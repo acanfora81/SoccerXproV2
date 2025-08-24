@@ -1,0 +1,383 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Team {
+  id                 String        @id @default(uuid())
+  name               String
+  slug               String        @unique
+  plan               String        @default("basic")
+  isActive           Boolean       @default(true)
+  maxPlayers         Int           @default(25)
+  maxUsers           Int           @default(5)
+  email              String?
+  phone              String?
+  address            String?
+  vatNumber          String?
+  subscriptionId     String?
+  subscriptionStatus String        @default("trial")
+  trialEndsAt        DateTime?
+  subscriptionEndsAt DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  players            Player[]      @relation("TeamPlayers")
+  users              UserProfile[] @relation("TeamUsers")
+
+  @@map("teams")
+}
+
+model UserProfile {
+  id                     Int               @id @default(autoincrement())
+  auth_user_id           String            @unique
+  email                  String            @unique
+  first_name             String
+  last_name              String
+  role                   UserRole          @default(SECRETARY)
+  theme_preference       String            @default("light")
+  language_preference    String            @default("it")
+  is_active              Boolean           @default(true)
+  last_login             DateTime?
+  created_at             DateTime          @default(now())
+  updated_at             DateTime
+  teamId                 String?           @map("team_id")
+  contracts              contracts[]
+  injuries               injuries[]
+  createdPerformanceData PerformanceData[] @relation("PerformanceDataCreator")
+  createdPlayers         Player[]          @relation("PlayerCreator")
+  transfers              transfers[]
+  team                   Team?             @relation("TeamUsers", fields: [teamId], references: [id])
+
+  @@map("user_profiles")
+}
+
+model Player {
+  id                Int                 @id @default(autoincrement())
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime
+  nationality       String
+  position          Position
+  shirtNumber       Int?                @unique
+  height            Float?
+  weight            Float?
+  preferredFoot     FootType?
+  placeOfBirth      String?
+  taxCode           String?             @unique
+  passportNumber    String?             @unique
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  createdById       Int
+  teamId            String?             @map("team_id")
+  contracts         contracts[]
+  injuries          injuries[]
+  medical_visits    medical_visits[]
+  performanceData   PerformanceData[]
+  player_statistics player_statistics[]
+  createdBy         UserProfile         @relation("PlayerCreator", fields: [createdById], references: [id])
+  team              Team?               @relation("TeamPlayers", fields: [teamId], references: [id])
+  transfers         transfers[]
+
+  @@map("players")
+}
+
+model PerformanceData {
+  id                  Int         @id @default(autoincrement())
+  playerId            Int
+  session_date        DateTime
+  session_type        String?
+  duration_minutes    Int?
+  total_distance_m    Float?
+  sprint_distance_m   Float?
+  top_speed_kmh       Float?
+  avg_speed_kmh       Float?
+  player_load         Float?
+  high_intensity_runs Int?
+  max_heart_rate      Int?
+  avg_heart_rate      Int?
+  source_device       String?
+  notes               String?
+  created_at          DateTime    @default(now())
+  updated_at          DateTime    @updatedAt
+  createdById         Int
+  created_by          UserProfile @relation("PerformanceDataCreator", fields: [createdById], references: [id])
+  player              Player      @relation(fields: [playerId], references: [id])
+
+  @@map("performance_data")
+}
+
+model budgets {
+  id           Int            @id @default(autoincrement())
+  year         Int
+  category     BudgetCategory
+  budgetAmount Decimal        @db.Decimal(12, 2)
+  spentAmount  Decimal        @default(0) @db.Decimal(12, 2)
+  currency     String         @default("EUR")
+  description  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  expenses     expenses[]
+
+  @@unique([year, category])
+}
+
+model contract_clauses {
+  id          Int        @id @default(autoincrement())
+  clauseType  ClauseType
+  description String
+  amount      Decimal?   @db.Decimal(10, 2)
+  currency    String?    @default("EUR")
+  conditions  String?
+  contractId  Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  contracts   contracts  @relation(fields: [contractId], references: [id])
+}
+
+model contracts {
+  id               Int                @id @default(autoincrement())
+  startDate        DateTime
+  endDate          DateTime
+  salary           Decimal            @db.Decimal(10, 2)
+  currency         String             @default("EUR")
+  contractType     ContractType
+  status           ContractStatus     @default(ACTIVE)
+  signedDate       DateTime?
+  notes            String?
+  playerId         Int
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  createdById      Int
+  contract_clauses contract_clauses[]
+  user_profiles    UserProfile        @relation(fields: [createdById], references: [id])
+  players          Player             @relation(fields: [playerId], references: [id])
+}
+
+model expenses {
+  id          Int            @id @default(autoincrement())
+  amount      Decimal        @db.Decimal(10, 2)
+  currency    String         @default("EUR")
+  category    BudgetCategory
+  description String
+  expenseDate DateTime
+  budgetId    Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime
+  budgets     budgets?       @relation(fields: [budgetId], references: [id])
+}
+
+model injuries {
+  id             Int              @id @default(autoincrement())
+  injuryType     InjuryType
+  bodyPart       BodyPart
+  severity       InjurySeverity
+  description    String
+  injuryDate     DateTime
+  expectedReturn DateTime?
+  actualReturn   DateTime?
+  status         InjuryStatus     @default(ACTIVE)
+  diagnosis      String?
+  treatment      String?
+  notes          String?
+  playerId       Int
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  createdById    Int
+  user_profiles  UserProfile      @relation(fields: [createdById], references: [id])
+  players        Player           @relation(fields: [playerId], references: [id])
+  medical_visits medical_visits[]
+}
+
+model medical_visits {
+  id        Int       @id @default(autoincrement())
+  visitDate DateTime
+  visitType VisitType
+  doctor    String
+  diagnosis String?
+  treatment String?
+  notes     String?
+  followUp  DateTime?
+  playerId  Int
+  injuryId  Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  injuries  injuries? @relation(fields: [injuryId], references: [id])
+  players   Player    @relation(fields: [playerId], references: [id])
+}
+
+model player_statistics {
+  id            Int      @id @default(autoincrement())
+  season        String
+  games         Int      @default(0)
+  goals         Int      @default(0)
+  assists       Int      @default(0)
+  yellowCards   Int      @default(0)
+  redCards      Int      @default(0)
+  minutesPlayed Int      @default(0)
+  playerId      Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  players       Player   @relation(fields: [playerId], references: [id])
+
+  @@unique([playerId, season])
+}
+
+model transfers {
+  id            Int            @id @default(autoincrement())
+  transferType  TransferType
+  transferDate  DateTime?
+  fee           Decimal?       @db.Decimal(12, 2)
+  currency      String?        @default("EUR")
+  status        TransferStatus @default(NEGOTIATING)
+  fromClub      String?
+  toClub        String?
+  agent         String?
+  notes         String?
+  playerId      Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  createdById   Int
+  user_profiles UserProfile    @relation(fields: [createdById], references: [id])
+  players       Player         @relation(fields: [playerId], references: [id])
+}
+
+enum BodyPart {
+  HEAD
+  NECK
+  SHOULDER
+  ARM
+  ELBOW
+  WRIST
+  HAND
+  CHEST
+  BACK
+  ABDOMEN
+  HIP
+  THIGH
+  KNEE
+  SHIN
+  CALF
+  ANKLE
+  FOOT
+}
+
+enum BudgetCategory {
+  PLAYER_SALARIES
+  TRANSFER_FEES
+  MEDICAL_COSTS
+  INFRASTRUCTURE
+  STAFF_SALARIES
+  EQUIPMENT
+  TRAVEL
+  MARKETING
+  OTHER
+}
+
+enum ClauseType {
+  RELEASE_CLAUSE
+  RENEWAL_OPTION
+  PERFORMANCE_BONUS
+  GOAL_BONUS
+  APPEARANCE_BONUS
+  RELEGATION_CLAUSE
+  PROMOTION_BONUS
+  INTERNATIONAL_BONUS
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWED
+}
+
+enum ContractType {
+  PERMANENT
+  LOAN
+  TRIAL
+  YOUTH
+}
+
+enum FootType {
+  LEFT
+  RIGHT
+  BOTH
+}
+
+enum InjurySeverity {
+  MINOR
+  MODERATE
+  MAJOR
+  SEVERE
+}
+
+enum InjuryStatus {
+  ACTIVE
+  RECOVERING
+  HEALED
+  CHRONIC
+}
+
+enum InjuryType {
+  MUSCLE_STRAIN
+  LIGAMENT_TEAR
+  BONE_FRACTURE
+  CONCUSSION
+  BRUISE
+  CUT
+  SPRAIN
+  OVERUSE
+  OTHER
+}
+
+enum Position {
+  GOALKEEPER
+  DEFENDER
+  MIDFIELDER
+  FORWARD
+}
+
+enum TransferStatus {
+  SCOUTING
+  NEGOTIATING
+  AGREED
+  MEDICAL_PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum TransferType {
+  INCOMING
+  OUTGOING
+  LOAN_IN
+  LOAN_OUT
+  FREE_TRANSFER
+  EXCHANGE
+}
+
+enum UserRole {
+  ADMIN
+  DIRECTOR_SPORT
+  MEDICAL_STAFF
+  SECRETARY
+  SCOUT
+  PREPARATORE_ATLETICO
+}
+
+enum VisitType {
+  ROUTINE_CHECKUP
+  INJURY_ASSESSMENT
+  REHABILITATION
+  FITNESS_TEST
+  SPECIALIST_CONSULTATION
+  EMERGENCY
+}

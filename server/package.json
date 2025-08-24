@@ -1,0 +1,65 @@
+{
+  "name": "soccerxpro-v2-server",
+  "version": "1.0.0",
+  "description": "Backend API for SoccerXpro V2 football management system with secure logout",
+  "main": "src/app.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:auth": "node tests/auth-test.js",
+    "test:logout": "node tests/logout-security-test.js",
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev",
+    "prisma:studio": "npx prisma studio",
+    "redis:start": "redis-server",
+    "redis:cli": "redis-cli",
+    "security:test": "node tests/security-test.js",
+    "update:tree": "node scripts/tree.js"
+  },
+  "keywords": [
+    "football",
+    "management",
+    "api",
+    "express",
+    "prisma",
+    "supabase",
+    "redis",
+    "security",
+    "jwt",
+    "blacklist"
+  ],
+  "author": "Alessandro Canfora",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.14.0",
+    "@supabase/supabase-js": "^2.55.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "prisma": "^6.14.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/soccerxpro-v2"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/soccerxpro-v2/issues"
+  },
+  "homepage": "https://github.com/your-username/soccerxpro-v2#readme"
+}

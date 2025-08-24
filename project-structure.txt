@@ -1,0 +1,210 @@
+# Struttura progetto aggiornata: 23/08/2025, 15:51:09
+
+├── client
+│   ├── public
+│   │   └── vite.svg
+│   ├── src
+│   │   ├── assets
+│   │   │   └── react.svg
+│   │   ├── components
+│   │   │   ├── auth
+│   │   │   │   └── LoginForm.jsx
+│   │   │   ├── dashboard
+│   │   │   │   └── Dashboard.jsx
+│   │   │   ├── layout
+│   │   │   │   └── MainLayout.jsx
+│   │   │   ├── players
+│   │   │   │   ├── PlayerFormModal.jsx
+│   │   │   │   ├── PlayersList.jsx
+│   │   │   │   └── PlayerStatistics.jsx
+│   │   │   └── ui
+│   │   │       └── ThemeToggle.jsx
+│   │   ├── store
+│   │   │   └── authStore.js
+│   │   ├── styles
+│   │   │   ├── dashboard.css
+│   │   │   ├── index.css
+│   │   │   ├── layout.css
+│   │   │   ├── players.css
+│   │   │   ├── statistics.css
+│   │   │   └── themes.css
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── README.md
+│   └── vite.config.js
+├── docs
+│   ├── api
+│   ├── architecture
+│   └── setup
+├── e2e
+│   ├── fixtures
+│   ├── support
+│   │   └── page-objects
+│   └── tests
+│       ├── administration
+│       ├── auth
+│       ├── contracts
+│       ├── integration
+│       ├── market
+│       ├── medical
+│       └── players
+├── infrastructure
+├── scripts
+├── server
+│   ├── prisma
+│   │   ├── generated
+│   │   │   └── client
+│   │   │       ├── runtime
+│   │   │       │   ├── edge-esm.js
+│   │   │       │   ├── edge.js
+│   │   │       │   ├── index-browser.d.ts
+│   │   │       │   ├── index-browser.js
+│   │   │       │   ├── library.d.ts
+│   │   │       │   ├── library.js
+│   │   │       │   ├── react-native.js
+│   │   │       │   ├── wasm-compiler-edge.js
+│   │   │       │   └── wasm-engine-edge.js
+│   │   │       ├── client.d.ts
+│   │   │       ├── client.js
+│   │   │       ├── default.d.ts
+│   │   │       ├── default.js
+│   │   │       ├── edge.d.ts
+│   │   │       ├── edge.js
+│   │   │       ├── index-browser.js
+│   │   │       ├── index.d.ts
+│   │   │       ├── index.js
+│   │   │       ├── package.json
+│   │   │       ├── query_engine-windows.dll.node
+│   │   │       ├── schema.prisma
+│   │   │       ├── wasm.d.ts
+│   │   │       └── wasm.js
+│   │   ├── migrations
+│   │   │   ├── 20250822092341_clean_start
+│   │   │   │   └── migration.sql
+│   │   │   ├── 20250823103148_add_preparatore_atletico_role
+│   │   │   │   └── migration.sql
+│   │   │   ├── 20250823105610_add_performance_data_table
+│   │   │   │   └── migration.sql
+│   │   │   └── migration_lock.toml
+│   │   ├── seeds
+│   │   └── schema.prisma
+│   ├── src
+│   │   ├── config
+│   │   │   ├── database.js
+│   │   │   └── redis.js
+│   │   ├── constants
+│   │   │   └── errors.js
+│   │   ├── controllers
+│   │   │   ├── auth.js
+│   │   │   ├── performance.js
+│   │   │   └── players.js
+│   │   ├── events
+│   │   ├── middleware
+│   │   │   └── auth.js
+│   │   ├── models
+│   │   ├── routes
+│   │   │   ├── auth.js
+│   │   │   ├── performance.js
+│   │   │   ├── players.backup.js
+│   │   │   ├── players.js
+│   │   │   └── test-auth.js
+│   │   ├── services
+│   │   ├── utils
+│   │   │   ├── permissions.js
+│   │   │   └── tokenBlacklist.js
+│   │   └── app.js
+│   ├── tests
+│   │   ├── fixtures
+│   │   ├── integration
+│   │   ├── unit
+│   │   └── logout-security-test.js
+│   ├── debug-supabase.js
+│   ├── package-lock.json
+│   ├── package.json
+│   └── test-env.js
+├── src
+│   ├── components
+│   │   ├── administration
+│   │   │   ├── components
+│   │   │   └── modals
+│   │   ├── auth
+│   │   ├── common
+│   │   │   ├── charts
+│   │   │   ├── feedback
+│   │   │   ├── forms
+│   │   │   ├── modals
+│   │   │   └── ui
+│   │   ├── contracts
+│   │   │   ├── components
+│   │   │   └── modals
+│   │   ├── layout
+│   │   ├── market
+│   │   │   ├── components
+│   │   │   └── modals
+│   │   ├── medical
+│   │   │   ├── components
+│   │   │   └── modals
+│   │   └── players
+│   │       ├── components
+│   │       └── modals
+│   ├── config
+│   ├── constants
+│   ├── hooks
+│   │   ├── api
+│   │   ├── forms
+│   │   ├── ui
+│   │   └── utils
+│   ├── i18n
+│   │   ├── hooks
+│   │   ├── locales
+│   │   └── utils
+│   ├── pages
+│   ├── router
+│   ├── services
+│   │   ├── api
+│   │   ├── utils
+│   │   └── validation
+│   ├── store
+│   │   ├── administration
+│   │   ├── auth
+│   │   ├── contracts
+│   │   ├── market
+│   │   ├── medical
+│   │   ├── players
+│   │   └── ui
+│   ├── stories
+│   │   ├── administration
+│   │   ├── common
+│   │   ├── contracts
+│   │   ├── market
+│   │   ├── medical
+│   │   ├── players
+│   │   └── themes
+│   ├── styles
+│   │   ├── common
+│   │   ├── components
+│   │   └── themes
+│   ├── tests
+│   │   ├── __mocks__
+│   │   ├── components
+│   │   ├── hooks
+│   │   ├── services
+│   │   ├── store
+│   │   └── utils
+│   ├── types
+│   └── utils
+│       ├── constants
+│       ├── data
+│       └── helpers
+├── package-lock.json
+├── package.json
+├── project-structure.txt
+├── README.md
+├── Recap Lavoro Svolto.txt
+├── STRUTTURA_PROGETTO.md
+└── tree.js
