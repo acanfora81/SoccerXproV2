@@ -1,0 +1,575 @@
+/* client/src/styles/upload.css */
+/* 🎨 Stili per ImportWizard migliorato */
+
+.upload-step {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Wizard progress */
+.wizard-progress {
+  margin-bottom: 32px;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.step-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.step-indicator.active {
+  opacity: 1;
+}
+
+.step-indicator.completed {
+  opacity: 1;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.step-indicator.active .step-number {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: white;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.step-indicator.completed .step-number {
+  background: #10B981;
+  border-color: #10B981;
+  color: white;
+}
+
+.step-indicator span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.step-indicator.active span {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.step-line {
+  width: 60px;
+  height: 2px;
+  background: var(--border-color);
+  margin: 0 16px;
+}
+
+/* Upload section */
+.upload-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Upload card */
+.upload-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  padding: 32px;
+  transition: all 0.3s ease;
+}
+
+.upload-card:hover {
+  border-color: #3B82F6;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.upload-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.upload-header h2 {
+  margin: 16px 0 8px;
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.upload-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+/* File input area */
+.file-input-area {
+  margin-bottom: 24px;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-input-label {
+  display: block;
+  cursor: pointer;
+}
+
+.file-drop-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: var(--bg-primary);
+}
+
+.file-drop-zone:hover {
+  border-color: #3B82F6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.drop-zone-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drop-zone-main {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.drop-zone-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.supported-formats {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  background: rgba(107, 114, 128, 0.1);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+/* Selected file display */
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+}
+
+.file-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.file-size {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Upload actions */
+.upload-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.upload-btn {
+  min-width: 160px;
+  justify-content: center;
+}
+
+/* Error display */
+.upload-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.error-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.error-content strong {
+  color: #991B1B;
+  font-weight: 600;
+}
+
+.error-content span {
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+/* Headers preview */
+.headers-preview {
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(16, 185, 129, 0.1);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.preview-header h3 {
+  margin: 0;
+  color: #065F46;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.headers-info {
+  padding: 20px;
+}
+
+.headers-count {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.headers-count strong {
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.headers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.header-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.header-tag.more {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Help section */
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.help-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  gap: 16px;
+  transition: all 0.3s ease;
+}
+
+.help-card:hover {
+  border-color: #3B82F6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.help-content {
+  flex: 1;
+}
+
+.help-content h3 {
+  margin: 0 0 12px;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.help-content p {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.help-content ul {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.help-content li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.help-content li strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.help-content ul ul {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.download-template {
+  margin-top: 12px;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .upload-section {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .progress-steps {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .step-line {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .upload-card {
+    padding: 24px;
+  }
+  
+  .file-drop-zone {
+    padding: 32px 16px;
+  }
+  
+  .drop-zone-main {
+    font-size: 16px;
+  }
+  
+  .selected-file {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .headers-list {
+    flex-direction: column;
+  }
+  
+  .header-tag {
+    text-align: center;
+  }
+  
+  .help-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .progress-steps {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-card {
+    padding: 16px;
+  }
+  
+  .upload-header h2 {
+    font-size: 20px;
+  }
+  
+  .file-drop-zone {
+    padding: 24px 12px;
+  }
+  
+  .upload-btn {
+    width: 100%;
+  }
+}
+
+/* Import degli stili per il mapping */
+@import './mapping.css';
+
+/* Animazioni */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.upload-step {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Transizioni smooth tra step */
+.statistics-container > div {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Dark theme improvements */
+@media (prefers-color-scheme: dark) {
+  .file-drop-zone:hover {
+    background: rgba(59, 130, 246, 0.08);
+  }
+  
+  .selected-file {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+  
+  .upload-error {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+  
+  .headers-preview {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+  
+  .preview-header {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+  
+  .supported-formats {
+    background: rgba(107, 114, 128, 0.15);
+  }
+}
+
+/* Focus states per accessibilità */
+.file-input-label:focus-within .file-drop-zone {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Stato loading migliorato */
+.upload-btn:disabled {
+  cursor: not-allowed;
+  background: #9CA3AF;
+  border-color: #9CA3AF;
+}
+
+.upload-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Drag and drop enhancement */
+.file-drop-zone.drag-over {
+  border-color: #3B82F6;
+  background: rgba(59, 130, 246, 0.1);
+  transform: scale(1.02);
+}
+
+/* Success state animation */
+.selected-file {
+  animation: slideInRight 0.4s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.headers-preview {
+  animation: slideInUp 0.4s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
