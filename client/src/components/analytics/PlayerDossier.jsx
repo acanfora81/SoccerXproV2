@@ -13,6 +13,17 @@ import {
 
 import '../../styles/analytics.css';
 
+// 🗣️ Funzione per tradurre le posizioni
+const translatePosition = (position) => {
+  const translations = {
+    'GOALKEEPER': 'Portiere',
+    'DEFENDER': 'Difensore', 
+    'MIDFIELDER': 'Centrocampista',
+    'FORWARD': 'Attaccante'
+  };
+  return translations[position] || position;
+};
+
 const PlayerDossier = ({
   player,
   sessions = [],
@@ -75,6 +86,7 @@ const filteredSessions = useMemo(() => {
 
     // KPI base
     const kpis = {
+      // ================= CAMPI ESISTENTI =================
       totalSessions: filteredSessions.length,
       totalDistance: filteredSessions.reduce((a, s) => a + (s.total_distance_m || 0), 0),
       avgDistance: Math.round(filteredSessions.reduce((a, s) => a + (s.total_distance_m || 0), 0) / filteredSessions.length),
@@ -93,7 +105,33 @@ const filteredSessions = useMemo(() => {
       avgMaxHR: Math.round(filteredSessions.reduce((a, s) => a + (s.max_heart_rate || 0), 0) / filteredSessions.length),
       avgHeartRate: Math.round(filteredSessions.reduce((a, s) => a + (s.avg_heart_rate || 0), 0) / filteredSessions.length),
       trainingCount: filteredSessions.filter(s => s.session_type === 'Training').length,
-      matchCount: filteredSessions.filter(s => s.session_type === 'Match').length
+      matchCount: filteredSessions.filter(s => s.session_type === 'Match').length,
+      
+      // ================= NUOVI CAMPI - DISTANZE E VELOCITÀ =================
+      avgEquivalentDistance: Math.round(filteredSessions.reduce((a, s) => a + (s.equivalent_distance_m || 0), 0) / filteredSessions.length),
+      avgDistancePerMin: Math.round((filteredSessions.reduce((a, s) => a + (s.distance_per_min || 0), 0) / filteredSessions.length) * 10) / 10,
+      totalDistanceOver15kmh: filteredSessions.reduce((a, s) => a + (s.distance_over_15_kmh_m || 0), 0),
+      totalDistanceOver20kmh: filteredSessions.reduce((a, s) => a + (s.distance_over_20_kmh_m || 0), 0),
+      totalDistanceOver25kmh: filteredSessions.reduce((a, s) => a + (s.distance_over_25_kmh_m || 0), 0),
+      
+      // ================= NUOVI CAMPI - POTENZA METABOLICA =================
+      avgMetabolicPower: Math.round((filteredSessions.reduce((a, s) => a + (s.avg_metabolic_power_wkg || 0), 0) / filteredSessions.length) * 10) / 10,
+      totalDistanceOver20wkg: filteredSessions.reduce((a, s) => a + (s.distance_over_20wkg_m || 0), 0),
+      totalDistanceOver35wkg: filteredSessions.reduce((a, s) => a + (s.distance_over_35wkg_m || 0), 0),
+      maxPower5s: Math.max(...filteredSessions.map(s => s.max_power_5s_wkg || 0), 0),
+      
+      // ================= NUOVI CAMPI - ACCELERAZIONI/DECELERAZIONI =================
+      totalAccDistanceOver2ms2: filteredSessions.reduce((a, s) => a + (s.distance_acc_over_2_ms2_m || 0), 0),
+      totalDecDistanceOver2ms2: filteredSessions.reduce((a, s) => a + (s.distance_dec_over_minus2_ms2_m || 0), 0),
+      avgAccEventsPerMin: Math.round((filteredSessions.reduce((a, s) => a + (s.acc_events_per_min_over_2_ms2 || 0), 0) / filteredSessions.length) * 10) / 10,
+      avgDecEventsPerMin: Math.round((filteredSessions.reduce((a, s) => a + (s.dec_events_per_min_over_minus2_ms2 || 0), 0) / filteredSessions.length) * 10) / 10,
+      
+      // ================= NUOVI CAMPI - ZONE DI INTENSITÀ =================
+      avgTimeUnder5wkg: Math.round(filteredSessions.reduce((a, s) => a + (s.time_under_5wkg_min || 0), 0) / filteredSessions.length),
+      avgTime5to10wkg: Math.round(filteredSessions.reduce((a, s) => a + (s.time_5_10_wkg_min || 0), 0) / filteredSessions.length),
+      
+      // ================= NUOVI CAMPI - INDICI E PROFILI =================
+      avgRvpIndex: Math.round((filteredSessions.reduce((a, s) => a + (s.rvp_index || 0), 0) / filteredSessions.length) * 10) / 10,
     };
 
     // ACWR su tutte le sessioni del giocatore (7d / 28d)
@@ -129,6 +167,7 @@ const filteredSessions = useMemo(() => {
 
     // ✅ Dati grafici: tutto NUMBER, niente stringhe da toFixed
     const chartData = filteredSessions.map(s => {
+      // ================= CAMPI ESISTENTI =================
       const totalDistance = Number(s.total_distance_m ?? 0);
       const sprintDistance = Number(s.sprint_distance_m ?? 0);
       const hsrDistance = Number(s.hsr_distance_m ?? 0);
@@ -140,6 +179,24 @@ const filteredSessions = useMemo(() => {
       const highIntensityRuns = Number(s.high_intensity_runs ?? 0);
       const duration = Number(s.duration_minutes ?? 0);
 
+      // ================= NUOVI CAMPI =================
+      const equivalentDistance = Number(s.equivalent_distance_m ?? 0);
+      const distancePerMin = Number(s.distance_per_min ?? 0);
+      const distanceOver15kmh = Number(s.distance_over_15_kmh_m ?? 0);
+      const distanceOver20kmh = Number(s.distance_over_20_kmh_m ?? 0);
+      const distanceOver25kmh = Number(s.distance_over_25_kmh_m ?? 0);
+      const avgMetabolicPower = Number(s.avg_metabolic_power_wkg ?? 0);
+      const distanceOver20wkg = Number(s.distance_over_20wkg_m ?? 0);
+      const distanceOver35wkg = Number(s.distance_over_35wkg_m ?? 0);
+      const maxPower5s = Number(s.max_power_5s_wkg ?? 0);
+      const accDistanceOver2ms2 = Number(s.distance_acc_over_2_ms2_m ?? 0);
+      const decDistanceOver2ms2 = Number(s.distance_dec_over_minus2_ms2_m ?? 0);
+      const accEventsPerMin = Number(s.acc_events_per_min_over_2_ms2 ?? 0);
+      const decEventsPerMin = Number(s.dec_events_per_min_over_minus2_ms2 ?? 0);
+      const timeUnder5wkg = Number(s.time_under_5wkg_min ?? 0);
+      const time5to10wkg = Number(s.time_5_10_wkg_min ?? 0);
+      const rvpIndex = Number(s.rvp_index ?? 0);
+
       const intensityRatio = totalDistance > 0 ? (sprintDistance / totalDistance) * 100 : 0;
       const loadPerMinute = duration > 0 ? playerLoad / duration : 0;
       const avgSpeedDuringSession = duration > 0 ? (totalDistance / 1000) / (duration / 60) : 0;
@@ -148,6 +205,8 @@ const filteredSessions = useMemo(() => {
         date: new Date(s.session_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }),
         fullDate: s.session_date,
         sessionType: s.session_type || 'Sessione',
+        
+        // ================= CAMPI ESISTENTI =================
         totalDistance,
         sprintDistance,
         hsrDistance,
@@ -158,7 +217,26 @@ const filteredSessions = useMemo(() => {
         avgHeartRate: avgHeartRate > 0 ? avgHeartRate : null,
         highIntensityRuns,
         duration,
-        // arrotondiamo ma RESTANDO numbers
+        
+        // ================= NUOVI CAMPI =================
+        equivalentDistance,
+        distancePerMin,
+        distanceOver15kmh,
+        distanceOver20kmh,
+        distanceOver25kmh,
+        avgMetabolicPower,
+        distanceOver20wkg,
+        distanceOver35wkg,
+        maxPower5s,
+        accDistanceOver2ms2,
+        decDistanceOver2ms2,
+        accEventsPerMin,
+        decEventsPerMin,
+        timeUnder5wkg,
+        time5to10wkg,
+        rvpIndex,
+        
+        // ================= CALCOLI DERIVATI =================
         intensityRatio: Number(intensityRatio.toFixed(1)),
         loadPerMinute: Number(loadPerMinute.toFixed(1)),
         avgSpeedDuringSession: Number(avgSpeedDuringSession.toFixed(1)),
@@ -275,24 +353,28 @@ const filteredSessions = useMemo(() => {
     );
   }
 
+  const capMeta = allSessions && allSessions._meta ? allSessions._meta : null;
+
   return (
     <div className="analytics-container">
       {/* HEADER */}
-      <div className="analytics-header">
-        <div className="analytics-title">
+      <div className="analytics-header" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16}}>
+        <div style={{display:'flex',alignItems:'center',gap:16}}>
+          <div>
+            <h1 style={{margin:0}}>{player.firstName} {player.lastName}</h1>
+                         <p className="analytics-subtitle" style={{margin:0}}>
+               {translatePosition(player.position)} • #{player.shirtNumber || '-'} • {[timeRange]} • {filteredSessions.length} sessioni
+             </p>
+          </div>
           <div className="player-avatar" aria-hidden>
             {player.firstName?.[0]}{player.lastName?.[0]}
           </div>
-          <div>
-            <h1>{player.firstName} {player.lastName}</h1>
-            <p className="analytics-subtitle">
-              {player.position} • #{player.shirtNumber || '-'} • {[timeRange]} • {filteredSessions.length} sessioni
-            </p>
-          </div>
         </div>
-        <button className="back-btn" onClick={onBack}>
-          <ArrowLeft size={16} /> Lista Giocatori
-        </button>
+        <div>
+          <button className="back-btn" onClick={onBack}>
+            <ArrowLeft size={16} /> Lista Giocatori
+          </button>
+        </div>
       </div>
 
       {/* FILTRI (rispetta analytics-filters + filter-group + quick-filter-btn) */}
@@ -340,8 +422,21 @@ const filteredSessions = useMemo(() => {
       </div>
 
       {/* ALERTS (usa mapping-warnings già stylata) */}
+      {capMeta && capMeta.capped && (
+        <div className="mapping-warnings section-spacing">
+          <Info size={20} />
+          <div className="warnings-content">
+            <h4>Avviso dati limitati</h4>
+            <ul>
+              <li>
+                Mostrate {capMeta.capLimit} sessioni su {capMeta.total}. Riduci il periodo o esporta i dati.
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
       {analytics.alerts.length > 0 && (
-        <div className="mapping-warnings">
+        <div className="mapping-warnings section-spacing">
           <Info size={20} />
           <div className="warnings-content">
             <h4>Alert Giocatore ({analytics.alerts.length})</h4>
@@ -357,7 +452,7 @@ const filteredSessions = useMemo(() => {
       )}
 
       {/* KPI OVERVIEW (kpi-overview + kpi-card) */}
-      <div className="kpi-overview">
+      <div className="kpi-overview section-spacing">
         <div className="kpi-card">
           <div className="kpi-header">
             <div className="kpi-icon"><Target /></div>
@@ -449,7 +544,7 @@ const filteredSessions = useMemo(() => {
       {/* CHARTS */}
       <div className="charts-section">
         {/* Distanze & Player Load */}
-        <div className="chart-card">
+        <div className="chart-card chart-spacing">
           <div className="chart-header">
             <h4 className="chart-title">📏 Distanze e Player Load</h4>
             <Info size={16} title="Evoluzione dei carichi" />
@@ -500,7 +595,7 @@ const filteredSessions = useMemo(() => {
         </div>
 
         {/* Velocità & Intensità */}
-        <div className="chart-card">
+        <div className="chart-card chart-spacing">
           <div className="chart-header">
             <h4 className="chart-title">⚡ Velocità e Intensità</h4>
             <Info size={16} title="Performance di velocità nel tempo" />
@@ -731,52 +826,100 @@ const filteredSessions = useMemo(() => {
       </div>
 
       {/* SESSION DETAILS TABLE */}
-      <div className="chart-card">
+      <div className="chart-card table-spacing">
         <div className="chart-header">
           <h4 className="chart-title">📋 Dettaglio Sessioni</h4>
           <Info size={16} title="Tabella con tutte le metriche delle sessioni" />
         </div>
         <div className="table-container">
-          <table className="data-table">
+          {/* style locale minimal per pulizia tabella */}
+          <style>
+            {`
+              .sx-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+              .sx-table thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+              .sx-table th, .sx-table td { padding: 10px 12px; border-bottom: 1px solid #EEF2F7; }
+              .sx-table th { color: #6B7280; font-weight: 600; text-align: center; }
+              .sx-num { text-align: right; font-variant-numeric: tabular-nums; }
+              .sx-type { text-transform: uppercase; font-size: 12px; letter-spacing: .3px; }
+              .sx-row:nth-child(even) { background: #FAFCFF; }
+              .sx-cell-badge { display:inline-block; padding:2px 8px; border-radius:12px; background:#F3F4F6; color:#374151; }
+              .sx-cell-badge.match { background:#10B981; color:#FFFFFF; } /* Partita: verde */
+              .sx-cell-badge.training { background:#E0F2FE; color:#0369A1; } /* Allenamento: blu delicato */
+              .sx-foot { background:#F9FAFB; font-weight:600; }
+              @media (max-width: 1200px) { .sx-hide-lg { display:none; } }
+            `}
+          </style>
+
+          <table className="sx-table">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Tipo</th>
-                <th>Distanza (m)</th>
-                <th>Sprint (m)</th>
-                <th>HSR (m)</th>
-                <th>Player Load</th>
-                <th>Vel. Max (km/h)</th>
-                <th>Vel. Media (km/h)</th>
-                <th>FC Max</th>
-                <th>FC Media</th>
-                <th>Corse HI</th>
-                <th>Durata (min)</th>
+                <th style={{width: '90px'}}>Data</th>
+                <th style={{width: '100px'}}>Tipo</th>
+                <th className="sx-num">Distanza</th>
+                <th className="sx-num">Sprint</th>
+                <th className="sx-num sx-hide-lg">HSR</th>
+                <th className="sx-num">Load</th>
+                <th className="sx-num">Vel. Max</th>
+                <th className="sx-num">Vel. Media</th>
+                <th className="sx-num sx-hide-lg">FC Max</th>
+                <th className="sx-num sx-hide-lg">FC Media</th>
+                <th className="sx-num">Corse HI</th>
+                <th className="sx-num">Durata</th>
+                <th className="sx-num sx-hide-lg">Pot. Met.</th>
+                <th className="sx-num sx-hide-lg">D {'>'} 20km/h</th>
+                <th className="sx-num sx-hide-lg">Acc {'>'} 2m/s²</th>
+                <th className="sx-num sx-hide-lg">RVP</th>
               </tr>
             </thead>
             <tbody>
               {analytics.chartData.map((session, index) => (
-                <tr key={index}>
+                <tr key={index} className="sx-row">
                   <td>{session.date}</td>
                   <td>
-                    <span className={`session-badge ${session.sessionType?.toLowerCase()}`}>
-                      {session.sessionType}
+                    <span className={`sx-cell-badge ${session.sessionType?.toLowerCase() === 'match' ? 'match' : 'training'}`}>
+                      {session.sessionType || 'Sessione'}
                     </span>
                   </td>
-                  <td>{session.totalDistance.toLocaleString()}</td>
-                  <td>{session.sprintDistance.toLocaleString()}</td>
-                  <td>{session.hsrDistance.toLocaleString()}</td>
-                  <td>{session.playerLoad}</td>
-                  <td>{session.topSpeed}</td>
-                  <td>{session.avgSpeed}</td>
-                  <td>{session.maxHeartRate || '-'}</td>
-                  <td>{session.avgHeartRate || '-'}</td>
-                  <td>{session.highIntensityRuns}</td>
-                  <td>{session.duration}</td>
+                  <td className="sx-num">{session.totalDistance.toLocaleString()}&nbsp;m</td>
+                  <td className="sx-num">{session.sprintDistance.toLocaleString()}&nbsp;m</td>
+                  <td className="sx-num sx-hide-lg">{session.hsrDistance.toLocaleString()}&nbsp;m</td>
+                  <td className="sx-num">{Number(session.playerLoad).toLocaleString()}</td>
+                  <td className="sx-num">{session.topSpeed}&nbsp;km/h</td>
+                  <td className="sx-num">{session.avgSpeed}&nbsp;km/h</td>
+                  <td className="sx-num sx-hide-lg">{session.maxHeartRate || '-'}</td>
+                  <td className="sx-num sx-hide-lg">{session.avgHeartRate || '-'}</td>
+                  <td className="sx-num">{session.highIntensityRuns}</td>
+                  <td className="sx-num">{session.duration}&nbsp;min</td>
+                  <td className="sx-num sx-hide-lg">{session.avgMetabolicPower ? session.avgMetabolicPower.toFixed(1) : '-'}&nbsp;W/kg</td>
+                  <td className="sx-num sx-hide-lg">{session.distanceOver20kmh ? session.distanceOver20kmh.toLocaleString() : '-'}&nbsp;m</td>
+                  <td className="sx-num sx-hide-lg">{session.accDistanceOver2ms2 ? session.accDistanceOver2ms2.toLocaleString() : '-'}&nbsp;m</td>
+                  <td className="sx-num sx-hide-lg">{session.rvpIndex ? session.rvpIndex.toFixed(1) : '-'}</td>
                 </tr>
               ))}
             </tbody>
+            {analytics.chartData.length > 0 && (
+              <tfoot>
+                <tr className="sx-foot">
+                  <td colSpan={2}>Medie</td>
+                  <td className="sx-num">{Math.round(analytics.kpis.avgDistance).toLocaleString()}&nbsp;m</td>
+                  <td className="sx-num">{Math.round(analytics.kpis.avgSprintDistance).toLocaleString()}&nbsp;m</td>
+                  <td className="sx-num sx-hide-lg">{(analytics.kpis.totalHSR / analytics.chartData.length).toFixed(0)}&nbsp;m</td>
+                  <td className="sx-num">{analytics.kpis.avgPlayerLoad}</td>
+                  <td className="sx-num">{analytics.kpis.maxSpeed}</td>
+                  <td className="sx-num">{analytics.kpis.avgTopSpeed}</td>
+                  <td className="sx-num sx-hide-lg">{analytics.kpis.maxHeartRate || '-'}</td>
+                  <td className="sx-num sx-hide-lg">{analytics.kpis.avgHeartRate || '-'}</td>
+                  <td className="sx-num">-</td>
+                  <td className="sx-num">-</td>
+                  <td className="sx-num sx-hide-lg">{analytics.kpis.avgMetabolicPower ? analytics.kpis.avgMetabolicPower.toFixed(1) : '-'}&nbsp;W/kg</td>
+                  <td className="sx-num sx-hide-lg">{analytics.kpis.totalDistanceOver20kmh ? analytics.kpis.totalDistanceOver20kmh.toLocaleString() : '-'}&nbsp;m</td>
+                  <td className="sx-num sx-hide-lg">{analytics.kpis.totalAccDistanceOver2ms2 ? analytics.kpis.totalAccDistanceOver2ms2.toLocaleString() : '-'}&nbsp;m</td>
+                  <td className="sx-num sx-hide-lg">{analytics.kpis.avgRvpIndex ? analytics.kpis.avgRvpIndex.toFixed(1) : '-'}</td>
+                </tr>
+              </tfoot>
+            )}
           </table>
+
           {!hasData && (
             <div className="table-empty-state">
               Nessuna sessione disponibile per il periodo selezionato

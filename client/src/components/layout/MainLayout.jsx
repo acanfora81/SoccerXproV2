@@ -58,6 +58,12 @@ const ALL_MENU_ITEMS = [
         requiredPermission: 'performance:analytics'
       },
       {
+        id: 'performance-analytics-advanced',
+        label: 'Analytics Avanzate',
+        path: '/performance/analytics-advanced',
+        requiredPermission: 'performance:analytics'
+      },
+      {
         id: 'performance-import', 
         label: 'Import Dati',
         path: '/performance/import',

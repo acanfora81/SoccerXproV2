@@ -19,7 +19,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    // Usa una porta fissa diversa dal backend per evitare conflitti
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

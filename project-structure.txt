@@ -1,4 +1,4 @@
-# Struttura progetto aggiornata: 26/08/2025, 22:53:12
+# Struttura progetto aggiornata: 27/08/2025, 14:48:27
 
 ├── client
 │   ├── public

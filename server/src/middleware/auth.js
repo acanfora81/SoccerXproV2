@@ -45,6 +45,7 @@ const getUserProfile = async (userId) => {
       role: true,
       theme_preference: true,
       language_preference: true,
+      teamId: true, // 👈 AGGIUNTO - teamId per multi-tenancy
       is_active: true,
       last_login: true
     }

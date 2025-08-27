@@ -910,6 +910,7 @@ router.get(
             player: { teamId }, // 🔧 FILTRO INDIRETTO VIA RELATION
           },
           _avg: {
+            // ================= CAMPI ESISTENTI =================
             total_distance_m: true,
             sprint_distance_m: true,
             top_speed_kmh: true,
@@ -918,6 +919,42 @@ router.get(
             max_heart_rate: true,
             avg_heart_rate: true,
             duration_minutes: true,
+            
+            // ================= NUOVI CAMPI - DISTANZE E VELOCITÀ =================
+            equivalent_distance_m: true,
+            equivalent_distance_pct: true,
+            distance_per_min: true,
+            distance_over_15_kmh_m: true,
+            distance_15_20_kmh_m: true,
+            distance_20_25_kmh_m: true,
+            distance_over_25_kmh_m: true,
+            distance_over_20_kmh_m: true,
+            
+            // ================= NUOVI CAMPI - POTENZA METABOLICA =================
+            avg_metabolic_power_wkg: true,
+            distance_over_20wkg_m: true,
+            distance_over_35wkg_m: true,
+            max_power_5s_wkg: true,
+            
+            // ================= NUOVI CAMPI - ACCELERAZIONI/DECELERAZIONI =================
+            distance_acc_over_2_ms2_m: true,
+            distance_dec_over_minus2_ms2_m: true,
+            pct_distance_acc_over_2_ms2: true,
+            pct_distance_dec_over_minus2_ms2: true,
+            distance_acc_over_3_ms2_m: true,
+            distance_dec_over_minus3_ms2_m: true,
+            num_acc_over_3_ms2: true,
+            num_dec_over_minus3_ms2: true,
+            acc_events_per_min_over_2_ms2: true,
+            dec_events_per_min_over_minus2_ms2: true,
+            
+            // ================= NUOVI CAMPI - ZONE DI INTENSITÀ =================
+            time_under_5wkg_min: true,
+            time_5_10_wkg_min: true,
+            
+            // ================= NUOVI CAMPI - INDICI E PROFILI =================
+            rvp_index: true,
+            training_load: true,
           },
         }),
 
@@ -927,12 +964,40 @@ router.get(
             player: { teamId }, // 🔧 FILTRO INDIRETTO VIA RELATION
           },
           _max: {
+            // ================= CAMPI ESISTENTI =================
             total_distance_m: true,
             sprint_distance_m: true,
             top_speed_kmh: true,
             player_load: true,
             max_heart_rate: true,
             duration_minutes: true,
+            
+            // ================= NUOVI CAMPI - DISTANZE E VELOCITÀ =================
+            equivalent_distance_m: true,
+            distance_per_min: true,
+            distance_over_15_kmh_m: true,
+            distance_15_20_kmh_m: true,
+            distance_20_25_kmh_m: true,
+            distance_over_25_kmh_m: true,
+            distance_over_20_kmh_m: true,
+            
+            // ================= NUOVI CAMPI - POTENZA METABOLICA =================
+            avg_metabolic_power_wkg: true,
+            distance_over_20wkg_m: true,
+            distance_over_35wkg_m: true,
+            max_power_5s_wkg: true,
+            
+            // ================= NUOVI CAMPI - ACCELERAZIONI/DECELERAZIONI =================
+            distance_acc_over_2_ms2_m: true,
+            distance_dec_over_minus2_ms2_m: true,
+            distance_acc_over_3_ms2_m: true,
+            distance_dec_over_minus3_ms2_m: true,
+            num_acc_over_3_ms2: true,
+            num_dec_over_minus3_ms2: true,
+            
+            // ================= NUOVI CAMPI - INDICI E PROFILI =================
+            rvp_index: true,
+            training_load: true,
           },
         }),
 
@@ -1563,6 +1628,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
               
               // 🔧 Prepara dati con controllo campi obbligatori
               const performanceData = {
+                // ================= CAMPI ESISTENTI =================
                 playerId: rowData.playerId,
                 session_date: rowData.session_date,
                 session_type: rowData.session_type || null,
@@ -1575,6 +1641,49 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
                 high_intensity_runs: rowData.high_intensity_runs || null,
                 max_heart_rate: rowData.max_heart_rate || null,
                 avg_heart_rate: rowData.avg_heart_rate || null,
+                
+                // ================= NUOVI CAMPI - DISTANZE E VELOCITÀ =================
+                equivalent_distance_m: rowData.equivalent_distance_m || null,
+                equivalent_distance_pct: rowData.equivalent_distance_pct || null,
+                distance_per_min: rowData.distance_per_min || null,
+                distance_over_15_kmh_m: rowData.distance_over_15_kmh_m || null,
+                distance_15_20_kmh_m: rowData.distance_15_20_kmh_m || null,
+                distance_20_25_kmh_m: rowData.distance_20_25_kmh_m || null,
+                distance_over_25_kmh_m: rowData.distance_over_25_kmh_m || null,
+                distance_over_20_kmh_m: rowData.distance_over_20_kmh_m || null,
+                
+                // ================= NUOVI CAMPI - POTENZA METABOLICA =================
+                avg_metabolic_power_wkg: rowData.avg_metabolic_power_wkg || null,
+                distance_over_20wkg_m: rowData.distance_over_20wkg_m || null,
+                distance_over_35wkg_m: rowData.distance_over_35wkg_m || null,
+                max_power_5s_wkg: rowData.max_power_5s_wkg || null,
+                
+                // ================= NUOVI CAMPI - ACCELERAZIONI/DECELERAZIONI =================
+                distance_acc_over_2_ms2_m: rowData.distance_acc_over_2_ms2_m || null,
+                distance_dec_over_minus2_ms2_m: rowData.distance_dec_over_minus2_ms2_m || null,
+                pct_distance_acc_over_2_ms2: rowData.pct_distance_acc_over_2_ms2 || null,
+                pct_distance_dec_over_minus2_ms2: rowData.pct_distance_dec_over_minus2_ms2 || null,
+                distance_acc_over_3_ms2_m: rowData.distance_acc_over_3_ms2_m || null,
+                distance_dec_over_minus3_ms2_m: rowData.distance_dec_over_minus3_ms2_m || null,
+                num_acc_over_3_ms2: rowData.num_acc_over_3_ms2 || null,
+                num_dec_over_minus3_ms2: rowData.num_dec_over_minus3_ms2 || null,
+                acc_events_per_min_over_2_ms2: rowData.acc_events_per_min_over_2_ms2 || null,
+                dec_events_per_min_over_minus2_ms2: rowData.dec_events_per_min_over_minus2_ms2 || null,
+                
+                // ================= NUOVI CAMPI - ZONE DI INTENSITÀ =================
+                time_under_5wkg_min: rowData.time_under_5wkg_min || null,
+                time_5_10_wkg_min: rowData.time_5_10_wkg_min || null,
+                
+                // ================= NUOVI CAMPI - INDICI E PROFILI =================
+                rvp_index: rowData.rvp_index || null,
+                training_load: rowData.training_load || rowData.player_load || null, // Fallback su player_load
+                
+                // ================= NUOVI CAMPI - INFORMAZIONI AGGIUNTIVE =================
+                session_day: rowData.session_day || null,
+                is_match: rowData.is_match || null,
+                drill_name: rowData.drill_name || null,
+                
+                // ================= CAMPI SISTEMA =================
                 source_device: rowData.source_device || "CSV Import",
                 notes: rowData.notes || null,
                 extras: rowData.extras || null,
