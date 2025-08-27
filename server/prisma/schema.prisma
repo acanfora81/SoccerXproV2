@@ -111,6 +111,8 @@ model PerformanceData {
   session_date        DateTime
   session_type        String?
   duration_minutes    Int?
+  
+  // ================= CAMPI ESISTENTI =================
   total_distance_m    Float?
   sprint_distance_m   Float?
   top_speed_kmh       Float?
@@ -119,6 +121,49 @@ model PerformanceData {
   high_intensity_runs Int?
   max_heart_rate      Int?
   avg_heart_rate      Int?
+  
+  // ================= NUOVI CAMPI - DISTANZE E VELOCITÀ =================
+  equivalent_distance_m           Float?  // Dist Equivalente
+  equivalent_distance_pct         Float?  // %Eq Dist
+  distance_per_min                Float?  // Dist/min
+  distance_over_15_kmh_m          Float?  // D > 15 Km/h
+  distance_15_20_kmh_m            Float?  // D 15-20 km/h
+  distance_20_25_kmh_m            Float?  // D 20-25 km/h
+  distance_over_25_kmh_m          Float?  // D > 25 km/h
+  distance_over_20_kmh_m          Float?  // D > 20 km/h
+  
+  // ================= NUOVI CAMPI - POTENZA METABOLICA =================
+  avg_metabolic_power_wkg         Float?  // Pot. met. media
+  distance_over_20wkg_m           Float?  // D > 20 W/Kg
+  distance_over_35wkg_m           Float?  // D>35 W
+  max_power_5s_wkg                Float?  // MaxPM5
+  
+  // ================= NUOVI CAMPI - ACCELERAZIONI/DECELERAZIONI =================
+  distance_acc_over_2_ms2_m       Float?  // D Acc > 2m/s2
+  distance_dec_over_minus2_ms2_m  Float?  // D Dec > -2m/s2
+  pct_distance_acc_over_2_ms2     Float?  // %D acc > 2m/s2
+  pct_distance_dec_over_minus2_ms2 Float? // %D Dec > -2 m/s2
+  distance_acc_over_3_ms2_m       Float?  // D Acc > 3 m/s2
+  distance_dec_over_minus3_ms2_m  Float?  // D Dec < -3 m/s2
+  num_acc_over_3_ms2              Int?    // Num Acc > 3 m/s2
+  num_dec_over_minus3_ms2         Int?    // Num Dec <-3 m/s2
+  acc_events_per_min_over_2_ms2   Float?  // D Acc/min > 2 m/s2
+  dec_events_per_min_over_minus2_ms2 Float? // D Dec/min > -2m/s2
+  
+  // ================= NUOVI CAMPI - ZONE DI INTENSITÀ =================
+  time_under_5wkg_min             Int?    // T/min <5 W/kg
+  time_5_10_wkg_min               Int?    // T/min 5-10 W/Kg
+  
+  // ================= NUOVI CAMPI - INDICI E PROFILI =================
+  rvp_index                       Float?  // RVP
+  training_load                   Float?  // Training Load (duplicato di player_load per compatibilità)
+  
+  // ================= NUOVI CAMPI - INFORMAZIONI AGGIUNTIVE =================
+  session_day                     String? // Day
+  is_match                        Boolean? // Match
+  drill_name                      String? // Drill
+  
+  // ================= CAMPI SISTEMA =================
   source_device       String?
   notes               String?
   extras              Json?

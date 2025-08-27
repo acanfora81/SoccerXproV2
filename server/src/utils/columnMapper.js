@@ -104,7 +104,89 @@ class SmartColumnMapper {
       /^(minuti|minutes|min|hours|ore)$/i
     ];
 
-    console.log('🟢 Pattern riconoscimento inizializzati');
+    // ================= NUOVI PATTERN - DISTANZE E VELOCITÀ =================
+    this.equivalentDistancePatterns = [
+      /^(distanza[\s_]*equivalente|dist[\s_]*eq|equivalent[\s_]*distance)$/i,
+      /^(eq[\s_]*dist|distance[\s_]*equiv|metabolic[\s_]*distance)$/i
+    ];
+
+    this.distancePerMinPatterns = [
+      /^(distanza[\s_]*per[\s_]*minuto|dist[\s_]*min|distance[\s_]*per[\s_]*min)$/i,
+      /^(m\/min|meters[\s_]*per[\s_]*minute|metri[\s_]*al[\s_]*minuto)$/i
+    ];
+
+    this.distanceZonePatterns = [
+      /^(distanza[\s_]*>[\s_]*15[\s_]*km\/h|d[\s_]*>[\s_]*15|distance[\s_]*over[\s_]*15)$/i,
+      /^(distanza[\s_]*15[\s_]*20|d[\s_]*15[\s_]*20|distance[\s_]*15[\s_]*20)$/i,
+      /^(distanza[\s_]*20[\s_]*25|d[\s_]*20[\s_]*25|distance[\s_]*20[\s_]*25)$/i,
+      /^(distanza[\s_]*>[\s_]*25[\s_]*km\/h|d[\s_]*>[\s_]*25|distance[\s_]*over[\s_]*25)$/i,
+      /^(distanza[\s_]*>[\s_]*20[\s_]*km\/h|d[\s_]*>[\s_]*20|distance[\s_]*over[\s_]*20)$/i
+    ];
+
+    // ================= NUOVI PATTERN - POTENZA METABOLICA =================
+    this.metabolicPowerPatterns = [
+      /^(potenza[\s_]*metabolica|pot[\s_]*met|metabolic[\s_]*power)$/i,
+      /^(avg[\s_]*metabolic[\s_]*power|potenza[\s_]*media|power[\s_]*wkg)$/i,
+      /^(w\/kg|watts[\s_]*per[\s_]*kg|potenza[\s_]*wkg)$/i
+    ];
+
+    this.powerZonePatterns = [
+      /^(distanza[\s_]*>[\s_]*20[\s_]*w\/kg|d[\s_]*>[\s_]*20w|distance[\s_]*over[\s_]*20w)$/i,
+      /^(distanza[\s_]*>[\s_]*35[\s_]*w\/kg|d[\s_]*>[\s_]*35w|distance[\s_]*over[\s_]*35w)$/i,
+      /^(max[\s_]*power[\s_]*5s|max[\s_]*pot[\s_]*5s|peak[\s_]*power[\s_]*5s)$/i
+    ];
+
+    // ================= NUOVI PATTERN - ACCELERAZIONI/DECELERAZIONI =================
+    this.accelerationPatterns = [
+      /^(distanza[\s_]*acc[\s_]*>[\s_]*2|d[\s_]*acc[\s_]*>[\s_]*2|distance[\s_]*acc[\s_]*>[\s_]*2)$/i,
+      /^(distanza[\s_]*acc[\s_]*>[\s_]*3|d[\s_]*acc[\s_]*>[\s_]*3|distance[\s_]*acc[\s_]*>[\s_]*3)$/i,
+      /^(num[\s_]*acc[\s_]*>[\s_]*3|numero[\s_]*acc[\s_]*>[\s_]*3|count[\s_]*acc[\s_]*>[\s_]*3)$/i,
+      /^(eventi[\s_]*acc[\s_]*min|acc[\s_]*events[\s_]*min|acceleration[\s_]*events)$/i
+    ];
+
+    this.decelerationPatterns = [
+      /^(distanza[\s_]*dec[\s_]*>[\s_]*-2|d[\s_]*dec[\s_]*>[\s_]*-2|distance[\s_]*dec[\s_]*>[\s_]*-2)$/i,
+      /^(distanza[\s_]*dec[\s_]*<[\s_]*-3|d[\s_]*dec[\s_]*<[\s_]*-3|distance[\s_]*dec[\s_]*<[\s_]*-3)$/i,
+      /^(num[\s_]*dec[\s_]*<[\s_]*-3|numero[\s_]*dec[\s_]*<[\s_]*-3|count[\s_]*dec[\s_]*<[\s_]*-3)$/i,
+      /^(eventi[\s_]*dec[\s_]*min|dec[\s_]*events[\s_]*min|deceleration[\s_]*events)$/i
+    ];
+
+    // ================= NUOVI PATTERN - ZONE DI INTENSITÀ =================
+    this.intensityZonePatterns = [
+      /^(tempo[\s_]*<[\s_]*5[\s_]*w\/kg|time[\s_]*<[\s_]*5w|duration[\s_]*<[\s_]*5w)$/i,
+      /^(tempo[\s_]*5[\s_]*10[\s_]*w\/kg|time[\s_]*5[\s_]*10w|duration[\s_]*5[\s_]*10w)$/i
+    ];
+
+    // ================= NUOVI PATTERN - INDICI E PROFILI =================
+    this.rvpPatterns = [
+      /^(indice[\s_]*rvp|rvp[\s_]*index|running[\s_]*velocity[\s_]*profile)$/i,
+      /^(rvp|profile[\s_]*index|velocity[\s_]*profile)$/i
+    ];
+
+    this.trainingLoadPatterns = [
+      /^(training[\s_]*load|carico[\s_]*allenamento|load[\s_]*training)$/i,
+      /^(workload|carico[\s_]*lavoro|session[\s_]*load)$/i
+    ];
+
+    // ================= NUOVI PATTERN - INFORMAZIONI AGGIUNTIVE =================
+    this.sessionDayPatterns = [
+      /^(giorno[\s_]*sessione|day[\s_]*session|session[\s_]*day)$/i,
+      /^(weekday|giorno[\s_]*settimana|day[\s_]*of[\s_]*week)$/i
+    ];
+
+    this.matchPatterns = [
+      /^(è[\s_]*partita|is[\s_]*match|match[\s_]*flag)$/i,
+      /^(partita|match|game|competition)$/i,
+      /^(true|false|1|0|yes|no)$/i
+    ];
+
+    this.drillPatterns = [
+      /^(nome[\s_]*esercizio|drill[\s_]*name|exercise[\s_]*name)$/i,
+      /^(esercizio|drill|exercise|activity[\s_]*type)$/i,
+      /^(possesso[\s_]*palla|tiri[\s_]*in[\s_]*porta|passing[\s_]*drills)$/i
+    ];
+
+    console.log('🟢 Pattern riconoscimento inizializzati (inclusi 32 nuovi campi)');
   }
 
   // =========================
@@ -403,6 +485,328 @@ class SmartColumnMapper {
         confidence: 80,
         type: 'duration',
         description: 'Durata (minuti)'
+      };
+    }
+
+    // ================= NUOVI CAMPI - DISTANZE E VELOCITÀ =================
+    
+    // Distanza Equivalente
+    if (this.matchesPatterns(headerLower, this.equivalentDistancePatterns)) {
+      const isPct = /pct|percentuale|%/.test(headerLower);
+      return {
+        dbField: isPct ? 'equivalent_distance_pct' : 'equivalent_distance_m',
+        transform: 'parseFloat',
+        required: false,
+        confidence: 85,
+        type: isPct ? 'equivalent_distance_pct' : 'equivalent_distance',
+        description: isPct ? 'Percentuale distanza equivalente' : 'Distanza equivalente (metri)'
+      };
+    }
+
+    // Distanza per Minuto
+    if (this.matchesPatterns(headerLower, this.distancePerMinPatterns)) {
+      return {
+        dbField: 'distance_per_min',
+        transform: 'parseFloat',
+        required: false,
+        confidence: 85,
+        type: 'distance_per_min',
+        description: 'Distanza per minuto (m/min)'
+      };
+    }
+
+    // Zone di Velocità
+    if (this.matchesPatterns(headerLower, this.distanceZonePatterns)) {
+      if (/15[\s_]*20|15-20/.test(headerLower)) {
+        return {
+          dbField: 'distance_15_20_kmh_m',
+          transform: 'parseFloat',
+          required: false,
+          confidence: 85,
+          type: 'distance_zone_15_20',
+          description: 'Distanza 15-20 km/h (metri)'
+        };
+      } else if (/20[\s_]*25|20-25/.test(headerLower)) {
+        return {
+          dbField: 'distance_20_25_kmh_m',
+          transform: 'parseFloat',
+          required: false,
+          confidence: 85,
+          type: 'distance_zone_20_25',
+          description: 'Distanza 20-25 km/h (metri)'
+        };
+      } else if (/>[\s_]*25|over[\s_]*25/.test(headerLower)) {
+        return {
+          dbField: 'distance_over_25_kmh_m',
+          transform: 'parseFloat',
+          required: false,
+          confidence: 85,
+          type: 'distance_zone_over_25',
+          description: 'Distanza > 25 km/h (metri)'
+        };
+      } else if (/>[\s_]*20|over[\s_]*20/.test(headerLower)) {
+        return {
+          dbField: 'distance_over_20_kmh_m',
+          transform: 'parseFloat',
+          required: false,
+          confidence: 85,
+          type: 'distance_zone_over_20',
+          description: 'Distanza > 20 km/h (metri)'
+        };
+      } else if (/>[\s_]*15|over[\s_]*15/.test(headerLower)) {
+        return {
+          dbField: 'distance_over_15_kmh_m',
+          transform: 'parseFloat',
+          required: false,
+          confidence: 85,
+          type: 'distance_zone_over_15',
+          description: 'Distanza > 15 km/h (metri)'
+        };
+      }
+    }
+
+    // ================= NUOVI CAMPI - POTENZA METABOLICA =================
+    
+    // Potenza Metabolica Media
+    if (this.matchesPatterns(headerLower, this.metabolicPowerPatterns)) {
+      return {
+        dbField: 'avg_metabolic_power_wkg',
+        transform: 'parseFloat',
+        required: false,
+        confidence: 85,
+        type: 'metabolic_power_avg',
+        description: 'Potenza metabolica media (W/kg)'
+      };
+    }
+
+    // Zone di Potenza
+    if (this.matchesPatterns(headerLower, this.powerZonePatterns)) {
+      if (/>[\s_]*35|over[\s_]*35/.test(headerLower)) {
+        return {
+          dbField: 'distance_over_35wkg_m',
+          transform: 'parseFloat',
+          required: false,
+          confidence: 85,
+          type: 'power_zone_over_35',
+          description: 'Distanza > 35 W/kg (metri)'
+        };
+      } else if (/>[\s_]*20|over[\s_]*20/.test(headerLower)) {
+        return {
+          dbField: 'distance_over_20wkg_m',
+          transform: 'parseFloat',
+          required: false,
+          confidence: 85,
+          type: 'power_zone_over_20',
+          description: 'Distanza > 20 W/kg (metri)'
+        };
+      } else if (/5s|5[\s_]*secondi/.test(headerLower)) {
+        return {
+          dbField: 'max_power_5s_wkg',
+          transform: 'parseFloat',
+          required: false,
+          confidence: 85,
+          type: 'max_power_5s',
+          description: 'Potenza massima 5s (W/kg)'
+        };
+      }
+    }
+
+    // ================= NUOVI CAMPI - ACCELERAZIONI/DECELERAZIONI =================
+    
+    // Accelerazioni
+    if (this.matchesPatterns(headerLower, this.accelerationPatterns)) {
+      if (/>[\s_]*3|over[\s_]*3/.test(headerLower)) {
+        if (/num|numero|count/.test(headerLower)) {
+          return {
+            dbField: 'num_acc_over_3_ms2',
+            transform: 'parseInt',
+            required: false,
+            confidence: 85,
+            type: 'acc_count_over_3',
+            description: 'Numero accelerazioni > 3 m/s²'
+          };
+        } else {
+          return {
+            dbField: 'distance_acc_over_3_ms2_m',
+            transform: 'parseFloat',
+            required: false,
+            confidence: 85,
+            type: 'acc_distance_over_3',
+            description: 'Distanza accelerazione > 3 m/s² (metri)'
+          };
+        }
+      } else if (/>[\s_]*2|over[\s_]*2/.test(headerLower)) {
+        if (/pct|percentuale|%/.test(headerLower)) {
+          return {
+            dbField: 'pct_distance_acc_over_2_ms2',
+            transform: 'parseFloat',
+            required: false,
+            confidence: 85,
+            type: 'acc_pct_over_2',
+            description: '% Distanza accelerazione > 2 m/s²'
+          };
+        } else if (/min|minuto/.test(headerLower)) {
+          return {
+            dbField: 'acc_events_per_min_over_2_ms2',
+            transform: 'parseFloat',
+            required: false,
+            confidence: 85,
+            type: 'acc_events_per_min_over_2',
+            description: 'Eventi accelerazione/min > 2 m/s²'
+          };
+        } else {
+          return {
+            dbField: 'distance_acc_over_2_ms2_m',
+            transform: 'parseFloat',
+            required: false,
+            confidence: 85,
+            type: 'acc_distance_over_2',
+            description: 'Distanza accelerazione > 2 m/s² (metri)'
+          };
+        }
+      }
+    }
+
+    // Decelerazioni
+    if (this.matchesPatterns(headerLower, this.decelerationPatterns)) {
+      if (/<[\s_]*-3|under[\s_]*-3/.test(headerLower)) {
+        if (/num|numero|count/.test(headerLower)) {
+          return {
+            dbField: 'num_dec_over_minus3_ms2',
+            transform: 'parseInt',
+            required: false,
+            confidence: 85,
+            type: 'dec_count_under_minus3',
+            description: 'Numero decelerazioni < -3 m/s²'
+          };
+        } else {
+          return {
+            dbField: 'distance_dec_over_minus3_ms2_m',
+            transform: 'parseFloat',
+            required: false,
+            confidence: 85,
+            type: 'dec_distance_under_minus3',
+            description: 'Distanza decelerazione < -3 m/s² (metri)'
+          };
+        }
+      } else if (/>[\s_]*-2|over[\s_]*-2/.test(headerLower)) {
+        if (/pct|percentuale|%/.test(headerLower)) {
+          return {
+            dbField: 'pct_distance_dec_over_minus2_ms2',
+            transform: 'parseFloat',
+            required: false,
+            confidence: 85,
+            type: 'dec_pct_over_minus2',
+            description: '% Distanza decelerazione > -2 m/s²'
+          };
+        } else if (/min|minuto/.test(headerLower)) {
+          return {
+            dbField: 'dec_events_per_min_over_minus2_ms2',
+            transform: 'parseFloat',
+            required: false,
+            confidence: 85,
+            type: 'dec_events_per_min_over_minus2',
+            description: 'Eventi decelerazione/min > -2 m/s²'
+          };
+        } else {
+          return {
+            dbField: 'distance_dec_over_minus2_ms2_m',
+            transform: 'parseFloat',
+            required: false,
+            confidence: 85,
+            type: 'dec_distance_over_minus2',
+            description: 'Distanza decelerazione > -2 m/s² (metri)'
+          };
+        }
+      }
+    }
+
+    // ================= NUOVI CAMPI - ZONE DI INTENSITÀ =================
+    
+    // Zone di Intensità
+    if (this.matchesPatterns(headerLower, this.intensityZonePatterns)) {
+      if (/<[\s_]*5|under[\s_]*5/.test(headerLower)) {
+        return {
+          dbField: 'time_under_5wkg_min',
+          transform: 'parseInt',
+          required: false,
+          confidence: 85,
+          type: 'time_under_5wkg',
+          description: 'Tempo < 5 W/kg (minuti)'
+        };
+      } else if (/5[\s_]*10|5-10/.test(headerLower)) {
+        return {
+          dbField: 'time_5_10_wkg_min',
+          transform: 'parseInt',
+          required: false,
+          confidence: 85,
+          type: 'time_5_10_wkg',
+          description: 'Tempo 5-10 W/kg (minuti)'
+        };
+      }
+    }
+
+    // ================= NUOVI CAMPI - INDICI E PROFILI =================
+    
+    // Indice RVP
+    if (this.matchesPatterns(headerLower, this.rvpPatterns)) {
+      return {
+        dbField: 'rvp_index',
+        transform: 'parseFloat',
+        required: false,
+        confidence: 85,
+        type: 'rvp_index',
+        description: 'Indice RVP'
+      };
+    }
+
+    // Training Load
+    if (this.matchesPatterns(headerLower, this.trainingLoadPatterns)) {
+      return {
+        dbField: 'training_load',
+        transform: 'parseFloat',
+        required: false,
+        confidence: 85,
+        type: 'training_load',
+        description: 'Training Load'
+      };
+    }
+
+    // ================= NUOVI CAMPI - INFORMAZIONI AGGIUNTIVE =================
+    
+    // Giorno Sessione
+    if (this.matchesPatterns(headerLower, this.sessionDayPatterns)) {
+      return {
+        dbField: 'session_day',
+        transform: 'string',
+        required: false,
+        confidence: 85,
+        type: 'session_day',
+        description: 'Giorno della settimana'
+      };
+    }
+
+    // È Partita
+    if (this.matchesPatterns(headerLower, this.matchPatterns)) {
+      return {
+        dbField: 'is_match',
+        transform: 'boolean',
+        required: false,
+        confidence: 85,
+        type: 'is_match',
+        description: 'Flag partita (true/false)'
+      };
+    }
+
+    // Nome Esercizio
+    if (this.matchesPatterns(headerLower, this.drillPatterns)) {
+      return {
+        dbField: 'drill_name',
+        transform: 'string',
+        required: false,
+        confidence: 85,
+        type: 'drill_name',
+        description: 'Nome esercizio/drill'
       };
     }
 

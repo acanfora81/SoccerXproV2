@@ -1,7 +1,7 @@
 // client/src/components/analytics/ComparePanel.jsx
 // ⚖️ CONFRONTO MULTI-PLAYER AVANZATO - VERSIONE COMPLETA CORRETTA
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ArrowLeft, GitCompare, BarChart3, AlertTriangle,
   Download, Share2, Calendar, MinusCircle, Award, MinusCircle as RemoveIcon
@@ -14,18 +14,77 @@ import {
 
 import '../../styles/analytics.css';
 
-// 🎨 Colori giocatori (fino a 4) – fuori dal componente per evitare deps negli hook
-const PLAYER_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+// 🗣️ Funzione per tradurre le posizioni
+const translatePosition = (position) => {
+  const translations = {
+    'GOALKEEPER': 'Portiere',
+    'DEFENDER': 'Difensore', 
+    'MIDFIELDER': 'Centrocampista',
+    'FORWARD': 'Attaccante'
+  };
+  return translations[position] || position;
+};
+
+// 🎨 Colori giocatori (fino a 8) – fuori dal componente per evitare deps negli hook
+const PLAYER_COLORS = [
+  '#3B82F6', // Blu
+  '#10B981', // Verde
+  '#F59E0B', // Arancione
+  '#EF4444', // Rosso
+  '#8B5CF6', // Viola
+  '#06B6D4', // Ciano
+  '#F97316', // Arancione scuro
+  '#84CC16'  // Verde lime
+];
 
 const ComparePanel = ({
   players = [],
-  sessionsByPlayer = {},
   onClose,
   onBack
 }) => {
   const [chartType, setChartType] = useState('overlay');   // overlay, radar, scatter
   const [metric, setMetric] = useState('playerLoad');      // playerLoad, distance, topSpeed, avgHeartRate
   const [timeRange, setTimeRange] = useState('30d');
+  const [sessionsByPlayer, setSessionsByPlayer] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  // ================================
+  // CARICAMENTO DATI COMPLETI
+  // ================================
+  useEffect(() => {
+    const fetchAllPlayerData = async () => {
+      setLoading(true);
+      const sessionsData = {};
+      
+      try {
+        // Carica i dati completi per ogni giocatore
+        const promises = players.map(async (player) => {
+          const response = await fetch(`/api/performance/player/${player.id}/sessions`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            sessionsData[player.id] = result.data || [];
+          } else {
+            sessionsData[player.id] = [];
+          }
+        });
+        
+        await Promise.all(promises);
+        setSessionsByPlayer(sessionsData);
+      } catch (error) {
+        console.log('🔴 Errore caricamento dati confronto:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (players.length > 0) {
+      fetchAllPlayerData();
+    }
+  }, [players]);
 
   // ================================
   // HOOKS (devono stare prima di return)
@@ -48,10 +107,11 @@ const ComparePanel = ({
         filteredSessions = sessionsByPlayer[player.id] || [];
       } else {
         // 📅 Solo per filtri specifici applica limitazione di giorni
-        const daysBack = 
-          timeRange === '7d' ? 7 :
-          timeRange === '14d' ? 14 :
-          timeRange === '30d' ? 30 : 30;
+            const daysBack = 
+      timeRange === '7d' ? 7 :
+      timeRange === '14d' ? 14 :
+      timeRange === '30d' ? 30 :
+      timeRange === '90d' ? 90 : 30;
         const cutoffDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
         
         filteredSessions = (sessionsByPlayer[player.id] || []).filter(
@@ -138,7 +198,8 @@ const ComparePanel = ({
     const dateMap = {};
     allTimelines.forEach(point => {
       if (!dateMap[point.date]) dateMap[point.date] = { date: point.date };
-      const playerKey = `${point.playerName}`.replace(' ', '_');
+      // 🔧 FIX: Sostituisci TUTTI gli spazi con underscore per evitare problemi con nomi multipli
+      const playerKey = `${point.playerName}`.replace(/\s+/g, '_');
       dateMap[point.date][`${playerKey}_${metric}`] = point[metric];
     });
     const overlayData = Object.values(dateMap).sort(
@@ -150,7 +211,7 @@ const ComparePanel = ({
     const combinedRadarData = radarMetrics.map(metricName => {
       const dp = { metric: metricName.charAt(0).toUpperCase() + metricName.slice(1) };
       Object.values(compareAnalytics).forEach(p => {
-        dp[p.player.firstName] = p.radarData[metricName] || 0;
+        dp[`${p.player.firstName} ${p.player.lastName}`] = p.radarData[metricName] || 0;
       });
       return dp;
     });
@@ -159,7 +220,7 @@ const ComparePanel = ({
     const scatterData = Object.values(compareAnalytics).map(p => ({
       x: p.summary.avgPlayerLoad || 0,
       y: p.summary.avgDistance || 0,
-      name: p.player.firstName,
+      name: `${p.player.firstName} ${p.player.lastName}`,
       color: p.color,
       sessions: p.summary.totalSessions
     }));
@@ -184,7 +245,7 @@ const ComparePanel = ({
         out.push({
           type: 'info',
           title: 'Differenza Velocità',
-          message: `${fastP.player.firstName} raggiunge i ${maxSpeed.toFixed(1)} km/h (${((maxSpeed - minSpeed) / maxSpeed * 100).toFixed(1)}% più veloce)`
+          message: `${fastP.player.firstName} ${fastP.player.lastName} raggiunge i ${maxSpeed.toFixed(1)} km/h (${((maxSpeed - minSpeed) / maxSpeed * 100).toFixed(1)}% più veloce)`
         });
       }
     }
@@ -199,7 +260,7 @@ const ComparePanel = ({
         out.push({
           type: 'warning',
           title: 'Carico Squilibrato',
-          message: `${hardP.player.firstName} ha un carico medio del ${(((maxLoad - minLoad) / Math.max(minLoad, 1)) * 100).toFixed(1)}% superiore agli altri`
+          message: `${hardP.player.firstName} ${hardP.player.lastName} ha un carico medio del ${(((maxLoad - minLoad) / Math.max(minLoad, 1)) * 100).toFixed(1)}% superiore agli altri`
         });
       }
     }
@@ -210,6 +271,16 @@ const ComparePanel = ({
   // ================================
   // SOLO ORA eventuale return condizionale
   // ================================
+  if (loading) {
+    return (
+      <div className="analytics-container">
+        <div className="loading-card">
+          <div className="loading-text">Caricamento dati confronto...</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!players.length) {
     return (
       <div className="analytics-container">
@@ -236,7 +307,7 @@ const ComparePanel = ({
           <span className="legend-name">
             {player.firstName} {player.lastName}
           </span>
-          <span className="legend-position">({player.position})</span>
+          <span className="legend-position">({translatePosition(player.position)})</span>
           <button
             className="legend-remove"
             onClick={() => {
@@ -269,7 +340,8 @@ const ComparePanel = ({
           <Tooltip />
           <Legend />
           {players.map((player, index) => {
-            const dataKey = `${player.firstName}_${player.lastName}`.replace(' ', '_') + `_${metric}`;
+            // 🔧 FIX: Usa la stessa logica per sostituire TUTTI gli spazi
+            const dataKey = `${player.firstName}_${player.lastName}`.replace(/\s+/g, '_') + `_${metric}`;
             return (
               <Line
                 key={player.id}
@@ -278,7 +350,7 @@ const ComparePanel = ({
                 stroke={PLAYER_COLORS[index]}
                 strokeWidth={2}
                 dot={{ fill: PLAYER_COLORS[index], strokeWidth: 2, r: 4 }}
-                name={player.firstName}
+                name={`${player.firstName} ${player.lastName}`}
               />
             );
           })}
@@ -301,8 +373,8 @@ const ComparePanel = ({
           {players.map((player, index) => (
             <Radar
               key={player.id}
-              name={player.firstName}
-              dataKey={player.firstName}
+              name={`${player.firstName} ${player.lastName}`}
+              dataKey={`${player.firstName} ${player.lastName}`}
               stroke={PLAYER_COLORS[index]}
               fill={PLAYER_COLORS[index]}
               fillOpacity={0.1}
@@ -366,7 +438,7 @@ const ComparePanel = ({
               <th>Metrica</th>
               {players.map((player, index) => (
                 <th key={player.id} style={{ color: PLAYER_COLORS[index] }}>
-                  {player.firstName}
+                  {player.firstName} {player.lastName}
                 </th>
               ))}
               <th className="leader-column">Leader</th>
@@ -389,13 +461,13 @@ const ComparePanel = ({
                         className={`metric-value ${isLeader ? 'leader' : ''}`}
                       >
                         {typeof value === 'number' ? value.toLocaleString() : value}{unit}
-                        {isLeader && <Award size={12} className="leader-icon" />}
+                        {isLeader && <Award size={10} className="leader-icon" />}
                       </td>
                     );
                   })}
                   <td className="leader-cell">
                     <div style={{ color: PLAYER_COLORS[leaderIndex] }}>
-                      {players[leaderIndex]?.firstName || '-'}
+                      {players[leaderIndex] ? `${players[leaderIndex].firstName} ${players[leaderIndex].lastName}` : '-'}
                     </div>
                   </td>
                 </tr>
@@ -415,7 +487,6 @@ const ComparePanel = ({
       {/* Header */}
       <div className="analytics-header">
         <div className="analytics-title">
-          <GitCompare size={40} />
           <div>
             <h1>Confronto Giocatori</h1>
             <p className="analytics-subtitle">
@@ -437,36 +508,35 @@ const ComparePanel = ({
       {renderPlayerLegend()}
 
       {/* Controls */}
-      <div className="analytics-filters">
-        <div className="filter-group">
-          <Calendar size={16} />
-          <span className="filter-label">Periodo</span>
-          <select
-            className="filter-select"
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-          >
-            <option value="7d">7 giorni</option>
-            <option value="14d">14 giorni</option>
-            <option value="30d">30 giorni</option>
-            <option value="all">Tutto</option>
-          </select>
-        </div>
+              <div className="analytics-filters">
+          <div className="filter-group">
+            <span className="filter-label">Periodo</span>
+            <select
+              className="filter-select"
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+            >
+              <option value="7d">7 giorni</option>
+              <option value="14d">14 giorni</option>
+              <option value="30d">30 giorni</option>
+              <option value="90d">90 giorni</option>
+              <option value="all">Tutto</option>
+            </select>
+          </div>
 
-        <div className="filter-group">
-          <BarChart3 size={16} />
-          <span className="filter-label">Metrica</span>
-          <select
-            className="filter-select"
-            value={metric}
-            onChange={(e) => setMetric(e.target.value)}
-          >
-            <option value="playerLoad">Player Load</option>
-            <option value="distance">Distanza</option>
-            <option value="topSpeed">Velocità</option>
-            <option value="avgHeartRate">Freq. Cardiaca</option>
-          </select>
-        </div>
+          <div className="filter-group">
+            <span className="filter-label">Metrica</span>
+            <select
+              className="filter-select"
+              value={metric}
+              onChange={(e) => setMetric(e.target.value)}
+            >
+              <option value="playerLoad">Player Load</option>
+              <option value="distance">Distanza</option>
+              <option value="topSpeed">Velocità</option>
+              <option value="avgHeartRate">Freq. Cardiaca</option>
+            </select>
+          </div>
 
         <div className="quick-filters">
           <button
@@ -491,11 +561,9 @@ const ComparePanel = ({
 
         <div className="action-buttons">
           <button className="btn btn-secondary">
-            <Download size={16} />
             Esporta Confronto
           </button>
           <button className="btn btn-secondary">
-            <Share2 size={16} />
             Condividi
           </button>
         </div>
@@ -503,10 +571,9 @@ const ComparePanel = ({
 
       {/* Alerts */}
       {alerts.length > 0 && (
-        <div className="alerts-section">
+        <div className="alerts-section section-spacing">
           {alerts.map((alert, index) => (
             <div key={index} className={`alert alert-${alert.type}`}>
-              <AlertTriangle size={16} />
               <div>
                 <h4>{alert.title}</h4>
                 <p>{alert.message}</p>
@@ -519,7 +586,7 @@ const ComparePanel = ({
       {/* Main Content */}
       <div className="compare-content">
         {/* Chart Section */}
-        <div className="chart-section">
+        <div className="chart-section chart-spacing">
           <div className="chart-header">
             <h3>
               {chartType === 'overlay' && 'Andamento Temporale'}
@@ -535,7 +602,7 @@ const ComparePanel = ({
         </div>
 
         {/* Stats Table */}
-        <div className="table-section">
+        <div className="table-section table-spacing">
           <div className="section-header">
             <h3>Statistiche Comparative</h3>
           </div>

@@ -1,15 +1,26 @@
 // client/src/components/analytics/PlayerList.jsx
 // 👥 LISTA GIOCATORI AVANZATA con micro-insights e confronti
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search, Filter, Users, TrendingUp, TrendingDown, Minus,
   Eye, GitCompare, ArrowLeft, AlertTriangle, Award,
   Activity, Zap, Target, Clock, Heart, BarChart3,
-  CheckCircle2, XCircle, MinusCircle
+  CheckCircle2, XCircle, MinusCircle, Calendar
 } from 'lucide-react';
 
 import '../../styles/analytics.css';
+
+// 🗣️ Funzione per tradurre le posizioni
+const translatePosition = (position) => {
+  const translations = {
+    'GOALKEEPER': 'Portiere',
+    'DEFENDER': 'Difensore', 
+    'MIDFIELDER': 'Centrocampista',
+    'FORWARD': 'Attaccante'
+  };
+  return translations[position] || position;
+};
 
 /**
  * 🎯 PLAYER LIST COMPONENT
@@ -30,9 +41,59 @@ const PlayerList = ({
   onBack,
   onStartCompare 
 }) => {
+  // 🔧 FIX: Stato per i dati completi di ogni giocatore
+  const [allPlayerData, setAllPlayerData] = useState({});
+  const [loadingPlayerData, setLoadingPlayerData] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [positionFilter, setPositionFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [timeRange, setTimeRange] = useState('7d'); // 🔧 FIX: Aggiunto filtro temporale
+  
+  // DEBUG: Log quando cambia timeRange
+  console.log('🟡 PlayerList - timeRange cambiato a:', timeRange);
+  
+  // 🔧 FIX: Monitora cambiamenti di timeRange
+  useEffect(() => {
+    console.log('🟢 PlayerList - useEffect timeRange cambiato:', timeRange);
+  }, [timeRange]);
+  
+  // 🔧 FIX: Carica dati completi per ogni giocatore
+  useEffect(() => {
+    const fetchAllPlayerData = async () => {
+      if (players.length === 0) return;
+      
+      setLoadingPlayerData(true);
+      const sessionsData = {};
+      
+      try {
+        // Carica i dati completi per ogni giocatore
+        const promises = players.map(async (player) => {
+          const response = await fetch(`/api/performance/player/${player.id}/sessions`, {
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            sessionsData[player.id] = result.data || [];
+          } else {
+            sessionsData[player.id] = [];
+          }
+        });
+        
+        await Promise.all(promises);
+        setAllPlayerData(sessionsData);
+        console.log('🟢 PlayerList - Dati completi caricati per', Object.keys(sessionsData).length, 'giocatori');
+      } catch (error) {
+        console.log('🔴 Errore caricamento dati completi PlayerList:', error);
+      } finally {
+        setLoadingPlayerData(false);
+      }
+    };
+
+    fetchAllPlayerData();
+  }, [players]);
+  
   const [sortBy, setSortBy] = useState('name'); // name, performance, acwr, last-session
   const [sortDirection, setSortDirection] = useState('asc');
 
@@ -43,13 +104,30 @@ const PlayerList = ({
    */
   const playersWithAnalytics = useMemo(() => {
     console.log('🔴 DEBUG PlayerList - Players:', players.length);
-    console.log('🔴 DEBUG PlayerList - Performance data:', performanceData.length);
+    console.log('🔴 DEBUG PlayerList - All player data loaded:', Object.keys(allPlayerData).length);
     const now = new Date();
+    
+    // 🔧 FIX: Calcolo dinamico basato su timeRange
+    const getDaysBack = (range) => {
+      switch(range) {
+        case '7d': return 7;
+        case '14d': return 14;
+        case '30d': return 30;
+        case '90d': return 90;
+        case 'all': return 365; // Per "tutto" usiamo 1 anno
+        default: return 7;
+      }
+    };
+    
+    const daysBack = getDaysBack(timeRange);
     const last7Days = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
     const last28Days = new Date(now.getTime() - (28 * 24 * 60 * 60 * 1000));
+    const lastRangeDays = new Date(now.getTime() - (daysBack * 24 * 60 * 60 * 1000));
+    
+    console.log('🔵 PlayerList - timeRange:', timeRange, 'daysBack:', daysBack, 'cutoff:', lastRangeDays.toLocaleDateString()); // DEBUG
 
     return players.map(player => {
-      const playerSessions = performanceData.filter(s => s.playerId === player.id);
+      const playerSessions = allPlayerData[player.id] || [];
       
       if (playerSessions.length === 0) {
         return {
@@ -75,12 +153,34 @@ const PlayerList = ({
       // Sessioni recenti
       const sessions7d = playerSessions.filter(s => new Date(s.session_date) >= last7Days);
       const sessions28d = playerSessions.filter(s => new Date(s.session_date) >= last28Days);
+      const sessionsRange = timeRange === 'all' ? playerSessions : playerSessions.filter(s => new Date(s.session_date) >= lastRangeDays);
+      
+      // DEBUG: Log per verificare il filtraggio
+      if (player.firstName === 'Alessandro') { // Solo per debug
+        console.log('🔵 PlayerList -', player.firstName, 'total sessions:', playerSessions.length, 'filtered sessions:', sessionsRange.length, 'timeRange:', timeRange);
+        
+        // 🔧 DEBUG: Mostra le date delle sessioni per capire il problema
+        const sessionDates = playerSessions.map(s => new Date(s.session_date).toLocaleDateString()).slice(0, 5);
+        console.log('🔵 PlayerList - Date sessioni Alessandro:', sessionDates);
+        console.log('🔵 PlayerList - Cutoff date:', lastRangeDays.toLocaleDateString());
+      }
 
-      // KPI base
+      // KPI base - usiamo le sessioni filtrate per il periodo selezionato
       const totalSessions = playerSessions.length;
-      const avgDistance = Math.round(playerSessions.reduce((acc, s) => acc + (s.total_distance_m || 0), 0) / totalSessions);
-      const avgPlayerLoad = Math.round(playerSessions.reduce((acc, s) => acc + (s.player_load || 0), 0) / totalSessions);
-      const maxSpeed = Math.max(...playerSessions.map(s => s.top_speed_kmh || 0), 0);
+      const sessionsForAvg = sessionsRange.length > 0 ? sessionsRange : playerSessions;
+      const avgDistance = Math.round(sessionsForAvg.reduce((acc, s) => acc + (s.total_distance_m || 0), 0) / sessionsForAvg.length);
+      const avgPlayerLoad = Math.round(sessionsForAvg.reduce((acc, s) => acc + (s.player_load || 0), 0) / sessionsForAvg.length);
+      const maxSpeed = Math.max(...sessionsForAvg.map(s => s.top_speed_kmh || 0), 0);
+      
+      // DEBUG: Log dei valori calcolati
+      if (player.firstName === 'Alessandro') {
+        console.log('🔵 PlayerList - Valori calcolati per', timeRange, ':', {
+          avgDistance,
+          avgPlayerLoad,
+          maxSpeed,
+          sessionsCount: sessionsForAvg.length
+        });
+      }
       
       // ACWR Calculation
       const acuteLoad = sessions7d.reduce((acc, s) => acc + (s.player_load || 0), 0);
@@ -154,11 +254,12 @@ const PlayerList = ({
           personalBests: weeklyPBs,
           availability,
           sessions7d: sessions7d.length,
+          sessionsRange: sessionsRange.length, // 🔧 FIX: Sessioni nel periodo selezionato
           sessions28d: sessions28d.length
         }
       };
     });
-  }, [players, performanceData]);
+  }, [players, allPlayerData, timeRange]);
 
   /**
    * 🔍 FILTRI E RICERCA
@@ -217,7 +318,7 @@ const PlayerList = ({
     });
 
     return filtered;
-  }, [playersWithAnalytics, searchTerm, positionFilter, statusFilter, sortBy, sortDirection]);
+  }, [playersWithAnalytics, searchTerm, positionFilter, statusFilter, timeRange, sortBy, sortDirection]);
 
   /**
    * 🎮 EVENT HANDLERS
@@ -234,7 +335,12 @@ const PlayerList = ({
   const handleCompareToggle = (playerId) => {
     const newCompareIds = compareIds.includes(playerId)
       ? compareIds.filter(id => id !== playerId)
-      : [...compareIds, playerId].slice(0, 4); // Max 4 confronti
+      : [...compareIds, playerId].slice(0, 8); // 🔧 AGGIORNATO: Max 8 confronti
+    
+    // 🔔 Notifica se raggiunto il limite massimo
+    if (!compareIds.includes(playerId) && compareIds.length >= 8) {
+      alert('Limite massimo di 8 giocatori per confronto raggiunto. Rimuovi un giocatore per aggiungerne un altro.');
+    }
     
     onCompareChange(newCompareIds);
   };
@@ -313,6 +419,18 @@ const PlayerList = ({
   /**
    * 🖥️ MAIN RENDER
    */
+  
+  // Loading state mentre carichiamo i dati completi
+  if (loadingPlayerData) {
+    return (
+      <div className="analytics-container">
+        <div className="loading-card">
+          <div className="loading-text">Caricamento dati giocatori...</div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="analytics-container">
       {/* Header */}
@@ -339,6 +457,7 @@ const PlayerList = ({
             <GitCompare size={20} />
             <div className="comparison-count">
               {compareIds.length} giocatori selezionati per confronto
+              <span className="comparison-limit">(max 8)</span>
             </div>
             <div className="selected-players">
               {compareIds.map(id => {
@@ -421,6 +540,25 @@ const PlayerList = ({
           </select>
         </div>
 
+        <div className="filter-group">
+          <Calendar size={16} />
+          <span className="filter-label">Periodo</span>
+          <select 
+            className="filter-select" 
+            value={timeRange} 
+            onChange={(e) => {
+              console.log('🟠 PlayerList - onChange timeRange:', e.target.value);
+              setTimeRange(e.target.value);
+            }}
+          >
+            <option value="7d">7 giorni</option>
+            <option value="14d">14 giorni</option>
+            <option value="30d">30 giorni</option>
+            <option value="90d">90 giorni</option>
+            <option value="all">Tutto</option>
+          </select>
+        </div>
+
         <div className="quick-filters">
           <button 
             className={`quick-filter-btn ${sortBy === 'name' ? 'active' : ''}`}
@@ -466,15 +604,15 @@ const PlayerList = ({
                   {player.firstName} {player.lastName}
                 </h3>
                 <div className="player-details">
-                  <span>{player.position}</span>
+                  <span>{translatePosition(player.position)}</span>
                   <span>#{player.shirtNumber || '-'}</span>
                   {renderAvailabilityStatus(player.analytics.availability)}
                 </div>
                 <div className="player-status active">
                   {player.analytics.personalBests > 0 && (
                     <>
-                      <Award size={10} />
-                      {player.analytics.personalBests} PB
+                      <Award size={12} className="award-icon" />
+                      <span className="pb-text">{player.analytics.personalBests} PB</span>
                     </>
                   )}
                 </div>
@@ -533,7 +671,7 @@ const PlayerList = ({
             <div className="card-quick-info">
               <span className="quick-info-item">
                 <Clock size={10} />
-                {player.analytics.sessions7d} sess. (7d)
+                {player.analytics.sessionsRange} sess. ({timeRange === 'all' ? 'tutto' : timeRange})
               </span>
               <span className="quick-info-item">
                 <Target size={10} />
@@ -556,6 +694,7 @@ const PlayerList = ({
               setSearchTerm('');
               setPositionFilter('all');
               setStatusFilter('all');
+              setTimeRange('7d');
             }}
           >
             Azzera Filtri

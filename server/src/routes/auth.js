@@ -136,6 +136,7 @@ router.get('/me', authenticate, (req, res) => {
         language_preference: req.user.language_preference,
         first_name: req.user.profile?.first_name,
         last_name: req.user.profile?.last_name,
+        teamId: req.user.profile?.teamId, // 👈 AGGIUNTO - teamId per multi-tenancy
         is_active: req.user.profile?.is_active,
         last_login: req.user.profile?.last_login,
         created_at: req.user.profile?.created_at

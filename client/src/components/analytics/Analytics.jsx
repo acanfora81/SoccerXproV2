@@ -19,6 +19,17 @@ import Reports from './Reports';
 // Stili avanzati
 import '../../styles/analytics.css';
 
+// 🗣️ Funzione per tradurre le posizioni
+const translatePosition = (position) => {
+  const translations = {
+    'GOALKEEPER': 'Portiere',
+    'DEFENDER': 'Difensore', 
+    'MIDFIELDER': 'Centrocampista',
+    'FORWARD': 'Attaccante'
+  };
+  return translations[position] || position;
+};
+
 /**
  * 🎯 ANALYTICS MAIN COMPONENT
  * 
@@ -52,7 +63,7 @@ const Analytics = () => {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [autoRefresh, setAutoRefresh] = useState(false);
 
-  console.log('🔵 Analytics component renderizzato'); // INFO DEV
+  // console.log('🔵 Analytics component renderizzato'); // INFO DEV
 
   /**
    * 📊 FETCH DATA - Carica giocatori e performance
@@ -62,7 +73,7 @@ const Analytics = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔵 Caricamento dati analytics...');
+      // console.log('🔵 Caricamento dati analytics...');
 
       // Carica giocatori
       const playersResponse = await fetch('/api/players', {
@@ -92,15 +103,15 @@ const Analytics = () => {
       const performanceList = performanceResult.data || performanceResult.sessions || [];
       setPerformanceData(performanceList);
 
-      setLastUpdate(new Date());
-      console.log('🟢 Dati analytics caricati:', {
-        players: playersList.length,
-        sessions: performanceList.length
-      });
+             setLastUpdate(new Date());
+       // console.log('🟢 Dati analytics caricati:', {
+       //   players: playersList.length,
+       //   sessions: performanceList.length
+       // });
 
-    } catch (err) {
-      console.log('🔴 Errore caricamento analytics:', err.message);
-      setError(err.message);
+         } catch (err) {
+       // console.log('🔴 Errore caricamento analytics:', err.message);
+       setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -124,26 +135,25 @@ const Analytics = () => {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
   // 🔧 FIX: useEffect per caricare dati completi quando si seleziona un giocatore
   useEffect(() => {
     if (currentView === 'dossier' && selectedPlayer) {
       const fetchPlayerAllData = async () => {
         try {
           setLoadingPlayerData(true);
-          const response = await fetch(`/api/performance?playerId=${selectedPlayer.id}&pageSize=all`, {
+          const response = await fetch(`/api/performance/player/${selectedPlayer.id}/sessions`, {
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' }
           });
           
-          if (response.ok) {
-            const result = await response.json();
-            const allPlayerData = (result.data || []).filter(s => s.playerId === selectedPlayer.id);
-            setPlayerAllData(allPlayerData);
-          }
+                     if (response.ok) {
+             const result = await response.json();
+             const allPlayerData = result.data || [];
+             const capped = response.headers.get('X-Records-Capped') === 'true';
+             const capLimit = Number(response.headers.get('X-Records-Limit') || 0) || null;
+             const total = Number(response.headers.get('X-Total-Records') || 0) || allPlayerData.length;
+             setPlayerAllData(Object.assign(allPlayerData, { _meta: { capped, capLimit, total } }));
+           }
         } catch (error) {
           console.log('🔴 Errore caricamento dati completi giocatore:', error);
         } finally {
@@ -169,7 +179,7 @@ const Analytics = () => {
     };
   }
 
-  console.log('🔵 Calcolando analytics avanzati...'); // INFO DEV - rimuovere in produzione
+  // console.log('🔵 Calcolando analytics avanzati...'); // INFO DEV - rimuovere in produzione
 
  // FIX: Filtra dati per date range - CORRETTO
   const now = new Date();
@@ -177,9 +187,9 @@ const Analytics = () => {
   let cutoffDate;
   let daysBack;
 
-  if (dateRange === 'all') {
-    // Per "all" mostra TUTTI i dati senza filtro di data
-    console.log('Filtro "all" - mostrando tutte le sessioni:', performanceData.length);
+     if (dateRange === 'all') {
+     // Per "all" mostra TUTTI i dati senza filtro di data
+     // console.log('Filtro "all" - mostrando tutte le sessioni:', performanceData.length);
     
     filteredSessions = performanceData.filter(session => {
       const matchesPosition = positionFilter === 'all' || 
@@ -208,7 +218,7 @@ const Analytics = () => {
     });
   }
 
-  console.log('Sessioni filtrate:', filteredSessions.length, 'su', performanceData.length, 'totali');
+  // console.log('Sessioni filtrate:', filteredSessions.length, 'su', performanceData.length, 'totali');
 
     // TEAM KPIs
     const teamKPIs = {
@@ -246,11 +256,12 @@ const Analytics = () => {
       };
     }
 
-    // 🚨 RAG READINESS BOARD (ACWR Calculation)
-    const readinessBoard = players.map(player => {
-      const playerSessions = filteredSessions.filter(s => s.playerId === player.id);
+         // 🚨 RAG READINESS BOARD (ACWR Calculation)
+     const readinessBoard = players.map(player => {
+       // 🔧 FIX: Usa TUTTI i dati del giocatore per ACWR, non solo quelli filtrati
+       const allPlayerSessions = performanceData.filter(s => s.playerId === player.id);
       
-      if (playerSessions.length === 0) {
+             if (allPlayerSessions.length === 0) {
         return {
           ...player,
           acwr: 0,
@@ -261,18 +272,18 @@ const Analytics = () => {
         };
       }
 
-      // Calcola ACWR (7-day acute / 28-day chronic)
-      const last7Days = playerSessions.filter(s => {
-        const sessionDate = new Date(s.session_date);
-        const days7Ago = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-        return sessionDate >= days7Ago;
-      });
+             // Calcola ACWR (7-day acute / 28-day chronic) su TUTTI i dati
+       const last7Days = allPlayerSessions.filter(s => {
+         const sessionDate = new Date(s.session_date);
+         const days7Ago = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+         return sessionDate >= days7Ago;
+       });
 
-      const last28Days = playerSessions.filter(s => {
-        const sessionDate = new Date(s.session_date);
-        const days28Ago = new Date(now.getTime() - (28 * 24 * 60 * 60 * 1000));
-        return sessionDate >= days28Ago;
-      });
+       const last28Days = allPlayerSessions.filter(s => {
+         const sessionDate = new Date(s.session_date);
+         const days28Ago = new Date(now.getTime() - (28 * 24 * 60 * 60 * 1000));
+         return sessionDate >= days28Ago;
+       });
 
       const acuteLoad = last7Days.reduce((acc, s) => acc + (s.player_load || 0), 0);
       const chronicLoad = last28Days.reduce((acc, s) => acc + (s.player_load || 0), 0) / 4; // media settimanale
@@ -291,10 +302,10 @@ const Analytics = () => {
         ...player,
         acwr: acwr.toFixed(2),
         status,
-        lastSession: playerSessions[playerSessions.length - 1],
-        weeklyLoad: acuteLoad,
-        monthlyAvg: chronicLoad.toFixed(0),
-        sessionsCount: playerSessions.length
+                 lastSession: allPlayerSessions[allPlayerSessions.length - 1],
+         weeklyLoad: acuteLoad,
+         monthlyAvg: chronicLoad.toFixed(0),
+         sessionsCount: allPlayerSessions.length
       };
     }).sort((a, b) => parseFloat(b.acwr) - parseFloat(a.acwr));
 
@@ -404,7 +415,7 @@ const Analytics = () => {
         {player.firstName?.[0]}{player.lastName?.[0]}
       </div>
       <div className="player-name-small">{player.firstName} {player.lastName}</div>
-      <div className="player-position-small">{player.position}</div>
+              <div className="player-position-small">{translatePosition(player.position)}</div>
       <div className={`acwr-value status-${player.status}`}>
         {player.acwr}
       </div>
@@ -427,104 +438,123 @@ const Analytics = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="analytics-container">
-        <div className="error-state">
-          <AlertTriangle size={48} color="#EF4444" />
-          <h3>Errore caricamento dati</h3>
-          <p>{error}</p>
-          <button className="btn btn-primary" onClick={fetchData}>
-            <RefreshCw size={16} />
-            Riprova
-          </button>
-        </div>
-      </div>
-    );
-  }
+     if (error) {
+     return (
+       <div className="analytics-container">
+         <div className="error-state">
+           <h3>Errore caricamento dati</h3>
+           <p>{error}</p>
+           <button className="btn btn-primary" onClick={fetchData}>
+             Riprova
+           </button>
+         </div>
+       </div>
+     );
+   }
 
   // 🏠 OVERVIEW MODE
   if (currentView === 'overview') {
     return (
       <div className="analytics-container">
         {/* Header */}
-        <div className="analytics-header">
-          <div className="analytics-title">
-            <BarChart3 size={40} />
-            <div>
-              <h1>Team Analytics</h1>
-              <p className="analytics-subtitle">
-                Dashboard prestazioni squadra • {analytics.teamKPIs.activePlayers} giocatori attivi
-              </p>
-            </div>
-          </div>
-        </div>
+                 <div className="analytics-header">
+           <div className="analytics-title">
+             <div>
+               <h1>Team Analytics</h1>
+               <p className="analytics-subtitle">
+                 Dashboard prestazioni squadra • {analytics.teamKPIs.activePlayers} giocatori attivi
+               </p>
+             </div>
+           </div>
+         </div>
 
         {/* Filtri */}
-        <div className="analytics-filters">
-          <div className="filter-group">
-            <Calendar size={16} />
-            <span className="filter-label">Periodo</span>
-            <select 
-              className="filter-select" 
-              value={dateRange} 
-              onChange={(e) => setDateRange(e.target.value)}
-            >
-              <option value="7d">Ultimi 7 giorni</option>
-              <option value="14d">Ultimi 14 giorni</option>
-              <option value="30d">Ultimi 30 giorni</option>
-              <option value="90d">Ultimi 90 giorni</option>
-              <option value="all">Tutto</option>
-            </select>
-          </div>
+                 <div className="analytics-filters">
+           <div className="filter-group">
+             <span className="filter-label">Periodo</span>
+             <select 
+               className="filter-select" 
+               value={dateRange} 
+               onChange={(e) => setDateRange(e.target.value)}
+             >
+               <option value="7d">Ultimi 7 giorni</option>
+               <option value="14d">Ultimi 14 giorni</option>
+               <option value="30d">Ultimi 30 giorni</option>
+               <option value="90d">Ultimi 90 giorni</option>
+               <option value="all">Tutto</option>
+             </select>
+           </div>
 
-          <div className="filter-group">
-            <Users size={16} />
-            <span className="filter-label">Ruolo</span>
-            <select 
-              className="filter-select" 
-              value={positionFilter} 
-              onChange={(e) => setPositionFilter(e.target.value)}
-            >
-              <option value="all">Tutti</option>
-              <option value="GOALKEEPER">Portieri</option>
-              <option value="DEFENDER">Difensori</option>
-              <option value="MIDFIELDER">Centrocampisti</option>
-              <option value="FORWARD">Attaccanti</option>
-            </select>
-          </div>
+           <div className="filter-group">
+             <span className="filter-label">Ruolo</span>
+             <select 
+               className="filter-select" 
+               value={positionFilter} 
+               onChange={(e) => setPositionFilter(e.target.value)}
+             >
+               <option value="all">Tutti</option>
+               <option value="GOALKEEPER">Portieri</option>
+               <option value="DEFENDER">Difensori</option>
+               <option value="MIDFIELDER">Centrocampisti</option>
+               <option value="FORWARD">Attaccanti</option>
+             </select>
+           </div>
 
-          <div className="filter-group">
-            <Activity size={16} />
-            <span className="filter-label">Tipo</span>
-            <select 
-              className="filter-select" 
-              value={sessionTypeFilter} 
-              onChange={(e) => setSessionTypeFilter(e.target.value)}
-            >
-              <option value="all">Tutti</option>
-              <option value="Training">Allenamento</option>
-              <option value="Match">Partita</option>
-            </select>
-          </div>
+           <div className="filter-group">
+             <span className="filter-label">Tipo</span>
+             <select 
+               className="filter-select" 
+               value={sessionTypeFilter} 
+               onChange={(e) => setSessionTypeFilter(e.target.value)}
+             >
+               <option value="all">Tutti</option>
+               <option value="Training">Allenamento</option>
+               <option value="Match">Partita</option>
+             </select>
+           </div>
 
-          <div className="quick-filters">
-            <button 
-              className={`quick-filter-btn ${autoRefresh ? 'active' : ''}`}
-              onClick={() => setAutoRefresh(!autoRefresh)}
-            >
-              <RefreshCw size={12} />
-              Auto-refresh
-            </button>
-            <button className="quick-filter-btn" onClick={fetchData}>
-              <RefreshCw size={12} />
-              Aggiorna
-            </button>
+                     <div className="quick-filters">
+             <button 
+               className={`quick-filter-btn ${autoRefresh ? 'active' : ''}`}
+               onClick={() => setAutoRefresh(!autoRefresh)}
+             >
+               Auto-refresh
+             </button>
+             <button className="quick-filter-btn" onClick={fetchData}>
+               Aggiorna
+             </button>
+           </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="dashboard-card section-spacing">
+          <div className="card-header">
+            <h2>Azioni Rapide</h2>
           </div>
+                     <div className="quick-actions">
+             <button 
+               className="quick-action-btn"
+               onClick={() => handleViewChange('player-list')}
+             >
+               <span>Analizza Giocatori</span>
+             </button>
+             <button 
+               className="quick-action-btn"
+               onClick={() => handleViewChange('reports')}
+             >
+               <span>Genera Report</span>
+             </button>
+             <button className="quick-action-btn">
+               <span>Trend Analysis</span>
+             </button>
+             <button className="quick-action-btn">
+               <span>Configurazione</span>
+             </button>
+           </div>
         </div>
 
         {/* KPI Cards */}
-        <div className="kpi-overview">
+        <div className="kpi-overview section-spacing">
           {renderKPICard(
             <Activity size={24} />,
             'Sessioni Totali',
@@ -560,31 +590,30 @@ const Analytics = () => {
         </div>
 
         {/* Alerts */}
-        {analytics.alerts.length > 0 && (
-          <div className="mapping-warnings">
-            <AlertTriangle size={20} color="#F59E0B" />
-            <div className="warnings-content">
-              <h4>Alert Sistema ({analytics.alerts.length})</h4>
-              <ul>
-                {analytics.alerts.slice(0, 3).map((alert, idx) => (
-                  <li key={idx}>
-                    <strong>{alert.playerName}:</strong> {alert.message}
-                  </li>
-                ))}
-                {analytics.alerts.length > 3 && (
-                  <li>... e altri {analytics.alerts.length - 3} alert</li>
-                )}
-              </ul>
-            </div>
-          </div>
-        )}
+                 {analytics.alerts.length > 0 && (
+           <div className="mapping-warnings section-spacing">
+             <div className="warnings-content">
+               <h4>Alert Sistema ({analytics.alerts.length})</h4>
+               <ul>
+                 {analytics.alerts.slice(0, 3).map((alert, idx) => (
+                   <li key={idx}>
+                     <strong>{alert.playerName}:</strong> {alert.message}
+                   </li>
+                 ))}
+                 {analytics.alerts.length > 3 && (
+                   <li>... e altri {analytics.alerts.length - 3} alert</li>
+                 )}
+               </ul>
+             </div>
+           </div>
+         )}
 
         {/* RAG Readiness Board */}
-        <div className="readiness-board">
-          <div className="board-header">
-            <h2 className="board-title">
-              🚦 Readiness Board (ACWR)
-            </h2>
+                 <div className="readiness-board section-spacing">
+           <div className="board-header">
+             <h2 className="board-title">
+               Readiness Board (ACWR)
+             </h2>
             <div className="legend">
               <div className="legend-item">
                 <div className="legend-dot green"></div>
@@ -602,37 +631,6 @@ const Analytics = () => {
           </div>
           <div className="readiness-grid">
             {analytics.readinessBoard.slice(0, 12).map(renderReadinessCard)}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h2>Azioni Rapide</h2>
-          </div>
-          <div className="quick-actions">
-            <button 
-              className="quick-action-btn"
-              onClick={() => handleViewChange('player-list')}
-            >
-              <Users size={20} />
-              <span>Analizza Giocatori</span>
-            </button>
-            <button 
-              className="quick-action-btn"
-              onClick={() => handleViewChange('reports')}
-            >
-              <Download size={20} />
-              <span>Genera Report</span>
-            </button>
-            <button className="quick-action-btn">
-              <TrendingUp size={20} />
-              <span>Trend Analysis</span>
-            </button>
-            <button className="quick-action-btn">
-              <Settings size={20} />
-              <span>Configurazione</span>
-            </button>
           </div>
         </div>
 
@@ -686,15 +684,10 @@ if (currentView === 'dossier' && selectedPlayer) {
   // ⚖️ COMPARE MODE
   if (currentView === 'compare' && compareIds.length > 0) {
     const comparePlayers = players.filter(p => compareIds.includes(p.id));
-    const sessionsByPlayer = {};
-    comparePlayers.forEach(player => {
-      sessionsByPlayer[player.id] = analytics.filteredSessions.filter(s => s.playerId === player.id);
-    });
-
+    
     return (
       <ComparePanel
         players={comparePlayers}
-        sessionsByPlayer={sessionsByPlayer}
         onClose={clearComparison}
         onBack={() => handleViewChange('player-list')}
       />

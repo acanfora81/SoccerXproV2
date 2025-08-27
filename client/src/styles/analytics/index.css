@@ -1,0 +1,324 @@
+/* client/src/styles/analytics/index.css */
+/* File principale che importa tutti i moduli CSS di analytics */
+
+/* =========================
+   IMPORTS MODULI CSS
+   ========================= */
+@import './charts.css';
+@import './navigation.css';
+
+/* =========================
+   STILI GLOBALI ANALYTICS
+   ========================= */
+
+/* Reset per analytics */
+.analytics-page * {
+  box-sizing: border-box;
+}
+
+/* Container principale analytics */
+.analytics-page {
+  background: var(--gray-50);
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+}
+
+/* =========================
+   UTILITY CLASSES GLOBALI
+   ========================= */
+
+/* Spacing utilities */
+.section-spacing {
+  margin-bottom: var(--spacing-xl);
+}
+
+.card-spacing {
+  margin-bottom: var(--spacing-lg);
+}
+
+.chart-spacing {
+  margin-bottom: var(--spacing-lg);
+}
+
+.table-spacing {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Text utilities */
+.text-primary {
+  color: var(--primary-blue);
+}
+
+.text-success {
+  color: var(--success-green);
+}
+
+.text-warning {
+  color: var(--warning-orange);
+}
+
+.text-danger {
+  color: var(--danger-red);
+}
+
+.text-muted {
+  color: var(--gray-500);
+}
+
+/* Background utilities */
+.bg-primary {
+  background: var(--primary-blue);
+}
+
+.bg-success {
+  background: var(--success-green);
+}
+
+.bg-warning {
+  background: var(--warning-orange);
+}
+
+.bg-danger {
+  background: var(--danger-red);
+}
+
+.bg-light {
+  background: var(--gray-50);
+}
+
+/* Border utilities */
+.border-primary {
+  border-color: var(--primary-blue);
+}
+
+.border-success {
+  border-color: var(--success-green);
+}
+
+.border-warning {
+  border-color: var(--warning-orange);
+}
+
+.border-danger {
+  border-color: var(--danger-red);
+}
+
+/* =========================
+   COMPONENTI COMUNI
+   ========================= */
+
+/* Alert component */
+.analytics-alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  border-left: 4px solid;
+}
+
+.analytics-alert.info {
+  background: #EFF6FF;
+  border-color: var(--primary-blue);
+  color: var(--primary-blue-dark);
+}
+
+.analytics-alert.success {
+  background: #ECFDF5;
+  border-color: var(--success-green);
+  color: var(--success-green-dark);
+}
+
+.analytics-alert.warning {
+  background: #FFFBEB;
+  border-color: var(--warning-orange);
+  color: var(--warning-orange-dark);
+}
+
+.analytics-alert.danger {
+  background: #FEF2F2;
+  border-color: var(--danger-red);
+  color: var(--danger-red-dark);
+}
+
+/* Badge component */
+.analytics-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.analytics-badge.primary {
+  background: var(--primary-blue);
+  color: white;
+}
+
+.analytics-badge.success {
+  background: var(--success-green);
+  color: white;
+}
+
+.analytics-badge.warning {
+  background: var(--warning-orange);
+  color: white;
+}
+
+.analytics-badge.danger {
+  background: var(--danger-red);
+  color: white;
+}
+
+.analytics-badge.gray {
+  background: var(--gray-500);
+  color: white;
+}
+
+/* Button component */
+.analytics-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.analytics-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.analytics-btn.primary {
+  background: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+}
+
+.analytics-btn.primary:hover:not(:disabled) {
+  background: var(--primary-blue-dark);
+  border-color: var(--primary-blue-dark);
+}
+
+.analytics-btn.secondary {
+  background: white;
+  color: var(--gray-700);
+  border-color: var(--gray-300);
+}
+
+.analytics-btn.secondary:hover:not(:disabled) {
+  background: var(--gray-50);
+  border-color: var(--gray-400);
+}
+
+.analytics-btn.success {
+  background: var(--success-green);
+  color: white;
+  border-color: var(--success-green);
+}
+
+.analytics-btn.success:hover:not(:disabled) {
+  background: var(--success-green-dark);
+  border-color: var(--success-green-dark);
+}
+
+.analytics-btn.danger {
+  background: var(--danger-red);
+  color: white;
+  border-color: var(--danger-red);
+}
+
+.analytics-btn.danger:hover:not(:disabled) {
+  background: var(--danger-red-dark);
+  border-color: var(--danger-red-dark);
+}
+
+/* =========================
+   RESPONSIVE UTILITIES
+   ========================= */
+
+/* Hide/Show utilities */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .show-mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .hide-tablet {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1201px) {
+  .show-tablet {
+    display: none !important;
+  }
+}
+
+/* =========================
+   PRINT STYLES
+   ========================= */
+@media print {
+  .analytics-page {
+    background: white;
+    padding: 0;
+  }
+  
+  .chart-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+  
+  .analytics-navigation {
+    display: none;
+  }
+  
+  .quick-actions {
+    display: none;
+  }
+}
+
+/* =========================
+   ACCESSIBILITY
+   ========================= */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus styles */
+.analytics-btn:focus,
+.filter-control:focus,
+.tab-item:focus {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .chart-card {
+    border: 2px solid var(--gray-800);
+  }
+  
+  .analytics-alert {
+    border-left-width: 6px;
+  }
+}

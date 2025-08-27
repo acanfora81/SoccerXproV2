@@ -485,11 +485,21 @@ const getSessionsByPlayer = async (req, res) => {
       return res.status(404).json({ error: 'Giocatore non trovato o non appartiene al team' });
     }
 
-    // Recupera tutte le sessioni in ordine cronologico
+    // Cap massimo per sicurezza
+    const CAP_LIMIT = 5000;
+
+    // Conta totale sessioni
+    const totalCount = await prisma.performanceData.count({
+      where: { playerId, player: { teamId } }
+    });
+
+    // Recupera fino al CAP in ordine cronologico
     const sessions = await prisma.performanceData.findMany({
       where: { playerId, player: { teamId } },
       orderBy: { session_date: 'asc' },
+      take: CAP_LIMIT,
       select: {
+        // ================= CAMPI ESISTENTI =================
         id: true,
         session_date: true,
         session_type: true,
@@ -502,8 +512,59 @@ const getSessionsByPlayer = async (req, res) => {
         high_intensity_runs: true,
         max_heart_rate: true,
         avg_heart_rate: true,
+        
+        // ================= NUOVI CAMPI - DISTANZE E VELOCITÀ =================
+        equivalent_distance_m: true,
+        equivalent_distance_pct: true,
+        distance_per_min: true,
+        distance_over_15_kmh_m: true,
+        distance_15_20_kmh_m: true,
+        distance_20_25_kmh_m: true,
+        distance_over_25_kmh_m: true,
+        distance_over_20_kmh_m: true,
+        
+        // ================= NUOVI CAMPI - POTENZA METABOLICA =================
+        avg_metabolic_power_wkg: true,
+        distance_over_20wkg_m: true,
+        distance_over_35wkg_m: true,
+        max_power_5s_wkg: true,
+        
+        // ================= NUOVI CAMPI - ACCELERAZIONI/DECELERAZIONI =================
+        distance_acc_over_2_ms2_m: true,
+        distance_dec_over_minus2_ms2_m: true,
+        pct_distance_acc_over_2_ms2: true,
+        pct_distance_dec_over_minus2_ms2: true,
+        distance_acc_over_3_ms2_m: true,
+        distance_dec_over_minus3_ms2_m: true,
+        num_acc_over_3_ms2: true,
+        num_dec_over_minus3_ms2: true,
+        acc_events_per_min_over_2_ms2: true,
+        dec_events_per_min_over_minus2_ms2: true,
+        
+        // ================= NUOVI CAMPI - ZONE DI INTENSITÀ =================
+        time_under_5wkg_min: true,
+        time_5_10_wkg_min: true,
+        
+        // ================= NUOVI CAMPI - INDICI E PROFILI =================
+        rvp_index: true,
+        training_load: true,
+        
+        // ================= NUOVI CAMPI - INFORMAZIONI AGGIUNTIVE =================
+        session_day: true,
+        is_match: true,
+        drill_name: true,
       }
     });
+
+    const capped = totalCount > CAP_LIMIT;
+    if (capped) {
+      res.set('X-Records-Capped', 'true');
+      res.set('X-Records-Limit', String(CAP_LIMIT));
+    } else {
+      res.set('X-Records-Capped', 'false');
+      res.set('X-Records-Limit', String(CAP_LIMIT));
+    }
+    res.set('X-Total-Records', String(totalCount));
 
     return res.json({
       message: 'Sessioni caricate con successo',

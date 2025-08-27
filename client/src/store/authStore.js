@@ -3,6 +3,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { apiFetch } from '../utils/http';
 
 console.log('🟢 Inizializzazione authStore...'); // INFO - rimuovere in produzione
 
@@ -30,7 +31,7 @@ const useAuthStore = create(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await fetch('/api/auth/login', {
+          const response = await apiFetch('/api/auth/login', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -43,15 +44,34 @@ const useAuthStore = create(
           if (response.ok) {
             console.log('🟢 AuthStore: login riuscito', data.user.email); // INFO - rimuovere in produzione
             
-            set({
-              user: data.user,
-              token: data.access_token,
-              refreshToken: data.refresh_token,
-              expiresAt: data.expires_at,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null
-            });
+            // Conferma sessione lato server tramite /me (cookie HttpOnly)
+            try {
+              const meRes = await apiFetch('/api/auth/me');
+              if (meRes.ok) {
+                const me = await meRes.json();
+                set({
+                  user: me.user || data.user,
+                  isAuthenticated: true,
+                  isLoading: false,
+                  error: null
+                });
+              } else {
+                // Fallback: usa user del login
+                set({
+                  user: data.user,
+                  isAuthenticated: true,
+                  isLoading: false,
+                  error: null
+                });
+              }
+            } catch (_) {
+              set({
+                user: data.user,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null
+              });
+            }
 
             return { success: true, data };
           } else {
@@ -146,19 +166,10 @@ const useAuthStore = create(
       logout: async () => {
         console.log('🔵 AuthStore: logout in corso'); // INFO DEV - rimuovere in produzione
         
-        const { token } = get();
-        
         try {
-          // Chiama API logout solo se abbiamo un token
-          if (token) {
-            await fetch('/api/auth/logout', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              }
-            });
-          }
+          await apiFetch('/api/auth/logout', {
+            method: 'POST',
+          });
         } catch (error) {
           console.log('🟡 AuthStore: errore logout API', error.message); // WARNING - rimuovere in produzione
           // Continua comunque con il logout locale
@@ -183,38 +194,19 @@ const useAuthStore = create(
        */
       refreshAccessToken: async () => {
         console.log('🔵 AuthStore: refresh token in corso'); // INFO DEV - rimuovere in produzione
-        
-        const { refreshToken } = get();
-        
-        if (!refreshToken) {
-          console.log('🟡 AuthStore: nessun refresh token disponibile'); // WARNING - rimuovere in produzione
-          get().logout();
-          return false;
-        }
 
         try {
-          const response = await fetch('/api/auth/refresh', {
+          const response = await apiFetch('/api/auth/refresh', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ refresh_token: refreshToken })
           });
-
-          const data = await response.json();
 
           if (response.ok) {
             console.log('🟢 AuthStore: token rinnovato'); // INFO - rimuovere in produzione
-            
-            set({
-              token: data.access_token,
-              refreshToken: data.refresh_token,
-              expiresAt: data.expires_at,
-              error: null
-            });
 
             return true;
           } else {
+            let data = {};
+            try { data = await response.json(); } catch (_) {}
             console.log('🟡 AuthStore: refresh token fallito', data.error); // WARNING - rimuovere in produzione
             get().logout();
             return false;
@@ -254,25 +246,31 @@ const useAuthStore = create(
       /**
        * 🔍 Verifica autenticazione al caricamento
        */
-      checkAuth: () => {
-        console.log('🔵 AuthStore: verifica autenticazione'); // INFO DEV - rimuovere in produzione
-        
-        const { user, token, isTokenValid, refreshAccessToken, logout } = get();
-        
-        if (!user || !token) {
-          console.log('🟡 AuthStore: utente o token mancante'); // WARNING - rimuovere in produzione
-          logout();
-          return false;
+      checkAuth: async () => {
+        console.log('🔵 AuthStore: verifica autenticazione via /me'); // INFO DEV - rimuovere in produzione
+        set({ isLoading: true });
+        try {
+          const res = await apiFetch('/api/auth/me');
+          if (res.ok) {
+            const data = await res.json();
+            set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
+            return true;
+          }
+          // Prova un refresh una volta
+          const refreshed = await get().refreshAccessToken();
+          if (refreshed) {
+            const res2 = await apiFetch('/api/auth/me');
+            if (res2.ok) {
+              const data2 = await res2.json();
+              set({ user: data2.user, isAuthenticated: true, isLoading: false, error: null });
+              return true;
+            }
+          }
+        } catch (e) {
+          console.log('🟡 AuthStore: errore checkAuth', e.message);
         }
-
-        if (!isTokenValid()) {
-          console.log('🟡 AuthStore: token scaduto, tentativo refresh'); // WARNING - rimuovere in produzione
-          refreshAccessToken();
-          return false;
-        }
-
-        console.log('🟢 AuthStore: autenticazione valida'); // INFO - rimuovere in produzione
-        return true;
+        set({ user: null, isAuthenticated: false, isLoading: false });
+        return false;
       }
     }),
     {
@@ -280,9 +278,6 @@ const useAuthStore = create(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
-        refreshToken: state.refreshToken,
-        expiresAt: state.expiresAt,
         isAuthenticated: state.isAuthenticated
       })
     }

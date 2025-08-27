@@ -1,0 +1,404 @@
+/* client/src/styles/analytics/navigation.css */
+/* Stili per la navigazione tra sezioni di analytics */
+
+/* =========================
+   CONTAINER PRINCIPALE NAVIGAZIONE
+   ========================= */
+.analytics-navigation {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid var(--gray-200);
+}
+
+/* =========================
+   HEADER ANALYTICS
+   ========================= */
+.analytics-header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--gray-200);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+  color: white;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.analytics-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-sm) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.analytics-header .subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.analytics-header .icon {
+  font-size: 32px;
+}
+
+/* =========================
+   FILTRI GLOBALI
+   ========================= */
+.analytics-filters {
+  padding: var(--spacing-lg);
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  align-items: end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.filter-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: var(--spacing-xs);
+}
+
+.filter-control {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.filter-control:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-control:hover {
+  border-color: var(--gray-400);
+}
+
+/* =========================
+   TAB NAVIGAZIONE
+   ========================= */
+.analytics-tabs {
+  display: flex;
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.analytics-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  background: transparent;
+  color: var(--gray-600);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.tab-item:hover {
+  color: var(--primary-blue);
+  background: var(--gray-50);
+}
+
+.tab-item.active {
+  color: var(--primary-blue);
+  border-bottom-color: var(--primary-blue);
+  background: var(--gray-50);
+}
+
+.tab-item .icon {
+  font-size: 16px;
+}
+
+.tab-item .badge {
+  background: var(--primary-blue);
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* =========================
+   CONTENUTO SEZIONI
+   ========================= */
+.analytics-content {
+  padding: var(--spacing-xl);
+  background: var(--gray-50);
+  min-height: 600px;
+}
+
+.section-content {
+  display: none;
+}
+
+.section-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* =========================
+   BREADCRUMB
+   ========================= */
+.analytics-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: white;
+  border-bottom: 1px solid var(--gray-200);
+  font-size: 14px;
+  color: var(--gray-600);
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.breadcrumb-item:not(:last-child)::after {
+  content: '/';
+  color: var(--gray-400);
+  margin-left: var(--spacing-sm);
+}
+
+.breadcrumb-item.active {
+  color: var(--primary-blue);
+  font-weight: 600;
+}
+
+/* =========================
+   AZIONI RAPIDE
+   ========================= */
+.quick-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--gray-700);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover {
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+  background: var(--gray-50);
+}
+
+.quick-action-btn.primary {
+  background: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+}
+
+.quick-action-btn.primary:hover {
+  background: var(--primary-blue-dark);
+}
+
+/* =========================
+   STATI CARICAMENTO
+   ========================= */
+.analytics-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: var(--gray-500);
+}
+
+.analytics-loading .spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--gray-200);
+  border-top: 4px solid var(--primary-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--spacing-lg);
+}
+
+.analytics-loading h3 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--gray-700);
+}
+
+.analytics-loading p {
+  margin: 0;
+  color: var(--gray-500);
+}
+
+/* =========================
+   RESPONSIVE DESIGN
+   ========================= */
+@media (max-width: 1200px) {
+  .filters-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-header {
+    padding: var(--spacing-md);
+  }
+  
+  .analytics-header h1 {
+    font-size: 24px;
+  }
+  
+  .analytics-filters {
+    padding: var(--spacing-md);
+  }
+  
+  .filters-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .analytics-tabs {
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .tab-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 13px;
+  }
+  
+  .analytics-content {
+    padding: var(--spacing-md);
+  }
+  
+  .quick-actions {
+    flex-wrap: wrap;
+  }
+  
+  .quick-action-btn {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+  }
+}
+
+/* =========================
+   ANIMAZIONI
+   ========================= */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.section-content.active {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* =========================
+   UTILITY CLASSES
+   ========================= */
+.analytics-navigation.compact {
+  margin-bottom: var(--spacing-lg);
+}
+
+.analytics-navigation.compact .analytics-header {
+  padding: var(--spacing-md);
+}
+
+.analytics-navigation.compact .analytics-header h1 {
+  font-size: 24px;
+}
+
+.analytics-navigation.compact .analytics-filters {
+  padding: var(--spacing-md);
+}
+
+.analytics-navigation.compact .analytics-content {
+  padding: var(--spacing-lg);
+}
+
+/* =========================
+   THEME DARK (OPZIONALE)
+   ========================= */
+@media (prefers-color-scheme: dark) {
+  .analytics-navigation {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .analytics-filters {
+    background: var(--gray-900);
+    border-color: var(--gray-700);
+  }
+  
+  .filter-control {
+    background: var(--gray-800);
+    border-color: var(--gray-600);
+    color: white;
+  }
+  
+  .analytics-tabs {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .tab-item {
+    color: var(--gray-300);
+  }
+  
+  .tab-item:hover {
+    background: var(--gray-700);
+  }
+  
+  .tab-item.active {
+    background: var(--gray-700);
+  }
+  
+  .analytics-content {
+    background: var(--gray-900);
+  }
+}

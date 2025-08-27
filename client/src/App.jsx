@@ -10,6 +10,7 @@ import PlayersList from './components/players/PlayersList';
 import PlayerStatistics from './components/players/PlayerStatistics';
 import PerformanceImport from './components/performance/PerformanceImport';
 import Analytics from './components/analytics/Analytics';
+import AnalyticsAdvanced from './components/analytics/AnalyticsAdvanced';
 import Reports from './components/analytics/Reports';
 
 // 🎨 STILI GLOBALI AGGIORNATI - IMPORTANTE!
@@ -43,52 +44,9 @@ function App() {
     setCurrentSection('dashboard'); // Reset sezione dopo logout
   };
 
-  // Render del contenuto in base alla sezione attiva
-  const renderContent = () => {
-    switch (currentSection) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'players':
-        return <PlayersList />;
-      case 'players-stats':
-        return <PlayerStatistics />;
-      case 'performance-import':
-        return <PerformanceImport />; // ← import file CSV
-      case 'performance-analytics':
-        return <Analytics />; // ← nuova sezione Analytics
-      case 'performance-reports':
-        return <Reports />; // ← nuova sezione Reports
-      case 'contracts':
-        return (
-          <div className="page-placeholder">
-            <h2>Gestione Contratti</h2>
-            <p>Modulo in sviluppo - Contratti e scadenze</p>
-          </div>
-        );
-      case 'medical':
-        return (
-          <div className="page-placeholder">
-            <h2>Area Medica</h2>
-            <p>Modulo in sviluppo - Infortuni e visite mediche</p>
-          </div>
-        );
-      case 'market':
-        return (
-          <div className="page-placeholder">
-            <h2>Mercato</h2>
-            <p>Modulo in sviluppo - Trasferimenti e scouting</p>
-          </div>
-        );
-      case 'administration':
-        return (
-          <div className="page-placeholder">
-            <h2>Amministrazione</h2>
-            <p>Modulo in sviluppo - Budget e amministrazione</p>
-          </div>
-        );
-      default:
-        return <Dashboard />;
-    }
+  // Handler cambio sezione dalla sidebar
+  const handleSectionChange = (section) => {
+    setCurrentSection(section);
   };
 
   // Loading state
@@ -110,11 +68,29 @@ function App() {
       ) : (
         <MainLayout 
           currentSection={currentSection}
-          onSectionChange={setCurrentSection}
+          onSectionChange={handleSectionChange}
           user={user}
           onLogout={handleLogout}
         >
-          {renderContent()}
+          {currentSection === 'dashboard' && <Dashboard />}
+          {currentSection === 'players' && <PlayersList />}
+          {currentSection === 'players-stats' && <PlayerStatistics />}
+          {currentSection === 'performance-import' && <PerformanceImport />}
+          {currentSection === 'performance-analytics' && <Analytics />}
+          {currentSection === 'performance-analytics-advanced' && <AnalyticsAdvanced />}
+          {currentSection === 'performance-reports' && <Reports />}
+          {currentSection === 'contracts' && (
+            <div className="page-placeholder"><h2>Gestione Contratti</h2><p>Modulo in sviluppo - Contratti e scadenze</p></div>
+          )}
+          {currentSection === 'medical' && (
+            <div className="page-placeholder"><h2>Area Medica</h2><p>Modulo in sviluppo - Infortuni e visite mediche</p></div>
+          )}
+          {currentSection === 'market' && (
+            <div className="page-placeholder"><h2>Mercato</h2><p>Modulo in sviluppo - Trasferimenti e scouting</p></div>
+          )}
+          {currentSection === 'administration' && (
+            <div className="page-placeholder"><h2>Amministrazione</h2><p>Modulo in sviluppo - Budget e amministrazione</p></div>
+          )}
         </MainLayout>
       )}
     </div>
