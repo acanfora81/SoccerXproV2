@@ -1,0 +1,116 @@
+# C:\Progetti\SoccerXpro_V2\.gitignore
+
+# Dependencies
+node_modules/
+server/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+server/dist/
+server/build/
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+server/.env
+server/.env.local
+
+# IDEs and editors
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+server/logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+server/prisma/dev.db
+server/prisma/migrations/**/migration.sql
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Storybook
+storybook-static/
+.storybook/build/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# Package manager locks (optional - uncomment if needed)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Generated files
+server/prisma/generated/
+src/types/generated/
+
+# Uploads and user content
+uploads/
+server/uploads/
+public/uploads/
+
+# Documentation builds
+docs/build/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# ESLint cache
+.eslintcache
+
+# Prettier cache
+.prettierignore
+
+# Miscellaneous
+*.tgz
+*.tar.gz
