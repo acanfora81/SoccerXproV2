@@ -28,7 +28,7 @@ const Dashboard = () => {
   ];
 
   const StatCard = ({ icon: Icon, title, value, trend, color = "blue" }) => ( // eslint-disable-line no-unused-vars
-    <div className="stat-card">
+    <div className="card stat-card">
       <div className="stat-icon" style={{ color: color === "blue" ? "var(--text-primary)" : color }}>
         <Icon size={24} />
       </div>
@@ -79,7 +79,7 @@ const Dashboard = () => {
       {/* Main Content Grid */}
       <div className="dashboard-grid">
         {/* Recent Activity */}
-        <div className="dashboard-card">
+        <div className="card dashboard-card">
           <div className="card-header">
             <h2>Attività Recenti</h2>
             <Activity size={20} />
@@ -103,7 +103,7 @@ const Dashboard = () => {
         </div>
 
         {/* Upcoming Events */}
-        <div className="dashboard-card">
+        <div className="card dashboard-card">
           <div className="card-header">
             <h2>Prossimi Eventi</h2>
             <Calendar size={20} />
@@ -127,24 +127,24 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="dashboard-card">
+        <div className="card dashboard-card">
           <div className="card-header">
             <h2>Azioni Rapide</h2>
           </div>
           <div className="quick-actions">
-            <button className="quick-action-btn">
+            <button className="btn btn--ghost quick-action-btn">
               <Users size={20} />
               <span>Aggiungi Giocatore</span>
             </button>
-            <button className="quick-action-btn">
+            <button className="btn btn--ghost quick-action-btn">
               <FileText size={20} />
               <span>Nuovo Contratto</span>
             </button>
-            <button className="quick-action-btn">
+            <button className="btn btn--ghost quick-action-btn">
               <Activity size={20} />
               <span>Registra Infortunio</span>
             </button>
-            <button className="quick-action-btn">
+            <button className="btn btn--ghost quick-action-btn">
               <TrendingUp size={20} />
               <span>Nuovo Trasferimento</span>
             </button>
@@ -152,7 +152,7 @@ const Dashboard = () => {
         </div>
 
         {/* Budget Overview */}
-        <div className="dashboard-card">
+        <div className="card dashboard-card">
           <div className="card-header">
             <h2>Budget Overview</h2>
             <TrendingUp size={20} />

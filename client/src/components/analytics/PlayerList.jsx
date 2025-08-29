@@ -34,7 +34,6 @@ const translatePosition = (position) => {
  */
 const PlayerList = ({ 
   players = [], 
-  performanceData = [], 
   onSelect, 
   onCompareChange, 
   compareIds = [],
@@ -47,7 +46,7 @@ const PlayerList = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [positionFilter, setPositionFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [timeRange, setTimeRange] = useState('7d'); // 🔧 FIX: Aggiunto filtro temporale
+  const [timeRange, setTimeRange] = useState('all'); // 🔧 FIX: Aggiunto filtro temporale
   
   // DEBUG: Log quando cambia timeRange
   console.log('🟡 PlayerList - timeRange cambiato a:', timeRange);
@@ -318,7 +317,7 @@ const PlayerList = ({
     });
 
     return filtered;
-  }, [playersWithAnalytics, searchTerm, positionFilter, statusFilter, timeRange, sortBy, sortDirection]);
+  }, [playersWithAnalytics, searchTerm, positionFilter, statusFilter, sortBy, sortDirection]);
 
   /**
    * 🎮 EVENT HANDLERS
@@ -444,7 +443,7 @@ const PlayerList = ({
             </p>
           </div>
         </div>
-        <button className="back-btn" onClick={onBack}>
+        <button className="btn btn--ghost back-btn" onClick={onBack}>
           <ArrowLeft size={16} />
           Dashboard
         </button>

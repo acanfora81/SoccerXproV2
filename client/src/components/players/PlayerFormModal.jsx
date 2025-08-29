@@ -231,10 +231,10 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
         <form onSubmit={handleSubmit} className="player-form">
           {/* Dati anagrafici */}
           <div className="form-section">
-            <h3>Dati Anagrafici</h3>
+            <h3 className="form-section-title">Dati Anagrafici</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="firstName">Nome *</label>
+                <label htmlFor="firstName" className="form-label">Nome *</label>
                 <input
                   type="text"
                   id="firstName"
@@ -244,14 +244,14 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   required
                   disabled={loading}
                   placeholder="Mario"
-                  className={validationErrors.firstName ? 'error' : ''}
+                  className={`form-input ${validationErrors.firstName ? 'error' : ''}`}
                 />
                 {validationErrors.firstName && (
                   <span className="field-error">{validationErrors.firstName}</span>
                 )}
               </div>
               <div className="form-group">
-                <label htmlFor="lastName">Cognome *</label>
+                <label htmlFor="lastName" className="form-label">Cognome *</label>
                 <input
                   type="text"
                   id="lastName"
@@ -261,7 +261,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   required
                   disabled={loading}
                   placeholder="Rossi"
-                  className={validationErrors.lastName ? 'error' : ''}
+                  className={`form-input ${validationErrors.lastName ? 'error' : ''}`}
                 />
                 {validationErrors.lastName && (
                   <span className="field-error">{validationErrors.lastName}</span>
@@ -271,7 +271,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="dateOfBirth">Data di Nascita *</label>
+                <label htmlFor="dateOfBirth" className="form-label">Data di Nascita *</label>
                 <input
                   type="date"
                   id="dateOfBirth"
@@ -280,14 +280,14 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  className={validationErrors.dateOfBirth ? 'error' : ''}
+                  className={`form-input ${validationErrors.dateOfBirth ? 'error' : ''}`}
                 />
                 {validationErrors.dateOfBirth && (
                   <span className="field-error">{validationErrors.dateOfBirth}</span>
                 )}
               </div>
               <div className="form-group">
-                <label htmlFor="nationality">Nazionalità *</label>
+                <label htmlFor="nationality" className="form-label">Nazionalità *</label>
                 <input
                   type="text"
                   id="nationality"
@@ -297,7 +297,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   required
                   disabled={loading}
                   placeholder="Italia"
-                  className={validationErrors.nationality ? 'error' : ''}
+                  className={`form-input ${validationErrors.nationality ? 'error' : ''}`}
                 />
                 {validationErrors.nationality && (
                   <span className="field-error">{validationErrors.nationality}</span>
@@ -307,7 +307,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="placeOfBirth">Luogo di Nascita</label>
+                <label htmlFor="placeOfBirth" className="form-label">Luogo di Nascita</label>
                 <input
                   type="text"
                   id="placeOfBirth"
@@ -316,6 +316,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   onChange={handleChange}
                   disabled={loading}
                   placeholder="Roma"
+                  className="form-input"
                 />
               </div>
             </div>
@@ -323,10 +324,10 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
 
           {/* Dati sportivi */}
           <div className="form-section">
-            <h3>Dati Sportivi</h3>
+            <h3 className="form-section-title">Dati Sportivi</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="position">Ruolo *</label>
+                <label htmlFor="position" className="form-label">Ruolo *</label>
                 <select
                   id="position"
                   name="position"
@@ -334,7 +335,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  className={validationErrors.position ? 'error' : ''}
+                  className={`form-select ${validationErrors.position ? 'error' : ''}`}
                 >
                   <option value="">Seleziona ruolo</option>
                   <option value="GOALKEEPER">Portiere</option>
@@ -347,7 +348,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                 )}
               </div>
               <div className="form-group">
-                <label htmlFor="shirtNumber">Numero Maglia</label>
+                <label htmlFor="shirtNumber" className="form-label">Numero Maglia</label>
                 <input
                   type="number"
                   id="shirtNumber"
@@ -358,7 +359,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   min="1"
                   max="99"
                   placeholder="10"
-                  className={validationErrors.shirtNumber ? 'error' : ''}
+                  className={`form-input ${validationErrors.shirtNumber ? 'error' : ''}`}
                 />
                 {validationErrors.shirtNumber && (
                   <span className="field-error">{validationErrors.shirtNumber}</span>
@@ -368,13 +369,14 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="preferredFoot">Piede Preferito</label>
+                <label htmlFor="preferredFoot" className="form-label">Piede Preferito</label>
                 <select
                   id="preferredFoot"
                   name="preferredFoot"
                   value={formData.preferredFoot}
                   onChange={handleChange}
                   disabled={loading}
+                  className="form-select"
                 >
                   <option value="">Non specificato</option>
                   <option value="LEFT">Sinistro</option>
@@ -387,10 +389,10 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
 
           {/* Dati fisici */}
           <div className="form-section">
-            <h3>Dati Fisici</h3>
+            <h3 className="form-section-title">Dati Fisici</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="height">Altezza (cm)</label>
+                <label htmlFor="height" className="form-label">Altezza (cm)</label>
                 <input
                   type="number"
                   id="height"
@@ -402,10 +404,11 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   max="220"
                   step="0.1"
                   placeholder="180"
+                  className="form-input"
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="weight">Peso (kg)</label>
+                <label htmlFor="weight" className="form-label">Peso (kg)</label>
                 <input
                   type="number"
                   id="weight"
@@ -417,6 +420,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   max="150"
                   step="0.1"
                   placeholder="75"
+                  className="form-input"
                 />
               </div>
             </div>
@@ -424,10 +428,10 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
 
           {/* Documenti */}
           <div className="form-section">
-            <h3>Documenti</h3>
+            <h3 className="form-section-title">Documenti</h3>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="taxCode">Codice Fiscale</label>
+                <label htmlFor="taxCode" className="form-label">Codice Fiscale</label>
                 <input
                   type="text"
                   id="taxCode"
@@ -437,14 +441,14 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   disabled={loading}
                   placeholder="RSSMRA90A01H501X"
                   maxLength="16"
-                  className={validationErrors.taxCode ? 'error' : ''}
+                  className={`form-input ${validationErrors.taxCode ? 'error' : ''}`}
                 />
                 {validationErrors.taxCode && (
                   <span className="field-error">{validationErrors.taxCode}</span>
                 )}
               </div>
               <div className="form-group">
-                <label htmlFor="passportNumber">Numero Passaporto</label>
+                <label htmlFor="passportNumber" className="form-label">Numero Passaporto</label>
                 <input
                   type="text"
                   id="passportNumber"
@@ -453,6 +457,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
                   onChange={handleChange}
                   disabled={loading}
                   placeholder="AA1234567"
+                  className="form-input"
                 />
               </div>
             </div>
@@ -466,7 +471,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
           )}
 
           {/* Azioni */}
-          <div className="modal-actions">
+          <div className="form-actions">
             <button
               type="button"
               onClick={handleClose}

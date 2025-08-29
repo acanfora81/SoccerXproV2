@@ -28,6 +28,22 @@ const DEFAULT_MAPPING_BY_HEADER = {
   duration_minutes: 'none'       // -- Non mappare --
 };
 
+// 🎯 SET MINIMO DI DATI OBBLIGATORI
+const MINIMUM_REQUIRED_FIELDS = [
+  'playerId',           // Giocatore
+  'session_date',       // Data Sessione  
+  'duration_minutes',   // Durata (minuti)
+  'total_distance_m'    // Distanza Totale
+];
+
+// Etichette statiche per i campi minimi (evita riferimenti non inizializzati)
+const MINIMUM_FIELD_LABELS = {
+  playerId: 'Giocatore',
+  session_date: 'Data Sessione',
+  duration_minutes: 'Durata Sessione',
+  total_distance_m: 'Distanza Totale'
+};
+
 const ColumnMappingStep = ({
   csvHeaders,
   onMappingComplete,
@@ -46,8 +62,40 @@ const ColumnMappingStep = ({
      const [warnings, setWarnings] = useState([]);
    const [showAdvanced, setShowAdvanced] = useState(false);
    const [customFields, setCustomFields] = useState([]);
-   const [autoMappedFields, setAutoMappedFields] = useState(new Set());
-   const [pendingSuggestions, setPendingSuggestions] = useState({});
+     const [autoMappedFields, setAutoMappedFields] = useState(new Set());
+  const [pendingSuggestions, setPendingSuggestions] = useState({});
+  const [minimumDataValidation, setMinimumDataValidation] = useState(null);
+
+  // =========================
+  // VALIDAZIONE SET MINIMO
+  // =========================
+  const validateMinimumData = useCallback((currentMapping) => {
+    const missingFields = [];
+    
+    MINIMUM_REQUIRED_FIELDS.forEach(field => {
+      // Cerca se questo campo del database è mappato a qualche colonna CSV
+      const isMapped = Object.values(currentMapping).includes(field);
+      if (!isMapped) {
+        missingFields.push(field);
+      }
+    });
+    
+    if (missingFields.length === 0) {
+      return {
+        isValid: true,
+        message: 'Set minimo di dati Validato',
+        missingFields: []
+      };
+    } else {
+      const fieldLabels = missingFields.map(field => MINIMUM_FIELD_LABELS[field] || field);
+      
+      return {
+        isValid: false,
+        message: 'Set minimo di dati Non Validato',
+        missingFields: fieldLabels
+      };
+    }
+  }, []);
 
   // =========================
   // DEFINIZIONI CAMPI (etichette umane)
@@ -546,9 +594,13 @@ const ColumnMappingStep = ({
          }
        }
 
+       // 🔍 Validazione immediata del set minimo dopo auto-mapping
+       const validation = validateMinimumData(next);
+       setMinimumDataValidation(validation);
+
        return next;
      });
-   }, [csvHeaders, fieldDefinitions]);
+   }, [csvHeaders, fieldDefinitions, validateMinimumData]);
 
    // =========================
    // SUGGERIMENTI INTELLIGENTI
@@ -757,11 +809,17 @@ const ColumnMappingStep = ({
   // HANDLERS
   // =========================
   const handleMappingChange = useCallback((csvHeader, dbField) => {
-    setMapping(prev => ({
-      ...prev,
+    const newMapping = {
+      ...mapping,
       [csvHeader]: dbField === 'none' ? undefined : dbField
-    }));
-  }, []);
+    };
+    
+    setMapping(newMapping);
+    
+    // 🔍 Validazione immediata del set minimo
+    const validation = validateMinimumData(newMapping);
+    setMinimumDataValidation(validation);
+  }, [mapping, validateMinimumData]);
 
   const validateMapping = useMemo(() => {
     const requiredFields = Object.entries(fieldDefinitions)
@@ -847,10 +905,12 @@ const ColumnMappingStep = ({
    // GESTIONE SUGGERIMENTI
    // =========================
    const acceptSuggestion = useCallback((csvHeader, suggestedField) => {
-     setMapping(prev => ({
-       ...prev,
+     const newMapping = {
+       ...mapping,
        [csvHeader]: suggestedField
-     }));
+     };
+     
+     setMapping(newMapping);
      
      // Rimuovi dai pending
      setPendingSuggestions(prev => {
@@ -859,8 +919,12 @@ const ColumnMappingStep = ({
        return newPending;
      });
      
+     // 🔍 Validazione immediata del set minimo
+     const validation = validateMinimumData(newMapping);
+     setMinimumDataValidation(validation);
+     
      console.log(`✅ Suggerimento accettato: ${csvHeader} → ${suggestedField}`);
-   }, []);
+   }, [mapping, validateMinimumData]);
 
    const rejectSuggestion = useCallback((csvHeader) => {
      // Rimuovi dai pending
@@ -996,6 +1060,32 @@ const ColumnMappingStep = ({
           </div>
         )}
 
+        {/* 🔍 Validazione Set Minimo */}
+        {minimumDataValidation && (
+          <div className={`minimum-data-validation ${minimumDataValidation.isValid ? 'valid' : 'invalid'}`}>
+            {minimumDataValidation.isValid ? (
+              <CheckCircle size={20} color="#10B981" />
+            ) : (
+              <XCircle size={20} color="#EF4444" />
+            )}
+            <div className="validation-content">
+              <h4>{minimumDataValidation.message}</h4>
+              {!minimumDataValidation.isValid && minimumDataValidation.missingFields.length > 0 && (
+                <div className="missing-fields">
+                  <p>Colonne mancanti per il set minimo:</p>
+                  <ul>
+                    {minimumDataValidation.missingFields.map((field, index) => (
+                      <li key={index}>
+                        <strong>{field}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
                  {/* Suggerimenti Intelligenti */}
          {Object.keys(pendingSuggestions).length > 0 && (
            <div className="suggestions-section">
@@ -1075,21 +1165,22 @@ const ColumnMappingStep = ({
          <div className="required-fields-status">
            <h3>📋 Campi Obbligatori</h3>
            <div className="required-grid">
-             {Object.entries(fieldDefinitions)
-               .filter(([, cfg]) => cfg.required)
-               .map(([field, cfg]) => {
-                 const isMapped = Object.values(mapping).includes(field);
-                 const Icon = cfg.icon;
-                 return (
-                   <div key={field} className={`required-field ${isMapped ? 'mapped' : 'missing'}`}>
-                     <Icon size={16} color={cfg.color} />
-                     <span>{cfg.label}</span>
-                     {isMapped
-                       ? <CheckCircle size={14} color="#10B981" />
-                       : <XCircle size={14} color="#EF4444" />}
-                   </div>
-                 );
-               })}
+             {MINIMUM_REQUIRED_FIELDS.map((field) => {
+               const isMapped = Object.values(mapping).includes(field);
+               const def = fieldDefinitions[field] || {};
+               const Icon = def.icon || Info;
+               const label = def.label || MINIMUM_FIELD_LABELS[field] || field;
+               const color = def.color || '#3B82F6';
+               return (
+                 <div key={field} className={`required-field ${isMapped ? 'mapped' : 'missing'}`}>
+                   <Icon size={16} color={color} />
+                   <span>{label}</span>
+                   {isMapped
+                     ? <CheckCircle size={14} color="#10B981" />
+                     : <XCircle size={14} color="#EF4444" />}
+                 </div>
+               );
+             })}
            </div>
          </div>
 

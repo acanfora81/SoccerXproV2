@@ -55,7 +55,7 @@ const Analytics = () => {
   const [compareIds, setCompareIds] = useState([]);
   
   // Stati per filtri
-  const [dateRange, setDateRange] = useState('7d'); // 7d, 14d, 30d, all
+  const [dateRange, setDateRange] = useState('all'); // 7d, 14d, 30d, all
   const [positionFilter, setPositionFilter] = useState('all');
   const [sessionTypeFilter, setSessionTypeFilter] = useState('all');
   
@@ -90,7 +90,7 @@ const Analytics = () => {
       setPlayers(playersList);
 
       // Carica performance data
-      const performanceResponse = await fetch('/api/performance?page=1&pageSize=10000', {
+      const performanceResponse = await fetch('/api/performance?all=true', {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -385,7 +385,7 @@ const Analytics = () => {
    * 🎨 RENDER HELPERS
    */
   const renderKPICard = (icon, label, value, unit, trend, trendLabel) => (
-    <div className="kpi-card">
+            <div className="card kpi-card">
       <div className="kpi-header">
         <div className="kpi-icon">
           {icon}
@@ -527,27 +527,27 @@ const Analytics = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="dashboard-card section-spacing">
+        <div className="card dashboard-card section-spacing">
           <div className="card-header">
             <h2>Azioni Rapide</h2>
           </div>
                      <div className="quick-actions">
              <button 
-               className="quick-action-btn"
+               className="btn btn--ghost quick-action-btn"
                onClick={() => handleViewChange('player-list')}
              >
                <span>Analizza Giocatori</span>
              </button>
              <button 
-               className="quick-action-btn"
+               className="btn btn--ghost quick-action-btn"
                onClick={() => handleViewChange('reports')}
              >
                <span>Genera Report</span>
              </button>
-             <button className="quick-action-btn">
+             <button className="btn btn--ghost quick-action-btn">
                <span>Trend Analysis</span>
              </button>
-             <button className="quick-action-btn">
+             <button className="btn btn--ghost quick-action-btn">
                <span>Configurazione</span>
              </button>
            </div>

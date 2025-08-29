@@ -1,47 +1,19 @@
 /* client/src/styles/themes.css */
-/* 🎨 TEMI SOCCERXPRO V2 - DESIGN PULITO */
 
-/* Reset e base */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* 🌞 LIGHT THEME - Bianco con Blu */
-:root,
-:root[data-theme="light"] {
-  --bg-primary: #FFFFFF;
-  --text-primary: #3B82F6;
-  --border-color: #3B82F6;
-  --button-bg: #3B82F6;
-  --button-text: #FFFFFF;
-  --input-bg: #FFFFFF;
-  --input-border: #3B82F6;
-  --shadow: rgba(59, 130, 246, 0.1);
-}
-
-/* 🌙 DARK THEME - Nero con Viola */
-:root[data-theme="dark"] {
-  --bg-primary: #000000;
-  --text-primary: #8B5CF6;
-  --border-color: #8B5CF6;
-  --button-bg: #8B5CF6;
-  --button-text: #FFFFFF;
-  --input-bg: #000000;
-  --input-border: #8B5CF6;
-  --shadow: rgba(139, 92, 246, 0.1);
-}
+/* 🎨 TEMI SOCCERXPRO V2 - DESIGN LINEARE E PURO */
+@import url('./variables.css');
 
 /* Base styles */
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
   transition: all 0.3s ease;
 }
 
 /* 🔄 TOGGLE SWITCH */
+
 .theme-toggle {
   position: fixed;
   bottom: 20px;
@@ -54,7 +26,7 @@ body {
   background: var(--bg-primary);
   border: 2px solid var(--border-color);
   border-radius: 25px;
-  box-shadow: 0 4px 12px var(--shadow);
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .toggle-label {
@@ -91,6 +63,7 @@ body {
 }
 
 /* 🔐 AUTH CONTAINER */
+
 .auth-container {
   min-height: 100vh;
   display: flex;
@@ -106,7 +79,7 @@ body {
   padding: 40px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 10px 30px var(--shadow);
+  box-shadow: 0 10px 30px var(--shadow-color);
 }
 
 .auth-header {
@@ -116,17 +89,18 @@ body {
 
 .auth-title {
   font-size: 28px;
-  font-weight: bold;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-sm);
 }
 
 .auth-subtitle {
   color: var(--text-primary);
-  opacity: 0.7;
+  opacity: 70%;
 }
 
 /* 📝 FORM STYLES */
+
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -157,46 +131,13 @@ body {
 .form-input:focus {
   outline: none;
   border-color: var(--text-primary);
-  box-shadow: 0 0 0 3px var(--shadow);
+  box-shadow: 0 0 0 3px var(--shadow-color);
 }
 
-/* 🔲 BUTTONS */
-.btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  text-align: center;
-  display: inline-block;
-}
-
-.btn-primary {
-  background: var(--button-bg);
-  color: var(--button-text);
-  border: 2px solid var(--button-bg);
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
-}
-
-.btn-secondary:hover {
-  background: var(--text-primary);
-  color: var(--bg-primary);
-}
+/* 🔲 BUTTONS - RIMOSSI (già definiti in global.css) */
 
 /* 🔗 LINKS */
+
 .auth-link {
   text-align: center;
   margin-top: 20px;
@@ -213,7 +154,8 @@ body {
 }
 
 /* 📱 RESPONSIVE */
-@media (max-width: 480px) {
+@media (width <= 480px) {
+
   .auth-card {
     padding: 30px 20px;
   }

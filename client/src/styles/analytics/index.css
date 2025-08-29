@@ -1,24 +1,28 @@
 /* client/src/styles/analytics/index.css */
+
 /* File principale che importa tutti i moduli CSS di analytics */
+@import url('../variables.css');
 
 /* =========================
    IMPORTS MODULI CSS
    ========================= */
-@import './charts.css';
-@import './navigation.css';
+@import url('./charts.css');
+@import url('./navigation.css');
 
 /* =========================
    STILI GLOBALI ANALYTICS
    ========================= */
 
 /* Reset per analytics */
+
 .analytics-page * {
   box-sizing: border-box;
 }
 
 /* Container principale analytics */
+
 .analytics-page {
-  background: var(--gray-50);
+  background: var(--bg-primary);
   min-height: 100vh;
   padding: var(--spacing-lg);
 }
@@ -28,6 +32,7 @@
    ========================= */
 
 /* Spacing utilities */
+
 .section-spacing {
   margin-bottom: var(--spacing-xl);
 }
@@ -45,62 +50,47 @@
 }
 
 /* Text utilities */
-.text-primary {
-  color: var(--primary-blue);
-}
 
-.text-success {
-  color: var(--success-green);
-}
-
-.text-warning {
-  color: var(--warning-orange);
-}
-
-.text-danger {
-  color: var(--danger-red);
-}
-
-.text-muted {
-  color: var(--gray-500);
-}
+/* Text color utilities ora centralizzate in utilities.css */
 
 /* Background utilities */
+
 .bg-primary {
-  background: var(--primary-blue);
+  background: var(--accent-primary);
 }
 
 .bg-success {
-  background: var(--success-green);
+  background: var(--success);
 }
 
 .bg-warning {
-  background: var(--warning-orange);
+  background: var(--warning);
 }
 
 .bg-danger {
-  background: var(--danger-red);
+  background: var(--error);
 }
 
 .bg-light {
-  background: var(--gray-50);
+  background: var(--bg-secondary);
 }
 
 /* Border utilities */
+
 .border-primary {
-  border-color: var(--primary-blue);
+  border-color: var(--border-primary);
 }
 
 .border-success {
-  border-color: var(--success-green);
+  border-color: var(--success);
 }
 
 .border-warning {
-  border-color: var(--warning-orange);
+  border-color: var(--warning);
 }
 
 .border-danger {
-  border-color: var(--danger-red);
+  border-color: var(--error);
 }
 
 /* =========================
@@ -108,6 +98,7 @@
    ========================= */
 
 /* Alert component */
+
 .analytics-alert {
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
@@ -116,30 +107,31 @@
 }
 
 .analytics-alert.info {
-  background: #EFF6FF;
-  border-color: var(--primary-blue);
-  color: var(--primary-blue-dark);
+  background: var(--accent-muted);
+  border-color: var(--accent-primary);
+  color: var(--accent-secondary);
 }
 
 .analytics-alert.success {
-  background: #ECFDF5;
-  border-color: var(--success-green);
-  color: var(--success-green-dark);
+  background: rgb(16 185 129 / 10%);
+  border-color: var(--success);
+  color: var(--success);
 }
 
 .analytics-alert.warning {
-  background: #FFFBEB;
-  border-color: var(--warning-orange);
-  color: var(--warning-orange-dark);
+  background: rgb(245 158 11 / 10%);
+  border-color: var(--warning);
+  color: var(--warning);
 }
 
 .analytics-alert.danger {
-  background: #FEF2F2;
-  border-color: var(--danger-red);
-  color: var(--danger-red-dark);
+  background: rgb(239 68 68 / 10%);
+  border-color: var(--error);
+  color: var(--error);
 }
 
 /* Badge component */
+
 .analytics-badge {
   display: inline-flex;
   align-items: center;
@@ -152,173 +144,298 @@
 }
 
 .analytics-badge.primary {
-  background: var(--primary-blue);
+  background: var(--accent-primary);
   color: white;
 }
 
 .analytics-badge.success {
-  background: var(--success-green);
+  background: var(--success);
   color: white;
 }
 
 .analytics-badge.warning {
-  background: var(--warning-orange);
+  background: var(--warning);
   color: white;
 }
 
 .analytics-badge.danger {
-  background: var(--danger-red);
+  background: var(--error);
   color: white;
 }
 
 .analytics-badge.gray {
-  background: var(--gray-500);
+  background: var(--text-muted);
   color: white;
 }
 
-/* Button component */
-.analytics-btn {
+/* Button component - ora usa .btn unificato */
+
+/* =========================
+   LAYOUT PULSANTI AZIONE
+   ========================= */
+
+.quick-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.main-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.export-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* =========================
+   PULSANTI AZIONE PRINCIPALE
+   ========================= */
+
+.action-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid transparent;
+  border: 2px solid var(--border-primary);
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   text-decoration: none;
 }
 
-.analytics-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.action-btn:hover {
+  background-color: var(--accent-muted);
+  border-color: var(--accent-secondary);
+  color: var(--accent-secondary);
 }
 
-.analytics-btn.primary {
-  background: var(--primary-blue);
-  color: white;
-  border-color: var(--primary-blue);
+.action-btn.active {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--bg-primary);
 }
 
-.analytics-btn.primary:hover:not(:disabled) {
-  background: var(--primary-blue-dark);
-  border-color: var(--primary-blue-dark);
-}
-
-.analytics-btn.secondary {
-  background: white;
-  color: var(--gray-700);
-  border-color: var(--gray-300);
-}
-
-.analytics-btn.secondary:hover:not(:disabled) {
-  background: var(--gray-50);
-  border-color: var(--gray-400);
-}
-
-.analytics-btn.success {
-  background: var(--success-green);
-  color: white;
-  border-color: var(--success-green);
-}
-
-.analytics-btn.success:hover:not(:disabled) {
-  background: var(--success-green-dark);
-  border-color: var(--success-green-dark);
-}
-
-.analytics-btn.danger {
-  background: var(--danger-red);
-  color: white;
-  border-color: var(--danger-red);
-}
-
-.analytics-btn.danger:hover:not(:disabled) {
-  background: var(--danger-red-dark);
-  border-color: var(--danger-red-dark);
+.action-btn.active:hover {
+  background-color: var(--accent-secondary);
+  border-color: var(--accent-secondary);
 }
 
 /* =========================
-   RESPONSIVE UTILITIES
+   PLAYER CARDS E SELECTION
    ========================= */
 
-/* Hide/Show utilities */
-@media (max-width: 768px) {
-  .hide-mobile {
-    display: none !important;
-  }
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
-@media (min-width: 769px) {
-  .show-mobile {
-    display: none !important;
-  }
+.player-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border: 2px solid var(--border-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--bg-primary);
 }
 
-@media (max-width: 1200px) {
-  .hide-tablet {
-    display: none !important;
-  }
+.player-card:hover {
+  border-color: var(--border-primary);
+  background-color: var(--bg-secondary);
 }
 
-@media (min-width: 1201px) {
-  .show-tablet {
-    display: none !important;
-  }
+.player-card.selected {
+  border-color: var(--accent-primary);
+  background-color: var(--accent-primary);
+  color: var(--bg-primary);
+}
+
+.player-info {
+  flex: 1;
+}
+
+.player-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: inherit;
+}
+
+.player-position {
+  font-size: 12px;
+  opacity: 80%;
+  color: inherit;
+}
+
+.player-card.selected .player-position {
+  opacity: 90%;
+}
+
+.selection-indicator {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-secondary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.player-card.selected .selection-indicator {
+  border-color: var(--bg-primary);
+  background-color: var(--bg-primary);
+  color: var(--accent-primary);
 }
 
 /* =========================
-   PRINT STYLES
+   MODALITÀ DOSSIER
    ========================= */
-@media print {
-  .analytics-page {
-    background: white;
-    padding: 0;
-  }
-  
-  .chart-card {
-    box-shadow: none;
-    border: 1px solid #ccc;
-    break-inside: avoid;
-  }
-  
-  .analytics-navigation {
-    display: none;
-  }
-  
+
+.dossier-view {
+  padding: var(--spacing-lg);
+}
+
+.player-selection-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.player-selection-container h3 {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.dossier-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dossier-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-muted);
+}
+
+/* back-btn ora usa .btn unificato */
+
+.dossier-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+/* =========================
+   MODALITÀ CONFRONTO
+   ========================= */
+
+.compare-view {
+  padding: var(--spacing-lg);
+}
+
+.compare-view .player-selection-container h3 {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.compare-view .compare-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--spacing-xl);
+}
+
+.compare-view .btn-primary {
+  background-color: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
+  color: var(--bg-primary);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.compare-view .btn-primary:hover {
+  background-color: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+}
+
+/* =========================
+   RESPONSIVE PER NUOVE MODALITÀ
+   ========================= */
+
+@media (width <= 768px) {
+
   .quick-actions {
-    display: none;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .main-actions {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .action-btn {
+    justify-content: center;
+    flex: 1;
+  }
+  
+  .export-action {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .dossier-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+  
+  .players-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 /* =========================
-   ACCESSIBILITY
+   FOCUS STATES ACCESSIBILI
    ========================= */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
 
-/* Focus styles */
-.analytics-btn:focus,
-.filter-control:focus,
-.tab-item:focus {
-  outline: 2px solid var(--primary-blue);
+*:focus-visible {
+  outline: 2px solid var(--text-primary);
   outline-offset: 2px;
 }
 
-/* High contrast mode */
-@media (prefers-contrast: high) {
-  .chart-card {
-    border: 2px solid var(--gray-800);
-  }
-  
-  .analytics-alert {
-    border-left-width: 6px;
-  }
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
 }

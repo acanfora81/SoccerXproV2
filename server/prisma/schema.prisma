@@ -10,177 +10,149 @@ datasource db {
 }
 
 model Team {
-  id                 String    @id @default(uuid()) @db.Uuid
+  id                 String              @id @default(uuid()) @db.Uuid
   name               String
-  slug               String    @unique
-  plan               String    @default("basic")
-  isActive           Boolean   @default(true)
-  maxPlayers         Int       @default(25)
-  maxUsers           Int       @default(5)
+  slug               String              @unique
+  plan               String              @default("basic")
+  isActive           Boolean             @default(true)
+  maxPlayers         Int                 @default(25)
+  maxUsers           Int                 @default(5)
   email              String?
   phone              String?
   address            String?
   vatNumber          String?
   subscriptionId     String?
-  subscriptionStatus String    @default("trial")
+  subscriptionStatus String              @default("trial")
   trialEndsAt        DateTime?
   subscriptionEndsAt DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  // relazioni originali
-  players Player[]      @relation("TeamPlayers")
-  users   UserProfile[] @relation("TeamUsers")
-
-  // nuove relazioni inverse per multi-tenant
-  performances    PerformanceData[]   @relation("TeamPerformances")
-  budgets         budgets[]           @relation("TeamBudgets")
-  expenses        expenses[]          @relation("TeamExpenses")
-  contracts       contracts[]         @relation("TeamContracts")
-  contractClauses contract_clauses[]  @relation("TeamContractClauses")
-  injuries        injuries[]          @relation("TeamInjuries")
-  medicalVisits   medical_visits[]    @relation("TeamMedicalVisits")
-  statistics      player_statistics[] @relation("TeamStatistics")
-  transfers       transfers[]         @relation("TeamTransfers")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  budgets            budgets[]           @relation("TeamBudgets")
+  contractClauses    contract_clauses[]  @relation("TeamContractClauses")
+  contracts          contracts[]         @relation("TeamContracts")
+  expenses           expenses[]          @relation("TeamExpenses")
+  injuries           injuries[]          @relation("TeamInjuries")
+  medicalVisits      medical_visits[]    @relation("TeamMedicalVisits")
+  performances       PerformanceData[]   @relation("TeamPerformances")
+  statistics         player_statistics[] @relation("TeamStatistics")
+  players            Player[]            @relation("TeamPlayers")
+  transfers          transfers[]         @relation("TeamTransfers")
+  users              UserProfile[]       @relation("TeamUsers")
 
   @@map("teams")
 }
 
 model UserProfile {
-  id                  Int       @id @default(autoincrement())
-  auth_user_id        String    @unique
-  email               String    @unique
-  first_name          String
-  last_name           String
-  role                UserRole  @default(SECRETARY)
-  theme_preference    String    @default("light")
-  language_preference String    @default("it")
-  is_active           Boolean   @default(true)
-  last_login          DateTime?
-  created_at          DateTime  @default(now())
-  updated_at          DateTime  @updatedAt
-
-  teamId String? @map("team_id") @db.Uuid
-  team   Team?   @relation("TeamUsers", fields: [teamId], references: [id])
-
+  id                     Int               @id @default(autoincrement())
+  auth_user_id           String            @unique
+  email                  String            @unique
+  first_name             String
+  last_name              String
+  role                   UserRole          @default(SECRETARY)
+  theme_preference       String            @default("light")
+  language_preference    String            @default("it")
+  is_active              Boolean           @default(true)
+  last_login             DateTime?
+  created_at             DateTime          @default(now())
+  updated_at             DateTime          @updatedAt
+  teamId                 String?           @map("team_id") @db.Uuid
   contracts              contracts[]
   injuries               injuries[]
   createdPerformanceData PerformanceData[] @relation("PerformanceDataCreator")
   createdPlayers         Player[]          @relation("PlayerCreator")
   transfers              transfers[]
+  team                   Team?             @relation("TeamUsers", fields: [teamId], references: [id])
 
   @@map("user_profiles")
 }
 
 model Player {
-  id             Int       @id @default(autoincrement())
-  firstName      String
-  lastName       String
-  dateOfBirth    DateTime
-  nationality    String
-  position       Position
-  shirtNumber    Int?      @unique
-  height         Float?
-  weight         Float?
-  preferredFoot  FootType?
-  placeOfBirth   String?
-  taxCode        String?   @unique
-  passportNumber String?   @unique
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  createdById    Int
-
-  teamId String? @map("team_id") @db.Uuid
-  team   Team?   @relation("TeamPlayers", fields: [teamId], references: [id])
-
+  id                Int                 @id @default(autoincrement())
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime
+  nationality       String
+  position          Position
+  shirtNumber       Int?                @unique
+  height            Float?
+  weight            Float?
+  preferredFoot     FootType?
+  placeOfBirth      String?
+  taxCode           String?             @unique
+  passportNumber    String?             @unique
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  createdById       Int
+  teamId            String?             @map("team_id") @db.Uuid
   contracts         contracts[]
   injuries          injuries[]
   medical_visits    medical_visits[]
   performanceData   PerformanceData[]
   player_statistics player_statistics[]
   createdBy         UserProfile         @relation("PlayerCreator", fields: [createdById], references: [id])
+  team              Team?               @relation("TeamPlayers", fields: [teamId], references: [id])
   transfers         transfers[]
 
   @@map("players")
 }
 
 model PerformanceData {
-  id                  Int          @id @default(autoincrement())
-  playerId            Int
-  session_date        DateTime
-  session_type        String?
-  duration_minutes    Int?
-  
-  // ================= CAMPI ESISTENTI =================
-  total_distance_m    Float?
-  sprint_distance_m   Float?
-  top_speed_kmh       Float?
-  avg_speed_kmh       Float?
-  player_load         Float?
-  high_intensity_runs Int?
-  max_heart_rate      Int?
-  avg_heart_rate      Int?
-  
-  // ================= NUOVI CAMPI - DISTANZE E VELOCITÀ =================
-  equivalent_distance_m           Float?  // Dist Equivalente
-  equivalent_distance_pct         Float?  // %Eq Dist
-  distance_per_min                Float?  // Dist/min
-  distance_over_15_kmh_m          Float?  // D > 15 Km/h
-  distance_15_20_kmh_m            Float?  // D 15-20 km/h
-  distance_20_25_kmh_m            Float?  // D 20-25 km/h
-  distance_over_25_kmh_m          Float?  // D > 25 km/h
-  distance_over_20_kmh_m          Float?  // D > 20 km/h
-  
-  // ================= NUOVI CAMPI - POTENZA METABOLICA =================
-  avg_metabolic_power_wkg         Float?  // Pot. met. media
-  distance_over_20wkg_m           Float?  // D > 20 W/Kg
-  distance_over_35wkg_m           Float?  // D>35 W
-  max_power_5s_wkg                Float?  // MaxPM5
-  
-  // ================= NUOVI CAMPI - ACCELERAZIONI/DECELERAZIONI =================
-  distance_acc_over_2_ms2_m       Float?  // D Acc > 2m/s2
-  distance_dec_over_minus2_ms2_m  Float?  // D Dec > -2m/s2
-  pct_distance_acc_over_2_ms2     Float?  // %D acc > 2m/s2
-  pct_distance_dec_over_minus2_ms2 Float? // %D Dec > -2 m/s2
-  distance_acc_over_3_ms2_m       Float?  // D Acc > 3 m/s2
-  distance_dec_over_minus3_ms2_m  Float?  // D Dec < -3 m/s2
-  num_acc_over_3_ms2              Int?    // Num Acc > 3 m/s2
-  num_dec_over_minus3_ms2         Int?    // Num Dec <-3 m/s2
-  acc_events_per_min_over_2_ms2   Float?  // D Acc/min > 2 m/s2
-  dec_events_per_min_over_minus2_ms2 Float? // D Dec/min > -2m/s2
-  
-  // ================= NUOVI CAMPI - ZONE DI INTENSITÀ =================
-  time_under_5wkg_min             Int?    // T/min <5 W/kg
-  time_5_10_wkg_min               Int?    // T/min 5-10 W/Kg
-  
-  // ================= NUOVI CAMPI - INDICI E PROFILI =================
-  rvp_index                       Float?  // RVP
-  training_load                   Float?  // Training Load (duplicato di player_load per compatibilità)
-  
-  // ================= NUOVI CAMPI - INFORMAZIONI AGGIUNTIVE =================
-  session_day                     String? // Day
-  is_match                        Boolean? // Match
-  drill_name                      String? // Drill
-  
-  // ================= CAMPI SISTEMA =================
-  source_device       String?
-  notes               String?
-  extras              Json?
-  created_at          DateTime     @default(now())
-  updated_at          DateTime     @updatedAt
-
-  createdById Int?
-  created_by  UserProfile? @relation("PerformanceDataCreator", fields: [createdById], references: [id])
-  player      Player       @relation(fields: [playerId], references: [id])
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamPerformances", fields: [teamId], references: [id])
+  id                                 Int          @id @default(autoincrement())
+  playerId                           Int
+  session_date                       DateTime
+  session_type                       String?
+  duration_minutes                   Int?
+  total_distance_m                   Float?
+  sprint_distance_m                  Float?
+  top_speed_kmh                      Float?
+  avg_speed_kmh                      Float?
+  player_load                        Float?
+  high_intensity_runs                Int?
+  max_heart_rate                     Int?
+  avg_heart_rate                     Int?
+  source_device                      String?
+  notes                              String?
+  created_at                         DateTime     @default(now())
+  updated_at                         DateTime     @updatedAt
+  createdById                        Int?
+  teamId                             String       @map("team_id") @db.Uuid
+  extras                             Json?
+  acc_events_per_min_over_2_ms2      Float?
+  avg_metabolic_power_wkg            Float?
+  dec_events_per_min_over_minus2_ms2 Float?
+  distance_15_20_kmh_m               Float?
+  distance_20_25_kmh_m               Float?
+  distance_acc_over_2_ms2_m          Float?
+  distance_acc_over_3_ms2_m          Float?
+  distance_dec_over_minus2_ms2_m     Float?
+  distance_dec_over_minus3_ms2_m     Float?
+  distance_over_15_kmh_m             Float?
+  distance_over_20_kmh_m             Float?
+  distance_over_20wkg_m              Float?
+  distance_over_25_kmh_m             Float?
+  distance_over_35wkg_m              Float?
+  distance_per_min                   Float?
+  drill_name                         String?
+  equivalent_distance_m              Float?
+  equivalent_distance_pct            Float?
+  is_match                           Boolean?
+  max_power_5s_wkg                   Float?
+  num_acc_over_3_ms2                 Int?
+  num_dec_over_minus3_ms2            Int?
+  pct_distance_acc_over_2_ms2        Float?
+  pct_distance_dec_over_minus2_ms2   Float?
+  rvp_index                          Float?
+  session_day                        String?
+  time_5_10_wkg_min                  Int?
+  time_under_5wkg_min                Int?
+  training_load                      Float?
+  created_by                         UserProfile? @relation("PerformanceDataCreator", fields: [createdById], references: [id])
+  player                             Player       @relation(fields: [playerId], references: [id])
+  team                               Team         @relation("TeamPerformances", fields: [teamId], references: [id])
 
   @@map("performance_data")
 }
-
 
 model budgets {
   id           Int            @id @default(autoincrement())
@@ -192,12 +164,9 @@ model budgets {
   description  String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamBudgets", fields: [teamId], references: [id])
-
-  expenses expenses[]
+  teamId       String         @map("team_id") @db.Uuid
+  team         Team           @relation("TeamBudgets", fields: [teamId], references: [id])
+  expenses     expenses[]
 
   @@unique([year, category])
 }
@@ -212,36 +181,30 @@ model contract_clauses {
   contractId  Int
   createdAt   DateTime   @default(now())
   updatedAt   DateTime
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamContractClauses", fields: [teamId], references: [id])
-
-  contracts contracts @relation(fields: [contractId], references: [id])
+  teamId      String     @map("team_id") @db.Uuid
+  contracts   contracts  @relation(fields: [contractId], references: [id])
+  team        Team       @relation("TeamContractClauses", fields: [teamId], references: [id])
 }
 
 model contracts {
-  id           Int            @id @default(autoincrement())
-  startDate    DateTime
-  endDate      DateTime
-  salary       Decimal        @db.Decimal(10, 2)
-  currency     String         @default("EUR")
-  contractType ContractType
-  status       ContractStatus @default(ACTIVE)
-  signedDate   DateTime?
-  notes        String?
-  playerId     Int
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime
-  createdById  Int
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamContracts", fields: [teamId], references: [id])
-
+  id               Int                @id @default(autoincrement())
+  startDate        DateTime
+  endDate          DateTime
+  salary           Decimal            @db.Decimal(10, 2)
+  currency         String             @default("EUR")
+  contractType     ContractType
+  status           ContractStatus     @default(ACTIVE)
+  signedDate       DateTime?
+  notes            String?
+  playerId         Int
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  createdById      Int
+  teamId           String             @map("team_id") @db.Uuid
   contract_clauses contract_clauses[]
   user_profiles    UserProfile        @relation(fields: [createdById], references: [id])
   players          Player             @relation(fields: [playerId], references: [id])
+  team             Team               @relation("TeamContracts", fields: [teamId], references: [id])
 }
 
 model expenses {
@@ -254,16 +217,13 @@ model expenses {
   budgetId    Int?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamExpenses", fields: [teamId], references: [id])
-
-  budgets budgets? @relation(fields: [budgetId], references: [id])
+  teamId      String         @map("team_id") @db.Uuid
+  budgets     budgets?       @relation(fields: [budgetId], references: [id])
+  team        Team           @relation("TeamExpenses", fields: [teamId], references: [id])
 }
 
 model injuries {
-  id             Int            @id @default(autoincrement())
+  id             Int              @id @default(autoincrement())
   injuryType     InjuryType
   bodyPart       BodyPart
   severity       InjurySeverity
@@ -271,21 +231,18 @@ model injuries {
   injuryDate     DateTime
   expectedReturn DateTime?
   actualReturn   DateTime?
-  status         InjuryStatus   @default(ACTIVE)
+  status         InjuryStatus     @default(ACTIVE)
   diagnosis      String?
   treatment      String?
   notes          String?
   playerId       Int
-  createdAt      DateTime       @default(now())
+  createdAt      DateTime         @default(now())
   updatedAt      DateTime
   createdById    Int
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamInjuries", fields: [teamId], references: [id])
-
+  teamId         String           @map("team_id") @db.Uuid
   user_profiles  UserProfile      @relation(fields: [createdById], references: [id])
   players        Player           @relation(fields: [playerId], references: [id])
+  team           Team             @relation("TeamInjuries", fields: [teamId], references: [id])
   medical_visits medical_visits[]
 }
 
@@ -302,13 +259,10 @@ model medical_visits {
   injuryId  Int?
   createdAt DateTime  @default(now())
   updatedAt DateTime
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamMedicalVisits", fields: [teamId], references: [id])
-
-  injuries injuries? @relation(fields: [injuryId], references: [id])
-  players  Player    @relation(fields: [playerId], references: [id])
+  teamId    String    @map("team_id") @db.Uuid
+  injuries  injuries? @relation(fields: [injuryId], references: [id])
+  players   Player    @relation(fields: [playerId], references: [id])
+  team      Team      @relation("TeamMedicalVisits", fields: [teamId], references: [id])
 }
 
 model player_statistics {
@@ -323,38 +277,32 @@ model player_statistics {
   playerId      Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamStatistics", fields: [teamId], references: [id])
-
-  players Player @relation(fields: [playerId], references: [id])
+  teamId        String   @map("team_id") @db.Uuid
+  players       Player   @relation(fields: [playerId], references: [id])
+  team          Team     @relation("TeamStatistics", fields: [teamId], references: [id])
 
   @@unique([playerId, season])
 }
 
 model transfers {
-  id           Int            @id @default(autoincrement())
-  transferType TransferType
-  transferDate DateTime?
-  fee          Decimal?       @db.Decimal(12, 2)
-  currency     String?        @default("EUR")
-  status       TransferStatus @default(NEGOTIATING)
-  fromClub     String?
-  toClub       String?
-  agent        String?
-  notes        String?
-  playerId     Int
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime
-  createdById  Int
-
-  // nuovo: team
-  teamId String @map("team_id") @db.Uuid
-  team   Team   @relation("TeamTransfers", fields: [teamId], references: [id])
-
-  user_profiles UserProfile @relation(fields: [createdById], references: [id])
-  players       Player      @relation(fields: [playerId], references: [id])
+  id            Int            @id @default(autoincrement())
+  transferType  TransferType
+  transferDate  DateTime?
+  fee           Decimal?       @db.Decimal(12, 2)
+  currency      String?        @default("EUR")
+  status        TransferStatus @default(NEGOTIATING)
+  fromClub      String?
+  toClub        String?
+  agent         String?
+  notes         String?
+  playerId      Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime
+  createdById   Int
+  teamId        String         @map("team_id") @db.Uuid
+  user_profiles UserProfile    @relation(fields: [createdById], references: [id])
+  players       Player         @relation(fields: [playerId], references: [id])
+  team          Team           @relation("TeamTransfers", fields: [teamId], references: [id])
 }
 
 enum BodyPart {

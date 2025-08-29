@@ -17,6 +17,13 @@ import Reports from './components/analytics/Reports';
 import './index.css'; // ← Questo contiene TUTTI i CSS importati
 
 function App() {
+  // 🎨 Applicazione tema al caricamento
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('soccerxpro-theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  }, []);
   // Hook per lo store di autenticazione
   const {
     user,

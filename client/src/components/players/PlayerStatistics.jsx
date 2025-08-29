@@ -380,7 +380,7 @@ const PlayerStatistics = () => {
         <div className="detail-card">
           <h3>Dati Fisici per Ruolo</h3>
           <div className="detail-table">
-            <table>
+            <table className="table">
               <thead>
                 <tr>
                   <th>Ruolo</th>

@@ -1,22 +1,18 @@
-/* client/src/index.css */
-/* 🎨 Reset CSS di base per SoccerXpro V2 */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* client/src/styles/index.css */
+@import url('./variables.css');
+@import url('./global.css');
+@import url('./themes.css');
+@import url('./layout.css');
+@import url('./dashboard.css');
+@import url('./players.css');
+@import url('./statistics.css');
+@import url('./analytics.css');
+@import url('./upload.css');
+@import url('./import-wizard.css');
+@import url('./mapping.css');
+@import url('./analytics/index.css');
 
 #root {
   width: 100%;
   min-height: 100vh;
 }
-
-/* Import del tema principale */
-@import './styles/themes.css';

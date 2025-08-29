@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "test:auth": "node tests/auth-test.js",
     "test:logout": "node tests/logout-security-test.js",
     "prisma:generate": "npx prisma generate",

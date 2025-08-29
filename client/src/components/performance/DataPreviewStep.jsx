@@ -382,7 +382,7 @@ const DataPreviewStep = ({ fileId, mappingResult, originalExtension, onBack, onR
               </div>
               
               <div className="preview-table-container">
-                <table className="preview-table">
+                <table className="table preview-table">
                   <thead>
                     <tr>
                       {rows[0] ? Object.keys(rows[0]).map((column) => (

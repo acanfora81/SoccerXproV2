@@ -20,6 +20,7 @@ const csv = require("csv-parser");
 const xlsx = require("xlsx");
 const fs = require("fs");
 const path = require("path");
+const { completeRow } = require("../utils/gpsDeriver.js");
 
 const upload = multer({ dest: "uploads/" });
 
@@ -27,9 +28,15 @@ console.log("🟢 Caricamento route performance multi-tenant...");
 
 const router = express.Router();
 
-// 🟠 Configurazioni ottimizzazione import
-const BATCH_SIZE = 10; // Record per batch - ottimizzato per performance  
-const TRANSACTION_TIMEOUT = 20000; // Timeout esteso a 20 secondi
+// 🟠 Configurazioni ottimizzazione import (configurabili via ENV)
+const BATCH_SIZE = Math.max(
+  1,
+  parseInt(process.env.IMPORT_BATCH_SIZE || "100", 10) || 100
+); // Record per batch
+const TRANSACTION_TIMEOUT =
+  parseInt(process.env.IMPORT_TX_TIMEOUT_MS || "20000", 10) || 20000; // ms
+const BATCH_DELAY_MS =
+  parseInt(process.env.IMPORT_BATCH_DELAY_MS || "0", 10) || 0; // ms
 
 // 🔐 Middleware di autenticazione + tenant context per tutte le route
 router.use(authenticate, tenantContext); // 🔧 FIXED - Aggiunto tenantContext
@@ -604,14 +611,83 @@ try {
                 // Altri campi principali per debug
               });
 
+              // 🧠 INTEGRAZIONE GPS DERIVER - Completa i dati mancanti
+              const partialRow = {
+                Player: rowData.playerName || "Sconosciuto",
+                Position: rowData.position || "",
+                Day: rowData.session_date,
+                Match: rowData.session_type === "Match" ? "Yes" : "No",
+                T: rowData.duration_minutes || 0,
+                "Distanza (m)": rowData.total_distance_m || 0,
+                "Dist Equivalente": rowData.equivalent_distance_m || null,
+                "Training Load": rowData.training_load || rowData.player_load || null,
+                "SMax (kmh)": rowData.top_speed_kmh || null,
+                "D 15-20 km/h": rowData.distance_15_20_kmh_m || null,
+                "D 20-25 km/h": rowData.distance_20_25_kmh_m || null,
+                "D > 25 km/h": rowData.distance_over_25_kmh_m || null,
+                "D > 20 W/Kg": rowData.distance_over_20wkg_m || null,
+                "D>35 W": rowData.distance_over_35wkg_m || null,
+                "D Acc > 2m/s2": rowData.distance_acc_over_2_ms2_m || null,
+                "D Dec > -2m/s2": rowData.distance_dec_over_minus2_ms2_m || null,
+                "Num Acc > 3 m/s2": rowData.num_acc_over_3_ms2 || null,
+                "Num Dec <-3 m/s2": rowData.num_dec_over_minus3_ms2 || null,
+                "Pot. met. media": rowData.avg_metabolic_power_wkg || null,
+                Drill: rowData.drill_name || null,
+                Note: rowData.note || ""
+              };
+
+              const { row: completedRow, imputationFlags } = completeRow(partialRow, {
+                eqA: 0.6, eqB: 0.8, eqC: 1.6,
+                tlK1: 0.5, tlK2: 0.02,
+                defaultDrill: "Allenamento Tecnico"
+              });
+
+              // Log dei campi imputati per audit
+              const imputedFields = Object.entries(imputationFlags)
+                .filter(([, wasImputed]) => wasImputed)
+                .map(([field]) => field);
+              
+              if (imputedFields.length > 0) {
+                console.log(`🟡 Giocatore ${completedRow.Player}: campi imputati:`, imputedFields);
+              }
+
               const performanceData = {
                 playerId: rowData.playerId,
                 session_date: rowData.session_date,
                 session_type: rowData.session_type || null,
-                duration_minutes: rowData.duration_minutes || null,
-                total_distance_m: rowData.total_distance_m || null,
+                duration_minutes: completedRow.T,
+                total_distance_m: completedRow["Distanza (m)"],
+                equivalent_distance_m: completedRow["Dist Equivalente"],
+                distance_per_min: completedRow["Dist/min"],
+                avg_metabolic_power_wkg: completedRow["Pot. met. media"],
+                distance_over_20wkg_m: completedRow["D > 20 W/Kg"],
+                distance_acc_over_2_ms2_m: completedRow["D Acc > 2m/s2"],
+                distance_dec_over_minus2_ms2_m: completedRow["D Dec > -2m/s2"],
+                distance_over_15_kmh_m: completedRow["D > 15 Km/h"],
+                pct_distance_acc_over_2_ms2: completedRow["%D acc > 2m/s2"],
+                pct_distance_dec_over_minus2_ms2: completedRow["%D Dec > -2 m/s2"],
+                time_under_5wkg_min: completedRow["T/min <5 W/kg"],
+                time_5_10_wkg_min: completedRow["T/min 5-10 W/Kg"],
+                distance_15_20_kmh_m: completedRow["D 15-20 km/h"],
+                distance_20_25_kmh_m: completedRow["D 20-25 km/h"],
+                distance_over_25_kmh_m: completedRow["D > 25 km/h"],
+                top_speed_kmh: completedRow["SMax (kmh)"],
+                acc_events_per_min_over_2_ms2: completedRow["D Acc/min > 2 m/s2"],
+                dec_events_per_min_over_minus2_ms2: completedRow["D Dec/min > -2m/s2"],
+                rvp_index: completedRow.RVP,
+                distance_over_35wkg_m: completedRow["D>35 W"],
+                training_load: completedRow["Training Load"],
+                distance_over_20_kmh_m: completedRow["D > 20 km/h"],
+                distance_acc_over_3_ms2_m: completedRow["D Acc > 3 m/s2"],
+                distance_dec_over_minus3_ms2_m: completedRow["D Dec < -3 m/s2"],
+                num_acc_over_3_ms2: completedRow["Num Acc > 3 m/s2"],
+                num_dec_over_minus3_ms2: completedRow["Num Dec <-3 m/s2"],
+                max_power_5s_wkg: completedRow.MaxPM5,
+                is_match: completedRow.Match === "Yes",
+                drill_name: completedRow.Drill,
+                notes: completedRow.Note || null,
+                // Campi legacy per compatibilità
                 sprint_distance_m: rowData.sprint_distance_m || null,
-                top_speed_kmh: rowData.top_speed_kmh || null,
                 avg_speed_kmh: rowData.avg_speed_kmh || null,
                 player_load: rowData.player_load || null,
                 high_intensity_runs: rowData.high_intensity_runs || null,
@@ -635,28 +711,17 @@ try {
                     connect: { id: teamId }, // AGGIUNGI QUESTA RIGA
                   },
                 },
-                include: {
-                  player: {
-                    select: { firstName: true, lastName: true },
-                  },
-                },
               });
 
-              console.log(
-                "🟢 Record creato:",
-                created.id,
-                "per",
-                created.player.firstName,
-                created.player.lastName
-              );
+              console.log("🟢 Record creato:", created.id);
 
               importResults.successful.push({
                 id: created.id,
-                playerName: `${created.player.firstName} ${created.player.lastName}`,
+                playerName: rowData.playerName || "",
                 sessionDate: created.session_date,
               });
 
-              importResults.summary.playersAffected.add(created.playerId);
+              importResults.summary.playersAffected.add(playerId);
             } catch (rowError) {
               console.log("🔴 Errore inserimento riga:", rowError.message);
               importResults.failed.push({
@@ -1608,6 +1673,13 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
       "righe"
     ); // INFO DEV - rimuovere in produzione
 
+    // 🔎 Precarica mappa playerId -> nome per evitare include per riga
+    const players = await prisma.player.findMany({
+      where: { teamId },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    const playerIdToName = new Map(players.map(p => [p.id, `${p.firstName} ${p.lastName}`]));
+
     // 🟠 Processo ogni batch con timeout configurabile
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
@@ -1619,12 +1691,14 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
         await prisma.$transaction(async (tx) => {
           for (const rowData of batch) {
             try {
-              console.log("🟡 Preparazione dati per DB:", {
-                playerId: rowData.playerId,
-                session_date: rowData.session_date,
-                total_distance_m: rowData.total_distance_m,
-                sprint_distance_m: rowData.sprint_distance_m
-              }); // DEBUG - rimuovere in produzione
+              if (process.env.IMPORT_DEBUG === '1') {
+                console.log("🟡 Preparazione dati per DB:", {
+                  playerId: rowData.playerId,
+                  session_date: rowData.session_date,
+                  total_distance_m: rowData.total_distance_m,
+                  sprint_distance_m: rowData.sprint_distance_m
+                });
+              }
               
               // 🔧 Prepara dati con controllo campi obbligatori
               const performanceData = {
@@ -1692,34 +1766,38 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
 
               const { playerId: pId, ...dataWithoutPlayerId } = performanceData;
 
-              const created = await tx.performanceData.create({
-                data: {
-                  ...dataWithoutPlayerId,
-                  player: {
-                    connect: { id: pId },
+              // Se lo schema consente FK scalari, usiamole per ridurre overhead
+              let created;
+              if (tx.performanceData.fields?.playerId && tx.performanceData.fields?.teamId) {
+                created = await tx.performanceData.create({
+                  data: {
+                    ...dataWithoutPlayerId,
+                    playerId: pId,
+                    teamId: teamId,
                   },
-                  team: {
-                    connect: { id: teamId },
+                });
+              } else {
+                created = await tx.performanceData.create({
+                  data: {
+                    ...dataWithoutPlayerId,
+                    player: { connect: { id: pId } },
+                    team: { connect: { id: teamId } },
                   },
-                },
-                include: {
-                  player: {
-                    select: { firstName: true, lastName: true },
-                  },
-                },
-              });
+                });
+              }
 
-              console.log(
-                "🟢 Record creato:",
-                created.id,
-                "per",
-                created.player.firstName,
-                created.player.lastName
-              ); // INFO - rimuovere in produzione
+              if (process.env.IMPORT_DEBUG === '1') {
+                console.log(
+                  "🟢 Record creato:",
+                  created.id,
+                  "per",
+                  playerIdToName.get(created.playerId) || created.playerId
+                );
+              }
 
               importResults.successful.push({
                 id: created.id,
-                playerName: `${created.player.firstName} ${created.player.lastName}`,
+                playerName: playerIdToName.get(created.playerId) || "",
                 sessionDate: created.session_date,
               });
 
@@ -1740,9 +1818,9 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
 
         console.log(`🟢 Batch ${batchIndex + 1} completato: ${batch.length} record processati`); // INFO - rimuovere in produzione
 
-        // 🟠 Pausa tra batch per evitare sovraccarico database
-        if (batchIndex + 1 < batches.length) {
-          await new Promise(resolve => setTimeout(resolve, 200));
+        // 🟠 Pausa tra batch per evitare sovraccarico database (configurabile)
+        if (BATCH_DELAY_MS > 0 && (batchIndex + 1 < batches.length)) {
+          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
         }
 
       } catch (batchError) {
