@@ -112,6 +112,23 @@ const PlayersList = () => {
     return matchesSearch && matchesPosition;
   });
 
+  // Ordina giocatori: prima per ruolo, poi per cognome alfabetico
+  const sortedPlayers = [...filteredPlayers].sort((a, b) => {
+    // Prima ordina per ruolo (ordine: Portiere, Difensore, Centrocampista, Attaccante)
+    const positionOrder = {
+      'GOALKEEPER': 1,
+      'DEFENDER': 2,
+      'MIDFIELDER': 3,
+      'FORWARD': 4
+    };
+    
+    const positionDiff = positionOrder[a.position] - positionOrder[b.position];
+    if (positionDiff !== 0) return positionDiff;
+    
+    // A parità di ruolo, ordina per cognome alfabetico
+    return a.lastName.localeCompare(b.lastName, 'it');
+  });
+
   // Log dei risultati filtro quando cambiano
   useEffect(() => {
     console.log('🔵 Filtri applicati - Risultati:', filteredPlayers.length, 'di', players.length); // INFO DEV - rimuovere in produzione
@@ -183,7 +200,7 @@ const PlayersList = () => {
       <div className="players-header">
         <div className="header-left">
           <h2>Gestione Giocatori</h2>
-          <p>{filteredPlayers.length} giocatori trovati</p>
+          <p>{sortedPlayers.length} giocatori trovati</p>
         </div>
         <div className="header-right">
           <button 
@@ -226,7 +243,7 @@ const PlayersList = () => {
       </div>
 
       {/* Lista giocatori */}
-      {filteredPlayers.length === 0 ? (
+      {sortedPlayers.length === 0 ? (
         <div className="empty-state">
           <Users size={48} />
           <h3>Nessun giocatore trovato</h3>
@@ -248,20 +265,23 @@ const PlayersList = () => {
         </div>
       ) : (
         <div className="players-grid">
-          {filteredPlayers.map(player => (
-            <div key={player.id} className="player-card">
+          {sortedPlayers.map(player => (
+            <div key={player.id} className="card player-card">
               <div className="player-card-header">
                 <div className="player-name">
                   <h3>{player.firstName} {player.lastName}</h3>
-                  <span className="player-position">
-                    {getPositionLabel(player.position)}
-                  </span>
                 </div>
                 {player.shirtNumber && (
                   <div className="shirt-number">
                     {player.shirtNumber}
                   </div>
                 )}
+              </div>
+              
+              <div className="player-position-section">
+                <span className="player-position">
+                  {getPositionLabel(player.position)}
+                </span>
               </div>
 
               <div className="player-card-body">
@@ -299,7 +319,7 @@ const PlayersList = () => {
                 <small>Aggiunto il {formatDate(player.createdAt)}</small>
                 <button 
                   onClick={() => handleEditPlayer(player)}
-                  className="btn btn-outline"
+                  className="btn btn-secondary edit-btn"
                 >
                   Modifica
                 </button>

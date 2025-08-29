@@ -44,7 +44,7 @@ const ComparePanel = ({
 }) => {
   const [chartType, setChartType] = useState('overlay');   // overlay, radar, scatter
   const [metric, setMetric] = useState('playerLoad');      // playerLoad, distance, topSpeed, avgHeartRate
-  const [timeRange, setTimeRange] = useState('30d');
+  const [timeRange, setTimeRange] = useState('all');
   const [sessionsByPlayer, setSessionsByPlayer] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -432,7 +432,7 @@ const ComparePanel = ({
 
     return (
       <div className="stats-table-container">
-        <table className="compare-stats-table">
+        <table className="table compare-stats-table">
           <thead>
             <tr>
               <th>Metrica</th>
@@ -495,10 +495,10 @@ const ComparePanel = ({
           </div>
         </div>
         <div className="header-actions">
-          <button className="back-btn secondary" onClick={onBack}>
+          <button className="btn btn--ghost back-btn" onClick={onBack}>
             <ArrowLeft size={16} /> Lista Giocatori
           </button>
-          <button className="back-btn" onClick={onClose}>
+          <button className="btn btn--ghost back-btn" onClick={onClose}>
             <MinusCircle size={16} /> Chiudi Confronto
           </button>
         </div>

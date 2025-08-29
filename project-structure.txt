@@ -1,4 +1,4 @@
-# Struttura progetto aggiornata: 27/08/2025, 14:48:27
+# Struttura progetto aggiornata: 28/08/2025, 22:01:03
 
 ├── client
 │   ├── public
@@ -8,7 +8,10 @@
 │   │   │   └── react.svg
 │   │   ├── components
 │   │   │   ├── analytics
+│   │   │   │   ├── sections
+│   │   │   │   │   └── CaricoVolumi.jsx
 │   │   │   │   ├── Analytics.jsx
+│   │   │   │   ├── AnalyticsAdvanced.jsx
 │   │   │   │   ├── ComparePanel.jsx
 │   │   │   │   ├── PlayerDossier.jsx
 │   │   │   │   ├── PlayerList.jsx
@@ -30,12 +33,22 @@
 │   │   │   │   ├── PlayersList.jsx
 │   │   │   │   └── PlayerStatistics.jsx
 │   │   │   └── ui
+│   │   │       ├── PageLoader.jsx
 │   │   │       └── ThemeToggle.jsx
 │   │   ├── store
 │   │   │   └── authStore.js
 │   │   ├── styles
+│   │   │   ├── analytics
+│   │   │   │   ├── charts.css
+│   │   │   │   ├── index.css
+│   │   │   │   └── navigation.css
+│   │   │   ├── sections
 │   │   │   ├── analytics.css
+│   │   │   ├── animations.css
+│   │   │   ├── components.css
 │   │   │   ├── dashboard.css
+│   │   │   ├── forms.css
+│   │   │   ├── global.css
 │   │   │   ├── import-wizard.css
 │   │   │   ├── index.css
 │   │   │   ├── layout.css
@@ -43,7 +56,11 @@
 │   │   │   ├── players.css
 │   │   │   ├── statistics.css
 │   │   │   ├── themes.css
-│   │   │   └── upload.css
+│   │   │   ├── upload.css
+│   │   │   ├── utilities.css
+│   │   │   └── variables.css
+│   │   ├── utils
+│   │   │   └── http.js
 │   │   ├── App.jsx
 │   │   ├── index.css
 │   │   └── main.jsx
@@ -143,8 +160,11 @@
 │   │   ├── utils
 │   │   │   ├── columnMapper.js
 │   │   │   ├── dateParser.js
+│   │   │   ├── gpsDeriver.example.js
+│   │   │   ├── gpsDeriver.js
 │   │   │   ├── permissions.js
 │   │   │   ├── playerLookup.js
+│   │   │   ├── README.md
 │   │   │   └── tokenBlacklist.js
 │   │   └── app.js
 │   ├── tests
@@ -158,6 +178,7 @@
 │   │   ├── 08436b06554bac7d19bdcb8e86a3acaf
 │   │   ├── 08f81d4e3d41d5cb2cc139206def7c08
 │   │   ├── 0a2a2dbca1ee6ff2c84fa378f4a77c09
+│   │   ├── 14dd696f63ca116d771d4bb99d170d12
 │   │   ├── 22b03a7ffeb1b1992db72bf0311d3edc
 │   │   ├── 2aa4f795ccb0042370915a83917a705d
 │   │   ├── 2fe06122c62956d6796a10c8aa0a07d5
@@ -171,13 +192,21 @@
 │   │   ├── 6145decef9a0e39cd76a91c591acf561
 │   │   ├── 628931bba12ffdb06d9b82d4a046038b
 │   │   ├── 6c6b147a42672a516310897dfeb262aa
+│   │   ├── 6c84eae2449734e26ef00b46aab2070c
 │   │   ├── 892ed41eda46cd7059fe6e86da74db50
+│   │   ├── 949cdbafd22a9d0538960bf7621c2883
+│   │   ├── a3d99f813e73b32d55220993ae4aafd2
+│   │   ├── b1045f42701cd14e91bd18e0845a3aec
 │   │   ├── b9f0f3bee994545dfa28c52dddadf9c1
+│   │   ├── ba7f792f101314a33905c293fffbf78f
+│   │   ├── dfdeb9e8218b183b82bd1503c1fb8866
 │   │   ├── ed0ca3370145a1c57d2b6db69eb76de6
 │   │   ├── ee44ae2b620d77decdca5d7b96ee2033
+│   │   ├── ee738d0273f87dbe58cb70665f4edd6e
 │   │   └── ff203daa1cca3711da23fdbbff4000a4
 │   ├── assign-players-to-team.js
 │   ├── debug-supabase.js
+│   ├── jest.config.js
 │   ├── package-lock.json
 │   ├── package.json
 │   ├── patch-assign-admin.js

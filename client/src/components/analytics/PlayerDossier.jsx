@@ -30,7 +30,7 @@ const PlayerDossier = ({
   allSessions = [],
   onBack
 }) => {
-  const [timeRange, setTimeRange] = useState('7d'); // 7d, 14d, 30d, 90d, all
+  const [timeRange, setTimeRange] = useState('all'); // 7d, 14d, 30d, 90d, all
   const [chartType, setChartType] = useState('line'); // line, bar, area
 
   // --- Helpers UI ---
@@ -371,7 +371,7 @@ const filteredSessions = useMemo(() => {
           </div>
         </div>
         <div>
-          <button className="back-btn" onClick={onBack}>
+          <button className="btn btn--ghost back-btn" onClick={onBack}>
             <ArrowLeft size={16} /> Lista Giocatori
           </button>
         </div>
@@ -453,7 +453,7 @@ const filteredSessions = useMemo(() => {
 
       {/* KPI OVERVIEW (kpi-overview + kpi-card) */}
       <div className="kpi-overview section-spacing">
-        <div className="kpi-card">
+        <div className="card kpi-card">
           <div className="kpi-header">
             <div className="kpi-icon"><Target /></div>
           </div>
@@ -467,7 +467,7 @@ const filteredSessions = useMemo(() => {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="card kpi-card">
           <div className="kpi-header">
             <div className="kpi-icon"><Zap /></div>
           </div>
@@ -481,7 +481,7 @@ const filteredSessions = useMemo(() => {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="card kpi-card">
           <div className="kpi-header">
             <div className="kpi-icon"><Activity /></div>
           </div>
@@ -495,7 +495,7 @@ const filteredSessions = useMemo(() => {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="card kpi-card">
           <div className="kpi-header">
             <div className="kpi-icon"><Award /></div>
           </div>
@@ -512,7 +512,7 @@ const filteredSessions = useMemo(() => {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="card kpi-card">
           <div className="kpi-header">
             <div className="kpi-icon"><Heart /></div>
           </div>
@@ -526,7 +526,7 @@ const filteredSessions = useMemo(() => {
           </div>
         </div>
 
-        <div className="kpi-card">
+        <div className="card kpi-card">
           <div className="kpi-header">
             <div className="kpi-icon"><Clock /></div>
           </div>
@@ -544,7 +544,7 @@ const filteredSessions = useMemo(() => {
       {/* CHARTS */}
       <div className="charts-section">
         {/* Distanze & Player Load */}
-        <div className="chart-card chart-spacing">
+        <div className="card chart-card chart-spacing">
           <div className="chart-header">
             <h4 className="chart-title">📏 Distanze e Player Load</h4>
             <Info size={16} title="Evoluzione dei carichi" />
@@ -595,7 +595,7 @@ const filteredSessions = useMemo(() => {
         </div>
 
         {/* Velocità & Intensità */}
-        <div className="chart-card chart-spacing">
+        <div className="card chart-card chart-spacing">
           <div className="chart-header">
             <h4 className="chart-title">⚡ Velocità e Intensità</h4>
             <Info size={16} title="Performance di velocità nel tempo" />
@@ -646,7 +646,7 @@ const filteredSessions = useMemo(() => {
         </div>
 
         {/* Frequenza Cardiaca */}
-        <div className="chart-card">
+        <div className="card chart-card">
           <div className="chart-header">
             <h4 className="chart-title">❤️ Frequenza Cardiaca</h4>
             <Info size={16} title="Monitoraggio cardiaco durante le sessioni" />
@@ -695,7 +695,7 @@ const filteredSessions = useMemo(() => {
         </div>
 
         {/* High Speed Running & HSR */}
-        <div className="chart-card">
+        <div className="card chart-card">
           <div className="chart-header">
             <h4 className="chart-title">🚀 High Speed Running & HSR</h4>
             <Info size={16} title="Distanze ad alta intensità" />
@@ -746,7 +746,7 @@ const filteredSessions = useMemo(() => {
         </div>
 
         {/* Metriche derivate */}
-        <div className="chart-card">
+        <div className="card chart-card">
           <div className="chart-header">
             <h4 className="chart-title">🧮 Metriche Derivate</h4>
             <Info size={16} title="Metriche calcolate per analisi avanzata" />
@@ -799,7 +799,7 @@ const filteredSessions = useMemo(() => {
         </div>
 
         {/* Correlazione Player Load vs Distanza */}
-        <div className="chart-card">
+        <div className="card chart-card">
           <div className="chart-header">
             <h4 className="chart-title">📊 Correlazione Player Load vs Distanza</h4>
             <Info size={16} title="Relazione tra carico e distanza percorsa" />
@@ -826,7 +826,7 @@ const filteredSessions = useMemo(() => {
       </div>
 
       {/* SESSION DETAILS TABLE */}
-      <div className="chart-card table-spacing">
+      <div className="card chart-card table-spacing">
         <div className="chart-header">
           <h4 className="chart-title">📋 Dettaglio Sessioni</h4>
           <Info size={16} title="Tabella con tutte le metriche delle sessioni" />
@@ -850,7 +850,7 @@ const filteredSessions = useMemo(() => {
             `}
           </style>
 
-          <table className="sx-table">
+          <table className="table sx-table">
             <thead>
               <tr>
                 <th style={{width: '90px'}}>Data</th>

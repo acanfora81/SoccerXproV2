@@ -1,0 +1,115 @@
+@layer utilities {
+  /* Animazioni centralizzate */
+  
+  /* Loading animations */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Fade animations */
+  @keyframes fadeIn {
+
+    from {
+      opacity: 0%;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 100%;
+      transform: none;
+    }
+  }
+  
+  /* Slide animations */
+  @keyframes slideIn {
+
+    from {
+      opacity: 0%;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 100%;
+      transform: none;
+    }
+  }
+  
+  @keyframes slideInCard {
+
+    from {
+      opacity: 0%;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 100%;
+      transform: none;
+    }
+  }
+  
+  @keyframes slideInRight {
+
+    from {
+      opacity: 0%;
+      transform: translateX(20px);
+    }
+
+    to {
+      opacity: 100%;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slideInUp {
+
+    from {
+      opacity: 0%;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 100%;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Pulse animation */
+  @keyframes pulse {
+    0%, 100% { opacity: 100%; }
+    50% { opacity: 70%; }
+  }
+  
+  /* Modal animations */
+  @keyframes modalSlideIn {
+
+    from {
+      opacity: 0%;
+      transform: translateY(-50px);
+    }
+
+    to {
+      opacity: 100%;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Fade up animation */
+  @keyframes fadeInUp {
+
+    from {
+      opacity: 0%;
+      transform: translateY(30px);
+    }
+
+    to {
+      opacity: 100%;
+      transform: translateY(0);
+    }
+  }
+}

@@ -1,5 +1,7 @@
 /* client/src/styles/statistics.css */
+
 /* Stili per modulo statistiche giocatori - SoccerXpro V2 */
+@import url('./variables.css');
 
 .statistics-container {
   max-width: 1400px;
@@ -8,6 +10,7 @@
 }
 
 /* HEADER */
+
 .statistics-header {
   margin-bottom: 30px;
 }
@@ -16,16 +19,17 @@
   font-size: 32px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 8px 0;
+  margin: 0 0 8px;
 }
 
 .statistics-header p {
   color: var(--text-primary);
-  opacity: 0.7;
+  opacity: 70%;
   margin: 0;
 }
 
 /* STATS OVERVIEW */
+
 .stats-overview {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -37,27 +41,27 @@
   background: var(--bg-primary);
   border: 2px solid var(--border-color);
   border-radius: 12px;
-  padding: 24px;
+  padding: var(--spacing-lg);
   display: flex;
   align-items: center;
   gap: 16px;
   transition: all 0.2s ease;
+  height: 120px; /* Altezza uniforme */
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px var(--shadow);
-}
+.stat-card:hover { box-shadow: none; transform: none; }
 
 .stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
-  background: rgba(59, 130, 246, 0.1);
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 .stat-content {
@@ -68,24 +72,25 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
-  opacity: 0.7;
-  margin: 0 0 4px 0;
+  opacity: 70%;
+  margin: 0 0 4px;
 }
 
 .stat-number {
   font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 4px 0;
+  margin: 0 0 4px;
 }
 
 .stat-detail {
   font-size: 12px;
   color: var(--text-primary);
-  opacity: 0.6;
+  opacity: 60%;
 }
 
 /* CHART SELECTOR */
+
 .chart-selector {
   display: flex;
   gap: 12px;
@@ -117,6 +122,7 @@
 }
 
 /* CHARTS GRID */
+
 .charts-grid {
   margin-bottom: 30px;
 }
@@ -125,42 +131,44 @@
   background: var(--bg-primary);
   border: 2px solid var(--border-color);
   border-radius: 12px;
-  padding: 24px;
+  padding: var(--spacing-lg);
 }
 
 .chart-container h3 {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 20px 0;
+  margin: 0 0 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-color);
 }
 
 /* DETAILS GRID */
+
 .details-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
+  gap: var(--spacing-lg);
 }
 
 .detail-card {
   background: var(--bg-primary);
   border: 2px solid var(--border-color);
   border-radius: 12px;
-  padding: 24px;
+  padding: var(--spacing-lg);
 }
 
 .detail-card h3 {
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 20px 0;
+  margin: 0 0 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-color);
 }
 
 /* DETAIL TABLE */
+
 .detail-table {
   overflow-x: auto;
 }
@@ -181,8 +189,8 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  opacity: 0.8;
-  background: rgba(59, 130, 246, 0.05);
+  opacity: 80%;
+  background: var(--accent-muted);
 }
 
 .detail-table td {
@@ -192,10 +200,11 @@
 }
 
 .detail-table tr:hover {
-  background: rgba(59, 130, 246, 0.03);
+  background: var(--accent-muted);
 }
 
 /* SHIRT NUMBERS */
+
 .shirt-numbers {
   display: flex;
   flex-direction: column;
@@ -206,7 +215,7 @@
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 12px 0;
+  margin: 0 0 12px;
 }
 
 .number-tags {
@@ -241,18 +250,18 @@
 }
 
 .number-tag.available:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: var(--accent-muted);
 }
 
 .number-tags .more {
   font-size: 12px;
-  color: var(--text-primary);
-  opacity: 0.6;
+  color: var(--text-secondary);
   font-weight: 500;
   margin-left: 8px;
 }
 
 /* LOADING E ERROR STATES */
+
 .loading-state,
 .error-state {
   display: flex;
@@ -266,33 +275,32 @@
 
 .loading-state svg {
   margin-bottom: 20px;
-  opacity: 0.6;
+  opacity: 60%;
   animation: spin 1s linear infinite;
 }
 
 .loading-state p,
 .error-state p {
   margin: 10px 0;
-  opacity: 0.8;
+  opacity: 80%;
 }
 
 .error-state button {
   margin-top: 20px;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+/* Animazione spin ora centralizzata in animations.css */
 
 /* RESPONSIVE */
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
+
   .details-grid {
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
+
   .statistics-container {
     padding: 15px;
   }
@@ -331,7 +339,8 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
+
   .stats-overview {
     grid-template-columns: 1fr;
   }
@@ -351,8 +360,9 @@
 }
 
 /* DARK THEME ADJUSTMENTS */
+
 :root[data-theme="dark"] .stat-icon {
-  background: rgba(139, 92, 246, 0.1);
+  background: rgb(139 92 246 / 10%);
 }
 
 :root[data-theme="dark"] .chart-selector button:hover,
@@ -362,17 +372,17 @@
 }
 
 :root[data-theme="dark"] .detail-table th {
-  background: rgba(139, 92, 246, 0.05);
+  background: rgb(139 92 246 / 5%);
 }
 
 :root[data-theme="dark"] .detail-table tr:hover {
-  background: rgba(139, 92, 246, 0.03);
+  background: rgb(139 92 246 / 3%);
 }
 
 :root[data-theme="dark"] .number-tag.available:hover {
-  background: rgba(139, 92, 246, 0.1);
+  background: rgb(139 92 246 / 10%);
 }
 
 :root[data-theme="dark"] .stat-card:hover {
-  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 8px 25px rgb(139 92 246 / 10%);
 }

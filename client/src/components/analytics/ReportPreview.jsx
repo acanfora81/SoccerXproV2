@@ -47,7 +47,7 @@ const ReportPreview = ({ teamStats = {}, topPlayers = [], alerts = [] }) => {
       <div className="detail-card" style={{ marginTop: "30px" }}>
         <h3>Top 5 Giocatori — Distanza Totale</h3>
         <div className="detail-table">
-          <table>
+                      <table className="table">
             <thead>
               <tr>
                 <th>Giocatore</th>

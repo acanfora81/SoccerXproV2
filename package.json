@@ -16,6 +16,8 @@
     "build-storybook": "storybook build",
     "lint": "eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext js,jsx,ts,tsx --fix",
+    "lint:css": "stylelint \"client/src/**/*.css\"",
+    "fix:css": "stylelint \"client/src/**/*.css\" --fix",
     "format": "prettier --write .",
     "server": "cd server && npm run dev",
     "server:prod": "cd server && npm start",
@@ -58,6 +60,7 @@
     "react-redux": "^9.0.4",
     "react-router-dom": "^6.20.1",
     "recharts": "^2.8.0",
+    "xlsx": "^0.18.5",
     "yup": "^1.4.0"
   },
   "devDependencies": {
@@ -86,6 +89,10 @@
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^3.1.1",
     "storybook": "^7.6.3",
+    "stylelint": "^16.23.1",
+    "stylelint-config-clean-order": "^7.0.0",
+    "stylelint-config-recommended": "^17.0.0",
+    "stylelint-config-standard": "^36.0.1",
     "tree-cli": "^0.6.7",
     "typescript": "^5.3.3",
     "vite": "^5.0.8"

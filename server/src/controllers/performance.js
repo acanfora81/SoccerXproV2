@@ -109,9 +109,20 @@ const getPerformanceData = async (req, res) => {
 
     // Paginazione
     const pageNum = Math.max(1, toIntOrNull(page) || 1);
-    const pageSizeNum = Math.min(100, Math.max(1, toIntOrNull(pageSize) || 20));
-    const skip = (pageNum - 1) * pageSizeNum;
+    
+    // Se richiesto "all", carica tutti i dati senza limiti
+    const requestAll = req.query.all === 'true' || req.query.all === '1';
+    const pageSizeNum = requestAll ? 10000 : Math.min(100, Math.max(1, toIntOrNull(pageSize) || 20));
+    const skip = requestAll ? 0 : (pageNum - 1) * pageSizeNum;
     const take = pageSizeNum;
+    
+    console.log('🔍 API Performance - Parametri:', {
+      requestAll,
+      pageSizeNum,
+      skip,
+      take,
+      where: JSON.stringify(where)
+    });
 
     const [total, performanceData] = await Promise.all([
       prisma.performanceData.count({ where }),
@@ -144,6 +155,16 @@ const getPerformanceData = async (req, res) => {
     ]);
 
     console.log('🔵 Performance data recuperati per team:', teamId, '- Records:', performanceData.length); // INFO DEV
+    
+    // Debug: range date nei dati restituiti
+    if (performanceData.length > 0) {
+      const dates = performanceData.map(p => p.session_date).sort();
+      console.log('📅 Range date API:', {
+        prima: dates[0],
+        ultima: dates[dates.length - 1],
+        totale: dates.length
+      });
+    }
 
     res.json({
       message: 'Dati performance recuperati con successo',
