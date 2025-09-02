@@ -7,10 +7,12 @@ import LoginForm from './components/auth/LoginForm';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './components/dashboard/Dashboard';
 import PlayersList from './components/players/PlayersList';
+import PlayerStatistics from './components/players/PlayerStatistics';
+import AnalyticsAdvanced from './components/performance/AnalyticsAdvanced';
 import './styles/themes.css';
 import './styles/layout.css';
 import './styles/dashboard.css';
-import PlayerStatistics from './components/players/PlayerStatistics';
+import './styles/analytics.css';
 
 function App() {
   // Hook per lo store di autenticazione
@@ -49,6 +51,29 @@ function App() {
         return <PlayersList />;
       case 'players-stats':
         return <PlayerStatistics />;
+      case 'performance':
+        return (
+          <div className="page-placeholder">
+            <h2>Performance</h2>
+            <p>Modulo in sviluppo - Gestione performance giocatori</p>
+          </div>
+        );
+      case 'performance-analytics':
+        return <AnalyticsAdvanced />;
+      case 'performance-import':
+        return (
+          <div className="page-placeholder">
+            <h2>Import Dati Performance</h2>
+            <p>Modulo in sviluppo - Import dati da dispositivi GPS</p>
+          </div>
+        );
+      case 'performance-reports':
+        return (
+          <div className="page-placeholder">
+            <h2>Reports Performance</h2>
+            <p>Modulo in sviluppo - Generazione reports performance</p>
+          </div>
+        );
       case 'contracts':
         return (
           <div className="page-placeholder">
