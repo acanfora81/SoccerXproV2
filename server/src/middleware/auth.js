@@ -4,7 +4,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const { getPrismaClient } = require('../config/database');
 
-console.log('🟢 Caricamento middleware autenticazione sicuro...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Caricamento middleware autenticazione sicuro...'); // INFO - rimuovere in produzione
 
 // Inizializza Supabase client (service role, no sessione persistita)
 const supabase = createClient(
@@ -57,12 +57,12 @@ const getUserProfile = async (userId) => {
 // ------------------------------
 const authenticate = async (req, res, next) => {
   try {
-    console.log('🔵 Verifica autenticazione...'); // INFO DEV
+    console.log('🔵 [DEBUG] Verifica autenticazione...'); // INFO DEV
 
     // 1) Estrai token (cookie -> header)
     const token = extractToken(req);
     if (!token) {
-      console.log('🟡 Token mancante (cookie/header)'); // WARNING
+      console.log('🟡 [WARN] Token mancante (cookie/header)'); // WARNING
       return res.status(401).json({
         error: 'Token di autenticazione richiesto',
         code: 'MISSING_TOKEN'
@@ -72,7 +72,7 @@ const authenticate = async (req, res, next) => {
     // 2) Verifica token con Supabase
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      console.log('🟡 Token non valido/scaduto:', authError?.message); // WARNING
+      console.log('🟡 [WARN] Token non valido/scaduto:', authError?.message); // WARNING
       return res.status(401).json({
         error: 'Token non valido o scaduto',
         code: 'INVALID_TOKEN',
@@ -80,7 +80,7 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    console.log('🟢 Utente autenticato:', user.email); // INFO
+    console.log('🟢 [INFO] Utente autenticato:', user.email); // INFO
 
     // 3) Carica UserProfile
     const userProfile = await getUserProfile(user.id);
@@ -94,7 +94,7 @@ const authenticate = async (req, res, next) => {
     }
 
     if (!userProfile.is_active) {
-      console.log('🟡 Account disattivato:', user.email); // WARNING
+      console.log('🟡 [WARN] Account disattivato:', user.email); // WARNING
       return res.status(403).json({
         error: 'Account disattivato',
         code: 'ACCOUNT_DISABLED'
@@ -110,7 +110,7 @@ const authenticate = async (req, res, next) => {
       theme_preference: userProfile.theme_preference || 'light'
     };
 
-    console.log('🟢 Autenticazione completata, ruolo:', req.user.role); // INFO
+    console.log('🟢 [INFO] Autenticazione completata, ruolo:', req.user.role); // INFO
     next();
 
   } catch (error) {
@@ -138,7 +138,7 @@ const optionalAuth = async (req, res, next) => {
     theme_preference: 'light'
   };
 
-  console.log('🔵 Accesso guest'); // INFO DEV
+  console.log('🔵 [DEBUG] Accesso guest'); // INFO DEV
   next();
 };
 

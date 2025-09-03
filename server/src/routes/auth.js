@@ -8,7 +8,7 @@ const { login, register, logout, refreshToken } = require('../controllers/auth')
 
 const router = express.Router();
 
-console.log('🟢 Caricamento route autenticazione...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Caricamento route autenticazione...'); // INFO - rimuovere in produzione
 
 /**
  * 🛡️ Rate limiting per login/register (protezione brute force)
@@ -24,7 +24,7 @@ const authRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
-    console.log('🟡 Rate limit superato per IP:', req.ip); // WARNING - rimuovere in produzione
+    console.log('🟡 [WARN] Rate limit superato per IP:', req.ip); // WARNING - rimuovere in produzione
     res.status(429).json({
       error: 'Troppi tentativi di login',
       code: 'RATE_LIMIT_EXCEEDED',
@@ -51,7 +51,7 @@ const refreshRateLimit = rateLimit({
  * POST /api/auth/login
  */
 router.post('/login', authRateLimit, (req, res, next) => {
-  console.log('🔵 POST /api/auth/login chiamato'); // INFO - rimuovere in produzione
+  console.log('🔵 [DEBUG] POST /api/auth/login chiamato'); // INFO - rimuovere in produzione
   
   // Validazione base
   if (!req.body || typeof req.body !== 'object') {
@@ -69,7 +69,7 @@ router.post('/login', authRateLimit, (req, res, next) => {
  * POST /api/auth/register
  */
 router.post('/register', authRateLimit, (req, res, next) => {
-  console.log('🔵 POST /api/auth/register chiamato'); // INFO - rimuovere in produzione
+  console.log('🔵 [DEBUG] POST /api/auth/register chiamato'); // INFO - rimuovere in produzione
   
   // Validazione base
   if (!req.body || typeof req.body !== 'object') {
@@ -96,7 +96,7 @@ router.post('/register', authRateLimit, (req, res, next) => {
  * POST /api/auth/logout
  */
 router.post('/logout', authenticate, (req, res, next) => {
-  console.log('🔵 POST /api/auth/logout chiamato'); // INFO - rimuovere in produzione
+  console.log('🔵 [DEBUG] POST /api/auth/logout chiamato'); // INFO - rimuovere in produzione
   next();
 }, logout);
 
@@ -105,7 +105,7 @@ router.post('/logout', authenticate, (req, res, next) => {
  * POST /api/auth/refresh
  */
 router.post('/refresh', refreshRateLimit, (req, res, next) => {
-  console.log('🔵 POST /api/auth/refresh chiamato'); // INFO - rimuovere in produzione
+  console.log('🔵 [DEBUG] POST /api/auth/refresh chiamato'); // INFO - rimuovere in produzione
   
   // Validazione base
   if (!req.body || typeof req.body !== 'object') {
@@ -123,7 +123,7 @@ router.post('/refresh', refreshRateLimit, (req, res, next) => {
  * GET /api/auth/me
  */
 router.get('/me', authenticate, (req, res) => {
-  console.log('🔵 GET /api/auth/me chiamato'); // INFO - rimuovere in produzione
+  console.log('🔵 [DEBUG] GET /api/auth/me chiamato'); // INFO - rimuovere in produzione
   
   try {
     res.json({
@@ -157,7 +157,7 @@ router.get('/me', authenticate, (req, res) => {
  * PATCH /api/auth/theme
  */
 router.patch('/theme', authenticate, (req, res) => {
-  console.log('🔵 PATCH /api/auth/theme chiamato'); // INFO - rimuovere in produzione
+  console.log('🔵 [DEBUG] PATCH /api/auth/theme chiamato'); // INFO - rimuovere in produzione
   
   try {
     const { theme_preference } = req.body;

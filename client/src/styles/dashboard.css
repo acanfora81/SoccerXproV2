@@ -1,6 +1,6 @@
 /* client/src/styles/dashboard.css */
 
-/* Dashboard styles per SoccerXpro V2 */
+/* Dashboard styles per Athlos */
 
 .dashboard {
   max-width: 1400px;
@@ -43,9 +43,7 @@
   /* Eredita da .card: background, border, border-radius, padding, box-shadow, transition */
 }
 
-.stat-card:hover { 
-  /* Mantiene comportamento specifico */
-}
+
 
 .stat-icon {
   width: 48px;

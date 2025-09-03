@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import PageLoader from '../ui/PageLoader';
+import * as XLSX from 'xlsx';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -16,21 +18,29 @@ import {
   Eye,
   EyeOff,
   GitCompare,
-  User
+  User,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
+import { useFilters, buildPerformanceQuery, FiltersBar } from '../../modules/filters/index.js';
+import { apiFetch } from '../../utils/http';
 import '../../styles/analytics/index.css';
+import '../../modules/filters/filters.css';
 
 // Import dei componenti delle sezioni
 import CaricoVolumi from './sections/CaricoVolumi';
-import ComparePanel from './ComparePanel';
-import PlayerDossier from './PlayerDossier';
-// import Intensita from './sections/Intensita';
-// import AltaVelocita from './sections/AltaVelocita';
-// import Accelerazioni from './sections/Accelerazioni';
-// import Energetico from './sections/Energetico';
-// import RischioRecupero from './sections/RischioRecupero';
-// import Comparazioni from './sections/Comparazioni';
-// import ReportCoach from './sections/ReportCoach';
+import Intensita from './sections/Intensita';
+import AltaVelocita from './sections/AltaVelocita';
+import Accelerazioni from './sections/Accelerazioni';
+import Energetico from './sections/Energetico';
+import RischioRecupero from './sections/RischioRecupero';
+import Comparazioni from './sections/Comparazioni';
+import ReportCoach from './sections/ReportCoach';
+
+// Import per le tab Squadra/Giocatore
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+import { Select, SelectTrigger, SelectValue, SelectContentWithRoles, SelectItem } from "../Select";
+
 
 // =========================
 // CONFIGURAZIONE SEZIONI (fuori dal componente per evitare ricreazione)
@@ -99,304 +109,658 @@ const SECTIONS = [
       description: 'Potenza metabolica, RVP e costi energetici',
       color: '#EF4444',
       charts: [
-        'Distanza sopra 20 e 35 W/kg',
-        '% distanza equivalente su reale',
-        'Indice RVP per giocatore',
-        'MaxPM5 (power max 5s)',
-        'Analisi costi energetici'
+        'Potenza metabolica per sessione',
+        'RVP (Relative Velocity Power)',
+        'Costi energetici per ruolo',
+        'Distribuzione potenza metabolica',
+        'Confronto energetico squadre'
       ]
     },
     {
       id: 'rischio-recupero',
       title: 'Rischio & Recupero',
       icon: Shield,
-      description: 'Monitoraggio infortuni e gestione carichi',
-      color: '#06B6D4',
+      description: 'ACWR, monotonia, strain e readiness',
+      color: '#EC4899',
       charts: [
-        'Training Load giornaliero/settimanale',
-        'ACWR con zone colorate',
-        'Carico meccanico cumulativo',
-        'Trend distanza equivalente',
-        'Indicatori semaforo per giocatore'
+        'ACWR per giocatore',
+        'Monotonia del carico',
+        'Strain vs fitness',
+        'Readiness score',
+        'Rischio infortunio'
       ]
     },
     {
       id: 'comparazioni',
-      title: 'Comparazioni & Correlazioni',
-      icon: Users,
-      description: 'Correlazioni, confronti e analisi multivariate',
-      color: '#84CC16',
+      title: 'Comparazioni',
+      icon: GitCompare,
+      description: 'Confronti tra giocatori, ruoli e periodi',
+      color: '#06B6D4',
       charts: [
-        'Correlazione Player Load vs Distanza',
-        'Correlazione accelerazioni vs infortuni',
-        'Confronto allenamenti vs partite',
-        'Radar chart per ruolo',
-        'Analisi multivariate'
+        'Confronto giocatori per KPI',
+        'Analisi per ruolo',
+        'Trend temporali',
+        'Benchmark squadra',
+        'Confronto periodi'
       ]
     },
     {
       id: 'report-coach',
       title: 'Report Coach',
-      icon: Target,
-      description: 'Report pratici per preparatori atletici',
-      color: '#F97316',
+      icon: Users,
+      description: 'Report personalizzati per preparatori',
+      color: '#8B5CF6',
       charts: [
-        'Confronto Drill per tipo',
-        'Confronto Match Day -1, -2, +1',
-        'Heatmap carichi settimanali',
-        'Ranking giocatori per metriche',
-        'Report personalizzati'
-             ]
-     }
-   ];
+        'Report settimanale',
+        'Report mensile',
+        'Report per giocatore',
+        'Report per ruolo',
+        'Report personalizzato'
+      ]
+    }
+];
 
+// =========================
+// FUNZIONI UTILITY
+// =========================
+const exportToCSV = (data, filename) => {
+  if (!data || data.length === 0) return;
+  
+  const headers = Object.keys(data[0]);
+  const csvContent = [
+    headers.join(','),
+    ...data.map(row => headers.map(header => `"${row[header]}"`).join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const exportToExcel = (data, filename) => {
+  if (!data || data.length === 0) return;
+  
+  // Crea un nuovo workbook
+  const wb = XLSX.utils.book_new();
+  
+  // Converte i dati in worksheet
+  const ws = XLSX.utils.json_to_sheet(data);
+  
+  // Aggiunge il worksheet al workbook
+  XLSX.utils.book_append_sheet(wb, ws, 'Dati');
+  
+  // Esporta il file
+  XLSX.writeFile(wb, `${filename}.xlsx`);
+};
+
+// =========================
+// COMPONENTE PRINCIPALE
+// =========================
 const AnalyticsAdvanced = () => {
+  const { filters } = useFilters();
+  
   // =========================
   // STATE MANAGEMENT
   // =========================
-  const [activeSection, setActiveSection] = useState('carico-volumi');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   
-  // Filtri globali
-  const [timeRange, setTimeRange] = useState('all');
-  const [selectedPlayers, setSelectedPlayers] = useState([]);
-  const [selectedPosition, setSelectedPosition] = useState('all');
-  const [sessionType, setSessionType] = useState('all');
-  const [viewMode, setViewMode] = useState('charts'); // charts, table, compact
-  
   // Dati
-  const [players, setPlayers] = useState([]);
   const [performanceData, setPerformanceData] = useState([]);
-  const [sessionsByPlayer, setSessionsByPlayer] = useState({});
+  const [players, setPlayers] = useState([]);
   
-  // Modalità di visualizzazione principale
-  const [mainViewMode, setMainViewMode] = useState('analysis'); // 'analysis', 'dossier', 'compare'
+  // UI State
+  const [activeSection, setActiveSection] = useState('carico-volumi');
   
-  // Funzionalità confronto
-  const [compareIds, setCompareIds] = useState([]);
-  const [showComparePanel, setShowComparePanel] = useState(false);
+  // Tab Squadra/Giocatore
+  const [viewMode, setViewMode] = useState("team"); // "team" | "player"
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [dashboardData, setDashboardData] = useState({});
+
+  // State per comparazione (disattivata in questa pagina)
   
-  // Funzionalità dossier
-  const [selectedPlayerForDossier, setSelectedPlayerForDossier] = useState(null);
-  // const [showDossierPanel, setShowDossierPanel] = useState(false); // TODO: implementare
+  // Export
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [showFilters, setShowFilters] = useState(false);
+
+  console.log('🟢 AnalyticsAdvanced: sezione', activeSection, 'con filtri compatti'); // INFO - rimuovere in produzione
+
+  // =========================
+  // CACHE SYSTEM
+  // =========================
+  const [dataCache, setDataCache] = useState(new Map());
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minuti
 
   // =========================
   // DATA FETCHING
   // =========================
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
+  
+  // Funzione per caricare i dati del team
+  const fetchTeamData = useCallback(async (forceRefresh = false) => {
+    try {
+      if (!performanceData.length || forceRefresh) {
         setLoading(true);
-        setError(null);
+      } else {
+        setIsRefreshing(true);
+      }
+      setError(null);
+      
+      console.log('🔄 fetchTeamData chiamato - Caricamento dati team...');
+      
+      const query = buildPerformanceQuery(filters);
+      
+      // Carica dati performance aggregati per i grafici
+      const performanceResponse = await apiFetch(`/api/performance?${query}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      // 🔧 FIX: Carica anche dati ACWR specifici per i grafici
+      const acwrQuery = buildPerformanceQuery({ ...filters, acwrOnly: 'true' });
+      const acwrResponse = await apiFetch(`/api/performance?${acwrQuery}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!performanceResponse.ok) {
+        const errorText = await performanceResponse.text();
+        throw new Error(`Errore caricamento performance: ${performanceResponse.status} - ${errorText}`);
+      }
 
-        // Fetch players
-        const playersResponse = await fetch('/api/players', {
-          credentials: 'include'
+      const performanceResult = await performanceResponse.json();
+      const aggregatedDataFromAPI = performanceResult.data || [];
+      
+      console.log('✅ Dati performance team caricati:', aggregatedDataFromAPI.length, 'record');
+      
+      // 🔧 FIX: Estrai dati ACWR dalla risposta meta
+      let combinedData = [...aggregatedDataFromAPI];
+      if (performanceResult.meta && performanceResult.meta.acwrData) {
+        const acwrDataFromAPI = performanceResult.meta.acwrData;
+        console.log('✅ Dati ACWR estratti da meta:', acwrDataFromAPI.length, 'record');
+        combinedData.acwrData = acwrDataFromAPI;
+      }
+      
+      setPerformanceData(combinedData);
+      
+      // Gestisci dati ACWR aggiuntivi se disponibili
+      if (acwrResponse.ok) {
+        const acwrResult = await acwrResponse.json();
+        const acwrDataFromAPI = acwrResult.data || [];
+        console.log('✅ Dati ACWR aggiuntivi caricati:', acwrDataFromAPI.length, 'record');
+        
+        // Combina con eventuali dati ACWR già presenti
+        if (acwrDataFromAPI.length > 0) {
+          combinedData.acwrData = [...(combinedData.acwrData || []), ...acwrDataFromAPI];
+          setPerformanceData(combinedData);
+        }
+      }
+      
+      // Carica anche i dati dashboard per le card
+      const dashboardResponse = await apiFetch(`/api/dashboard/stats/team?${query}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (dashboardResponse.ok) {
+        const dashboardResult = await dashboardResponse.json();
+        setDashboardData(dashboardResult.data || {});
+      }
+      
+    } catch (error) {
+      console.error('Errore caricamento dati team:', error);
+      setError(`Errore caricamento dati team: ${error.message}`);
+      setPerformanceData([]);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [filters, performanceData.length]);
+
+  // Funzione per caricare i dati del giocatore
+  const fetchPlayerData = useCallback(async () => {
+    if (!selectedPlayer) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 fetchPlayerData chiamato - Caricamento dati giocatore:', selectedPlayer);
+      
+      const query = buildPerformanceQuery(filters);
+      
+      // Carica dati dashboard per le card
+      const response = await apiFetch(`/api/dashboard/stats/player/${selectedPlayer}?${query}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Errore ${response.status}: ${response.statusText}`);
+      }
+      
+      const responseData = await response.json();
+      setDashboardData(responseData.data || {});
+      
+      // Per i grafici, carica anche i dati performance aggregati del giocatore
+      const performanceResponse = await apiFetch(`/api/performance?${query}&playerId=${selectedPlayer}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (performanceResponse.ok) {
+        const performanceResult = await performanceResponse.json();
+        const playerPerformanceData = performanceResult.data || [];
+        console.log('✅ Dati performance giocatore caricati:', playerPerformanceData.length, 'record');
+        setPerformanceData(playerPerformanceData);
+      }
+      
+    } catch (error) {
+      console.error('Errore caricamento dati giocatore:', error);
+      setError(`Errore caricamento dati giocatore: ${error.message}`);
+      setPerformanceData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedPlayer, filters]);
+
+  const fetchData = useCallback(async (forceRefresh = false) => {
+    try {
+      // Mostra loading solo se non abbiamo dati o è un refresh forzato
+      if (!performanceData.length || forceRefresh) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true); // Loading silenzioso per aggiornamenti
+      }
+      setError(null);
+      
+      console.log('🔄 fetchData chiamato - Caricamento dati Analytics Avanzate...');
+      
+      // 🔧 FIX: Cache key per evitare chiamate duplicate
+      const cacheKey = [
+        filters.period,
+        filters.sessionType,
+        filters.sessionName,
+        (filters.roles || []).join('|'),
+        (filters.players || []).join('|'),
+        filters.startDate || '',
+        filters.endDate || '',
+        'aggregated' // 🔧 FIX: Aggiunto per cache con aggregazione
+      ].join('::');
+      
+      // Controlla cache
+      const cached = dataCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        console.log('✅ Dati dalla cache:', cached.data.length, 'record');
+        setPerformanceData(cached.data);
+        setLoading(false);
+        return;
+      }
+      
+      // 🔧 FIX: UNA SOLA chiamata API con aggregazione automatica
+      console.log('🔄 Chiamata API performance con aggregazione automatica...');
+      
+      const query = buildPerformanceQuery(filters); // Ora include aggregate=true
+      console.log('🔍 DEBUG - Query API performance:', query);
+      
+      const performanceResponse = await apiFetch(`/api/performance?${query}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!performanceResponse.ok) {
+        const errorText = await performanceResponse.text();
+        console.error('🔴 Errore API performance:', performanceResponse.status, errorText);
+        throw new Error(`Errore caricamento performance: ${performanceResponse.status} - ${errorText}`);
+      }
+
+      const performanceResult = await performanceResponse.json();
+      console.log('🟢 Performance data aggregati caricati:', performanceResult.data?.length || 0, 'date uniche');
+      
+      // 🔧 FIX: I dati arrivano GIÀ AGGREGATI PER DATA dal backend
+      const aggregatedDataFromAPI = performanceResult.data || [];
+      console.log('✅ Dati già aggregati dal backend:', aggregatedDataFromAPI.length, 'giorni unici');
+      
+      // 🔍 DEBUG: Analisi struttura dati aggregati
+      if (aggregatedDataFromAPI.length > 0) {
+        console.log('🔍 DEBUG fetchData - Primo record aggregato:', aggregatedDataFromAPI[0]);
+        console.log('🔍 DEBUG fetchData - Chiavi disponibili:', Object.keys(aggregatedDataFromAPI[0]));
+        console.log('🔍 DEBUG fetchData - Campione valori:', {
+          dateFull: aggregatedDataFromAPI[0]?.dateFull,
+          totalDistance: aggregatedDataFromAPI[0]?.totalDistance,
+          playerLoad: aggregatedDataFromAPI[0]?.playerLoad,
+          sessions: aggregatedDataFromAPI[0]?.sessions?.length || 'N/A'
+        });
+      }
+      
+      // 🔧 VERIFICA: Controlla che i filtri date siano rispettati
+      if (aggregatedDataFromAPI.length > 0) {
+        const firstDay = aggregatedDataFromAPI[0];
+        console.log('🔍 VERIFICA DATI AGGREGATI:', {
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          period: filters.period,
+          hasSingleDatePerEntry: firstDay?.dateFull ? true : false,
+          hasAggregatedMetrics: firstDay?.totalDistance ? true : false,
+          hasSessionCount: firstDay?.sessionsCount ? true : false,
+          firstDayStructure: Object.keys(firstDay || {}).join(', ')
+        });
+      }
+      console.log('🔍 DEBUG - Filtri applicati:', {
+        period: filters.period,
+        sessionType: filters.sessionType,
+        sessionName: filters.sessionName,
+        roles: filters.roles
+      });
+      console.log('🔍 DEBUG - Query inviata:', query);
+      
+      // Carica lista giocatori
+      const playersResponse = await apiFetch('/api/players', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!playersResponse.ok) {
+        throw new Error(`Errore API players: ${playersResponse.status}`);
+      }
+      
+      const playersResponseData = await playersResponse.json();
+      console.log('✅ Players data caricati:', playersResponseData.length, 'giocatori');
+      
+      // 🔧 FIX: Estrai i dati dalla response
+      const playersData = playersResponseData.data || playersResponseData;
+      
+      setPerformanceData(aggregatedDataFromAPI);
+      setPlayers(playersData);
+      
+      // 🔧 FIX: Verifica formato dati aggregati per debug
+      console.log('🔍 Verifica formato dati aggregati:', {
+        isArray: Array.isArray(aggregatedDataFromAPI),
+        length: aggregatedDataFromAPI?.length,
+        firstItem: aggregatedDataFromAPI?.[0],
+        hasExpectedFields: aggregatedDataFromAPI?.[0]?.dateFull && aggregatedDataFromAPI?.[0]?.totalDistance,
+        dataStructure: aggregatedDataFromAPI?.[0] ? Object.keys(aggregatedDataFromAPI[0]) : 'N/A'
+      });
+      
+      // Salva in cache
+      setDataCache(prev => {
+        const newCache = new Map(prev);
+        newCache.set(cacheKey, {
+          data: aggregatedDataFromAPI,
+          timestamp: Date.now()
+        });
+        return newCache;
+      });
+      
+    } catch (e) {
+      console.error('❌ Errore caricamento dati:', e);
+      setError(`Errore caricamento dati: ${e.message}`);
+      // In caso di errore, assicurati che performanceData sia un array vuoto
+      setPerformanceData([]);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [filters.period, filters.sessionType, filters.sessionName, filters.roles, filters.players, filters.startDate, filters.endDate, performanceData.length, CACHE_DURATION, dataCache, filters]);
+
+  // Carica dati al mount e quando cambiano i filtri
+  useEffect(() => {
+    console.log('🔄 useEffect triggered - filtri cambiati:', {
+      period: filters.period,
+      sessionType: filters.sessionType,
+      sessionName: filters.sessionName,
+      roles: filters.roles,
+      players: filters.players
+    });
+    
+    // 🔧 FIX: Guard intelligente - blocca solo se period='custom' senza date E non è il primo caricamento
+    if (filters.period === 'custom' && (!filters.startDate || !filters.endDate)) {
+      // Se abbiamo già dei dati, non bloccare (potrebbe essere un cambio di filtro)
+      if (performanceData.length > 0) {
+        console.log('⏳ Periodo personalizzato selezionato, in attesa delle date...');
+        return; // aspetta che l'utente scelga le date
+      }
+      // Se non abbiamo dati, carica comunque per evitare pagina vuota
+      console.log('🔄 Caricamento iniziale con period=custom, procedo comunque...');
+    }
+    console.log('🔄 Chiamando fetchData...');
+    fetchData();
+  }, [fetchData, filters.period, filters.startDate, filters.endDate, performanceData.length, filters.players, filters.roles, filters.sessionName, filters.sessionType]);
+
+  // Effect per cambio vista Squadra/Giocatore
+  useEffect(() => {
+    if (viewMode === "team") {
+      fetchTeamData();
+    } else if (viewMode === "player" && selectedPlayer) {
+      fetchPlayerData();
+    }
+  }, [viewMode, selectedPlayer, fetchTeamData, fetchPlayerData]);
+
+  // Carica lista giocatori all'avvio
+  useEffect(() => {
+    const loadPlayers = async () => {
+      try {
+        const response = await apiFetch('/api/players', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
         });
         
-        if (!playersResponse.ok) {
-          throw new Error('Errore nel caricamento giocatori');
+        if (response.ok) {
+          const data = await response.json();
+          const playersData = data.data || data;
+          setPlayers(playersData);
         }
-        
-                 const playersResponseData = await playersResponse.json();
-         
-         // L'API restituisce { message, data, count } - prendiamo solo data
-         const playersData = playersResponseData.data || playersResponseData;
-         
-         // Controllo sicurezza: assicuriamoci che sia un array
-         if (!Array.isArray(playersData)) {
-           console.error('API players ha restituito:', playersResponseData);
-           throw new Error('Formato dati giocatori non valido');
-         }
-         
-         setPlayers(playersData);
-
-                 // Fetch performance data - CARICA TUTTI I DATI SENZA PAGINAZIONE
-         console.log('🔄 Caricamento dati performance completi...');
-         
-         // Carica performance data senza limiti di paginazione
-         console.log('🔄 Chiamata API con all=true...');
-         const performanceResponse = await fetch('/api/performance?all=true', {
-           credentials: 'include',
-           headers: { 'Content-Type': 'application/json' }
-         });
-         
-         if (!performanceResponse.ok) {
-           throw new Error('Errore nel caricamento dati performance');
-         }
-         
-         const performanceResult = await performanceResponse.json();
-         const performanceList = performanceResult.data || performanceResult.sessions || [];
-         
-         console.log('📊 Dati performance caricati:', performanceList.length, 'sessioni');
-         console.log('📊 Esempio prima sessione:', performanceList[0]);
-         console.log('📊 Risposta API completa:', performanceResult);
-         
-         setPerformanceData(performanceList);
-         
-         // Organizza i dati per giocatore (come in Analytics normale)
-         const sessionsByPlayerMap = {};
-         playersData.forEach(player => {
-           const playerSessions = performanceList.filter(s => s.playerId === player.id);
-           sessionsByPlayerMap[player.id] = playerSessions;
-         });
-         
-         setSessionsByPlayer(sessionsByPlayerMap);
-
-      } catch (err) {
-        console.error('Errore nel caricamento dati:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error('Errore caricamento giocatori:', error);
       }
     };
-
-    fetchData();
+    
+    loadPlayers();
   }, []);
 
-  // =========================
-  // COMPUTED VALUES
-  // =========================
-  const activeSectionData = useMemo(() => {
-    return SECTIONS.find(section => section.id === activeSection);
-  }, [activeSection]);
+  // Debug effect per monitorare i cambiamenti dei dati
+  useEffect(() => {
+    console.log('🔍 DEBUG - performanceData changed:', {
+      length: performanceData?.length || 0,
+      isArray: Array.isArray(performanceData),
+      firstItem: performanceData?.[0] || 'N/A',
+      timestamp: new Date().toISOString()
+    });
+  }, [performanceData]);
 
-     const filteredData = useMemo(() => {
-     console.log('🔄 Ricalcolo filtri - timeRange:', timeRange, 'sessionType:', sessionType, 'selectedPlayers:', selectedPlayers.length);
-     
-     if (!performanceData.length) {
-       console.log('❌ Nessun dato performance disponibile');
-       return [];
-     }
-     
-     // Debug: log dei valori unici di session_type presenti nei dati
-     const uniqueSessionTypes = [...new Set(performanceData.map(s => s.session_type).filter(Boolean))];
-     console.log('🔍 Session types nei dati:', uniqueSessionTypes);
-     console.log('🔍 Filtro applicato:', sessionType);
-     
-     const timeRangeLower = (timeRange || '').toLowerCase();
-     const daysBack = timeRangeLower === '7d' ? 7 : 
-                     timeRangeLower === '14d' ? 14 : 
-                     timeRangeLower === '30d' ? 30 : 
-                     timeRangeLower === '90d' ? 90 : 
-                     timeRangeLower === 'all' ? null : 365;
-     
-     const cutoffDate = daysBack == null ? null : new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
-     console.log('🔍 Cutoff date:', cutoffDate);
-     
-     const filtered = performanceData.filter((session, index) => {
-       const sessionDate = new Date(session.session_date);
-       const matchesTimeRange = cutoffDate ? (sessionDate >= cutoffDate) : true;
-       
-       // Filtro session type: confronto esatto (case-sensitive)
-       const matchesSessionType = sessionType === 'all' || session.session_type === sessionType;
-       
-       // Filtro giocatori
-       const matchesPlayer = selectedPlayers.length === 0 || selectedPlayers.includes(session.playerId);
-       
-       // Filtro ruolo
-       const player = players.find(p => p.id === session.playerId);
-       const matchesPosition = selectedPosition === 'all' || player?.position === selectedPosition;
-       
-       // Debug per prime 3 sessioni
-       if (index < 3) {
-         console.log('🔍 Debug filtro sessione', index + 1, ':', {
-           sessionId: session.id,
-           sessionDate: session.session_date,
-           sessionDateObj: sessionDate,
-           cutoffDate: cutoffDate,
-           matchesTimeRange,
-           sessionType: session.session_type,
-           selectedSessionType: sessionType,
-           matchesSessionType,
-           playerId: session.playerId,
-           selectedPlayers,
-           matchesPlayer,
-           playerPosition: player?.position,
-           selectedPosition,
-           matchesPosition,
-           allMatches: matchesTimeRange && matchesSessionType && matchesPlayer && matchesPosition
-         });
-       }
-       
-       // Debug per sessioni filtrate via data
-       if (!matchesTimeRange && timeRange === 'all') {
-         console.log('❌ Sessione filtrata via data (timeRange=all):', {
-           sessionId: session.id,
-           sessionDate: session.session_date,
-           sessionDateObj: sessionDate,
-           cutoffDate: cutoffDate
-         });
-       }
-       
-       return matchesTimeRange && matchesSessionType && matchesPlayer && matchesPosition;
-     });
-     
-     // Debug: range date nei dati
-     if (performanceData.length > 0) {
-       const dates = performanceData.map(s => new Date(s.session_date)).sort((a, b) => a - b);
-       console.log('📅 Range date nei dati:', {
-         prima: dates[0].toISOString().slice(0, 10),
-         ultima: dates[dates.length - 1].toISOString().slice(0, 10),
-         totale: dates.length
-       });
-     }
-     
-     console.log('🔍 Dati filtrati:', filtered.length, 'su', performanceData.length, 'totali');
-     console.log('🔍 Filtri applicati:', {
-       timeRange,
-       sessionType,
-       selectedPlayers: selectedPlayers.length,
-       selectedPosition
-     });
-     
-           return filtered;
-    }, [performanceData, timeRange, sessionType, selectedPlayers, selectedPosition, players]);
+  // =========================
+  // DATA PROCESSING
+  // =========================
+  const filteredData = useMemo(() => {
+    console.log('🔍 DEBUG filteredData - Input:', { 
+      performanceDataLength: performanceData?.length || 0, 
+      performanceDataType: typeof performanceData, 
+      isArray: Array.isArray(performanceData), 
+      firstItem: performanceData?.[0] || 'N/A',
+      viewMode,
+      selectedPlayer
+    }); // TEMP DEBUG - rimuovere dopo diagnosi
+    console.log('🔄 Ricalcolo filtri - period:', filters.period, 'sessionType:', filters.sessionType);
+    
+    if (!performanceData || !performanceData.length) {
+      console.log('❌ Nessun dato performance disponibile');
+      return [];
+    }
+    
+    // 🔧 FIX: Gestione intelligente dati aggregati vs non aggregati
+    const firstRecord = performanceData[0];
+    const isAggregated = firstRecord && firstRecord.dateFull;
+    const isIndividualSessions = firstRecord && firstRecord.session_date;
+    const isACWRData = firstRecord && firstRecord.date && firstRecord.acwr; // Nuovo caso per dati ACWR
+    
+    console.log('🔍 Tipo dati rilevato:', {
+      isAggregated,
+      isIndividualSessions,
+      isACWRData,
+      hasDateFull: !!firstRecord?.dateFull,
+      hasSessionDate: !!firstRecord?.session_date,
+      hasDateAndACWR: !!(firstRecord?.date && firstRecord?.acwr)
+    });
+    
+    let processedData = [];
+    
+    if (isAggregated) {
+      // 🔧 CASO 1: Dati già aggregati per data (con dateFull)
+      console.log('✅ Dati già aggregati per data, uso direttamente');
+      
+      processedData = performanceData.filter(day => {
+        if (!day.dateFull) {
+          console.warn('⚠️ Giorno senza dateFull:', day);
+          return false;
+        }
+        
+        try {
+          const date = new Date(day.dateFull);
+          if (isNaN(date.getTime())) {
+            console.warn('⚠️ Giorno con dateFull invalida:', day.dateFull);
+            return false;
+          }
+          return true;
+        } catch (error) {
+          console.warn('⚠️ Errore validazione dateFull:', day.dateFull, error);
+          return false;
+        }
+      });
+      
+    } else if (isIndividualSessions) {
+      // 🔧 CASO 2: Dati non aggregati (sessioni individuali con session_date)
+      console.log('🔄 Dati non aggregati, aggrego per data...');
+      
+      // Raggruppa per data
+      const dateMap = new Map();
+      
+      performanceData.forEach(session => {
+        if (!session.session_date) {
+          console.warn('⚠️ Sessione senza session_date:', session);
+          return;
+        }
+        
+        try {
+          const sessionDate = new Date(session.session_date);
+          if (isNaN(sessionDate.getTime())) {
+            console.warn('⚠️ Sessione con session_date invalida:', session.session_date);
+            return;
+          }
+          
+          const dateKey = sessionDate.toISOString().split('T')[0]; // YYYY-MM-DD
+          
+          if (!dateMap.has(dateKey)) {
+            dateMap.set(dateKey, {
+              dateFull: dateKey,
+              sessions: [],
+              totalDistance: 0,
+              playerLoad: 0,
+              sessionsCount: 0
+            });
+          }
+          
+          const dayData = dateMap.get(dateKey);
+          dayData.sessions.push(session);
+          dayData.totalDistance += (session.total_distance_m || 0);
+          dayData.playerLoad += (session.player_load || 0);
+          dayData.sessionsCount += 1;
+          
+        } catch (error) {
+          console.warn('⚠️ Errore processando sessione:', session, error);
+        }
+      });
+      
+      // Converti Map in array e ordina per data
+      processedData = Array.from(dateMap.values())
+        .sort((a, b) => new Date(a.dateFull) - new Date(b.dateFull));
+      
+      console.log(`✅ Dati aggregati per data: ${processedData.length} giorni da ${performanceData.length} sessioni`);
+      
+    } else if (isACWRData) {
+      // 🔧 CASO 3: Dati ACWR (con date e acwr)
+      console.log('🔄 Dati ACWR rilevati, converto formato...');
+      
+      processedData = performanceData.filter(record => {
+        if (!record.date) {
+          console.warn('⚠️ Record ACWR senza date:', record);
+          return false;
+        }
+        
+        try {
+          const date = new Date(record.date);
+          if (isNaN(date.getTime())) {
+            console.warn('⚠️ Record ACWR con date invalida:', record.date);
+            return false;
+          }
+          return true;
+        } catch (error) {
+          console.warn('⚠️ Errore validazione date ACWR:', record.date, error);
+          return false;
+        }
+      }).map(record => ({
+        // Converte i dati ACWR al formato atteso dai grafici
+        dateFull: record.date,
+        date: record.date,
+        playerId: record.playerId,
+        acuteLoad: record.acuteLoad || 0,
+        chronicLoad: record.chronicLoad || 0,
+        acwr: record.acwr || 0,
+        // Aggiungi campi di default per compatibilità con i grafici
+        totalDistance: 0,
+        playerLoad: record.acuteLoad || 0, // Usa acuteLoad come playerLoad
+        sessionsCount: 1
+      }));
+      
+      console.log(`✅ Dati ACWR convertiti: ${processedData.length} record`);
+      
+    } else {
+      console.warn('⚠️ Struttura dati non riconosciuta, primo record:', firstRecord);
+      return [];
+    }
+    
+    // 🔧 FIX: Debug range date con gestione sicura
+    if (processedData.length > 0) {
+      const validDates = processedData
+        .map(day => {
+          try {
+            // Usa dateFull se disponibile, altrimenti date
+            const dateStr = day.dateFull || day.date;
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? null : date;
+          } catch (error) {
+            console.warn('⚠️ Data invalida per giorno:', day.dateFull || day.date, error);
+            return null;
+          }
+        })
+        .filter(date => date !== null)
+        .sort((a, b) => a - b);
+      
+      if (validDates.length > 0) {
+        console.log('📅 Range date nei dati processati:', {
+          prima: validDates[0].toISOString().slice(0, 10),
+          ultima: validDates[validDates.length - 1].toISOString().slice(0, 10),
+          totale: validDates.length,
+          totali: processedData.length
+        });
+      } else {
+        console.warn('⚠️ Nessuna data valida trovata nei dati processati');
+      }
+    }
+    
+    console.log(`✅ Dati finali processati: ${processedData.length} giorni validi`);
+    return processedData;
+  }, [performanceData, filters.period, filters.sessionType]);
 
   // =========================
   // EVENT HANDLERS
   // =========================
-  const handleSectionChange = (sectionId) => {
-    setActiveSection(sectionId);
-  };
-
-  const handleTimeRangeChange = (newTimeRange) => {
-    console.log('🔄 Cambio timeRange da', timeRange, 'a', newTimeRange);
-    setTimeRange(newTimeRange);
-  };
-
-  const handlePlayerSelection = (playerId) => {
-    console.log('🔄 Selezione giocatore:', playerId, 'attuali:', selectedPlayers);
-    
-    if (playerId === 'all') {
-      setSelectedPlayers([]);
-    } else {
-      const numId = parseInt(playerId);
-      // Sostituisci completamente la selezione (non aggiungi/rimuovi)
-      setSelectedPlayers([numId]);
-    }
-  };
-
-  const handlePositionChange = (position) => {
-    console.log('🔄 Cambio ruolo da', selectedPosition, 'a', position);
-    setSelectedPosition(position);
-    // Reset selezione giocatore quando cambia ruolo
-    setSelectedPlayers([]);
-  };
-
-  const handleSessionTypeChange = (newSessionType) => {
-    console.log('🔄 Cambio sessionType da', sessionType, 'a', newSessionType);
-    setSessionType(newSessionType);
-  };
-
-  const handleViewModeChange = (newViewMode) => {
-    setViewMode(newViewMode);
-  };
-
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportFormat, setExportFormat] = useState('csv');
-
   const handleExportData = () => {
     if (!filteredData || filteredData.length === 0) {
       alert('Nessun dato da esportare. Applica prima i filtri desiderati.');
@@ -408,589 +772,173 @@ const AnalyticsAdvanced = () => {
 
   const handleExportConfirm = () => {
     try {
-      // Prepara i dati per l'export
-      const exportData = filteredData.map(session => {
-        const player = players.find(p => p.id === session.playerId);
-        return {
-          'ID Sessione': session.id,
-          'Giocatore': player ? `${player.firstName} ${player.lastName}` : 'N/A',
-          'Ruolo': player?.position || 'N/A',
-          'Data': new Date(session.session_date).toLocaleDateString('it-IT'),
-          'Tipo Sessione': session.session_type,
-          'Durata (min)': session.duration_minutes,
-          'Distanza Totale (m)': session.total_distance_m,
-          'Distanza Sprint (m)': session.sprint_distance_m,
-          'Velocità Media (km/h)': session.average_speed_kmh,
-          'Velocità Massima (km/h)': session.max_speed_kmh,
-          'Accelerazioni': session.accelerations,
-          'Decelerazioni': session.decelerations,
-          'Carico': session.load,
-          'Intensità': session.intensity
-        };
-      });
-
-      // Nome file con timestamp
+      const exportData = filteredData;
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
       const fileName = `analytics_${activeSection}_${timestamp}`;
-
       if (exportFormat === 'excel') {
-        // Export Excel
         exportToExcel(exportData, fileName);
       } else {
-        // Export CSV
         exportToCSV(exportData, fileName);
       }
-
-      console.log(`✅ Esportati ${exportData.length} record in formato ${exportFormat === 'excel' ? 'Excel' : 'CSV'}`);
       setShowExportModal(false);
-    } catch (error) {
-      console.error('❌ Errore durante l\'esportazione:', error);
+    } catch (e) {
+      console.error('❌ Errore durante l\'esportazione:', e);
       alert('Errore durante l\'esportazione. Riprova.');
     }
   };
-
-  // TODO: implementare funzione di refresh quando necessario
-  // const handleRefreshData = () => {
-  //   // Ricarica i dati dal server (non tutta la pagina)
-  //   setLoading(true);
-  //   setError(null);
-  //   
-  //   // Reset filtri
-  //   setTimeRange('30d');
-  //   setSessionType('all');
-  //   setSelectedPlayers([]);
-  //   setSelectedPosition('all');
-  //   
-  //   // Ricarica dati
-  //   // fetchPerformanceData(); // TODO: implementare funzione di refresh
-  // };
-
-  // Funzioni helper per export
-  const exportToCSV = (data, fileName) => {
-    if (data.length === 0) return;
+  // Funzione di rendering delle sezioni
+  function renderSectionContent() {
+    console.log('🔍 DEBUG renderSectionContent - Props passati ai grafici:', {
+      dataLength: filteredData?.length || 0,
+      dataSample: filteredData?.[0] || 'N/A',
+      playersLength: players?.length || 0,
+      activeSection,
+      viewMode,
+      selectedPlayer
+    });
     
-    const headers = Object.keys(data[0]);
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => headers.map(header => `"${row[header]}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${fileName}.csv`;
-    link.click();
-  };
-
-  const exportToExcel = (data, fileName) => {
-    try {
-      // Importa la libreria xlsx dinamicamente
-      import('xlsx').then((XLSX) => {
-        // Crea un nuovo workbook
-        const workbook = XLSX.utils.book_new();
-        
-        // Converti i dati in worksheet
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        
-        // Imposta larghezza colonne automatica
-        const columnWidths = [];
-        const headers = Object.keys(data[0] || {});
-        headers.forEach(header => {
-          const maxLength = Math.max(
-            header.length,
-            ...data.map(row => String(row[header] || '').length)
-          );
-          columnWidths.push({ wch: Math.min(maxLength + 2, 50) });
-        });
-        worksheet['!cols'] = columnWidths;
-        
-        // Aggiungi stili per l'header (prima riga)
-        const headerRange = XLSX.utils.decode_range(worksheet['!ref']);
-        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-          if (!worksheet[cellAddress]) continue;
-          
-          // Stile header: grassetto e sfondo grigio
-          worksheet[cellAddress].s = {
-            font: { bold: true, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "4472C4" } },
-            alignment: { horizontal: "center", vertical: "center" }
-          };
-        }
-        
-        // Aggiungi il worksheet al workbook
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Analytics Data');
-        
-        // Crea foglio informazioni sui filtri applicati
-        const filterInfo = [
-          ['REPORT ANALYTICS AVANZATE'],
-          [''],
-          ['Informazioni Export:'],
-          ['Data Export:', new Date().toLocaleString('it-IT')],
-          ['Sezione:', activeSectionData?.title || activeSection],
-          [''],
-          ['Filtri Applicati:'],
-          ['Periodo:', timeRange === 'all' ? 'Tutti i giorni' : timeRange],
-          ['Tipo Sessione:', sessionType === 'all' ? 'Tutte le sessioni' : sessionType],
-          ['Ruolo:', selectedPosition === 'all' ? 'Tutti i ruoli' : selectedPosition],
-          ['Giocatore:', selectedPlayers.length === 0 ? 'Tutti i giocatori' : 
-            players.find(p => p.id === selectedPlayers[0])?.firstName + ' ' + 
-            players.find(p => p.id === selectedPlayers[0])?.lastName || 'N/A'],
-          [''],
-          ['Statistiche:'],
-          ['Record Esportati:', data.length],
-          ['Periodo Dati:', data.length > 0 ? 
-            `${new Date(data[0]['Data']).toLocaleDateString('it-IT')} - ${new Date(data[data.length-1]['Data']).toLocaleDateString('it-IT')}` : 'N/A']
-        ];
-        
-        const infoWorksheet = XLSX.utils.aoa_to_sheet(filterInfo);
-        infoWorksheet['!cols'] = [{ wch: 20 }, { wch: 40 }];
-        XLSX.utils.book_append_sheet(workbook, infoWorksheet, 'Info Filtri');
-        
-        // Genera il file Excel
-        const excelBuffer = XLSX.write(workbook, { 
-          bookType: 'xlsx', 
-          type: 'array' 
-        });
-        
-        // Crea blob e scarica
-        const blob = new Blob([excelBuffer], { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${fileName}.xlsx`;
-        link.click();
-        
-        console.log('✅ File Excel generato e scaricato:', `${fileName}.xlsx`);
-      }).catch(error => {
-        console.error('❌ Errore importazione libreria xlsx:', error);
-        // Fallback: usa CSV
-        exportToCSV(data, fileName);
-        alert('Errore nella generazione Excel. File esportato in formato CSV.');
-      });
-    } catch (error) {
-      console.error('❌ Errore generazione Excel:', error);
-      // Fallback: usa CSV
-      exportToCSV(data, fileName);
-      alert('Errore nella generazione Excel. File esportato in formato CSV.');
-    }
-  };
-
-  // =========================
-  // RENDER FUNCTIONS
-  // =========================
-  const renderLoadingState = () => (
-    <div className="analytics-loading">
-      <div className="spinner"></div>
-      <h3>Caricamento Analytics Avanzate</h3>
-      <p>Stiamo preparando i tuoi dati...</p>
-    </div>
-  );
-
-  const renderErrorState = () => (
-    <div className="analytics-alert danger">
-      <h3>Errore nel caricamento</h3>
-      <p>{error}</p>
-      <button 
-        className="btn btn--primary"
-        onClick={() => window.location.reload()}
-      >
-        <RefreshCw size={16} />
-        Riprova
-      </button>
-    </div>
-  );
-
-  const renderSectionContent = () => {
     const sectionProps = {
-      data: filteredData,
-      players,
-      sessionsByPlayer,
-      timeRange,
-      sessionType,
-      viewMode
+      data: filteredData || [], // Assicura che sia sempre un array
+      players: players || [], // Assicura che sia sempre un array
+      filters
     };
 
     switch (activeSection) {
       case 'carico-volumi':
         return <CaricoVolumi {...sectionProps} />;
-      // case 'intensita':
-      //   return <Intensita {...sectionProps} />;
-      // case 'alta-velocita':
-      //   return <AltaVelocita {...sectionProps} />;
-      // case 'accelerazioni':
-      //   return <Accelerazioni {...sectionProps} />;
-      // case 'energetico':
-      //   return <Energetico {...sectionProps} />;
-      // case 'rischio-recupero':
-      //   return <RischioRecupero {...sectionProps} />;
-      // case 'comparazioni':
-      //   return <Comparazioni {...sectionProps} />;
-      // case 'report-coach':
-      //   return <ReportCoach {...sectionProps} />;
+      case 'intensita':
+        return <Intensita {...sectionProps} />;
+      case 'alta-velocita':
+        return <AltaVelocita {...sectionProps} />;
+      case 'accelerazioni':
+        return <Accelerazioni {...sectionProps} />;
+      case 'energetico':
+        return <Energetico {...sectionProps} />;
+      case 'rischio-recupero':
+        return <RischioRecupero {...sectionProps} />;
+      case 'comparazioni':
+        return <Comparazioni {...sectionProps} />;
+      case 'report-coach':
+        return <ReportCoach {...sectionProps} />;
       default:
-        return (
-          <div className="section-content active">
-            <div className="card chart-card">
-              <div className="chart-header">
-                <h3 className="chart-title">
-                  <activeSectionData.icon size={20} />
-                  {activeSectionData.title}
-                </h3>
-                <div className="chart-actions">
-                  <button className="btn btn--ghost">
-                    <Download size={16} />
-                    Esporta
-                  </button>
-                </div>
-              </div>
-              <div className="chart-content">
-                <div className="chart-no-data">
-                  <BarChart3 size={48} />
-                  <h3>Sezione in sviluppo</h3>
-                  <p>I grafici per "{activeSectionData.title}" saranno disponibili presto!</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return null;
     }
-  };
+  }
 
   // =========================
   // MAIN RENDER
   // =========================
   if (loading) {
-    return (
-      <div className="analytics-page">
-        {renderLoadingState()}
-      </div>
-    );
+    return <PageLoader message="Caricamento Analytics Avanzate…" minHeight={360} />;
   }
 
   if (error) {
     return (
-      <div className="analytics-page">
+      <div className={`analytics-page density-${filters.density}`}>
         {renderErrorState()}
       </div>
     );
   }
 
   return (
-    <div className="analytics-page">
-      {/* Header principale */}
-      <div className="analytics-navigation">
-        <div className="analytics-header">
+    <div className={`analytics-page density-${filters.density}`}>
+      {/* Header principale - coerente con altre pagine Performance */}
+      <div className="page-header">
+        <div className="page-title">
           <h1>
-            <BarChart3 />
+            <BarChart3 size={24} />
             Analytics Avanzate
+            {isRefreshing && (
+              <span style={{ marginLeft: '10px', fontSize: '14px', color: '#666' }}>
+                <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                Aggiornamento...
+              </span>
+            )}
           </h1>
-          <p className="subtitle">
+          <p className="page-subtitle">
             Analisi approfondite per preparatori atletici professionisti
           </p>
         </div>
-
-        {/* Filtri globali */}
-        <div className="analytics-filters">
-          <div className="filters-row">
-            <div className="filter-group">
-              <label className="filter-label">Periodo</label>
-              <select 
-                className="filter-control"
-                value={timeRange}
-                onChange={(e) => handleTimeRangeChange(e.target.value)}
-              >
-                <option value="7d">Ultimi 7 giorni</option>
-                <option value="14d">Ultimi 14 giorni</option>
-                <option value="30d">Ultimi 30 giorni</option>
-                <option value="90d">Ultimi 90 giorni</option>
-                <option value="all">Tutto il periodo</option>
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Tipo Sessione</label>
-              <select 
-                className="filter-control"
-                value={sessionType}
-                onChange={(e) => handleSessionTypeChange(e.target.value)}
-              >
-                <option value="all">Tutte le sessioni</option>
-                <option value="Allenamento">Allenamento</option>
-                <option value="Partita">Partita</option>
-                <option value="Recupero">Recupero</option>
-                <option value="Tattica">Tattica</option>
-                <option value="Forza">Forza</option>
-                <option value="Rifinitura">Rifinitura</option>
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Ruolo</label>
-              <select 
-                className="filter-control"
-                value={selectedPosition}
-                onChange={(e) => handlePositionChange(e.target.value)}
-              >
-                <option value="all">Tutti i ruoli</option>
-                <option value="GOALKEEPER">Portieri</option>
-                <option value="DEFENDER">Difensori</option>
-                <option value="MIDFIELDER">Centrocampisti</option>
-                <option value="FORWARD">Attaccanti</option>
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Giocatore</label>
-              <select 
-                className="filter-control"
-                value={selectedPlayers.length === 0 ? 'all' : selectedPlayers[0].toString()}
-                onChange={(e) => handlePlayerSelection(e.target.value)}
-              >
-                <option value="all">Tutti i giocatori</option>
-                                  {players
-                    .filter(player => selectedPosition === 'all' || player.position === selectedPosition)
-                    .sort((a, b) => {
-                      // Prima ordina per ruolo (ordine: Portiere, Difensore, Centrocampista, Attaccante)
-                      const roleOrder = {
-                        'GOALKEEPER': 1,
-                        'DEFENDER': 2,
-                        'MIDFIELDER': 3,
-                        'FORWARD': 4
-                      };
-                      const roleA = roleOrder[a.position] || 5;
-                      const roleB = roleOrder[b.position] || 5;
-                      
-                      if (roleA !== roleB) {
-                        return roleA - roleB;
-                      }
-                      
-                      // A parità di ruolo, ordina per cognome alfabetico
-                      return a.lastName.localeCompare(b.lastName, 'it');
-                    })
-                    .map(player => {
-                      const positionLabels = {
-                        'GOALKEEPER': 'Portiere',
-                        'DEFENDER': 'Difensore',
-                        'MIDFIELDER': 'Centrocampista',
-                        'FORWARD': 'Attaccante'
-                      };
-                      const positionLabel = positionLabels[player.position] || player.position;
-                      
-                      // Formato: COGNOME Nome
-                      const displayName = `${player.lastName.toUpperCase()} ${player.firstName.charAt(0).toUpperCase() + player.firstName.slice(1).toLowerCase()}`;
-                      
-                      return (
-                        <option key={player.id} value={player.id}>
-                          {displayName} ({positionLabel})
-                        </option>
-                      );
-                    })}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Visualizzazione</label>
-              <select 
-                className="filter-control"
-                value={viewMode}
-                onChange={(e) => handleViewModeChange(e.target.value)}
-              >
-                <option value="charts">Grafici</option>
-                <option value="table">Tabella</option>
-                <option value="compact">Compatta</option>
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <div className="quick-actions">
-                <div className="main-actions">
-                  <button 
-                    className={`action-btn ${mainViewMode === 'analysis' ? 'active' : ''}`}
-                    onClick={() => setMainViewMode('analysis')}
-                  >
-                    <BarChart3 size={16} />
-                    Analisi
-                  </button>
-                  <button 
-                    className={`action-btn ${mainViewMode === 'dossier' ? 'active' : ''}`}
-                    onClick={() => setMainViewMode('dossier')}
-                  >
-                    <User size={16} />
-                    Dossier
-                  </button>
-                  <button 
-                    className={`action-btn ${mainViewMode === 'compare' ? 'active' : ''}`}
-                    onClick={() => setMainViewMode('compare')}
-                  >
-                    <GitCompare size={16} />
-                    Confronta
-                  </button>
-                </div>
-                <div className="export-action">
-                  <button 
-                    className="btn btn--primary"
-                    onClick={handleExportData}
-                  >
-                    <Download size={16} />
-                    Esporta
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        
+        <div className="header-actions">
+          <button 
+            type="button"
+            className="btn btn--primary"
+            onClick={handleExportData}
+          >
+            <Download size={16} />
+            Esporta Dati
+          </button>
         </div>
+      </div>
 
-                 {/* Contenuto principale basato sulla modalità */}
-        {mainViewMode === 'analysis' && (
-          <>
-            {/* Tab navigazione */}
-            <div className="analytics-tabs">
-              {SECTIONS.map((section) => (
-                <button
-                  key={section.id}
-                  className={`tab-item ${activeSection === section.id ? 'active' : ''}`}
-                  onClick={() => handleSectionChange(section.id)}
-                >
-                  <section.icon size={16} />
-                  {section.title}
-                  <span className="badge">{SECTIONS.indexOf(section) + 1}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Contenuto sezione */}
-            <div className="analytics-content">
-              {renderSectionContent()}
-            </div>
-          </>
+      {/* Tab Squadra/Giocatore */}
+      <div className="flex items-center justify-between mb-4">
+        <Tabs value={viewMode} onValueChange={(value) => {
+          console.log('🔄 Cambio vista da', viewMode, 'a', value);
+          setViewMode(value);
+        }}>
+          <TabsList>
+            <TabsTrigger value="team">Squadra</TabsTrigger>
+            <TabsTrigger value="player">Giocatore</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        {viewMode === "player" && (
+          <Select onValueChange={(value) => {
+            console.log('🔄 Cambio giocatore da', selectedPlayer, 'a', value);
+            setSelectedPlayer(value);
+          }} players={players}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Seleziona giocatore" />
+            </SelectTrigger>
+            <SelectContentWithRoles players={players} />
+          </Select>
         )}
+      </div>
 
-        {mainViewMode === 'dossier' && (
-          <div className="dossier-view">
-            {!selectedPlayerForDossier ? (
-              <div className="player-selection-container">
-                <h3>Seleziona un giocatore per visualizzare il dossier</h3>
-                <div className="players-grid">
-                  {players.map(player => {
-                    const positionLabels = {
-                      'GOALKEEPER': 'Portiere',
-                      'DEFENDER': 'Difensore',
-                      'MIDFIELDER': 'Centrocampista',
-                      'FORWARD': 'Attaccante'
-                    };
-                    const positionLabel = positionLabels[player.position] || player.position;
-                    
-                    return (
-                      <div 
-                        key={player.id}
-                        className="player-card"
-                        onClick={() => setSelectedPlayerForDossier(player)}
-                      >
-                        <div className="player-info">
-                          <div className="player-name">
-                            {player.lastName.toUpperCase()} {player.firstName.charAt(0).toUpperCase() + player.firstName.slice(1).toLowerCase()}
-                          </div>
-                          <div className="player-position">{positionLabel}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="dossier-content">
-                <div className="dossier-header">
-                  <button 
-                    className="btn btn--ghost back-btn"
-                    onClick={() => setSelectedPlayerForDossier(null)}
-                  >
-                    ← Torna alla selezione
-                  </button>
-                  <h2>Dossier: {selectedPlayerForDossier.lastName.toUpperCase()} {selectedPlayerForDossier.firstName}</h2>
-                </div>
-                <PlayerDossier 
-                  player={selectedPlayerForDossier}
-                  performanceData={filteredData.filter(s => s.playerId === selectedPlayerForDossier.id)}
-                  timeRange={timeRange}
-                  sessionType={sessionType}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {mainViewMode === 'compare' && (
-          <div className="compare-view">
-            {!showComparePanel ? (
-              <div className="player-selection-container">
-                <h3>Seleziona 2-8 giocatori per il confronto</h3>
-                <div className="players-grid">
-                  {players.map(player => {
-                    const positionLabels = {
-                      'GOALKEEPER': 'Portiere',
-                      'DEFENDER': 'Difensore',
-                      'MIDFIELDER': 'Centrocampista',
-                      'FORWARD': 'Attaccante'
-                    };
-                    const positionLabel = positionLabels[player.position] || player.position;
-                    const isSelected = compareIds.includes(player.id);
-                    
-                    return (
-                      <div 
-                        key={player.id}
-                        className={`player-card ${isSelected ? 'selected' : ''}`}
-                        onClick={() => {
-                          if (isSelected) {
-                            setCompareIds(compareIds.filter(id => id !== player.id));
-                          } else if (compareIds.length < 8) {
-                            setCompareIds([...compareIds, player.id]);
-                          }
-                        }}
-                      >
-                        <div className="player-info">
-                          <div className="player-name">
-                            {player.lastName.toUpperCase()} {player.firstName.charAt(0).toUpperCase() + player.firstName.slice(1).toLowerCase()}
-                          </div>
-                          <div className="player-position">{positionLabel}</div>
-                        </div>
-                        <div className="selection-indicator">
-                          {isSelected ? '✓' : '+'}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {compareIds.length >= 2 && (
-                  <div className="compare-actions">
-                    <button 
-                      className="btn-primary"
-                      onClick={() => setShowComparePanel(true)}
-                    >
-                      Avvia Confronto ({compareIds.length} giocatori)
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <ComparePanel
-                players={players.filter(p => compareIds.includes(p.id))}
-                onClose={() => {
-                  setShowComparePanel(false);
-                  setCompareIds([]);
-                  setMainViewMode('analysis');
-                }}
-                onBack={() => {
-                  setShowComparePanel(false);
-                }}
-              />
-            )}
+      {/* FilterBar minimal come DossierDrawer */}
+      <div className="drawer-filters-section">
+        <button 
+          className="filters-toggle-btn"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter size={16} />
+          Filtri {showFilters ? '−' : '+'}
+        </button>
+        
+        {showFilters && (
+          <div className="drawer-filters-expanded">
+            <FiltersBar 
+              showSort={true}
+              players={players}
+              showPlayers={true}
+              mode="compact"
+            />
           </div>
         )}
       </div>
 
+      {/* Tab navigazione */}
+      <div className="analytics-tabs">
+        {SECTIONS.map((section) => (
+          <button
+            type="button"
+            key={section.id}
+            className={`tab-item ${activeSection === section.id ? 'active' : ''}`}
+            onClick={() => setActiveSection(section.id)}
+          >
+            <section.icon size={16} />
+            {section.title}
+            <span className="badge">{SECTIONS.indexOf(section) + 1}</span>
+          </button>
+        ))}
+      </div>
 
+      {/* Contenuto sezione */}
+      <div className="analytics-content">
+        {renderSectionContent()}
+      </div>
 
       {/* Modal Export */}
       {showExportModal && (
@@ -999,6 +947,7 @@ const AnalyticsAdvanced = () => {
             <div className="modal-header">
               <h3>Esporta Dati</h3>
               <button 
+                type="button"
                 className="modal-close"
                 onClick={() => setShowExportModal(false)}
               >
@@ -1040,12 +989,14 @@ const AnalyticsAdvanced = () => {
             </div>
             <div className="modal-footer">
               <button 
+                type="button"
                 className="btn-secondary"
                 onClick={() => setShowExportModal(false)}
               >
                 Annulla
               </button>
               <button 
+                type="button"
                 className="btn-primary"
                 onClick={handleExportConfirm}
               >
@@ -1055,23 +1006,8 @@ const AnalyticsAdvanced = () => {
           </div>
         </div>
       )}
-
-      {/* ComparePanel - si apre quando si clicca Confronta */}
-      {showComparePanel && (
-        <ComparePanel
-          players={players.filter(p => compareIds.includes(p.id))}
-          onClose={() => {
-            setShowComparePanel(false);
-            setCompareIds([]);
-          }}
-          onBack={() => {
-            setShowComparePanel(false);
-            setCompareIds([]);
-          }}
-        />
-      )}
     </div>
   );
-};
+}
 
 export default AnalyticsAdvanced;

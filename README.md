@@ -1,4 +1,4 @@
-# ⚽ SoccerXpro V2
+# ⚽ Athlos
 
 > Sistema di gestione completo per società calcistiche professionali
 
@@ -185,6 +185,14 @@ docker-compose up -d      # Avvia tutti i servizi
 - [🏗️ Architecture](./docs/architecture/)  
 - [⚙️ Setup Guide](./docs/setup/)
 - [🤝 Contributing](./CONTRIBUTING.md)
+
+## 📖 Documentazione tecnica
+
+- [Architettura](docs/architecture/STRUTTURA_PROGETTO.md)
+- [Struttura progetto aggiornata](docs/setup/project-structure-2025-08-30.md)
+- [Recap progetto](docs/setup/Recap_Progetto.md)
+- [Modulo GPS Deriver](docs/api/gpsDeriver.md)
+- [Metriche Dashboard](docs/metrics/README_Dashboard_Metriche.md)
 
 ## 👥 Team
 

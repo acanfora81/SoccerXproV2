@@ -1,7 +1,7 @@
 // server/src/utils/dateParser.js
 // 📅 Smart Date Parser per Performance Import - SoccerXpro V2
 
-console.log('🟢 Inizializzazione Smart Date Parser...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Inizializzazione Smart Date Parser...'); // INFO - rimuovere in produzione
 
 /**
  * 🧠 SMART DATE PARSER CLASS
@@ -18,7 +18,7 @@ class SmartDateParser {
    * 🎯 Inizializza pattern riconoscimento date
    */
   initializeDatePatterns() {
-    console.log('🔵 Inizializzazione pattern date...'); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] Inizializzazione pattern date...'); // INFO DEV - rimuovere in produzione
 
     // 📅 DATE PATTERNS - Ordinati per specificità
     this.datePatterns = [
@@ -219,7 +219,7 @@ class SmartDateParser {
       }
     };
 
-    console.log('🟢 Pattern date inizializzati:', this.datePatterns.length, 'formati supportati'); // INFO - rimuovere in produzione
+    console.log('🟢 [INFO] Pattern date inizializzati:', this.datePatterns.length, 'formati supportati'); // INFO - rimuovere in produzione
   }
 
   /**
@@ -236,13 +236,13 @@ class SmartDateParser {
 
       const normalizedInput = String(dateString).trim();
       
-      console.log('🔵 Smart date parsing per:', normalizedInput); // INFO DEV - rimuovere in produzione
+      console.log('🔵 [DEBUG] Smart date parsing per:', normalizedInput); // INFO DEV - rimuovere in produzione
 
       // 🚀 Check cache first
       const cacheKey = `${normalizedInput}:${JSON.stringify(options)}`;
       if (this.parseCache.has(cacheKey)) {
         const cached = this.parseCache.get(cacheKey);
-        console.log('🟢 Date trovata in cache:', cached.originalString); // INFO - rimuovere in produzione
+        console.log('🟢 [INFO] Date trovata in cache:', cached.originalString); // INFO - rimuovere in produzione
         return cached;
       }
 
@@ -259,11 +259,11 @@ class SmartDateParser {
             
             if (dateResult.success) {
               attemptResults.push(dateResult);
-              console.log(`🟢 Pattern match: ${patternConfig.name} (${patternConfig.confidence}%)`); // INFO - rimuovere in produzione
+              console.log(`🟢 [INFO] Pattern match: ${patternConfig.name} (${patternConfig.confidence}%)`); // INFO - rimuovere in produzione
             }
             
           } catch (parseError) {
-            console.log(`🟡 Pattern ${patternConfig.name} fallito:`, parseError.message); // WARNING - rimuovere in produzione
+            console.log(`🟡 [WARN] Pattern ${patternConfig.name} fallito:`, parseError.message); // WARNING - rimuovere in produzione
             continue;
           }
         }
@@ -351,7 +351,7 @@ class SmartDateParser {
       }
     };
 
-    console.log('🟢 Data costruita con successo:', result.formatted.display); // INFO - rimuovere in produzione
+    console.log('🟢 [INFO] Data costruita con successo:', result.formatted.display); // INFO - rimuovere in produzione
 
     return result;
   }
@@ -411,7 +411,7 @@ class SmartDateParser {
     const parsedDate = new Date(components.year, components.month - 1, components.day);
     if (parsedDate > new Date()) {
       // Warning, not error - potrebbe essere training programmato
-      console.log('🟡 Data futura rilevata:', this.formatDisplay(parsedDate, false)); // WARNING - rimuovere in produzione
+      console.log('🟡 [WARN] Data futura rilevata:', this.formatDisplay(parsedDate, false)); // WARNING - rimuovere in produzione
     }
 
     return {
@@ -429,7 +429,7 @@ class SmartDateParser {
    * @returns {Object} - Result con disambiguation
    */
   handleAmbiguousDate(results, originalString, options) {
-    console.log('🟡 Data ambigua rilevata, interpretazioni:', results.length); // WARNING - rimuovere in produzione
+    console.log('🟡 [WARN] Data ambigua rilevata, interpretazioni:', results.length); // WARNING - rimuovere in produzione
 
     // 🎯 Strategy 1: Prefer higher confidence patterns
     const sortedByConfidence = results.sort((a, b) => b.metadata.confidence - a.metadata.confidence);
@@ -437,7 +437,7 @@ class SmartDateParser {
 
     // If top result has significantly higher confidence, use it
     if (topResult.metadata.confidence >= 85) {
-      console.log('🟢 Auto-risoluzione per alta confidence:', topResult.metadata.confidence + '%'); // INFO - rimuovere in produzione
+      console.log('🟢 [INFO] Auto-risoluzione per alta confidence:', topResult.metadata.confidence + '%'); // INFO - rimuovere in produzione
       this.cacheResult(`${originalString}:${JSON.stringify(options)}`, topResult);
       return topResult;
     }
@@ -449,7 +449,7 @@ class SmartDateParser {
       // Prefer DD/MM format for Italian/European
       const europeanResult = results.find(r => r.metadata.format.includes('DD/MM'));
       if (europeanResult) {
-        console.log('🟢 Auto-risoluzione per locale EU:', europeanResult.metadata.format); // INFO - rimuovere in produzione
+        console.log('🟢 [INFO] Auto-risoluzione per locale EU:', europeanResult.metadata.format); // INFO - rimuovere in produzione
         europeanResult.metadata.autoResolved = true;
         europeanResult.metadata.autoResolveReason = 'European locale preference';
         this.cacheResult(`${originalString}:${JSON.stringify(options)}`, europeanResult);
@@ -460,12 +460,12 @@ class SmartDateParser {
     // 🎯 Strategy 3: Check if one interpretation is invalid
     const validResults = results.filter(r => r.success);
     if (validResults.length === 1) {
-      console.log('🟢 Auto-risoluzione per unica interpretazione valida'); // INFO - rimuovere in produzione
+      console.log('🟢 [INFO] Auto-risoluzione per unica interpretazione valida'); // INFO - rimuovere in produzione
       return validResults[0];
     }
 
     // 🤷‍♂️ Need human disambiguation
-    console.log('🟡 Richiesta disambiguazione umana per:', originalString); // WARNING - rimuovere in produzione
+    console.log('🟡 [WARN] Richiesta disambiguazione umana per:', originalString); // WARNING - rimuovere in produzione
     
     return {
       success: false,
@@ -625,7 +625,7 @@ class SmartDateParser {
    */
   clearCache() {
     this.parseCache.clear();
-    console.log('🟡 Date parser cache cleared'); // WARNING - rimuovere in produzione
+    console.log('🟡 [WARN] Date parser cache cleared'); // WARNING - rimuovere in produzione
   }
 
   /**
@@ -648,7 +648,7 @@ class SmartDateParser {
    * @returns {Array} - Risultati test
    */
   testParsing(testStrings) {
-    console.log('🔵 Test batch parsing...'); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] Test batch parsing...'); // INFO DEV - rimuovere in produzione
     
     const results = testStrings.map(dateStr => {
       const result = this.parseSmartDate(dateStr);
@@ -660,7 +660,7 @@ class SmartDateParser {
       };
     });
 
-    console.log('🟢 Test parsing completato:', results.length, 'casi'); // INFO - rimuovere in produzione
+    console.log('🟢 [INFO] Test parsing completato:', results.length, 'casi'); // INFO - rimuovere in produzione
     return results;
   }
 }
@@ -668,6 +668,6 @@ class SmartDateParser {
 // Export singleton instance
 const smartDateParser = new SmartDateParser();
 
-console.log('🟢 Smart Date Parser inizializzato e pronto'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Smart Date Parser inizializzato e pronto'); // INFO - rimuovere in produzione
 
 module.exports = smartDateParser;

@@ -6,8 +6,9 @@ import {
   BarChart3, Users, TrendingUp, Activity, AlertTriangle, 
   Calendar, Filter, Download, RefreshCw, Eye, GitCompare,
   Zap, Heart, Timer, Target, Award, ArrowUp, ArrowDown,
-  ChevronLeft, Settings, MoreVertical
+  ChevronLeft, Settings, MoreVertical, ChevronUp, ChevronDown
 } from 'lucide-react';
+import { useFilters, buildPerformanceQuery, FiltersBar } from '../../modules/filters/index.js';
 
 // Importa gli altri componenti
 import PlayerList from './PlayerList';
@@ -15,9 +16,12 @@ import PlayerDossier from './PlayerDossier';
 import ComparePanel from './ComparePanel';
 import ReportPreview from './ReportPreview';
 import Reports from './Reports';
+import TeamDashboard from './TeamDashboard';
 
 // Stili avanzati
 import '../../styles/analytics.css';
+import '../../modules/filters/filters.css';
+import PageLoader from '../ui/PageLoader';
 
 // 🗣️ Funzione per tradurre le posizioni
 const translatePosition = (position) => {
@@ -42,6 +46,7 @@ const translatePosition = (position) => {
  * - Export reports professionali
  */
 const Analytics = () => {
+  const { filters } = useFilters();
   const [players, setPlayers] = useState([]);
   const [performanceData, setPerformanceData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,16 +59,12 @@ const Analytics = () => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [compareIds, setCompareIds] = useState([]);
   
-  // Stati per filtri
-  const [dateRange, setDateRange] = useState('all'); // 7d, 14d, 30d, all
-  const [positionFilter, setPositionFilter] = useState('all');
-  const [sessionTypeFilter, setSessionTypeFilter] = useState('all');
-  
   // Stato per aggiornamenti real-time
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
-  // console.log('🔵 Analytics component renderizzato'); // INFO DEV
+  console.log('🟢 Analytics: componente inizializzato con filtri compatti'); // INFO - rimuovere in produzione
 
   /**
    * 📊 FETCH DATA - Carica giocatori e performance
@@ -90,7 +91,8 @@ const Analytics = () => {
       setPlayers(playersList);
 
       // Carica performance data
-      const performanceResponse = await fetch('/api/performance?all=true', {
+      const query = buildPerformanceQuery(filters);
+      const performanceResponse = await fetch(`/api/performance?${query}`, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -115,7 +117,7 @@ const Analytics = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filters]);
 
   /**
    * 🔄 AUTO-REFRESH ogni 30 secondi se attivato
@@ -361,7 +363,7 @@ const Analytics = () => {
       alerts,
       filteredSessions
     };
-  }, [players, performanceData, dateRange, positionFilter, sessionTypeFilter]);
+  }, [players, performanceData, filters]);
 
   /**
    * 🎮 EVENT HANDLERS
@@ -427,20 +429,32 @@ const Analytics = () => {
    * 🖥️ MAIN RENDER
    */
   if (loading) {
-    return (
-      <div className="analytics-container">
-        <div className="loading-card">
-          <div className="loading-bar large loading-shimmer"></div>
-          <div className="loading-bar medium loading-shimmer"></div>
-          <div className="loading-bar small loading-shimmer"></div>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Caricamento Analytics Avanzate…" minHeight={360} />;
   }
 
      if (error) {
      return (
-       <div className="analytics-container">
+       <div className={`analytics-container density-${filters.density}`}>
+         {/* 🎯 FilterBar compatta per Analytics */}
+         <div className="analytics-filters-section">
+           <button 
+             className="filters-toggle-btn"
+             onClick={() => setShowFilters(!showFilters)}
+           >
+             <Filter size={16} />
+             Filtri {showFilters ? '−' : '+'}
+           </button>
+           
+           {showFilters && (
+             <div className="analytics-filters-expanded">
+               <FiltersBar 
+                 pageId="ANALYTICS_MAIN" 
+                 showSort={true}
+                 mode="expanded"
+               />
+             </div>
+           )}
+         </div>
          <div className="error-state">
            <h3>Errore caricamento dati</h3>
            <p>{error}</p>
@@ -452,192 +466,31 @@ const Analytics = () => {
      );
    }
 
-  // 🏠 OVERVIEW MODE
+  // 🏠 OVERVIEW MODE - Team Dashboard
   if (currentView === 'overview') {
     return (
-      <div className="analytics-container">
-        {/* Header */}
-                 <div className="analytics-header">
-           <div className="analytics-title">
-             <div>
-               <h1>Team Analytics</h1>
-               <p className="analytics-subtitle">
-                 Dashboard prestazioni squadra • {analytics.teamKPIs.activePlayers} giocatori attivi
-               </p>
-             </div>
-           </div>
-         </div>
-
-        {/* Filtri */}
-                 <div className="analytics-filters">
-           <div className="filter-group">
-             <span className="filter-label">Periodo</span>
-             <select 
-               className="filter-select" 
-               value={dateRange} 
-               onChange={(e) => setDateRange(e.target.value)}
-             >
-               <option value="7d">Ultimi 7 giorni</option>
-               <option value="14d">Ultimi 14 giorni</option>
-               <option value="30d">Ultimi 30 giorni</option>
-               <option value="90d">Ultimi 90 giorni</option>
-               <option value="all">Tutto</option>
-             </select>
-           </div>
-
-           <div className="filter-group">
-             <span className="filter-label">Ruolo</span>
-             <select 
-               className="filter-select" 
-               value={positionFilter} 
-               onChange={(e) => setPositionFilter(e.target.value)}
-             >
-               <option value="all">Tutti</option>
-               <option value="GOALKEEPER">Portieri</option>
-               <option value="DEFENDER">Difensori</option>
-               <option value="MIDFIELDER">Centrocampisti</option>
-               <option value="FORWARD">Attaccanti</option>
-             </select>
-           </div>
-
-           <div className="filter-group">
-             <span className="filter-label">Tipo</span>
-             <select 
-               className="filter-select" 
-               value={sessionTypeFilter} 
-               onChange={(e) => setSessionTypeFilter(e.target.value)}
-             >
-               <option value="all">Tutti</option>
-               <option value="Training">Allenamento</option>
-               <option value="Match">Partita</option>
-             </select>
-           </div>
-
-                     <div className="quick-filters">
-             <button 
-               className={`quick-filter-btn ${autoRefresh ? 'active' : ''}`}
-               onClick={() => setAutoRefresh(!autoRefresh)}
-             >
-               Auto-refresh
-             </button>
-             <button className="quick-filter-btn" onClick={fetchData}>
-               Aggiorna
-             </button>
-           </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="card dashboard-card section-spacing">
-          <div className="card-header">
-            <h2>Azioni Rapide</h2>
-          </div>
-                     <div className="quick-actions">
-             <button 
-               className="btn btn--ghost quick-action-btn"
-               onClick={() => handleViewChange('player-list')}
-             >
-               <span>Analizza Giocatori</span>
-             </button>
-             <button 
-               className="btn btn--ghost quick-action-btn"
-               onClick={() => handleViewChange('reports')}
-             >
-               <span>Genera Report</span>
-             </button>
-             <button className="btn btn--ghost quick-action-btn">
-               <span>Trend Analysis</span>
-             </button>
-             <button className="btn btn--ghost quick-action-btn">
-               <span>Configurazione</span>
-             </button>
-           </div>
-        </div>
-
-        {/* KPI Cards */}
-        <div className="kpi-overview section-spacing">
-          {renderKPICard(
-            <Activity size={24} />,
-            'Sessioni Totali',
-            analytics.teamKPIs.totalSessions,
-            '',
-            parseFloat(analytics.trends.sessionsTrend),
-            'periodo precedente'
-          )}
-          {renderKPICard(
-            <Target size={24} />,
-            'Distanza Media',
-            analytics.teamKPIs.avgDistance,
-            ' m',
-            parseFloat(analytics.trends.distanceTrend),
-            'periodo precedente'
-          )}
-          {renderKPICard(
-            <Zap size={24} />,
-            'Player Load Medio',
-            analytics.teamKPIs.avgPlayerLoad,
-            '',
-            parseFloat(analytics.trends.loadTrend),
-            'periodo precedente'
-          )}
-          {renderKPICard(
-            <Award size={24} />,
-            'Velocità Max',
-            analytics.teamKPIs.maxSpeed,
-            ' km/h',
-            0,
-            'record stagionale'
-          )}
-        </div>
-
-        {/* Alerts */}
-                 {analytics.alerts.length > 0 && (
-           <div className="mapping-warnings section-spacing">
-             <div className="warnings-content">
-               <h4>Alert Sistema ({analytics.alerts.length})</h4>
-               <ul>
-                 {analytics.alerts.slice(0, 3).map((alert, idx) => (
-                   <li key={idx}>
-                     <strong>{alert.playerName}:</strong> {alert.message}
-                   </li>
-                 ))}
-                 {analytics.alerts.length > 3 && (
-                   <li>... e altri {analytics.alerts.length - 3} alert</li>
-                 )}
-               </ul>
-             </div>
-           </div>
-         )}
-
-        {/* RAG Readiness Board */}
-                 <div className="readiness-board section-spacing">
-           <div className="board-header">
-             <h2 className="board-title">
-               Readiness Board (ACWR)
-             </h2>
-            <div className="legend">
-              <div className="legend-item">
-                <div className="legend-dot green"></div>
-                <span>Ottimale (0.8-1.3)</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-dot yellow"></div>
-                <span>Attenzione (1.3-1.5)</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-dot red"></div>
-                <span>Rischio (&gt;1.5 o &lt;0.7)</span>
-              </div>
+      <div className={`analytics-container density-${filters.density}`}>
+        {/* FilterBar minimal come DossierDrawer */}
+        <div className="drawer-filters-section">
+          <button 
+            className="filters-toggle-btn"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={16} />
+            Filtri {showFilters ? '−' : '+'}
+          </button>
+          
+          {showFilters && (
+            <div className="drawer-filters-expanded">
+              <FiltersBar 
+                pageId="ANALYTICS_MAIN" 
+                showSort={true}
+                mode="compact"
+              />
             </div>
-          </div>
-          <div className="readiness-grid">
-            {analytics.readinessBoard.slice(0, 12).map(renderReadinessCard)}
-          </div>
+          )}
         </div>
-
-        {/* Last Update */}
-        <div className="kpi-footer" style={{textAlign: 'center', marginTop: '20px', opacity: 0.7}}>
-          <small>Ultimo aggiornamento: {lastUpdate.toLocaleTimeString()}</small>
-        </div>
+        <TeamDashboard />
       </div>
     );
   }
@@ -645,39 +498,77 @@ const Analytics = () => {
   // 👥 PLAYER LIST MODE
   if (currentView === 'player-list') {
     return (
-      <PlayerList
-        players={players}
-        performanceData={analytics.filteredSessions}
-        onSelect={(player) => handleViewChange('dossier', player)}
-        onCompareChange={setCompareIds}
-        compareIds={compareIds}
-        onBack={() => handleViewChange('overview')}
-        onStartCompare={() => handleViewChange('compare')}
-      />
+      <div className={`analytics-container density-${filters.density}`}>
+        {/* FilterBar minimal come DossierDrawer */}
+        <div className="drawer-filters-section">
+          <button 
+            className="filters-toggle-btn"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={16} />
+            Filtri {showFilters ? '−' : '+'}
+          </button>
+          
+          {showFilters && (
+            <div className="drawer-filters-expanded">
+              <FiltersBar 
+                pageId="ANALYTICS_MAIN" 
+                showSort={true}
+                mode="compact"
+              />
+            </div>
+          )}
+        </div>
+        <PlayerList
+          players={players}
+          performanceData={analytics.filteredSessions}
+          onSelect={(player) => handleViewChange('dossier', player)}
+          onCompareChange={setCompareIds}
+          compareIds={compareIds}
+          onBack={() => handleViewChange('overview')}
+          onStartCompare={() => handleViewChange('compare')}
+        />
+      </div>
     );
   }
 
 // 👤 PLAYER DOSSIER MODE
 if (currentView === 'dossier' && selectedPlayer) {
   if (loadingPlayerData) {
-    return (
-      <div className="analytics-container">
-        <div className="loading-card">
-          <div className="loading-text">Caricamento dati completi giocatore...</div>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Caricamento dossier giocatore…" minHeight={360} />;
   }
 
   const playerFilteredSessions = analytics.filteredSessions.filter(s => s.playerId === selectedPlayer.id);
   
   return (
-    <PlayerDossier
-      player={selectedPlayer}
-      sessions={playerFilteredSessions}
-      allSessions={playerAllData}
-      onBack={() => handleViewChange('player-list')}
-    />
+    <div className={`analytics-container density-${filters.density}`}>
+      {/* 🎯 FilterBar compatta per Analytics */}
+      <div className="analytics-filters-section">
+        <button 
+          className="filters-toggle-btn"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter size={16} />
+          Filtri {showFilters ? '−' : '+'}
+        </button>
+        
+        {showFilters && (
+          <div className="analytics-filters-expanded">
+            <FiltersBar 
+              pageId="ANALYTICS_MAIN" 
+              showSort={true}
+              mode="expanded"
+            />
+          </div>
+        )}
+      </div>
+      <PlayerDossier
+        player={selectedPlayer}
+        sessions={playerFilteredSessions}
+        allSessions={playerAllData}
+        onBack={() => handleViewChange('player-list')}
+      />
+    </div>
   );
 }
 
@@ -686,30 +577,97 @@ if (currentView === 'dossier' && selectedPlayer) {
     const comparePlayers = players.filter(p => compareIds.includes(p.id));
     
     return (
-      <ComparePanel
-        players={comparePlayers}
-        onClose={clearComparison}
-        onBack={() => handleViewChange('player-list')}
-      />
+      <div className={`analytics-container density-${filters.density}`}>
+        {/* FilterBar minimal come DossierDrawer */}
+        <div className="drawer-filters-section">
+          <button 
+            className="filters-toggle-btn"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={16} />
+            Filtri {showFilters ? '−' : '+'}
+          </button>
+          
+          {showFilters && (
+            <div className="drawer-filters-expanded">
+              <FiltersBar 
+                pageId="ANALYTICS_MAIN" 
+                showNormalize={true}
+                showSort={true}
+                mode="compact"
+              />
+            </div>
+          )}
+        </div>
+        <ComparePanel
+          players={comparePlayers}
+          onClose={clearComparison}
+          onBack={() => handleViewChange('player-list')}
+        />
+      </div>
     );
   }
 
   // 📄 REPORTS MODE
   if (currentView === 'reports') {
     return (
-      <Reports
-        teamStats={analytics.teamKPIs}
-        players={players}
-        sessions={analytics.filteredSessions}
-        alerts={analytics.alerts}
-        onBack={() => handleViewChange('overview')}
-      />
+      <div className={`analytics-container density-${filters.density}`}>
+        {/* FilterBar minimal come DossierDrawer */}
+        <div className="drawer-filters-section">
+          <button 
+            className="filters-toggle-btn"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={16} />
+            Filtri {showFilters ? '−' : '+'}
+          </button>
+          
+          {showFilters && (
+            <div className="drawer-filters-expanded">
+              <FiltersBar 
+                pageId="ANALYTICS_MAIN" 
+                showNormalize={true}
+                showSort={true}
+                mode="compact"
+              />
+            </div>
+          )}
+        </div>
+        <Reports
+          teamStats={analytics.teamKPIs}
+          players={players}
+          sessions={analytics.filteredSessions}
+          alerts={analytics.alerts}
+          onBack={() => handleViewChange('overview')}
+        />
+      </div>
     );
   }
 
   // Fallback
   return (
-    <div className="analytics-container">
+    <div className={`analytics-container density-${filters.density}`}>
+      {/* 🎯 FilterBar compatta per Analytics */}
+      <div className="analytics-filters-section">
+        <button 
+          className="filters-toggle-btn"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter size={16} />
+          Filtri {showFilters ? '−' : '+'}
+        </button>
+        
+        {showFilters && (
+          <div className="analytics-filters-expanded">
+            <FiltersBar 
+              pageId="ANALYTICS_MAIN" 
+              showNormalize={true}
+              showSort={true}
+              mode="expanded"
+            />
+          </div>
+        )}
+      </div>
       <div className="error-state">
         <h3>Vista non riconosciuta</h3>
         <button className="btn btn-primary" onClick={() => handleViewChange('overview')}>

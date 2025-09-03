@@ -7,19 +7,17 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const { PrismaClient } = require('../prisma/generated/client');
 const cookieParser = require('cookie-parser');
 
 // Import componenti sicurezza
 const redisClient = require('./config/redis');
 const TokenBlacklist = require('./utils/tokenBlacklist');
+const { getPrismaClient } = require('./config/database');
 
-console.log('🟢 Starting SoccerXpro V2 Server con logout sicuro...');
+console.log('🟢 [INFO] Starting Athlos Server con logout sicuro...');
 
-// Initialize Prisma Client
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'], // 🟡 DEBUG - rimuovere in produzione
-});
+// Get shared Prisma Client
+const prisma = getPrismaClient();
 
 // Initialize Express app
 const app = express();
@@ -27,7 +25,7 @@ const app = express();
 // Middleware
 app.use(helmet());
 const corsOptions = {
-  origin: 'http://localhost:3000', // 👈 il tuo frontend in dev
+  origin: 'http://localhost:5173', // 👈 il tuo frontend in dev
   credentials: true
 };
 app.use(cors(corsOptions));
@@ -44,28 +42,28 @@ let securityInitialized = false;
  */
 const initializeSecurity = async () => {
   try {
-    console.log('🔵 Inizializzazione sistema sicurezza...');
+    console.log('🔵 [DEBUG] Inizializzazione sistema sicurezza...');
 
     try {
       const redisConnected = await redisClient.connect();
       if (redisConnected) {
-        console.log('🟢 Redis connesso per token blacklist');
+        console.log('🟢 [INFO] Redis connesso per token blacklist');
       } else {
-        console.log('🟡 Redis non disponibile, modalità fallback attivata');
+        console.log('🟡 [WARN] Redis non disponibile, modalità fallback attivata');
       }
     } catch (redisError) {
-      console.log('🟡 Redis connection error (fallback mode):', redisError.message);
+      console.log('🟡 [WARN] Redis connection error (fallback mode):', redisError.message);
     }
 
     const blacklistReady = await TokenBlacklist.initialize();
     if (blacklistReady) {
-      console.log('🟢 TokenBlacklist inizializzato');
+      console.log('🟢 [INFO] TokenBlacklist inizializzato');
     } else {
-      console.log('🟡 TokenBlacklist in modalità limitata');
+      console.log('🟡 [WARN] TokenBlacklist in modalità limitata');
     }
 
     securityInitialized = true;
-    console.log('🟢 Sistema sicurezza inizializzato');
+    console.log('🟢 [INFO] Sistema sicurezza inizializzato');
   } catch (error) {
     console.log('🔴 Errore inizializzazione sicurezza:', error.message);
     securityInitialized = false;
@@ -76,7 +74,7 @@ const initializeSecurity = async () => {
 app.get('/health', async (req, res) => {
   const healthData = {
     status: 'OK',
-    message: 'SoccerXpro V2 Server is running',
+    message: 'Athlos Server is running',
     timestamp: new Date().toISOString(),
     security: {
       initialized: securityInitialized,
@@ -117,14 +115,24 @@ app.use('/api/players', playersRoutes);
 const performanceRoutes = require('./routes/performance');
 app.use('/api/performance', performanceRoutes);
 
+// 📈 Dashboard
+const dashboardRoutes = require('./routes/dashboard');
+app.use('/api/dashboard', dashboardRoutes);
+
+// 🎯 Session Types
+const sessionTypesRoutes = require('./routes/session-types');
+app.use('/api/session-types', sessionTypesRoutes);
+
 // Riepilogo route
-console.log('🔵 Route caricate:');
+console.log('🔵 [DEBUG] Route caricate:');
 console.log('  - GET /health');
 console.log('  - GET /test-db');
 console.log('  - /api/test-auth/*');
 console.log('  - /api/auth/*');
 console.log('  - /api/players/*');
 console.log('  - /api/performance/* (CRUD)');
+console.log('  - /api/dashboard/* (Dashboard)');
+console.log('  - /api/session-types/* (Session Types)');
 
 
 const PORT = process.env.PORT || 3001;
@@ -134,10 +142,10 @@ const startServer = async () => {
   try {
     await initializeSecurity();
     app.listen(PORT, () => {
-      console.log(`🟢 Server running on port ${PORT}`);
-      console.log(`🔵 Health check: http://localhost:${PORT}/health`);
-      console.log(`🔵 DB test: http://localhost:${PORT}/test-db`);
-      console.log(`🔵 Auth test: http://localhost:${PORT}/api/test-auth/optional`);
+      console.log(`🟢 [INFO] Server running on port ${PORT}`);
+      console.log(`🔵 [DEBUG] Health check: http://localhost:${PORT}/health`);
+      console.log(`🔵 [DEBUG] DB test: http://localhost:${PORT}/test-db`);
+      console.log(`🔵 [DEBUG] Auth test: http://localhost:${PORT}/api/test-auth/optional`);
       console.log(`🔐 Logout sicuro: POST http://localhost:${PORT}/api/auth/logout`);
     });
   } catch (error) {

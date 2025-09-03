@@ -18,6 +18,16 @@ export async function apiFetch(input, init = {}) {
 
   const makeRequest = async () => {
     const headers = new Headers(init.headers || {});
+    
+    // 🔧 Aggiungi header tenant per API performance
+    if (url.includes('/api/performance/') || url.includes('/api/analytics/')) {
+      // Leggi teamId da localStorage o auth context
+      const teamId = localStorage.getItem('teamId') || sessionStorage.getItem('teamId');
+      if (teamId && !headers.has('X-Team-Id')) {
+        headers.set('X-Team-Id', teamId);
+      }
+    }
+    
     // Attach CSRF token for state-changing requests if available
     if (METHODS_WITH_BODY.has(method)) {
       const csrf = getCookie('csrf_token');

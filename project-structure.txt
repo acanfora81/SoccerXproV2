@@ -1,24 +1,43 @@
-# Struttura progetto aggiornata: 28/08/2025, 22:01:03
+# Struttura progetto aggiornata: 02/09/2025, 19:59:19
 
 ├── client
 │   ├── public
 │   │   └── vite.svg
 │   ├── src
 │   │   ├── assets
+│   │   │   ├── images
+│   │   │   │   ├── logo.png.png
+│   │   │   │   └── README.md
 │   │   │   └── react.svg
 │   │   ├── components
 │   │   │   ├── analytics
 │   │   │   │   ├── sections
-│   │   │   │   │   └── CaricoVolumi.jsx
+│   │   │   │   │   ├── Accelerazioni.jsx
+│   │   │   │   │   ├── AltaVelocita.jsx
+│   │   │   │   │   ├── CaricoVolumi.jsx
+│   │   │   │   │   ├── Comparazioni.jsx
+│   │   │   │   │   ├── Energetico.jsx
+│   │   │   │   │   ├── Intensita.jsx
+│   │   │   │   │   ├── ReportCoach.jsx
+│   │   │   │   │   └── RischioRecupero.jsx
 │   │   │   │   ├── Analytics.jsx
 │   │   │   │   ├── AnalyticsAdvanced.jsx
+│   │   │   │   ├── CompareBar.jsx
+│   │   │   │   ├── CompareDrawer.jsx
+│   │   │   │   ├── CompareOverlay.jsx
 │   │   │   │   ├── ComparePanel.jsx
+│   │   │   │   ├── DossierDrawer.jsx
+│   │   │   │   ├── FiltersBar.jsx
+│   │   │   │   ├── PerformancePlayersList.jsx
 │   │   │   │   ├── PlayerDossier.jsx
 │   │   │   │   ├── PlayerList.jsx
 │   │   │   │   ├── ReportPreview.jsx
-│   │   │   │   └── Reports.jsx
+│   │   │   │   ├── Reports.jsx
+│   │   │   │   └── TeamDashboard.jsx
 │   │   │   ├── auth
 │   │   │   │   └── LoginForm.jsx
+│   │   │   ├── common
+│   │   │   │   └── ExportModal.jsx
 │   │   │   ├── dashboard
 │   │   │   │   └── Dashboard.jsx
 │   │   │   ├── layout
@@ -33,8 +52,35 @@
 │   │   │   │   ├── PlayersList.jsx
 │   │   │   │   └── PlayerStatistics.jsx
 │   │   │   └── ui
+│   │   │       ├── Logo.jsx
+│   │   │       ├── LogoWithImage.jsx
 │   │   │       ├── PageLoader.jsx
+│   │   │       ├── RouteProgress.jsx
+│   │   │       ├── segmented.css
+│   │   │       ├── Segmented.jsx
 │   │   │       └── ThemeToggle.jsx
+│   │   ├── hooks
+│   │   │   ├── useExport.js
+│   │   │   └── useSessionTypes.js
+│   │   ├── modules
+│   │   │   └── filters
+│   │   │       ├── filters.css
+│   │   │       ├── filters.css.backup
+│   │   │       ├── FiltersBar.jsx
+│   │   │       ├── FiltersBar.jsx.backup
+│   │   │       ├── filtersConfig.js
+│   │   │       ├── filtersConfig.js.backup
+│   │   │       ├── FiltersProvider.jsx
+│   │   │       ├── filtersUtils.js
+│   │   │       ├── filtersUtils.js.backup
+│   │   │       └── index.js
+│   │   ├── pages
+│   │   │   ├── performance
+│   │   │   │   ├── ComparePage.jsx
+│   │   │   │   ├── DossierPage.jsx
+│   │   │   │   ├── PlayersDossier.jsx
+│   │   │   │   └── PlayersList.jsx
+│   │   │   └── NotFound.jsx
 │   │   ├── store
 │   │   │   └── authStore.js
 │   │   ├── styles
@@ -45,16 +91,23 @@
 │   │   │   ├── sections
 │   │   │   ├── analytics.css
 │   │   │   ├── animations.css
+│   │   │   ├── compare-drawer.css
 │   │   │   ├── components.css
 │   │   │   ├── dashboard.css
+│   │   │   ├── export-modal.css
 │   │   │   ├── forms.css
 │   │   │   ├── global.css
 │   │   │   ├── import-wizard.css
 │   │   │   ├── index.css
 │   │   │   ├── layout.css
+│   │   │   ├── loading.css
+│   │   │   ├── logo.css
 │   │   │   ├── mapping.css
+│   │   │   ├── performance-pages.css
+│   │   │   ├── performance-players-list.css
 │   │   │   ├── players.css
 │   │   │   ├── statistics.css
+│   │   │   ├── team-dashboard.css
 │   │   │   ├── themes.css
 │   │   │   ├── upload.css
 │   │   │   ├── utilities.css
@@ -64,16 +117,46 @@
 │   │   ├── App.jsx
 │   │   ├── index.css
 │   │   └── main.jsx
+│   ├── CHANGELOG-ANALYTICS-ADVANCED.md
+│   ├── CHANGELOG-FIX-CALCOLI-CRITICI.md
 │   ├── eslint.config.js
 │   ├── index.html
 │   ├── package-lock.json
 │   ├── package.json
-│   ├── README.md
+│   ├── rollback-filtri.ps1
+│   ├── SOLUZIONE-DUAL-API-IMPLEMENTATA.md
+│   ├── SOLUZIONE-IMMEDIATA-APPLICATA.md
+│   ├── SOLUZIONE-UNIFORMAZIONE-COMPLETATA.md
+│   ├── test-aggregazione-grafici.js
+│   ├── test-coerenza-teamdashboard.js
+│   ├── test-correzione-grafici.js
+│   ├── test-date-robuste.js
+│   ├── test-datepicker.js
+│   ├── test-debug-date-error.js
+│   ├── test-filtri-completo.js
+│   ├── test-filtri-dropdown.js
+│   ├── test-filtri-finale.js
+│   ├── test-filtri-font-datepicker.js
+│   ├── test-fix-aggregazione-grafici.js
+│   ├── test-fix-analytics-advanced.js
+│   ├── test-fix-calcoli-critici.js
+│   ├── test-fix-date-error.js
+│   ├── test-giocatori-teamdashboard.js
+│   ├── test-grafica-filtri.js
+│   ├── test-grafici-distanze.js
+│   ├── test-soluzione-dual-api.js
+│   ├── test-soluzione-immediata.js
 │   └── vite.config.js
 ├── docs
 │   ├── api
+│   │   └── gpsDeriver.md
 │   ├── architecture
-│   └── setup
+│   │   └── STRUTTURA_PROGETTO.md
+│   ├── metrics
+│   ├── setup
+│   │   ├── project-structure-2025-08-30.md
+│   │   └── Recap_Progetto.md
+│   └── README.md
 ├── e2e
 │   ├── fixtures
 │   ├── support
@@ -115,6 +198,8 @@
 │   │   │       ├── index.js
 │   │   │       ├── package.json
 │   │   │       ├── query_engine-windows.dll.node
+│   │   │       ├── query_engine-windows.dll.node.tmp14832
+│   │   │       ├── query_engine-windows.dll.node.tmp31896
 │   │   │       ├── schema.prisma
 │   │   │       ├── wasm.d.ts
 │   │   │       └── wasm.js
@@ -152,9 +237,14 @@
 │   │   │   └── tenantContext.js
 │   │   ├── models
 │   │   ├── routes
+│   │   │   ├── performance
+│   │   │   │   └── compare.js
 │   │   │   ├── auth.js
+│   │   │   ├── dashboard.js
+│   │   │   ├── dashboard.js.backup
 │   │   │   ├── performance.js
 │   │   │   ├── players.js
+│   │   │   ├── session-types.js
 │   │   │   └── test-auth.js
 │   │   ├── services
 │   │   ├── utils
@@ -162,10 +252,14 @@
 │   │   │   ├── dateParser.js
 │   │   │   ├── gpsDeriver.example.js
 │   │   │   ├── gpsDeriver.js
+│   │   │   ├── kpi.js
+│   │   │   ├── logger.js
 │   │   │   ├── permissions.js
 │   │   │   ├── playerLookup.js
 │   │   │   ├── README.md
 │   │   │   └── tokenBlacklist.js
+│   │   ├── validation
+│   │   │   └── mappingSchema.js
 │   │   └── app.js
 │   ├── tests
 │   │   ├── fixtures
@@ -173,37 +267,6 @@
 │   │   ├── unit
 │   │   └── logout-security-test.js
 │   ├── uploads
-│   │   ├── 007fa15a1d9826bf8049b4bf954e1815
-│   │   ├── 04a78a6577fb7d3903f4da300d48e87e
-│   │   ├── 08436b06554bac7d19bdcb8e86a3acaf
-│   │   ├── 08f81d4e3d41d5cb2cc139206def7c08
-│   │   ├── 0a2a2dbca1ee6ff2c84fa378f4a77c09
-│   │   ├── 14dd696f63ca116d771d4bb99d170d12
-│   │   ├── 22b03a7ffeb1b1992db72bf0311d3edc
-│   │   ├── 2aa4f795ccb0042370915a83917a705d
-│   │   ├── 2fe06122c62956d6796a10c8aa0a07d5
-│   │   ├── 36bc89c3453214373500e9eb6a192590
-│   │   ├── 40cd7a9e2afe0caa70a03969fc33c377
-│   │   ├── 49ef8c7c09b4d541154e54e68f7cd627
-│   │   ├── 4bb9914f6eb7e707f5ddf2cb3555b14a
-│   │   ├── 4f1f34166becd75aae2bc33b2fa35f78
-│   │   ├── 534e7b4203f5b6b386be935f6d4bbe7f
-│   │   ├── 5effc0c4706ccc744e9a517717b8862d
-│   │   ├── 6145decef9a0e39cd76a91c591acf561
-│   │   ├── 628931bba12ffdb06d9b82d4a046038b
-│   │   ├── 6c6b147a42672a516310897dfeb262aa
-│   │   ├── 6c84eae2449734e26ef00b46aab2070c
-│   │   ├── 892ed41eda46cd7059fe6e86da74db50
-│   │   ├── 949cdbafd22a9d0538960bf7621c2883
-│   │   ├── a3d99f813e73b32d55220993ae4aafd2
-│   │   ├── b1045f42701cd14e91bd18e0845a3aec
-│   │   ├── b9f0f3bee994545dfa28c52dddadf9c1
-│   │   ├── ba7f792f101314a33905c293fffbf78f
-│   │   ├── dfdeb9e8218b183b82bd1503c1fb8866
-│   │   ├── ed0ca3370145a1c57d2b6db69eb76de6
-│   │   ├── ee44ae2b620d77decdca5d7b96ee2033
-│   │   ├── ee738d0273f87dbe58cb70665f4edd6e
-│   │   └── ff203daa1cca3711da23fdbbff4000a4
 │   ├── assign-players-to-team.js
 │   ├── debug-supabase.js
 │   ├── jest.config.js
@@ -286,10 +349,12 @@
 │       ├── constants
 │       ├── data
 │       └── helpers
+├── env.template
+├── mock-players-performance.json
 ├── package-lock.json
 ├── package.json
 ├── project-structure.txt
 ├── README.md
-├── Recap Lavoro Svolto.txt
-├── STRUTTURA_PROGETTO.md
+├── SOLUZIONE-FILTRI-DINAMICI.md
+├── SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md
 └── tree.js

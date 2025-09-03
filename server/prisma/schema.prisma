@@ -102,6 +102,7 @@ model PerformanceData {
   playerId                           Int
   session_date                       DateTime
   session_type                       String?
+  session_name                       String?
   duration_minutes                   Int?
   total_distance_m                   Float?
   sprint_distance_m                  Float?

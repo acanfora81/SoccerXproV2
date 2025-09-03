@@ -4,7 +4,7 @@
 const { getPrismaClient } = require('../config/database');
 const { API_ERRORS, createErrorResponse } = require('../constants/errors');
 
-console.log('🟢 Caricamento controller giocatori...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Caricamento controller giocatori...'); // INFO - rimuovere in produzione
 
 
 /**
@@ -13,7 +13,7 @@ console.log('🟢 Caricamento controller giocatori...'); // INFO - rimuovere in 
  */
 const getPlayers = async (req, res) => {
   try {
-    console.log('🔵 Richiesta lista giocatori');
+    console.log('🔵 [DEBUG] Richiesta lista giocatori');
 
     // ✅ 1) Contesto multi-tenant
     const teamId = req?.context?.teamId;
@@ -62,7 +62,7 @@ const getPlayers = async (req, res) => {
       }
     });
 
-    console.log('🟢 Lista giocatori recuperata:', players.length, 'giocatori');
+    console.log('🟢 [INFO] Lista giocatori recuperata:', players.length, 'giocatori');
 
     return res.json({
       message: 'Lista giocatori recuperata con successo',
@@ -103,7 +103,7 @@ const getPlayerById = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    console.log('🔵 Richiesta dettagli giocatore ID:', playerId);
+    console.log('🔵 [DEBUG] Richiesta dettagli giocatore ID:', playerId);
 
     // ✅ 3) Query vincolata a id + teamId
     const prisma = getPrismaClient();
@@ -120,7 +120,7 @@ const getPlayerById = async (req, res) => {
     });
 
     if (!player) {
-      console.log('🟡 Giocatore non trovato o non appartiene al team:', playerId);
+      console.log('🟡 [WARN] Giocatore non trovato o non appartiene al team:', playerId);
       const errorResponse = createErrorResponse(
         API_ERRORS.RESOURCE_NOT_FOUND,
         'Giocatore non trovato'
@@ -128,7 +128,7 @@ const getPlayerById = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    console.log('🟢 Dettagli giocatore recuperati:', player.firstName, player.lastName);
+    console.log('🟢 [INFO] Dettagli giocatore recuperati:', player.firstName, player.lastName);
 
     return res.json({
       message: 'Dettagli giocatore recuperati con successo',
@@ -175,7 +175,7 @@ const createPlayer = async (req, res) => {
       passportNumber
     } = req.body || {};
 
-    console.log('🔵 Creazione nuovo giocatore:', firstName, lastName);
+    console.log('🔵 [DEBUG] Creazione nuovo giocatore:', firstName, lastName);
 
     // ✅ 3) Validazioni base
     if (!firstName || !lastName || !dateOfBirth || !nationality || !position) {
@@ -284,7 +284,7 @@ const createPlayer = async (req, res) => {
       }
     });
 
-    console.log('🟢 Giocatore creato con ID:', player.id);
+    console.log('🟢 [INFO] Giocatore creato con ID:', player.id);
 
     return res.status(201).json({
       message: 'Giocatore creato con successo',

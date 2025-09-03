@@ -13,6 +13,11 @@ const {
 } = require("../controllers/performance");
 const { getPrismaClient } = require("../config/database");
 const smartColumnMapper = require("../utils/columnMapper");
+const { dlog, dwarn, derr } = require("../utils/logger");
+const { computeHSR, computeSprintPer90, computeACWR, buildPeriodRange, parseSessionTypeFilter, parseSessionTypeFilterSimple, round } = require("../utils/kpi");
+
+const { validateMapping } = require("../validation/mappingSchema");
+const fsAsync = require("fs").promises;
 
 // 🔧 AGGIUNTE per preview-mapping con file upload
 const multer = require("multer");
@@ -24,22 +29,56 @@ const { completeRow } = require("../utils/gpsDeriver.js");
 
 const upload = multer({ dest: "uploads/" });
 
-console.log("🟢 Caricamento route performance multi-tenant...");
+dlog("🟢 [INFO] Caricamento route performance multi-tenant...");
 
 const router = express.Router();
+
+// 🔧 FIX: Funzione per parsing sessionType con mapping frontend→database
+function parseSessionTypeFilterFixed(sessionType) {
+  dlog('🔵 [DEBUG] parseSessionTypeFilter: input:', sessionType);
+  
+  if (!sessionType || sessionType === 'all') return null;
+  
+  // Mapping esplicito frontend → database
+  const mapping = {
+    'training': 'allenamento',
+    'match': 'partita',
+    'allenamento': 'allenamento', // già corretto
+    'partita': 'partita' // già corretto
+  };
+  
+  const mapped = mapping[sessionType.toLowerCase()] || sessionType;
+  dlog('🟢 [INFO] sessionType mapping:', sessionType, '→', mapped);
+  return mapped;
+}
+
+// 🔧 FIX: Parser per players filter
+function parsePlayersFilter(playersParam) {
+  if (!playersParam || playersParam === 'all') return [];
+  return playersParam.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+}
 
 // 🟠 Configurazioni ottimizzazione import (configurabili via ENV)
 const BATCH_SIZE = Math.max(
   1,
-  parseInt(process.env.IMPORT_BATCH_SIZE || "100", 10) || 100
-); // Record per batch
+  parseInt(process.env.IMPORT_BATCH_SIZE || "50", 10) || 50
+); // Record per batch - RIDOTTO da 100 a 50
 const TRANSACTION_TIMEOUT =
-  parseInt(process.env.IMPORT_TX_TIMEOUT_MS || "20000", 10) || 20000; // ms
+  parseInt(process.env.IMPORT_TX_TIMEOUT_MS || "60000", 10) || 60000; // ms - AUMENTATO da 20s a 60s
 const BATCH_DELAY_MS =
-  parseInt(process.env.IMPORT_BATCH_DELAY_MS || "0", 10) || 0; // ms
+  parseInt(process.env.IMPORT_BATCH_DELAY_MS || "100", 10) || 100; // ms - AGGIUNTO delay di 100ms
 
 // 🔐 Middleware di autenticazione + tenant context per tutte le route
 router.use(authenticate, tenantContext); // 🔧 FIXED - Aggiunto tenantContext
+
+// 🔧 FIX: Monta il sotto-router di compare PRIMA delle route parametriche (/:id)
+// per evitare che "/compare" venga interpretato come ":id" e causi INVALID_ID
+try {
+  const compareRouter = require('./performance/compare');
+  router.use('/compare', compareRouter);
+} catch (e) {
+  dwarn('⚠️ Impossibile montare compare router in anticipo:', e?.message);
+}
 
 // Helper: valida parametro numerico
 const ensureNumericParam = (paramName) => (req, res, next) => {
@@ -98,7 +137,7 @@ router.post("/import/upload", upload.single("file"), async (req, res) => {
       originalExtension: ext,
     });
   } catch (err) {
-    console.error("🔴 Upload error:", err);
+    derr("🔴 Upload error:", err);
     return res.status(500).json({
       error: "Errore interno upload",
       details: err.message,
@@ -153,7 +192,7 @@ router.post("/map-columns", async (req, res) => {
     }
 
     // 🧠 Generate smart mapping usando columnMapper
-    console.log("🔵 Invocazione smart mapper per headers:", headers); // INFO DEV - rimuovere in produzione
+    console.log("🔵 [DEBUG] Invocazione smart mapper per headers:", headers); // INFO DEV - rimuovere in produzione
     console.log("🔍 Team ID nel context:", teamId);
     console.log(
       "🔍 Smart Column Mapper disponibile:",
@@ -170,7 +209,7 @@ router.post("/map-columns", async (req, res) => {
   );
 
     // 📊 Log risultato per debugging
-    console.log("🟢 Smart mapping completato:", {
+    console.log("🟢 [INFO] Smart mapping completato:", {
       headers: headers.length,
       suggestions: Object.keys(mappingResult.suggestions || {}).length,
       confidence: mappingResult.confidence?.average || 0,
@@ -268,7 +307,11 @@ router.post(
         rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
       }
 
-      fs.unlinkSync(filePath);
+      try { 
+        await fsAsync.unlink(filePath); 
+      } catch (e) { 
+        logger.warn({ err: e?.message }, "Temp file cleanup failed"); 
+      }
 
       if (rows.length === 0) {
         return res
@@ -288,8 +331,9 @@ router.post(
         return out;
       });
 
+      const validated = validateMapping(mapping); // throws se non valido
       const normalizedMapping = {};
-      Object.entries(mapping).forEach(([csvHeader, desc]) => {
+      Object.entries(validated).forEach(([csvHeader, desc]) => {
         const cleanHeader = strip(csvHeader);
         normalizedMapping[cleanHeader] = { ...desc, csvHeader: cleanHeader };
       });
@@ -389,8 +433,9 @@ router.post("/import/preview-data", async (req, res) => {
       return out;
     });
 
+    const validated = validateMapping(mapping); // throws se non valido
     const normalizedMapping = {};
-    Object.entries(mapping).forEach(([csvHeader, desc]) => {
+    Object.entries(validated).forEach(([csvHeader, desc]) => {
       const cleanHeader = strip(csvHeader);
       normalizedMapping[cleanHeader] = { ...desc, csvHeader: cleanHeader };
     });
@@ -442,14 +487,14 @@ router.post("/import/import-data", async (req, res) => {
     const { fileId, mapping, originalExtension } = req.body;
 
     // 🟡 === DEBUG IMPORT DATI RICEVUTI === (AGGIUNTO)
-    console.log("🟡 === IMPORT FINALE DATI RICEVUTI ===");
-    console.log("🟡 FileId ricevuto:", fileId);
-    console.log("🟡 Team ID:", teamId);
-    console.log("🟡 User ID:", createdById);
-    console.log("🟡 Original extension:", originalExtension);
-    console.log("🟡 Mapping ricevuto (tipo):", typeof mapping);
-    console.log("🟡 Mapping ricevuto (chiavi):", Object.keys(mapping || {}));
-    console.log("🟡 Mapping completo:", JSON.stringify(mapping, null, 2));
+    console.log("🟡 [WARN] === IMPORT FINALE DATI RICEVUTI ===");
+    console.log("🟡 [WARN] FileId ricevuto:", fileId);
+    console.log("🟡 [WARN] Team ID:", teamId);
+    console.log("🟡 [WARN] User ID:", createdById);
+    console.log("🟡 [WARN] Original extension:", originalExtension);
+    console.log("🟡 [WARN] Mapping ricevuto (tipo):", typeof mapping);
+    console.log("🟡 [WARN] Mapping ricevuto (chiavi):", Object.keys(mapping || {}));
+    console.log("🟡 [WARN] Mapping completo:", JSON.stringify(mapping, null, 2));
 
     // Debug ogni campo mappato
     if (mapping && typeof mapping === "object") {
@@ -459,7 +504,7 @@ router.post("/import/import-data", async (req, res) => {
         );
       });
     }
-    console.log("🟡 ================================");
+    console.log("🟡 [WARN] ================================");
 
     if (!fileId || !mapping) {
       return res.status(400).json({
@@ -482,12 +527,12 @@ router.post("/import/import-data", async (req, res) => {
     let allRows = [];
 
     // Leggi tutto il file
-    console.log("🟡 Lettura file:", filePath, "estensione:", ext);
+    console.log("🟡 [WARN] Lettura file:", filePath, "estensione:", ext);
 
     if (ext === ".csv") {
       const firstLine = fs.readFileSync(filePath, "utf8").split("\n")[0];
       const separator = firstLine.includes(";") ? ";" : ",";
-      console.log("🟡 CSV separatore:", separator);
+      console.log("🟡 [WARN] CSV separatore:", separator);
 
       await new Promise((resolve, reject) => {
         fs.createReadStream(filePath)
@@ -502,9 +547,9 @@ router.post("/import/import-data", async (req, res) => {
       allRows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
     }
 
-    console.log("🟡 Righe lette dal file:", allRows.length);
+    console.log("🟡 [WARN] Righe lette dal file:", allRows.length);
     if (allRows.length > 0) {
-      console.log("🟡 Prima riga esempio:", Object.keys(allRows[0]));
+      console.log("🟡 [WARN] Prima riga esempio:", Object.keys(allRows[0]));
     }
 
     // Normalizza e applica mapping usando columnMapper
@@ -518,13 +563,14 @@ router.post("/import/import-data", async (req, res) => {
       return out;
     });
 
+    const validated = validateMapping(mapping); // throws se non valido
     const normalizedMapping = {};
-    Object.entries(mapping).forEach(([csvHeader, desc]) => {
+    Object.entries(validated).forEach(([csvHeader, desc]) => {
       const cleanHeader = strip(csvHeader);
       normalizedMapping[cleanHeader] = { ...desc, csvHeader: cleanHeader };
     });
 
-    console.log("🟡 Mapping normalizzato:", Object.keys(normalizedMapping));
+    console.log("🟡 [WARN] Mapping normalizzato:", Object.keys(normalizedMapping));
 
     const transformResult = await smartColumnMapper.applyMapping(
       normalizedRows,
@@ -532,7 +578,7 @@ router.post("/import/import-data", async (req, res) => {
       teamId
     );
 
-    console.log("🟡 Risultato trasformazione:", {
+    console.log("🟡 [WARN] Risultato trasformazione:", {
       success: transformResult.success,
       dataLength: transformResult.data?.length || 0,
       errorsLength: transformResult.errors?.length || 0,
@@ -555,9 +601,9 @@ try {
     transformResult.stats,          // statistiche (successRate, ecc.)
     { vendor: 'CSV Import' }        // opzionale: info extra
   );
-  console.log("🟢 Template auto-salvato (se valido)");
+  console.log("🟢 [INFO] Template auto-salvato (se valido)");
 } catch (tplErr) {
-  console.log("🟡 Auto-learn template skipped:", tplErr.message);
+  console.log("🟡 [WARN] Auto-learn template skipped:", tplErr.message);
 }
 
 
@@ -567,7 +613,7 @@ try {
         "🟡 Prima riga trasformata:",
         Object.keys(transformResult.data[0])
       );
-      console.log("🟡 Esempio valori prima riga:", transformResult.data[0]);
+      console.log("🟡 [WARN] Esempio valori prima riga:", transformResult.data[0]);
     }
 
     // Salva nel database usando la stessa logica dell'endpoint originale
@@ -591,19 +637,19 @@ try {
       batches.push(transformResult.data.slice(i, i + BATCH_SIZE));
     }
 
-    console.log("🟡 Import ottimizzato in", batches.length, "batch di", BATCH_SIZE);
+    console.log("🟡 [WARN] Import ottimizzato in", batches.length, "batch di", BATCH_SIZE);
     console.log("🔴 DEBUG TIMEOUT CONFIG:", TRANSACTION_TIMEOUT, "ms");
 
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
       
-      console.log(`🟡 Processando batch ${batchIndex + 1}/${batches.length}`); // DEBUG - rimuovere in produzione
+      console.log(`🟡 [WARN] Processando batch ${batchIndex + 1}/${batches.length}`); // DEBUG - rimuovere in produzione
 
       try {
         await prisma.$transaction(async (tx) => {
           for (const rowData of batch) {
             try {
-              console.log("🟡 Preparazione dati per DB:", {
+              console.log("🟡 [WARN] Preparazione dati per DB:", {
                 playerId: rowData.playerId,
                 session_date: rowData.session_date,
                 total_distance_m: rowData.total_distance_m,
@@ -616,7 +662,7 @@ try {
                 Player: rowData.playerName || "Sconosciuto",
                 Position: rowData.position || "",
                 Day: rowData.session_date,
-                Match: rowData.session_type === "Match" ? "Yes" : "No",
+                Match: rowData.session_name === "Match" ? "Yes" : "No",
                 T: rowData.duration_minutes || 0,
                 "Distanza (m)": rowData.total_distance_m || 0,
                 "Dist Equivalente": rowData.equivalent_distance_m || null,
@@ -648,13 +694,14 @@ try {
                 .map(([field]) => field);
               
               if (imputedFields.length > 0) {
-                console.log(`🟡 Giocatore ${completedRow.Player}: campi imputati:`, imputedFields);
+  console.log(`🟡 [WARN] Giocatore ${completedRow.Player}: campi imputati:`, imputedFields);
               }
 
               const performanceData = {
                 playerId: rowData.playerId,
                 session_date: rowData.session_date,
-                session_type: rowData.session_type || null,
+                session_name: rowData.session_name || null,
+                session_name: rowData.session_name || null, // 🟠 AGGIUNTO session_name
                 duration_minutes: completedRow.T,
                 total_distance_m: completedRow["Distanza (m)"],
                 equivalent_distance_m: completedRow["Dist Equivalente"],
@@ -685,7 +732,7 @@ try {
                 max_power_5s_wkg: completedRow.MaxPM5,
                 is_match: completedRow.Match === "Yes",
                 drill_name: completedRow.Drill,
-                notes: completedRow.Note || null,
+                notes: (rowData?.notes != null ? rowData.notes : (completedRow?.Note ?? null)),
                 // Campi legacy per compatibilità
                 sprint_distance_m: rowData.sprint_distance_m || null,
                 avg_speed_kmh: rowData.avg_speed_kmh || null,
@@ -694,7 +741,6 @@ try {
                 max_heart_rate: rowData.max_heart_rate || null,
                 avg_heart_rate: rowData.avg_heart_rate || null,
                 source_device: rowData.source_device || "CSV Import",
-                notes: rowData.notes || null,
                 extras: rowData.extras || null, // 👈 AGGIUNTO
                 created_by: { connect: { id: createdById } },
               };
@@ -713,7 +759,7 @@ try {
                 },
               });
 
-              console.log("🟢 Record creato:", created.id);
+              console.log("🟢 [INFO] Record creato:", created.id);
 
               importResults.successful.push({
                 id: created.id,
@@ -735,15 +781,15 @@ try {
           isolationLevel: 'ReadCommitted' // 🔴 FIX: Aggiunto isolamento
         });
 
-        console.log(`🟢 Batch ${batchIndex + 1} completato: ${batch.length} record processati`);
+        logger.info({ batchIndex, batchSize: batch.length }, "Import batch processed");
 
-        // 🟠 Pausa tra batch per evitare sovraccarico database
-        if (batchIndex + 1 < batches.length) {
-          await new Promise(resolve => setTimeout(resolve, 200));
+        // 🟠 Pausa tra batch per evitare sovraccarico database (configurabile)
+        if (BATCH_DELAY_MS > 0 && (batchIndex + 1 < batches.length)) {
+          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
         }
 
       } catch (batchError) {
-        console.log(`🔴 Errore batch ${batchIndex + 1}: ${batchError.message}`);
+        logger.error({ err: batchError?.message }, "Import batch error");
         
         // Segna tutto il batch come fallito
         batch.forEach((rowData) => {
@@ -771,13 +817,13 @@ try {
       importResults.summary.playersAffected.size;
     importResults.summary.processingTime = processingTime;
 
-    console.log("🟢 Import completato:", importResults.summary);
+    console.log("🟢 [INFO] Import completato:", importResults.summary);
 
     // Cleanup file
-    try {
-      fs.unlinkSync(filePath);
-    } catch (cleanupError) {
-      console.log("🟡 Warning: could not delete temp file:", cleanupError.message);
+    try { 
+      await fsAsync.unlink(filePath); 
+    } catch (e) { 
+      logger.warn({ err: e?.message }, "Temp file cleanup failed"); 
     }
 
     return res.json({
@@ -790,7 +836,7 @@ try {
       },
     });
   } catch (error) {
-    console.log("🔴 Errore import finale:", error.message);
+    logger.error({ err: error?.message }, "Import error");
 
     return res.status(500).json({
       error: "Errore interno durante import finale",
@@ -809,7 +855,7 @@ router.post("/save-template", async (req, res) => {
     const teamId = req.context.teamId;
     const userId = req.context.userId;
 
-    console.log("🔵 Salvataggio template:", templateName, "per team:", teamId);
+    console.log("🔵 [DEBUG] Salvataggio template:", templateName, "per team:", teamId);
 
     if (
       !templateName ||
@@ -856,7 +902,7 @@ router.post("/save-template", async (req, res) => {
       });
     }
 
-    console.log("🟢 Template salvato:", normalizedName);
+    console.log("🟢 [INFO] Template salvato:", normalizedName);
 
     return res.json({
       message: "Template salvato con successo",
@@ -885,13 +931,13 @@ router.get("/templates", async (req, res) => {
   try {
     const teamId = req.context.teamId;
 
-    console.log("🔵 Caricamento template per team:", teamId); // INFO DEV - rimuovere in produzione
+    console.log("🔵 [DEBUG] Caricamento template per team:", teamId); // INFO DEV - rimuovere in produzione
 
     // 📋 Carica template usando columnMapper
 
     const templates = await smartColumnMapper.loadTemplates(teamId);
 
-    console.log("🟢 Template caricati:", templates.length); // INFO - rimuovere in produzione
+    console.log("🟢 [INFO] Template caricati:", templates.length); // INFO - rimuovere in produzione
 
     return res.json({
       message: "Template caricati con successo",
@@ -1067,12 +1113,12 @@ router.get(
         }),
 
         prisma.performanceData.groupBy({
-          by: ["session_type"],
+          by: ["session_name"],
           where: {
             playerId,
             player: { teamId }, // 🔧 FILTRO INDIRETTO VIA RELATION
           },
-          _count: { session_type: true },
+          _count: { session_name: true },
           _avg: {
             total_distance_m: true,
             top_speed_kmh: true,
@@ -1090,7 +1136,7 @@ router.get(
           select: {
             id: true,
             session_date: true,
-            session_type: true,
+            session_name: true,
             total_distance_m: true,
             top_speed_kmh: true,
             duration_minutes: true,
@@ -1147,8 +1193,8 @@ router.get(
           },
         },
         sessionBreakdown: sessionsByType.map((item) => ({
-          sessionType: item.session_type,
-          count: item._count.session_type,
+          sessionType: item.session_name,
+          count: item._count.session_name,
           avgDistance:
             item._avg.total_distance_m != null
               ? parseFloat(item._avg.total_distance_m.toFixed(2))
@@ -1208,7 +1254,7 @@ router.get(
   },
   async (req, res) => {
     try {
-      const { startDate, endDate, sessionType } = req.query;
+      const { startDate, endDate, sessionType, period } = req.query;
       const teamId = req.context.teamId; // 🔧 AGGIUNTO - Context multi-tenant
 
       console.log(
@@ -1220,6 +1266,14 @@ router.get(
 
       const prisma = getPrismaClient();
 
+      // 🔧 CALCOLO PERIODO CORRENTE E PRECEDENTE PER TREND
+      const periodValue = period || 'week';
+      const { periodStart, periodEnd } = buildPeriodRange(periodValue, startDate, endDate);
+      console.log(`📊 /stats/team -> periodo=${periodValue} start=${periodStart.toISOString()} end=${periodEnd.toISOString()}`);
+      const periodMs = periodEnd.getTime() - periodStart.getTime();
+      const prevEnd = new Date(periodStart.getTime() - 1);
+      const prevStart = new Date(prevEnd.getTime() - periodMs);
+
       // 🔧 FIXED - Filtri WHERE con constraint team
       const where = {
         player: { teamId }, // 🔧 FILTRO MULTI-TENANT OBBLIGATORIO
@@ -1230,7 +1284,14 @@ router.get(
           ...(where.session_date || {}),
           lte: new Date(endDate),
         };
-      if (sessionType) where.session_type = sessionType;
+      if (sessionType) where.session_name = sessionType;
+
+      // 🔧 FILTRI PER PERIODO PRECEDENTE
+      const prevWhere = {
+        player: { teamId },
+        session_date: { gte: prevStart, lte: prevEnd }
+      };
+      if (sessionType) prevWhere.session_name = sessionType;
 
       const [
         totalSessions,
@@ -1238,6 +1299,8 @@ router.get(
         teamAverages,
         topPerformers,
         sessionTypeBreakdown,
+        // 🔧 NUOVO: Dati per periodo precedente per trend
+        prevTeamAverages
       ] = await Promise.all([
         prisma.performanceData.count({ where }),
 
@@ -1279,16 +1342,52 @@ router.get(
         }),
 
         prisma.performanceData.groupBy({
-          by: ["session_type"],
+          by: ["session_name"],
           where,
-          _count: { session_type: true },
+          _count: { session_name: true },
           _avg: {
             total_distance_m: true,
             player_load: true,
             top_speed_kmh: true,
           },
         }),
+
+        // 🔧 NUOVO: Aggregate per periodo precedente
+        prisma.performanceData.aggregate({
+          where: prevWhere,
+          _avg: {
+            total_distance_m: true,
+            sprint_distance_m: true,
+            top_speed_kmh: true,
+            avg_speed_kmh: true,
+            player_load: true,
+            max_heart_rate: true,
+            duration_minutes: true,
+          },
+        }),
       ]);
+
+      // 🔧 CALCOLO TREND PERCENTUALI
+      const calculateTrend = (current, previous) => {
+        if (previous === 0 || previous === null) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+
+      const currentAvgDistance = teamAverages._avg.total_distance_m || 0;
+      const prevAvgDistance = prevTeamAverages._avg.total_distance_m || 0;
+      const distanceTrend = calculateTrend(currentAvgDistance, prevAvgDistance);
+
+      const currentAvgLoad = teamAverages._avg.player_load || 0;
+      const prevAvgLoad = prevTeamAverages._avg.player_load || 0;
+      const loadTrend = calculateTrend(currentAvgLoad, prevAvgLoad);
+
+      const currentAvgSpeed = teamAverages._avg.top_speed_kmh || 0;
+      const prevAvgSpeed = prevTeamAverages._avg.top_speed_kmh || 0;
+      const speedTrend = calculateTrend(currentAvgSpeed, prevAvgSpeed);
+
+      const currentAvgDuration = teamAverages._avg.duration_minutes || 0;
+      const prevAvgDuration = prevTeamAverages._avg.duration_minutes || 0;
+      const durationTrend = calculateTrend(currentAvgDuration, prevAvgDuration);
 
       const teamStats = {
         overview: {
@@ -1300,6 +1399,7 @@ router.get(
             endDate: endDate || null,
           },
           sessionTypeFilter: sessionType || null,
+          period: periodValue,
         },
         teamAverages: {
           totalDistance:
@@ -1331,17 +1431,24 @@ router.get(
               ? Math.round(teamAverages._avg.duration_minutes)
               : null,
         },
+        // 🔧 NUOVO: Trend percentuali per marcatori di variazione
+        trends: {
+          distanceTrend: Math.max(-999, Math.min(999, Math.round(distanceTrend || 0))),
+          loadTrend: Math.max(-999, Math.min(999, Math.round(loadTrend || 0))),
+          speedTrend: Math.max(-999, Math.min(999, Math.round(speedTrend || 0))),
+          durationTrend: Math.max(-999, Math.min(999, Math.round(durationTrend || 0))),
+        },
         topPerformers: topPerformers.map((item) => ({
           player: item.player,
           sessionDate: item.session_date,
-          sessionType: item.session_type,
+          sessionType: item.session_name,
           playerLoad: item.player_load,
           totalDistance: item.total_distance_m,
           topSpeed: item.top_speed_kmh,
         })),
         sessionBreakdown: sessionTypeBreakdown.map((item) => ({
-          sessionType: item.session_type,
-          count: item._count.session_type,
+          sessionType: item.session_name,
+          count: item._count.session_name,
           avgDistance:
             item._avg.total_distance_m != null
               ? parseFloat(item._avg.total_distance_m.toFixed(2))
@@ -1365,6 +1472,14 @@ router.get(
         "giocatori"
       );
 
+      console.log(
+        "🔵 Trend calcolati:",
+        "Distanza:", teamStats.trends.distanceTrend + "%",
+        "Load:", teamStats.trends.loadTrend + "%",
+        "Velocità:", teamStats.trends.speedTrend + "%",
+        "Durata:", teamStats.trends.durationTrend + "%"
+      );
+
       res.json({
         message: "Statistiche team recuperate con successo",
         data: teamStats,
@@ -1383,10 +1498,451 @@ router.get(
 router.get("/player/:playerId/sessions", ensureNumericParam("playerId"), getSessionsByPlayer);
 
 /**
+ * 👥 GET /api/performance/stats/players
+ * Card giocatori per "Schede Giocatori" - MULTI-TENANT con calcoli reali
+ */
+router.get("/stats/players", async (req, res) => {
+  try {
+    // Helper per evitare crash con dati sporchi
+    const safeNum = v => Number.isFinite(Number(v)) ? Number(v) : 0;
+    const asDate = v => v instanceof Date ? v : new Date(v);
+    
+    // a) Leggi e normalizza i parametri
+    const period = (req.query.period || 'week');            // 'week' | 'month' | 'quarter' | 'custom'
+    const sessionType = (req.query.sessionType || 'all');   // 'all' | 'allenamento' | 'partita'
+    const sessionName = (req.query.sessionName || 'all');   // 'all' | 'Aerobico' | 'Intermittente' | etc.
+    const roles = (req.query.roles || '').split(',').filter(Boolean); // ['POR','DIF',...]
+    const status = (req.query.status || 'all');
+    const search = (req.query.search || '').trim();
+    
+
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
+    const sortBy = (req.query.sortBy || 'acwr');            // 'acwr' | 'plMin' | 'hsr' | 'topSpeed' | 'sprintPer90' | 'name'
+    
+    const teamId = req.context.teamId;
+
+    logger.debug({ teamId, filters: req.query }, "[STATS/PLAYERS] request");
+
+    const prisma = getPrismaClient();
+
+    // b) Calcola il range date in base a period
+    const { periodStart, periodEnd } = buildPeriodRange(period, startDate, endDate);
+    console.log(`📊 /stats/players -> periodo=${period} start=${periodStart.toISOString()} end=${periodEnd.toISOString()}`);
+    const periodMs = periodEnd.getTime() - periodStart.getTime();
+    const prevEnd = new Date(periodStart.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - periodMs);
+
+    // c) Mappa i ruoli 'POR','DIF','CEN','ATT' in quello che c'è a DB
+    const roleMap = { 
+      POR: ['GOALKEEPER', 'POR'], 
+      DIF: ['DEFENDER', 'DIF'], 
+      CEN: ['MIDFIELDER', 'CEN'], 
+      ATT: ['FORWARD', 'ATT'] 
+    };
+
+    // d) Filtra per sessionType (session_type)
+    const sessionTypeFilter = parseSessionTypeFilterSimple(sessionType);
+    console.log('🔵 [DEBUG] Performance API: sessionType ricevuto:', sessionType);
+    console.log('🔵 [DEBUG] Performance API: sessionTypeFilter applicato:', sessionTypeFilter);
+
+    // 🆕 NUOVO: Filtra per sessionName (session_name)
+    const sessionNameFilter = parseSessionTypeFilter(sessionName);
+    console.log('🔵 [DEBUG] Performance API: sessionName ricevuto:', sessionName);
+    console.log('🔵 [DEBUG] Performance API: sessionNameFilter applicato:', sessionNameFilter);
+
+    // ================= CARICA GIOCATORI =================
+    
+    // Carica tutti i giocatori del team
+    const players = await prisma.player.findMany({
+      where: { 
+        teamId,
+        // e) Filtra per status solo se realmente abbiamo un campo 'status' per il player
+        ...(status !== 'all' && { isActive: status === 'active' })
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        position: true,
+        shirtNumber: true,
+        isActive: true
+      },
+      orderBy: [
+        { position: 'asc' },
+        { lastName: 'asc' }
+      ]
+    });
+
+    // f) Applica 'search' su nome/cognome/numero maglia
+    let filteredPlayers = players;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredPlayers = players.filter(p => 
+        `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchLower) ||
+        p.shirtNumber?.toString().includes(search)
+      );
+    }
+
+    // Filtra per ruolo
+    if (roles.length > 0) {
+      const mappedRoles = roles.flatMap(r => roleMap[r] || []).filter(Boolean);
+      filteredPlayers = filteredPlayers.filter(p => mappedRoles.includes(p.position));
+    }
+
+    // ================= CARICA DATI PERFORMANCE =================
+    
+    // Carica dati performance per periodo corrente
+    // h) Esegui le aggregate per giocatore nel range
+    console.log('🔵 [DEBUG] Performance API: Query con filtro session_type:', sessionTypeFilter);
+    console.log('🔵 [DEBUG] Performance API: Query con filtro session_name:', sessionNameFilter);
+    const performanceData = await prisma.performanceData.findMany({
+      where: {
+        player: { teamId },
+        session_date: { gte: periodStart, lte: periodEnd },
+        ...(sessionTypeFilter && { session_type: sessionTypeFilter }),
+        ...(sessionNameFilter && { session_name: sessionNameFilter })
+      },
+      include: {
+        player: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            position: true
+          }
+        }
+      },
+      orderBy: { session_date: 'desc' }
+    });
+    
+    console.log('🔵 [DEBUG] Performance API: Record trovati con filtro:', performanceData.length);
+
+    // Carica dati performance per periodo precedente (per trend)
+    const prevPerformanceData = await prisma.performanceData.findMany({
+      where: {
+        player: { teamId },
+        session_date: { gte: prevStart, lte: prevEnd },
+        ...(sessionTypeFilter && { session_type: sessionTypeFilter }),
+        ...(sessionNameFilter && { session_name: sessionNameFilter })
+      },
+      include: {
+        player: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            position: true
+          }
+        }
+      }
+    });
+
+    // Carica dati per ACWR (ultimi 28 giorni, finestra che termina in periodEnd)
+    const acwrEndDate = periodEnd;
+    const acwrStartDate = new Date(acwrEndDate.getTime() - 28 * 86400000);
+    const acwrData = await prisma.performanceData.findMany({
+      where: {
+        player: { teamId },
+        session_date: { gte: acwrStartDate, lte: acwrEndDate },
+        ...(sessionTypeFilter && { session_type: sessionTypeFilter }),
+        ...(sessionNameFilter && { session_name: sessionNameFilter })
+      },
+      select: { playerId: true, session_date: true, player_load: true }
+    });
+
+    // ================= CALCOLA KPI PER OGNI GIOCATORE =================
+    
+    const playersWithStats = await Promise.all(filteredPlayers.map(async (player) => {
+      const playerId = player.id;
+      
+      // Filtra dati per questo giocatore
+      const playerData = performanceData.filter(p => p.playerId === playerId);
+      const prevPlayerData = prevPerformanceData.filter(p => p.playerId === playerId);
+      const playerAcwrData = acwrData.filter(p => p.playerId === playerId);
+
+      // ================= CALCOLI BASE =================
+      
+      // PL/min = SUM(player_load) / SUM(duration_minutes)
+      const totalPlayerLoad = playerData.reduce((sum, p) => sum + safeNum(p.player_load), 0);
+      const totalDuration = playerData.reduce((sum, p) => sum + safeNum(p.duration_minutes), 0);
+      const plMin = totalDuration > 0 ? totalPlayerLoad / totalDuration : 0;
+
+      // ✅ Usa util KPI comuni
+      const hsr = computeHSR(playerData);
+      const sprintPer90 = computeSprintPer90(playerData);
+
+      logger.debug({ playerId: player.id, hsr, sprintPer90 }, "KPI calcolati");
+
+      // Top Speed = MAX(top_speed_kmh)
+      const topSpeed = Math.max(...playerData.map(p => safeNum(p.top_speed_kmh)), 0);
+
+      // ================= ACWR CALCULATION =================
+      
+      const acwr = computeACWR(playerAcwrData, acwrEndDate);
+
+      // ================= TREND CALCULATION =================
+      
+      // Calcola KPI per periodo precedente
+      const prevTotalPlayerLoad = prevPlayerData.reduce((sum, p) => sum + safeNum(p.player_load), 0);
+      const prevTotalDuration = prevPlayerData.reduce((sum, p) => sum + safeNum(p.duration_minutes), 0);
+      const prevPlMin = prevTotalDuration > 0 ? prevTotalPlayerLoad / prevTotalDuration : 0;
+
+      // ✅ Usa util KPI comuni per periodo precedente
+      const prevHsr = computeHSR(prevPlayerData);
+      const prevSprintPer90 = computeSprintPer90(prevPlayerData);
+
+      const prevTopSpeed = Math.max(...prevPlayerData.map(p => safeNum(p.top_speed_kmh)), 0);
+
+      // Calcola trend percentuali
+      const calculateTrend = (current, previous) => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+
+      const plMinTrend = calculateTrend(plMin, prevPlMin);
+      const hsrTrend = calculateTrend(hsr, prevHsr);
+      const sprintTrend = calculateTrend(sprintPer90, prevSprintPer90);
+      const speedTrend = calculateTrend(topSpeed, prevTopSpeed);
+
+      // ================= PERCENTILI PER RUOLO =================
+      
+      // Raggruppa giocatori per ruolo per calcolare percentili
+      const playersByRole = {};
+      filteredPlayers.forEach(p => {
+        if (!playersByRole[p.position]) playersByRole[p.position] = [];
+        playersByRole[p.position].push(p.id);
+      });
+
+      // Calcola percentili per questo giocatore
+      const rolePlayers = playersByRole[player.position] || [];
+      const rolePlayerStats = await Promise.all(rolePlayers.map(async (pid) => {
+        const pData = performanceData.filter(p => p.playerId === pid);
+        const pTotalLoad = pData.reduce((sum, p) => sum + (p.player_load || 0), 0);
+        const pTotalDuration = pData.reduce((sum, p) => sum + (p.duration_minutes || 0), 0);
+        const pPlMin = pTotalDuration > 0 ? pTotalLoad / pTotalDuration : 0;
+        
+        // ✅ HSR CORRETTO per percentili
+        const pHsr = pData.reduce((sum, p) => {
+          let hsrValue = p.high_intensity_distance_m || 0;
+          if (hsrValue === 0) {
+            hsrValue = (p.distance_over_15_kmh_m || 0) + 
+                       (p.distance_15_20_kmh_m || 0) + 
+                       (p.distance_20_25_kmh_m || 0) + 
+                       (p.distance_over_25_kmh_m || 0);
+            if (hsrValue === 0 && p.sprint_distance_m > 0) {
+              hsrValue = Math.round(p.sprint_distance_m * 2.5);
+            }
+          }
+          return sum + hsrValue;
+        }, 0);
+        
+        // ✅ SPRINT/90 CORRETTO per percentili
+        const pTotalSprints = pData.reduce((sum, p) => {
+          let sprintValue = p.sprint_count || 0;
+          if (sprintValue === 0 && p.num_acc_over_3_ms2 > 0) {
+            sprintValue = p.num_acc_over_3_ms2;
+          }
+          return sum + sprintValue;
+        }, 0);
+        const pSprintPer90 = pTotalDuration > 0 ? (pTotalSprints * 90) / pTotalDuration : 0;
+        
+        const pTopSpeed = Math.max(...pData.map(p => p.top_speed_kmh || 0), 0);
+        
+        return { plMin: pPlMin, hsr: pHsr, sprintPer90: pSprintPer90, topSpeed: pTopSpeed };
+      }));
+
+      // 🔧 FIX: PERCENTILE CORRETTO e semplificato
+      const calculatePercentile = (value, values, field) => {
+        if (!values || values.length === 0) return 50;
+        
+        const validValues = values
+          .map(v => v[field])
+          .filter(v => v != null && Number.isFinite(v))
+          .sort((a, b) => a - b);
+          
+        if (validValues.length === 0) return 50;
+        if (value == null || !Number.isFinite(value)) return 0;
+        
+        // 🔧 Calcolo percentile semplificato e robusto
+        let rank = 0;
+        for (let i = 0; i < validValues.length; i++) {
+          if (validValues[i] <= value) {
+            rank = i + 1;
+          } else {
+            break;
+          }
+        }
+        
+        return Math.max(1, Math.min(100, Math.round((rank / validValues.length) * 100)));
+      };
+
+      // ✅ PERCENTILI CORRETTI - calcolo reale all'interno del ruolo nel team
+      const plMinPercentile = rolePlayerStats.length > 1 ? 
+        calculatePercentile(plMin, rolePlayerStats, 'plMin') : 100;
+      const hsrPercentile = rolePlayerStats.length > 1 ? 
+        calculatePercentile(hsr, rolePlayerStats, 'hsr') : 100;
+      const sprintPercentile = rolePlayerStats.length > 1 ? 
+        calculatePercentile(sprintPer90, rolePlayerStats, 'sprintPer90') : 100;
+      const speedPercentile = rolePlayerStats.length > 1 ? 
+        calculatePercentile(topSpeed, rolePlayerStats, 'topSpeed') : 100;
+
+      console.log(`🟢 [INFO] Percentili calcolati per ${player.firstName} (${rolePlayerStats.length} giocatori nel ruolo):`, {
+        plMin: plMinPercentile, hsr: hsrPercentile, sprint: sprintPercentile, speed: speedPercentile
+      }); // INFO - rimuovere in produzione
+
+      // ================= ULTIMA SESSIONE =================
+      
+      const lastSession = playerData.length > 0 ? playerData[0] : null;
+      let lastSessionDelta = 0;
+      
+      if (lastSession) {
+        const avgPlayerLoad = playerData.reduce((sum, p) => sum + (p.player_load || 0), 0) / playerData.length;
+        const lastSessionLoad = lastSession.player_load || 0;
+        lastSessionDelta = avgPlayerLoad > 0 ? ((lastSessionLoad - avgPlayerLoad) / avgPlayerLoad) * 100 : 0;
+      }
+
+      // ================= ALERTS =================
+      
+      const alerts = [];
+      
+      // ACWR alerts
+      if (acwr > 1.5) {
+        alerts.push({ type: 'danger', message: 'ACWR critico' });
+      } else if (acwr > 1.3) {
+        alerts.push({ type: 'warning', message: 'ACWR elevato' });
+      } else if (acwr < 0.7) {
+        alerts.push({ type: 'warning', message: 'ACWR basso' });
+      }
+
+      // Personal Best alerts
+      const allTimeTopSpeed = Math.max(...performanceData.filter(p => p.playerId === playerId).map(p => p.top_speed_kmh || 0), 0);
+      if (topSpeed > 0 && topSpeed >= allTimeTopSpeed * 0.95) {
+        alerts.push({ type: 'success', message: `PB Velocità ${topSpeed.toFixed(1)} km/h` });
+      }
+
+      // Status alerts
+      if (!player.isActive) {
+        alerts.push({ type: 'danger', message: 'Giocatore non attivo' });
+      }
+
+      // i) Sanitizza numeri prima di rispondere (arrotonda e clampa trend)
+      const round = (v, d = 2) => Number.isFinite(v) ? Number(v.toFixed(d)) : null;
+      const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+      const pct = (v) => Number.isFinite(v) ? clamp(Math.round(v), -999, 999) : null;
+
+      // ================= FORMATTA OUTPUT =================
+      
+      const roleMap = {
+        'GOALKEEPER': 'POR',
+        'DEFENDER': 'DIF',
+        'MIDFIELDER': 'CEN', 
+        'FORWARD': 'ATT'
+      };
+
+      const statusMap = {
+        true: 'active',
+        false: 'inactive'
+      };
+
+      const availabilityMap = {
+        true: 'green',
+        false: 'red'
+      };
+
+      return {
+        id: player.id,
+        name: `${player.firstName} ${player.lastName}`,
+        role: roleMap[player.position] || player.position,
+        number: player.shirtNumber,
+        status: statusMap[player.isActive],
+        availability: availabilityMap[player.isActive],
+        avatar: null,
+        plMin: Number((plMin || 0).toFixed(2)),
+        plMinTrend: Math.max(-999, Math.min(999, Math.round(plMinTrend || 0))),
+        plMinPercentile: Math.max(1, Math.min(100, plMinPercentile || 50)),
+        hsr: Math.max(0, Math.round(hsr || 0)),
+        hsrTrend: Math.max(-999, Math.min(999, Math.round(hsrTrend || 0))),
+        hsrPercentile: Math.max(1, Math.min(100, hsrPercentile || 50)),
+        sprintPer90: Number((sprintPer90 || 0).toFixed(2)),
+        sprintTrend: Math.max(-999, Math.min(999, Math.round(sprintTrend || 0))),
+        sprintPercentile: Math.max(1, Math.min(100, sprintPercentile || 50)),
+        topSpeed: round(topSpeed, 2),
+        speedTrend: pct(speedTrend),
+        speedPercentile: speedPercentile,
+        acwr: round(acwr, 2),
+        lastSession: lastSession ? {
+          type: lastSession.session_name || 'Allenamento',
+          minutes: lastSession.duration_minutes || 0,
+          date: lastSession.session_date.toLocaleDateString('it-IT'),
+          delta: round(lastSessionDelta, 1)
+        } : null,
+        alerts: alerts
+      };
+    }));
+
+    // ================= APPLICA ORDINAMENTO =================
+    
+    let sortedPlayers = [...playersWithStats];
+    
+    switch (sortBy) {
+      case 'acwr':
+        sortedPlayers.sort((a, b) => b.acwr - a.acwr);
+        break;
+      case 'plMin':
+        sortedPlayers.sort((a, b) => b.plMin - a.plMin);
+        break;
+      case 'hsr':
+        sortedPlayers.sort((a, b) => b.hsr - a.hsr);
+        break;
+      case 'topSpeed':
+        sortedPlayers.sort((a, b) => b.topSpeed - a.topSpeed);
+        break;
+      case 'sprintPer90':
+        sortedPlayers.sort((a, b) => b.sprintPer90 - a.sprintPer90);
+        break;
+      case 'name':
+        sortedPlayers.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+
+    console.log('🟢 [INFO] Calcoli completati per', sortedPlayers.length, 'giocatori');
+
+    // ✅ DEBUG LOG PER MULTI-TENANT - verifica che i calcoli siano corretti per team
+    console.log(`🟢 [INFO] Calcoli completati per team ${teamId}:`, {
+      giocatoriProcessati: sortedPlayers.length,
+      hsrMedio: Math.round(sortedPlayers.reduce((sum, p) => sum + (p.hsr || 0), 0) / sortedPlayers.length),
+      sprintMedio: (sortedPlayers.reduce((sum, p) => sum + (p.sprintPer90 || 0), 0) / sortedPlayers.length).toFixed(2),
+      plMinMedio: (sortedPlayers.reduce((sum, p) => sum + (p.plMin || 0), 0) / sortedPlayers.length).toFixed(2),
+      topSpeedMax: Math.max(...sortedPlayers.map(p => p.topSpeed || 0)).toFixed(2),
+      percentilesValid: sortedPlayers.filter(p => p.hsrPercentile > 0 && p.hsrPercentile < 100).length
+    }); // INFO - rimuovere in produzione
+
+    // j) DEBUG: includi nel JSON un piccolo echo dei filtri applicati
+    res.json({
+      players: sortedPlayers,
+      total: sortedPlayers.length,
+      timestamp: new Date().toISOString(),
+      meta: { 
+        applied: { period, sessionType, roles, status, startDate, endDate, search, sortBy } 
+      }
+    });
+
+  } catch (error) {
+    logger.error({ err: error?.message }, "Stats error");
+    res.status(500).json({
+      error: 'Errore interno del server',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
  * 📋 GET /api/performance
  * Lista con filtri - MULTI-TENANT
  */
 router.get("/", getPerformanceData);
+
 
 /**
  * ➕ POST /api/performance
@@ -1475,11 +2031,8 @@ router.delete(
         });
       }
 
-      if (performanceData.createdById !== req.user.profile.id) {
-        console.log(
-          "🟡 Tentativo eliminazione performance data di altro utente da:",
-          userRole
-        );
+      if (performanceData.createdById !== req.context.userId) {
+        logger.warn({ role: req.user?.role }, "Unauthorized team stats access attempt");
         return res.status(403).json({
           error: "Puoi eliminare solo i dati performance che hai creato",
           code: "OWNERSHIP_REQUIRED",
@@ -1517,7 +2070,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
     const teamId = req.context.teamId;
     const createdById = req.context.userId;
 
-    console.log("🔵 Avvio import finale per team:", teamId); // INFO DEV - rimuovere in produzione
+    console.log("🔵 [DEBUG] Avvio import finale per team:", teamId); // INFO DEV - rimuovere in produzione
 
     // 🔍 Validazione input
     if (!req.file) {
@@ -1556,7 +2109,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
       const firstLine = fs.readFileSync(filePath, "utf8").split("\n")[0];
       const separator = firstLine.includes(";") ? ";" : ",";
 
-      console.log("🔵 Parsing CSV con separatore:", separator); // INFO DEV - rimuovere in produzione
+      console.log("🔵 [DEBUG] Parsing CSV con separatore:", separator); // INFO DEV - rimuovere in produzione
 
       await new Promise((resolve, reject) => {
         fs.createReadStream(filePath)
@@ -1566,13 +2119,17 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
           .on("error", reject);
       });
     } else if (ext === ".xlsx") {
-      console.log("🔵 Parsing XLSX..."); // INFO DEV - rimuovere in produzione
+      console.log("🔵 [DEBUG] Parsing XLSX..."); // INFO DEV - rimuovere in produzione
 
       const workbook = xlsx.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       allRows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
     } else {
-      fs.unlinkSync(filePath);
+      try { 
+        await fsAsync.unlink(filePath); 
+      } catch (e) { 
+        logger.warn({ err: e?.message }, "Temp file cleanup failed"); 
+      }
       return res.status(400).json({
         error: "Formato file non supportato",
         code: "UNSUPPORTED_FORMAT",
@@ -1580,7 +2137,11 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
     }
 
     // 🧹 Cleanup file
-    fs.unlinkSync(filePath);
+    try { 
+      await fsAsync.unlink(filePath); 
+    } catch (e) { 
+      logger.warn({ err: e?.message }, "Temp file cleanup failed"); 
+    }
 
     if (allRows.length === 0) {
       return res.status(400).json({
@@ -1589,7 +2150,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
       });
     }
 
-    console.log("🔵 File parsato:", allRows.length, "righe totali"); // INFO DEV - rimuovere in produzione
+    console.log("🔵 [DEBUG] File parsato:", allRows.length, "righe totali"); // INFO DEV - rimuovere in produzione
 
     // 🔧 Normalizza headers (rimuovi BOM + trim)
     const normalizeString = (str) =>
@@ -1603,14 +2164,15 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
       return normalized;
     });
 
+    const validated = validateMapping(mapping); // throws se non valido
     const normalizedMapping = {};
-    Object.entries(mapping).forEach(([csvHeader, config]) => {
+    Object.entries(validated).forEach(([csvHeader, config]) => {
       const cleanHeader = normalizeString(csvHeader);
       normalizedMapping[cleanHeader] = { ...config, csvHeader: cleanHeader };
     });
 
     // 🎯 Applica mapping usando smartColumnMapper
-    console.log("🔵 Applicazione mapping a tutti i dati..."); // INFO DEV - rimuovere in produzione
+    console.log("🔵 [DEBUG] Applicazione mapping a tutti i dati..."); // INFO DEV - rimuovere in produzione
 
     const transformResult = await smartColumnMapper.applyMapping(
       normalizedRows,
@@ -1632,7 +2194,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
       stats,
     } = transformResult;
 
-    console.log("🔵 Dati trasformati:", transformedData.length, "righe valide"); // INFO DEV - rimuovere in produzione
+    console.log("🔵 [DEBUG] Dati trasformati:", transformedData.length, "righe valide"); // INFO DEV - rimuovere in produzione
 
     if (transformedData.length === 0) {
       return res.status(400).json({
@@ -1643,7 +2205,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
     }
 
     // 💾 SALVATAGGIO DATABASE con transazione OTTIMIZZATA
-    console.log("🔵 Avvio transazione database ottimizzata..."); // INFO DEV - rimuovere in produzione
+    console.log("🔵 [DEBUG] Avvio transazione database ottimizzata..."); // INFO DEV - rimuovere in produzione
 
     const prisma = getPrismaClient();
     const importResults = {
@@ -1684,7 +2246,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
       
-      console.log(`🟡 Processando batch ${batchIndex + 1}/${batches.length}`); // DEBUG - rimuovere in produzione
+      console.log(`🟡 [WARN] Processando batch ${batchIndex + 1}/${batches.length}`); // DEBUG - rimuovere in produzione
 
       try {
         // 🟠 Transazione con timeout esteso e isolamento ottimizzato
@@ -1692,7 +2254,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
           for (const rowData of batch) {
             try {
               if (process.env.IMPORT_DEBUG === '1') {
-                console.log("🟡 Preparazione dati per DB:", {
+                console.log("🟡 [WARN] Preparazione dati per DB:", {
                   playerId: rowData.playerId,
                   session_date: rowData.session_date,
                   total_distance_m: rowData.total_distance_m,
@@ -1705,7 +2267,8 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
                 // ================= CAMPI ESISTENTI =================
                 playerId: rowData.playerId,
                 session_date: rowData.session_date,
-                session_type: rowData.session_type || null,
+                session_name: rowData.session_name || null,
+                session_name: rowData.session_name || null, // 🟠 AGGIUNTO session_name
                 duration_minutes: rowData.duration_minutes || null,
                 total_distance_m: rowData.total_distance_m || null,
                 sprint_distance_m: rowData.sprint_distance_m || null,
@@ -1816,7 +2379,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
           isolationLevel: 'ReadCommitted' // 🟠 Ottimizzazione isolamento
         });
 
-        console.log(`🟢 Batch ${batchIndex + 1} completato: ${batch.length} record processati`); // INFO - rimuovere in produzione
+        logger.info({ batchIndex, batchSize: batch.length }, "Import batch processed");
 
         // 🟠 Pausa tra batch per evitare sovraccarico database (configurabile)
         if (BATCH_DELAY_MS > 0 && (batchIndex + 1 < batches.length)) {
@@ -1865,7 +2428,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
           : `${minDate.toLocaleDateString("it-IT")} - ${maxDate.toLocaleDateString("it-IT")}`;
     }
 
-    console.log("🟢 Import completato:", {
+    console.log("🟢 [INFO] Import completato:", {
       successo: importResults.summary.successfulImports,
       errori: importResults.summary.errors,
       tasso: importResults.summary.successRate + "%",
@@ -1885,8 +2448,8 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
     });
 
   } catch (error) {
-    console.log("🔴 Errore import finale:", error.message); // ERROR - mantenere essenziali
-    console.log("🔴 Stack:", error.stack); // ERROR - per debug
+    logger.error({ err: error?.message }, "Import error");
+    logger.error({ stack: error.stack }, "Import error stack");
 
     return res.status(500).json({
       error: "Errore interno durante import finale",
@@ -1897,7 +2460,528 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
   }
 });
 
-console.log("🔵 Route performance multi-tenant configurate:");
+/**
+ * 📋 GET /api/performance/player/:playerId/dossier
+ * Dossier dettagliato giocatore - MULTI-TENANT
+ */
+router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (req, res) => {
+  const logger = require("../utils/logger");
+  try {
+    // Helper per evitare crash con dati sporchi
+    const safeNum = v => Number.isFinite(Number(v)) ? Number(v) : 0;
+    const safeDate = v => (v instanceof Date ? v : new Date(v || Date.now()));
+
+    const { buildPeriodRange, parseSessionTypeFilter, computeHSR, computeSprintPer90, computeACWR, round } = require("../utils/kpi");
+    
+    const playerId = Number(req.params.playerId);
+    const { period = 'week', sessionType = 'all', sessionName = 'all', roles = '', startDate, endDate } = req.query;
+    const teamId = req.context.teamId;
+
+    const { periodStart, periodEnd } = buildPeriodRange(period, startDate, endDate);
+    console.log(`📊 /player/${playerId}/dossier -> periodo=${period} start=${periodStart.toISOString()} end=${periodEnd.toISOString()}`);
+    const sessionTypeFilter = parseSessionTypeFilterSimple(sessionType);
+    const sessionNameFilter = parseSessionTypeFilter(sessionName);
+
+    logger.debug({ playerId, period, sessionType, sessionName, teamId }, "[DOSSIER] request");
+    console.log('🔍 DEBUG DOSSIER - Filtri applicati:', {
+      sessionType,
+      sessionTypeFilter,
+      sessionName,
+      sessionNameFilter,
+      period,
+      periodStart,
+      periodEnd
+    });
+
+    const prisma = getPrismaClient();
+
+    // Verifica che il giocatore appartenga al team
+    const player = await prisma.player.findFirst({
+      where: { 
+        id: playerId,
+        teamId 
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        position: true,
+        shirtNumber: true,
+        isActive: true
+      }
+    });
+
+    if (!player) {
+      return res.status(404).json({
+        error: "Player not found in this team",
+        code: "DOSSIER_404"
+      });
+    }
+
+    // Carica sessioni nel periodo richiesto
+    const sessions = await prisma.performanceData.findMany({
+      where: {
+        playerId,
+        session_date: { gte: safeDate(periodStart), lte: safeDate(periodEnd) },
+        ...(sessionTypeFilter ? { session_type: sessionTypeFilter } : {}),
+        ...(sessionNameFilter ? { session_name: sessionNameFilter } : {})
+      },
+      orderBy: { session_date: 'desc' },
+      select: {
+        id: true,
+        session_date: true,
+        session_name: true,
+        duration_minutes: true,
+        player_load: true,
+        top_speed_kmh: true,
+        high_intensity_runs: true,
+        sprint_distance_m: true,
+        distance_over_15_kmh_m: true,
+        distance_15_20_kmh_m: true,
+        distance_20_25_kmh_m: true,
+        distance_over_25_kmh_m: true,
+        total_distance_m: true,
+        num_acc_over_3_ms2: true,
+        num_dec_over_minus3_ms2: true,
+        avg_heart_rate: true,
+        max_heart_rate: true,
+        extras: true,          // JSON con eventuali rpe/sRPE
+        notes: true,
+      }
+    });
+
+    // KPI robusti + ACWR su finestra a periodEnd
+    const hsr = computeHSR(sessions);
+    const sprintPer90 = computeSprintPer90(sessions);
+
+    const acwrEndDate = safeDate(periodEnd);
+    const acwrStartDate = new Date(acwrEndDate.getTime() - 28 * 86400000);
+    const acwrData = await prisma.performanceData.findMany({
+      where: {
+        playerId,
+        session_date: { gte: acwrStartDate, lte: acwrEndDate },
+        ...(sessionTypeFilter && { session_type: sessionTypeFilter }),
+        ...(sessionNameFilter && { session_name: sessionNameFilter })
+      },
+      select: { session_date: true, player_load: true }
+    });
+    const acwr = computeACWR(
+      acwrData.map(r => ({ session_date: safeDate(r.session_date), player_load: safeNum(r.player_load) })),
+      acwrEndDate
+    );
+
+    // top speed nel periodo (fallback 0)
+    const topSpeedKmh = sessions.reduce((m, s) => {
+      const v = safeNum(s.top_speed_kmh);
+      return v > m ? v : m;
+    }, 0);
+
+    // pl/min nel periodo (media semplice o 0)
+    const totalPL = sessions.reduce((s, r) => s + safeNum(r.player_load), 0);
+    const totalMin = sessions.reduce((s, r) => s + safeNum(r.duration_minutes), 0);
+    const plPerMin = totalMin > 0 ? totalPL / totalMin : 0;
+
+    // "lastSession" sicura
+    const last = sessions[0];
+    const lastSession = last ? (() => {
+      const r = extractRPEfromExtras(last);
+      const minutes = safeNum(last.duration_minutes || 0);
+      const sRPEVal = r.session_rpe > 0 ? r.session_rpe : (r.rpe > 0 && minutes > 0 ? Math.round(r.rpe * minutes) : 0);
+      return {
+        date: safeDate(last.session_date),
+        type: last.session_name || null,
+        duration_minutes: safeNum(last.duration_minutes),
+        player_load: safeNum(last.player_load),
+        top_speed_kmh: safeNum(last.top_speed_kmh),
+        high_intensity_runs: safeNum(last.high_intensity_runs),
+        rpe: safeNum(r.rpe || 0),
+        session_rpe: sRPEVal,
+        notes: last.notes || null
+      };
+    })() : null;
+
+    // Formatta output per adattarsi al frontend
+    const roleMap = {
+      'GOALKEEPER': 'POR',
+      'DEFENDER': 'DIF',
+      'MIDFIELDER': 'CEN', 
+      'FORWARD': 'ATT'
+    };
+
+    // Calcola statistiche aggiuntive per il frontend
+    const totalDistance = sessions.reduce((s, r) => s + safeNum(r.total_distance_m || 0), 0);
+    const totalMinutes = sessions.reduce((s, r) => s + safeNum(r.duration_minutes), 0);
+    const totalSteps = sessions.reduce((s, r) => s + safeNum(r.steps || 0), 0);
+
+    // --- Riepilogo Intensità (zone velocità) ---
+    const zone15_20 = sessions.reduce((s, r) => s + safeNum(r.distance_15_20_kmh_m || 0), 0);
+    const zone20_25 = sessions.reduce((s, r) => s + safeNum(r.distance_20_25_kmh_m || 0), 0);
+    const zone25plus = sessions.reduce((s, r) => s + safeNum(r.distance_over_25_kmh_m || 0), 0);
+
+    // Helper per estrarre RPE/sRPE da extras
+    function extractRPEfromExtras(row) {
+      try {
+        const raw = row?.extras;
+        const ex = typeof raw === 'string' ? JSON.parse(raw) : raw || {};
+        // alias comuni usati negli import
+        const rpe =
+          Number(ex?.rpe) ??
+          Number(ex?.borg) ??
+          Number(ex?.borg_rpe) ??
+          Number(ex?.RPE) ?? 0;
+
+        const sRPE =
+          Number(ex?.session_rpe) ??
+          Number(ex?.sRPE) ??
+          Number(ex?.srpe) ?? 0;
+
+        return {
+          rpe: Number.isFinite(rpe) ? rpe : 0,
+          session_rpe: Number.isFinite(sRPE) ? sRPE : 0
+        };
+      } catch {
+        return { rpe: 0, session_rpe: 0 };
+      }
+    }
+
+    // --- Riepilogo Cardio ---
+    const avgHRValues = sessions.map(r => safeNum(r.avg_heart_rate || 0)).filter(v => v > 0);
+    const maxHRValues = sessions.map(r => safeNum(r.max_heart_rate || 0)).filter(v => v > 0);
+
+    // Estrai rpe/sRPE riga per riga da extras (con fallback)
+    const rpeRows = sessions.map(s => {
+      const { rpe, session_rpe } = extractRPEfromExtras(s);
+      const minutes = safeNum(s.duration_minutes || 0);
+      const sRPEcalc = session_rpe > 0 ? session_rpe : (rpe > 0 && minutes > 0 ? rpe * minutes : 0);
+      return { rpe: safeNum(rpe), sRPE: sRPEcalc };
+    });
+
+    const cardio = {
+      avgHR: avgHRValues.length ? Math.round(avgHRValues.reduce((a, b) => a + b, 0) / avgHRValues.length) : null,
+      maxHR: maxHRValues.length ? Math.max(...maxHRValues) : null,
+      // RPE medio (media dei Borg > 0)
+      rpeAvg: (() => {
+        const vals = rpeRows.map(r => r.rpe).filter(v => v > 0);
+        return vals.length ? Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)) : null;
+      })(),
+      // sRPE totale periodo (somma)
+      rpeSession: Math.round(rpeRows.reduce((sum, r) => sum + (r.sRPE || 0), 0))
+    };
+
+    // --- Riepilogo Acc/Dec ---
+    const accTotal = sessions.reduce((s, r) => s + safeNum(r.num_acc_over_3_ms2 || 0), 0);
+    const decTotal = sessions.reduce((s, r) => s + safeNum(r.num_dec_over_minus3_ms2 || 0), 0);
+
+    return res.json({
+      player: {
+        id: player.id,
+        name: `${player.firstName} ${player.lastName}`,
+        role: roleMap[player.position] || player.position,
+        number: player.shirtNumber,
+        status: player.isActive ? 'active' : 'inactive'
+      },
+      summary: {
+        plPerMin: round(plPerMin, 2),
+        hsrTot: round(hsr),
+        sprintPer90: round(sprintPer90, 2),
+        topSpeedMax: round(topSpeedKmh, 2),
+        acwr: round(acwr, 2),
+        distTot: totalDistance,
+        minutesTot: totalMinutes,
+        stepsTot: totalSteps,
+        trend: {
+          plPerMin: 0, // TODO: calcola trend se necessario
+          hsrTot: 0,
+          sprintPer90: 0,
+          topSpeedMax: 0
+        }
+      },
+      // 🔵 Nuova sezione per il tab "Intensità"
+      intensity: {
+        zone15_20: zone15_20,
+        zone20_25: zone20_25,
+        zone25plus: zone25plus,
+        hsrTot: round(hsr)
+      },
+      // 🔵 Nuova sezione per il tab "Cardio"
+      cardio,
+      // 🔵 Nuova sezione per il tab "Acc/Dec"
+      accDec: {
+        acc: accTotal,
+        dec: decTotal,
+        impact: null
+      },
+      percentiles: {
+        plPerMin: 50, // TODO: calcola percentili se necessario
+        hsrTot: 50,
+        sprintPer90: 50,
+        topSpeedMax: 50
+      },
+      breakdown: {
+        bySession: sessions.map(s => {
+          const rpeInfo = extractRPEfromExtras(s);
+          const minutes = safeNum(s.duration_minutes || 0);
+          const rpeVal = safeNum(rpeInfo.rpe || 0);
+          const sRPEVal = rpeInfo.session_rpe > 0 ? rpeInfo.session_rpe : (rpeVal > 0 && minutes > 0 ? Math.round(rpeVal * minutes) : 0);
+          return {
+            id: s.id,
+            date: safeDate(s.session_date).toLocaleDateString('it-IT'),
+            type: s.session_name || 'Allenamento',
+            minutes: safeNum(s.duration_minutes),
+            PL: safeNum(s.player_load),
+            notes: s.notes || null,
+            topSpeed: safeNum(s.top_speed_kmh),
+            hsr: safeNum(s.high_intensity_runs),
+            zone15_20: safeNum(s.distance_15_20_kmh_m || 0),
+            zone20_25: safeNum(s.distance_20_25_kmh_m || 0),
+            zone25plus: safeNum(s.distance_over_25_kmh_m || 0),
+            acc: safeNum(s.num_acc_over_3_ms2 || 0),
+            dec: safeNum(s.num_dec_over_minus3_ms2 || 0),
+            avgHR: safeNum(s.avg_heart_rate || 0),
+            maxHR: safeNum(s.max_heart_rate || 0),
+            rpe: rpeVal,
+            sRPE: sRPEVal
+          };
+        })
+      },
+      lastSession
+    });
+
+  } catch (err) {
+    logger.error({ err: err?.message, stack: err?.stack }, "[DOSSIER] crash");
+    return res.status(500).json({ error: "Internal Server Error", code: "DOSSIER_500" });
+  }
+});
+
+/**
+ * 📊 GET /api/performance/compare
+ * Confronto tra giocatori - MULTI-TENANT
+ */
+router.get("/compare", async (req, res) => {
+  try {
+    const teamId = req.context.teamId;
+    const playerIds = (req.query.players || '').split(',').filter(Boolean).map(Number);
+    
+    // Parametri di filtro
+    const period = (req.query.period || 'week');
+    const sessionType = (req.query.sessionType || 'all');
+    const sessionName = (req.query.sessionName || 'all');
+    const roles = (req.query.roles || '').split(',').filter(Boolean);
+    const status = (req.query.status || 'all');
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
+
+    console.log('[COMPARE] filters', { playerIds, period, sessionType, roles, status, startDate, endDate, teamId });
+
+    if (playerIds.length === 0) {
+      return res.status(400).json({
+        error: "Nessun giocatore specificato per il confronto",
+        code: "NO_PLAYERS_SPECIFIED"
+      });
+    }
+
+    const prisma = getPrismaClient();
+
+    // Verifica che tutti i giocatori appartengano al team
+    const players = await prisma.player.findMany({
+      where: { 
+        id: { in: playerIds },
+        teamId 
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        position: true,
+        shirtNumber: true,
+        isActive: true
+      }
+    });
+
+    if (players.length !== playerIds.length) {
+      return res.status(400).json({
+        error: "Uno o più giocatori non trovati o non appartengono al team",
+        code: "INVALID_PLAYERS"
+      });
+    }
+
+    // Calcola range date
+    let periodStart, periodEnd;
+    if (period === 'custom' && startDate && endDate) {
+      periodStart = new Date(startDate);
+      periodEnd = new Date(endDate);
+    } else {
+      const today = new Date();
+      switch (period) {
+        case 'month':
+          periodStart = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+          periodEnd = today;
+          break;
+        case 'quarter':
+          periodStart = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+          periodEnd = today;
+          break;
+        case 'week':
+        default:
+          periodStart = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+          periodEnd = today;
+          break;
+      }
+    }
+
+          // Filtro session type (session_type)
+      const sessionTypeFilter = (() => {
+        switch (sessionType) {
+          case 'allenamento': return 'allenamento';
+          case 'partita': return 'partita';
+          case 'all':
+          default: return undefined;
+        }
+      })();
+
+      // Filtro session name (session_name)
+      const sessionNameFilter = (() => {
+        if (sessionName === 'all') return undefined;
+        return sessionName;
+      })();
+
+      // Carica dati performance per tutti i giocatori
+      const performanceData = await prisma.performanceData.findMany({
+        where: {
+          playerId: { in: playerIds },
+          session_date: { gte: periodStart, lte: periodEnd },
+          ...(sessionTypeFilter && { session_type: sessionTypeFilter }),
+          ...(sessionNameFilter && { session_name: sessionNameFilter })
+        },
+      orderBy: { session_date: 'desc' }
+    });
+
+      // Carica dati per ACWR (ultimi 28 giorni, finestra che termina in periodEnd)
+      const acwrEndDate = periodEnd;
+      const acwrStartDate = new Date(acwrEndDate.getTime() - 28 * 86400000);
+
+      const acwrData = await prisma.performanceData.findMany({
+        where: {
+          playerId: { in: playerIds },
+          session_date: { gte: acwrStartDate, lte: acwrEndDate },
+          ...(sessionTypeFilter && { session_type: sessionTypeFilter }),
+          ...(sessionNameFilter && { session_name: sessionNameFilter })
+        },
+        select: { playerId: true, session_date: true, player_load: true }
+      });
+
+    // Calcola KPI per ogni giocatore
+    const playersWithStats = await Promise.all(players.map(async (player) => {
+      const playerData = performanceData.filter(p => p.playerId === player.id);
+
+      const totalPlayerLoad = playerData.reduce((sum, p) => sum + (p.player_load || 0), 0);
+      const totalDuration = playerData.reduce((sum, p) => sum + (p.duration_minutes || 0), 0);
+      const plMin = totalDuration > 0 ? totalPlayerLoad / totalDuration : 0;
+
+      // ✅ Usa util KPI comuni
+      const hsr = computeHSR(playerData);
+      const sprintPer90 = computeSprintPer90(playerData);
+
+      const topSpeed = Math.max(...playerData.map(p => p.top_speed_kmh || 0), 0);
+
+      // ACWR calculation (filtra i record della finestra 28gg per il singolo giocatore)
+      const playerAcwrData = acwrData.filter(p => p.playerId === player.id);
+      const acwr = computeACWR(playerAcwrData, periodEnd);
+
+      // Sanitizza numeri
+      const round = (v, d = 2) => Number.isFinite(v) ? Number(v.toFixed(d)) : null;
+
+      // Formatta output
+      const roleMap = {
+        'GOALKEEPER': 'POR',
+        'DEFENDER': 'DIF',
+        'MIDFIELDER': 'CEN', 
+        'FORWARD': 'ATT'
+      };
+
+      return {
+        id: player.id,
+        name: `${player.firstName} ${player.lastName}`,
+        role: roleMap[player.position] || player.position,
+        number: player.shirtNumber,
+        status: player.isActive ? 'active' : 'inactive',
+        kpis: {
+          plMin: round(plMin, 2),
+          hsr: Number.isFinite(hsr) ? Math.round(hsr) : null,
+          sprintPer90: round(sprintPer90, 2),
+          topSpeed: round(topSpeed, 2),
+          acwr: round(acwr, 2)
+        },
+        summary: {
+          totalSessions: playerData.length,
+          totalDuration: totalDuration,
+          totalPlayerLoad: totalPlayerLoad,
+          avgSessionDuration: playerData.length > 0 ? totalDuration / playerData.length : 0,
+          avgPlayerLoad: playerData.length > 0 ? totalPlayerLoad / playerData.length : 0
+        }
+      };
+    }));
+
+    res.json(playersWithStats);
+
+  } catch (error) {
+    logger.error({ err: error?.message }, "Compare error");
+    res.status(500).json({
+      error: 'Errore interno del server',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * 📊 GET /api/performance/session-types
+ * Ottiene i tipi di sessione disponibili nel database - MULTI-TENANT
+ */
+ router.get("/session-types", async (req, res) => {
+  try {
+    console.log('🔵 [DEBUG] API session-types chiamata per team:', req.context?.teamId);
+    const teamId = req.context?.teamId;
+    if (!teamId) {
+      return res.status(403).json({ error: 'Team non disponibile nel contesto' });
+    }
+
+    const prisma = getPrismaClient();
+
+    // Ottieni tutti i tipi di sessione distinti dal database per questo team
+    const sessionTypes = await prisma.performanceData.findMany({
+      where: {
+        player: { teamId }
+      },
+                   select: {
+        session_name: true
+      },
+      distinct: ['session_name']
+    });
+
+    // Estrai i valori e filtra quelli null/undefined
+    const availableTypes = sessionTypes
+      .map(st => st.session_name)
+      .filter(type => type && type.trim() !== '')
+      .sort();
+
+    console.log('🔵 [DEBUG] Session types disponibili per team', teamId, ':', availableTypes);
+    console.log('🟢 [INFO] API session-types risposta:', { sessionTypes: availableTypes, count: availableTypes.length });
+
+    res.json({
+      sessionTypes: availableTypes,
+      count: availableTypes.length
+    });
+
+  } catch (error) {
+    console.error('🔴 Errore nel recupero session types:', error);
+    res.status(500).json({
+      error: 'Errore interno durante il recupero dei tipi di sessione',
+      code: 'session_nameS_ERROR'
+    });
+  }
+});
+
+console.log("🔵 [DEBUG] Route performance multi-tenant configurate:");
 console.log("  - GET    /api/performance (lista con filtri team-scoped)");
 console.log("  - POST   /api/performance (creazione team-scoped)");
 console.log("  - GET    /api/performance/:id (dettaglio team-scoped)");
@@ -1905,5 +2989,7 @@ console.log("  - DELETE /api/performance/:id (eliminazione team-scoped)");
 console.log("  - GET    /api/performance/stats/player/:playerId (stats giocatore team-scoped)");
 console.log("  - GET    /api/performance/stats/team (stats team-scoped)");
 console.log("  - GET    /api/performance/player/:playerId/sessions (sessioni giocatore team-scoped)");
+console.log("  - GET    /api/performance/player/:playerId/dossier (dossier giocatore team-scoped)");
+console.log("  - GET    /api/performance/compare (confronto giocatori team-scoped)");
 
 module.exports = router;

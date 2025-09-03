@@ -19,8 +19,10 @@
   --accent-secondary: #1D4ED8;
   --accent-muted: #DBEAFE;
   --accent-hover: #D4AF37;
+  --accent-strong: #1D4ED8;
   --button-bg: #3B82F6;
   --button-text: #FFF;
+  --text-on-accent: #FFF;
   --input-bg: #FFF;
   --input-border: #3B82F6;
   --input-focus: #3B82F6;
@@ -98,6 +100,7 @@
   --border: var(--border-color);
   --shadow: var(--shadow-color);
   --accent: var(--accent-primary);
+  --text-on-accent: #FFF;
 }
 
 [data-theme="dark"] {
@@ -117,8 +120,10 @@
   --accent-secondary: #7C3AED;
   --accent-muted: #2E1B47;
   --accent-hover: #7C3AED;
+  --accent-strong: #7C3AED;
   --button-bg: #8B5CF6;
   --button-text: #FFF;
+  --text-on-accent: #FFF;
   --input-bg: #000;
   --input-border: #8B5CF6;
   --input-focus: #8B5CF6;
@@ -128,4 +133,7 @@
   --primary-blue: #8B5CF6;
   --danger-red: #F87171;
   --primary-blue-dark: #7C3AED;
+  
+  /* === LEGACY COMPATIBILITY === */
+  --accent: var(--accent-primary);
 }

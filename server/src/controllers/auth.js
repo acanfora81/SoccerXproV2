@@ -5,7 +5,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { getPrismaClient } = require('../config/database');
 const { AUTH_ERRORS, API_ERRORS, createErrorResponse } = require('../constants/errors');
 
-console.log('🟢 Caricamento controller autenticazione sicuro...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Caricamento controller autenticazione sicuro...'); // INFO - rimuovere in produzione
 
 // Client Supabase PUBBLICO per operazioni utente normali
 const supabasePublic = createClient(
@@ -62,7 +62,7 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log('🔵 Tentativo login per:', email);
+    console.log('🔵 [DEBUG] Tentativo login per:', email);
 
     // Validazione input
     if (!email || !password) {
@@ -77,7 +77,7 @@ const login = async (req, res) => {
     const { data, error } = await supabasePublic.auth.signInWithPassword({ email, password });
 
     if (error || !data?.user || !data?.session) {
-      console.log('🟡 Login fallito:', error?.message);
+      console.log('🟡 [WARN] Login fallito:', error?.message);
       const errorResponse = createErrorResponse(
         AUTH_ERRORS.INVALID_TOKEN,
         'Credenziali non valide'
@@ -88,7 +88,7 @@ const login = async (req, res) => {
     // Verifica/crea UserProfile
     let userProfile = await getUserProfile(data.user.id);
     if (!userProfile) {
-      console.log('🟡 UserProfile mancante, creazione automatica...');
+      console.log('🟡 [WARN] UserProfile mancante, creazione automatica...');
       userProfile = await createUserProfile(data.user, {
         first_name: data.user.user_metadata?.first_name || 'Nome',
         last_name: data.user.user_metadata?.last_name || 'Cognome',
@@ -111,7 +111,7 @@ const login = async (req, res) => {
     res.cookie('access_token', data.session.access_token, getCookieOptions(ACCESS_TTL));
     res.cookie('refresh_token', data.session.refresh_token, getCookieOptions(REFRESH_TTL));
 
-    console.log('🟢 Login completato per ruolo:', userProfile.role);
+    console.log('🟢 [INFO] Login completato per ruolo:', userProfile.role);
 
     // (opzionale) NON includiamo i token nel body per maggiore sicurezza
     return res.json({
@@ -142,7 +142,7 @@ const register = async (req, res) => {
   try {
     const { email, password, first_name, last_name, role = 'SECRETARY' } = req.body;
 
-    console.log('🔵 Tentativo registrazione per:', email);
+    console.log('🔵 [DEBUG] Tentativo registrazione per:', email);
 
     // Validazione input
     if (!email || !password || !first_name || !last_name) {
@@ -173,7 +173,7 @@ const register = async (req, res) => {
         const existingProfile = await getUserProfile(existingUser.id);
 
         if (!existingProfile) {
-          console.log('🟢 Account orfano rilevato, creo UserProfile e faccio login');
+          console.log('🟢 [INFO] Account orfano rilevato, creo UserProfile e faccio login');
 
           // Crea UserProfile
           const userProfile = await createUserProfile(existingUser, { first_name, last_name, role });
@@ -220,7 +220,7 @@ const register = async (req, res) => {
         }
       }
     } catch (orphanCheckError) {
-      console.log('🟡 Errore controllo account orfano:', orphanCheckError.message);
+      console.log('🟡 [WARN] Errore controllo account orfano:', orphanCheckError.message);
       // prosegui con registrazione normale
     }
 
@@ -291,7 +291,7 @@ const register = async (req, res) => {
       if (supabaseUser && !userProfile) {
         try {
           await supabaseAdmin.auth.admin.deleteUser(supabaseUser.id);
-          console.log('🟡 Rollback Supabase completato');
+          console.log('🟡 [WARN] Rollback Supabase completato');
         } catch (rollbackError) {
           console.log('🔴 Errore rollback Supabase:', rollbackError.message);
         }
@@ -319,10 +319,10 @@ const logout = async (req, res) => {
     if (userId) {
       try {
         const { error } = await supabaseAdmin.auth.admin.signOut(userId);
-        if (error) console.log('🟡 Errore logout Supabase:', error.message);
-        else console.log('🟢 Logout globale Supabase completato');
+        if (error) console.log('🟡 [WARN] Errore logout Supabase:', error.message);
+        else console.log('🟢 [INFO] Logout globale Supabase completato');
       } catch (supabaseError) {
-        console.log('🟡 Fallback: errore logout Supabase admin:', supabaseError.message);
+        console.log('🟡 [WARN] Fallback: errore logout Supabase admin:', supabaseError.message);
       }
     }
 
@@ -330,7 +330,7 @@ const logout = async (req, res) => {
     res.clearCookie('access_token', cookieClearOptions);
     res.clearCookie('refresh_token', cookieClearOptions);
 
-    console.log('🟢 Logout completato');
+    console.log('🟢 [INFO] Logout completato');
     return res.json({ message: 'Logout riuscito' });
 
   } catch (error) {
@@ -361,7 +361,7 @@ const refreshToken = async (req, res) => {
     const { data, error } = await supabasePublic.auth.refreshSession({ refresh_token });
 
     if (error || !data?.session) {
-      console.log('🟡 Refresh token fallito:', error?.message);
+      console.log('🟡 [WARN] Refresh token fallito:', error?.message);
       const errorResponse = createErrorResponse(AUTH_ERRORS.TOKEN_EXPIRED);
       return res.status(errorResponse.status).json(errorResponse.body);
     }
@@ -370,7 +370,7 @@ const refreshToken = async (req, res) => {
     res.cookie('access_token', data.session.access_token, getCookieOptions(ACCESS_TTL));
     res.cookie('refresh_token', data.session.refresh_token, getCookieOptions(REFRESH_TTL));
 
-    console.log('🟢 Token rinnovato con successo');
+    console.log('🟢 [INFO] Token rinnovato con successo');
     return res.json({ message: 'Token rinnovato' });
 
   } catch (error) {
@@ -424,7 +424,7 @@ const createUserProfile = async (supabaseUser, additionalData = {}) => {
       }
     });
 
-    console.log('🟢 UserProfile creato/aggiornato');
+    console.log('🟢 [INFO] UserProfile creato/aggiornato');
     return userProfile;
 
   } catch (error) {
@@ -445,7 +445,7 @@ const updateLastLogin = async (userId) => {
       }
     });
 
-    console.log('🔵 Last login aggiornato');
+    console.log('🔵 [DEBUG] Last login aggiornato');
 
   } catch (error) {
     if (error.code === 'P2025') {

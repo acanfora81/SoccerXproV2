@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import '../../styles/analytics.css';
+import PageLoader from '../ui/PageLoader';
 
 // 🗣️ Funzione per tradurre le posizioni
 const translatePosition = (position) => {
@@ -421,13 +422,7 @@ const PlayerList = ({
   
   // Loading state mentre carichiamo i dati completi
   if (loadingPlayerData) {
-    return (
-      <div className="analytics-container">
-        <div className="loading-card">
-          <div className="loading-text">Caricamento dati giocatori...</div>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Caricamento giocatori…" minHeight={360} />;
   }
   
   return (

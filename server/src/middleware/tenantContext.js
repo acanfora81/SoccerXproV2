@@ -3,14 +3,14 @@
 
 const { getPrismaClient } = require('../config/database');
 
-console.log('🟢 Caricamento middleware tenantContext irrobustito...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Caricamento middleware tenantContext irrobustito...'); // INFO - rimuovere in produzione
 
 /**
  * Middleware per gestione contesto multi-tenant con controlli di sicurezza rigorosi
  */
 module.exports = async function tenantContext(req, res, next) {
   try {
-    console.log('🔵 tenantContext: verifica contesto team...'); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] tenantContext: verifica contesto team...'); // INFO DEV - rimuovere in produzione
 
     // 1. Estrazione ID utente con validazione rigorosa
     const userProfileId = 
@@ -22,14 +22,14 @@ module.exports = async function tenantContext(req, res, next) {
 
     // 2. Validazione tipo ID (deve essere numero intero)
     if (!userProfileId || typeof userProfileId !== 'number' || userProfileId <= 0) {
-      console.log('🟡 tenantContext: ID utente non valido:', typeof userProfileId, userProfileId); // WARNING - rimuovere in produzione
+      console.log('🟡 [WARN] tenantContext: ID utente non valido:', typeof userProfileId, userProfileId); // WARNING - rimuovere in produzione
       return res.status(401).json({ 
         error: 'Sessione non valida',
         code: 'INVALID_SESSION'
       });
     }
 
-    console.log('🔵 tenantContext: verifica utente ID:', userProfileId); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] tenantContext: verifica utente ID:', userProfileId); // INFO DEV - rimuovere in produzione
 
     // 3. Query database con timeout e validazioni
     const prisma = getPrismaClient();
@@ -68,7 +68,7 @@ module.exports = async function tenantContext(req, res, next) {
 
     // 5. Validazione account attivo
     if (!user.is_active) {
-      console.log('🟡 tenantContext: account disattivato:', user.email); // WARNING - mantenere per audit
+      console.log('🟡 [WARN] tenantContext: account disattivato:', user.email); // WARNING - mantenere per audit
       return res.status(403).json({ 
         error: 'Account disattivato. Contattare amministratore.',
         code: 'ACCOUNT_DISABLED'
@@ -103,7 +103,7 @@ module.exports = async function tenantContext(req, res, next) {
     // 8. Validazione ruolo utente
     const validRoles = ['ADMIN', 'DIRECTOR_SPORT', 'MEDICAL_STAFF', 'SECRETARY', 'SCOUT', 'PREPARATORE_ATLETICO'];
     if (!validRoles.includes(user.role)) {
-      console.log('🟡 tenantContext: ruolo non riconosciuto:', user.role); // WARNING - mantenere per audit
+      console.log('🟡 [WARN] tenantContext: ruolo non riconosciuto:', user.role); // WARNING - mantenere per audit
       return res.status(403).json({ 
         error: 'Ruolo utente non valido',
         code: 'INVALID_USER_ROLE'
@@ -126,14 +126,14 @@ module.exports = async function tenantContext(req, res, next) {
       }
 
       if (!teamExists.isActive) {
-        console.log('🟡 tenantContext: team disattivato:', user.teamId); // WARNING - mantenere per audit
+        console.log('🟡 [WARN] tenantContext: team disattivato:', user.teamId); // WARNING - mantenere per audit
         return res.status(403).json({ 
           error: 'Team temporaneamente sospeso',
           code: 'TEAM_SUSPENDED'
         });
       }
     } catch (teamCheckError) {
-      console.log('🟡 tenantContext: warning verifica team:', teamCheckError.message); // WARNING - non bloccare il flusso
+      console.log('🟡 [WARN] tenantContext: warning verifica team:', teamCheckError.message); // WARNING - non bloccare il flusso
       // Non interrompere il flusso per errori di verifica team - il controllo principale è sul teamId
     }
 
@@ -202,11 +202,11 @@ const optionalTenantContext = async (req, res, next) => {
       teamId: null 
     };
 
-    console.log('🔵 optionalTenantContext: contesto impostato (opzionale)'); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] optionalTenantContext: contesto impostato (opzionale)'); // INFO DEV - rimuovere in produzione
     next();
 
   } catch (error) {
-    console.log('🟡 optionalTenantContext error (non critico):', error.message); // WARNING - rimuovere in produzione
+    console.log('🟡 [WARN] optionalTenantContext error (non critico):', error.message); // WARNING - rimuovere in produzione
     req.context = { userId: null, role: 'GUEST', teamId: null };
     next();
   }

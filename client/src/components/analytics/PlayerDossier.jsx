@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   ArrowLeft, Calendar, BarChart3, Download, Info, Award, Zap,
-  Activity, Target, Heart, Clock
+  Activity, Target, Heart, Clock, Maximize2
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -26,8 +26,11 @@ const translatePosition = (position) => {
 
 const PlayerDossier = ({
   player,
+  playerId,
   sessions = [],
   allSessions = [],
+  filters,
+  isStandalone,
   onBack
 }) => {
   const [timeRange, setTimeRange] = useState('all'); // 7d, 14d, 30d, 90d, all
@@ -370,7 +373,29 @@ const filteredSessions = useMemo(() => {
             {player.firstName?.[0]}{player.lastName?.[0]}
           </div>
         </div>
-        <div>
+        <div style={{display:'flex',gap:8}}>
+          {!isStandalone && playerId && (
+            <button 
+              className="btn btn--ghost"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (filters) {
+                  Object.entries(filters).forEach(([key, value]) => {
+                    if (value && value !== '') {
+                      if (Array.isArray(value)) {
+                        params.set(key, value.join(','));
+                      } else {
+                        params.set(key, value);
+                      }
+                    }
+                  });
+                }
+                window.open(`/performance/dossier/${playerId}?${params.toString()}`, '_blank');
+              }}
+            >
+              <Maximize2 size={16} /> Apri in pagina
+            </button>
+          )}
           <button className="btn btn--ghost back-btn" onClick={onBack}>
             <ArrowLeft size={16} /> Lista Giocatori
           </button>

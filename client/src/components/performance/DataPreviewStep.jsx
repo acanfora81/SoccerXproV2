@@ -2,6 +2,7 @@
 // 🎯 VERSIONE COMPLETA - Anteprima + Conferma Import nel Database - CON DEBUG
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from 'react-router-dom';
 import { 
   CheckCircle, 
   AlertTriangle, 
@@ -18,6 +19,7 @@ import {
 const API_BASE = "/api/performance/import";
 
 const DataPreviewStep = ({ fileId, mappingResult, originalExtension, onBack, onReset }) => {
+  const navigate = useNavigate();
 
   // 📊 State per preview
   const [rows, setRows] = useState([]);
@@ -264,12 +266,13 @@ const DataPreviewStep = ({ fileId, mappingResult, originalExtension, onBack, onR
 
           {/* Azioni finali */}
           <div className="success-actions">
-            <button onClick={onReset} className="btn btn-outline">
+            <button type="button" onClick={onReset} className="btn btn-outline">
               <RotateCcw size={16} />
               Nuovo Import
             </button>
             <button 
-              onClick={() => window.location.reload()} 
+              type="button"
+              onClick={() => navigate('/performance/analytics')} 
               className="btn btn-primary"
             >
               <ArrowRight size={16} />
@@ -437,11 +440,11 @@ const DataPreviewStep = ({ fileId, mappingResult, originalExtension, onBack, onR
               {/* Action buttons */}
               <div className="preview-actions">
                 <div className="actions-left">
-                  <button onClick={onBack} className="btn btn-secondary" disabled={importing}>
+                  <button type="button" onClick={onBack} className="btn btn-secondary" disabled={importing}>
                     <ArrowLeft size={16} />
                     Indietro
                   </button>
-                  <button onClick={onReset} className="btn btn-outline" disabled={importing}>
+                  <button type="button" onClick={onReset} className="btn btn-outline" disabled={importing}>
                     <RotateCcw size={16} />
                     Ricomincia
                   </button>
@@ -463,6 +466,7 @@ const DataPreviewStep = ({ fileId, mappingResult, originalExtension, onBack, onR
                   </div>
                   
                   <button 
+                    type="button"
                     onClick={confirmImport}
                     disabled={importing || rows.length === 0}
                     className="btn btn-primary btn-import"

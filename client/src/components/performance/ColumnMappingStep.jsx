@@ -1,7 +1,7 @@
 // client/src/components/performance/ColumnMappingStep.jsx
 // 🎯 VERSIONE COMPLETA — Mapping leggibile con layout migliorato
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ArrowRight,
   CheckCircle,
@@ -18,7 +18,9 @@ import {
   Lightbulb,
   Info,
   ChevronDown,
-  Activity
+  Activity,
+  Edit3,
+  X
 } from 'lucide-react';
 
 // ✅ Preselezioni desiderate per header CSV specifici (a livello di modulo)
@@ -49,6 +51,7 @@ const ColumnMappingStep = ({
   onMappingComplete,
   onBack,
   teamId,
+  fileId,
   loading: externalLoading = false
 }) => {
   // =========================
@@ -65,6 +68,35 @@ const ColumnMappingStep = ({
      const [autoMappedFields, setAutoMappedFields] = useState(new Set());
   const [pendingSuggestions, setPendingSuggestions] = useState({});
   const [minimumDataValidation, setMinimumDataValidation] = useState(null);
+  
+  // Conserva headers rifiutati/gestiti per non re-iniettarli su nuove fetch
+  const dismissedHeadersRef = useRef(new Set());
+  
+  // Persistenza per file (se torni al file precedente, ricordi i dismissed di quel file)
+  const dismissedByFileRef = useRef(new Map());
+  
+  // Funzione per normalizzare gli header (usata sia per match che per dismiss)
+  const normalizeHeader = useCallback((header) => {
+    return header.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }, []);
+  
+  // Reset automatico quando cambia file o struttura headers
+  const headersKey = useMemo(() => JSON.stringify([...csvHeaders].sort()), [csvHeaders]);
+  useEffect(() => {
+    console.log('🔄 Reset dismissed headers per nuovo file:', fileId, 'o nuova struttura headers');
+    
+    // Salva i dismissed del file corrente
+    if (fileId) {
+      dismissedByFileRef.current.set(fileId, new Set(dismissedHeadersRef.current));
+    }
+    
+    // Carica i dismissed del nuovo file (se esistono)
+    const newFileId = fileId || headersKey;
+    const savedDismissed = dismissedByFileRef.current.get(newFileId);
+    dismissedHeadersRef.current = new Set(savedDismissed || []);
+    
+    console.log('🔄 Dismissed salvati per file:', Array.from(dismissedHeadersRef.current));
+  }, [fileId, headersKey]);
 
   // =========================
   // VALIDAZIONE SET MINIMO
@@ -483,6 +515,15 @@ const ColumnMappingStep = ({
     color: '#10B981',
     category: 'Temporale'
   },
+  session_name: {
+    label: 'Nome Sessione',
+    icon: Calendar,
+    description: 'Nome specifico della sessione',
+    example: 'Allenamento tecnico mattutino, Partita contro Juventus',
+    required: false,
+    color: '#8B5CF6',
+    category: 'Temporale'
+  },
   source_device: {
     label: 'Dispositivo Sorgente',
     icon: Info,
@@ -602,127 +643,198 @@ const ColumnMappingStep = ({
      });
    }, [csvHeaders, fieldDefinitions, validateMinimumData]);
 
-   // =========================
-   // SUGGERIMENTI INTELLIGENTI
-   // =========================
-   const generateIntelligentSuggestions = useCallback(() => {
-     if (!csvHeaders || csvHeaders.length === 0) return;
+     // =========================
+  // SUGGERIMENTI INTELLIGENTI MIGLIORATI
+  // =========================
+  const generateIntelligentSuggestions = useCallback(() => {
+    console.log('🧠 GENERAZIONE SUGGERIMENTI INTELLIGENTI');
+    console.log('🧠 CSV Headers:', csvHeaders);
+    console.log('🧠 Mapping attuale:', mapping);
+    
+    if (!csvHeaders || csvHeaders.length === 0) {
+      console.log('🧠 Nessun CSV header, uscita');
+      return;
+    }
 
-     const newSuggestions = {};
-     const newPendingSuggestions = {};
+    const newSuggestions = {};
+    const newPendingSuggestions = {};
 
-     csvHeaders.forEach(csvHeader => {
-       const csvHeaderLower = csvHeader.toLowerCase();
-       const csvHeaderClean = csvHeaderLower.replace(/[^a-z0-9]/g, '');
-       
-       // Se è già mappato, salta
-       if (Object.values(mapping).includes(csvHeader)) return;
+              csvHeaders.forEach(csvHeader => {
+            // Se è già mappato, salta
+            if (Object.values(mapping).includes(csvHeader)) {
+              console.log('🧠 Salto', csvHeader, '- già mappato');
+              return;
+            }
+            
+            // Se è già stato processato (accettato/rifiutato), salta
+            if (mapping[csvHeader] !== undefined) {
+              console.log('🧠 Salto', csvHeader, '- già processato');
+              return;
+            }
+            
+            // Se è già stato rifiutato/gestito, salta
+            if (dismissedHeadersRef.current.has(normalizeHeader(csvHeader))) {
+              console.log('🧠 Salto', csvHeader, '- già rifiutato/gestito');
+              return;
+            }
 
-       let bestMatch = null;
-       let confidence = 0;
-       let reason = '';
+      let bestMatch = null;
+      let confidence = 0;
+      let reason = '';
+      let explanation = '';
+      let example = '';
+      let category = '';
+      let alternatives = [];
 
-       // 1. Corrispondenza esatta
-       const exactMatch = Object.keys(fieldDefinitions).find(dbField => 
-         dbField.toLowerCase() === csvHeaderLower
-       );
-       if (exactMatch) {
-         bestMatch = exactMatch;
-         confidence = 95;
-         reason = 'Corrispondenza esatta';
-       }
+      // 1. Corrispondenza esatta
+      const exactMatch = Object.keys(fieldDefinitions).find(dbField => 
+        dbField.toLowerCase() === csvHeader.toLowerCase()
+      );
+      if (exactMatch) {
+        bestMatch = exactMatch;
+        confidence = 95;
+        reason = 'Corrispondenza esatta';
+        explanation = `Il campo "${csvHeader}" corrisponde esattamente al nostro campo "${fieldDefinitions[exactMatch].label}"`;
+        example = `${csvHeader} → ${fieldDefinitions[exactMatch].label}`;
+        category = fieldDefinitions[exactMatch].category;
+      }
 
-       // 2. Corrispondenza simile (senza caratteri speciali)
-       if (!bestMatch) {
-         const similarMatch = Object.keys(fieldDefinitions).find(dbField => {
-           const dbFieldClean = dbField.toLowerCase().replace(/[^a-z0-9]/g, '');
-           return dbFieldClean === csvHeaderClean;
-         });
-         if (similarMatch) {
-           bestMatch = similarMatch;
-           confidence = 85;
-           reason = 'Corrispondenza simile';
-         }
-       }
+      // 2. Corrispondenza simile (senza caratteri speciali)
+      if (!bestMatch) {
+        const similarMatch = Object.keys(fieldDefinitions).find(dbField => {
+          const dbFieldClean = dbField.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const csvHeaderClean = csvHeader.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return dbFieldClean === csvHeaderClean;
+        });
+        if (similarMatch) {
+          bestMatch = similarMatch;
+          confidence = 85;
+          reason = 'Corrispondenza simile';
+          explanation = `Il campo "${csvHeader}" è molto simile al nostro campo "${fieldDefinitions[similarMatch].label}"`;
+          example = `${csvHeader} → ${fieldDefinitions[similarMatch].label}`;
+          category = fieldDefinitions[similarMatch].category;
+        }
+      }
 
-       // 3. Pattern matching intelligente
-       if (!bestMatch) {
-         const patterns = [
-           // Pattern per player
-           { pattern: /player|giocatore|athlete/i, field: 'playerId', conf: 80, reason: 'Riferimento al giocatore' },
-           
-           // Pattern per date
-           { pattern: /date|data|giorno|session.*date|training.*date/i, field: 'session_date', conf: 85, reason: 'Riferimento alla data' },
-           
-           // Pattern per duration
-           { pattern: /duration|durata|time|tempo|length|minuti|minutes/i, field: 'duration_minutes', conf: 80, reason: 'Riferimento alla durata' },
-           
-           // Pattern per distance
-           { pattern: /distance|distanza|total.*distance|dist.*totale/i, field: 'total_distance_m', conf: 85, reason: 'Riferimento alla distanza totale' },
-           { pattern: /sprint.*distance|distanza.*sprint|high.*intensity.*distance/i, field: 'sprint_distance_m', conf: 80, reason: 'Riferimento alla distanza sprint' },
-           
-           // Pattern per speed
-           { pattern: /avg.*speed|velocita.*media|average.*speed/i, field: 'avg_speed_kmh', conf: 85, reason: 'Riferimento alla velocità media' },
-           { pattern: /max.*speed|top.*speed|velocita.*massima|peak.*speed/i, field: 'top_speed_kmh', conf: 85, reason: 'Riferimento alla velocità massima' },
-           
-           // Pattern per heart rate
-           { pattern: /avg.*heart|heart.*rate.*avg|frequenza.*media/i, field: 'avg_heart_rate', conf: 85, reason: 'Riferimento alla frequenza cardiaca media' },
-           { pattern: /max.*heart|heart.*rate.*max|frequenza.*massima/i, field: 'max_heart_rate', conf: 85, reason: 'Riferimento alla frequenza cardiaca massima' },
-           
-           // Pattern per load
-           { pattern: /load|carico|player.*load|training.*load/i, field: 'player_load', conf: 80, reason: 'Riferimento al carico' },
-           
-           // Pattern per runs
-           { pattern: /runs|corse|high.*intensity|alta.*intensita/i, field: 'high_intensity_runs', conf: 75, reason: 'Riferimento alle corse ad alta intensità' },
-           
-           // Pattern per nuovi campi
-           { pattern: /equivalent.*distance|distanza.*equivalente/i, field: 'equivalent_distance_m', conf: 85, reason: 'Riferimento alla distanza equivalente' },
-           { pattern: /metabolic.*power|potenza.*metabolica/i, field: 'avg_metabolic_power_wkg', conf: 85, reason: 'Riferimento alla potenza metabolica' },
-           { pattern: /acceleration|accelerazione|acc.*distance/i, field: 'distance_acc_over_2_ms2_m', conf: 80, reason: 'Riferimento alle accelerazioni' },
-           { pattern: /deceleration|decelerazione|dec.*distance/i, field: 'distance_dec_over_minus2_ms2_m', conf: 80, reason: 'Riferimento alle decelerazioni' },
-           { pattern: /rvp.*index|indice.*rvp/i, field: 'rvp_index', conf: 85, reason: 'Riferimento all\'indice RVP' }
-         ];
+      // 3. Pattern matching intelligente migliorato
+      if (!bestMatch) {
+        const patterns = [
+          
 
-         for (const { pattern, field, conf, reason: patternReason } of patterns) {
-           if (pattern.test(csvHeader)) {
-             bestMatch = field;
-             confidence = conf;
-             reason = patternReason;
-             break;
-           }
-         }
-       }
+          
 
-       // 4. Analisi del contenuto (se disponibile)
-       if (!bestMatch && confidence < 70) {
-         // Qui potremmo analizzare i valori della colonna per determinare il tipo
-         // Per ora usiamo un approccio conservativo
-         confidence = 50;
-         reason = 'Analisi limitata';
-       }
+          
 
-       if (bestMatch && confidence >= 60) {
-         newSuggestions[csvHeader] = {
-           suggestedField: bestMatch,
-           confidence,
-           reason,
-           alternatives: getAlternativeSuggestions(csvHeader, bestMatch)
-         };
-         
-         // Se la confidenza è alta, aggiungi ai pending per approvazione
-         if (confidence >= 75) {
-           newPendingSuggestions[csvHeader] = {
-             suggestedField: bestMatch,
-             confidence,
-             reason
-           };
-         }
-       }
-     });
+          
 
-     setSuggestions(newSuggestions);
-     setPendingSuggestions(newPendingSuggestions);
-   }, [csvHeaders, mapping, fieldDefinitions]);
+          
+          // Pattern per RPE
+          { 
+            pattern: /rpe|rate.*perceived.*exertion|sforzo.*percepito/i, 
+            field: 'custom.rpe', 
+            conf: 90, 
+            reason: 'RPE → Campo personalizzato',
+            explanation: 'RPE (Rate of Perceived Exertion) è un campo specifico che creeremo come personalizzato',
+            example: 'rpe → RPE (campo personalizzato)',
+            category: 'Campi Personalizzati'
+          },
+          
+          // Pattern per session RPE
+          { 
+            pattern: /session.*rpe|rpe.*sessione/i, 
+            field: 'custom.session_rpe', 
+            conf: 90, 
+            reason: 'Session RPE → Campo personalizzato',
+            explanation: 'RPE della sessione, campo specifico da creare come personalizzato',
+            example: 'session_rpe → Session RPE (campo personalizzato)',
+            category: 'Campi Personalizzati'
+          },
+          
+          // Pattern per impacts
+          { 
+            pattern: /impacts.*count|conteggio.*impatto|impatti/i, 
+            field: 'custom.impacts_count', 
+            conf: 95, 
+            reason: 'Conteggio impatti → Campo personalizzato',
+            explanation: 'Il campo conta gli impatti, creeremo un campo personalizzato',
+            example: 'impacts_count → Conteggio Impatti (campo personalizzato)',
+            category: 'Campi Personalizzati'
+          },
+          
+          // Pattern per steps
+          { 
+            pattern: /steps.*count|conteggio.*passi|passi/i, 
+            field: 'custom.steps_count', 
+            conf: 95, 
+            reason: 'Conteggio passi → Campo personalizzato',
+            explanation: 'Il campo conta i passi, creeremo un campo personalizzato',
+            example: 'steps_count → Conteggio Passi (campo personalizzato)',
+            category: 'Campi Personalizzati'
+          },
+          
+          // Pattern per load rating
+          { 
+            pattern: /load.*rating|rating.*load|valutazione.*carico/i, 
+            field: 'custom.player_load_rating', 
+            conf: 95, 
+            reason: 'Rating carico → Campo personalizzato',
+            explanation: 'Il campo valuta il carico, creeremo un campo personalizzato',
+            example: 'player_load_rating → Rating Carico (campo personalizzato)',
+            category: 'Campi Personalizzati'
+          }
+        ];
+
+        for (const { pattern, field, conf, reason: patternReason, explanation: patternExplanation, example: patternExample, category: patternCategory, alternatives: patternAlternatives } of patterns) {
+          if (pattern.test(csvHeader)) {
+            bestMatch = field;
+            confidence = conf;
+            reason = patternReason;
+            explanation = patternExplanation;
+            example = patternExample;
+            category = patternCategory;
+            alternatives = patternAlternatives || [];
+            break;
+          }
+        }
+      }
+
+      // 4. Analisi del contenuto (se disponibile)
+      if (!bestMatch && confidence < 70) {
+        confidence = 50;
+        reason = 'Analisi limitata';
+        explanation = 'Non riusciamo a determinare automaticamente il tipo di campo';
+        category = 'Non Riconosciuto';
+      }
+
+      if (bestMatch && confidence >= 60) {
+        const suggestion = {
+          csvHeader,
+          suggestedField: bestMatch,
+          confidence,
+          reason,
+          explanation,
+          example,
+          category,
+          alternatives
+        };
+        
+        newSuggestions[csvHeader] = suggestion;
+        
+        // Se la confidenza è alta, aggiungi ai pending per approvazione
+        if (confidence >= 75) {
+          newPendingSuggestions[csvHeader] = suggestion;
+        }
+      }
+    });
+
+    console.log('🧠 SUGGERIMENTI GENERATI:', newSuggestions);
+    console.log('🧠 PENDING SUGGERIMENTI:', newPendingSuggestions);
+    console.log('🧠 NUMERO SUGGERIMENTI:', Object.keys(newSuggestions).length);
+    console.log('🧠 NUMERO PENDING:', Object.keys(newPendingSuggestions).length);
+    
+    setSuggestions(newSuggestions);
+    setPendingSuggestions(newPendingSuggestions);
+  }, [csvHeaders, mapping, fieldDefinitions]);
 
    // Funzione helper per trovare alternative
    const getAlternativeSuggestions = (csvHeader, currentSuggestion) => {
@@ -772,13 +884,24 @@ const ColumnMappingStep = ({
       }
 
       const data = await response.json();
-      setSuggestions(data.suggestions || {});
+      
+      // Filtra le risposte del backend per evitare reiniezione di suggerimenti rifiutati
+      const filteredSuggestions = {};
+      Object.entries(data.suggestions || {}).forEach(([header, suggestion]) => {
+        if (!dismissedHeadersRef.current.has(normalizeHeader(header))) {
+          filteredSuggestions[header] = suggestion;
+        } else {
+          console.log('🧠 Salto suggerimento backend per', header, '- già rifiutato/gestito');
+        }
+      });
+      
+      setSuggestions(filteredSuggestions);
       setConfidence(data.confidence?.individual || {});
       setWarnings(data.warnings || []);
 
       // Auto-apply solo alta confidence, ma NON sovrascrivere le preselezioni richieste
       const auto = {};
-      Object.entries(data.suggestions || {}).forEach(([header, s]) => {
+      Object.entries(filteredSuggestions).forEach(([header, s]) => {
         if (s?.confidence >= 85) {
           // se avevamo default "none" lasciamo non mappato
           if (DEFAULT_MAPPING_BY_HEADER[header] === 'none') return;
@@ -798,12 +921,21 @@ const ColumnMappingStep = ({
      if (csvHeaders?.length && teamId) loadSmartSuggestions();
    }, [csvHeaders, teamId, loadSmartSuggestions]);
 
-   // Genera suggerimenti intelligenti quando cambiano gli header
-   useEffect(() => {
-     if (csvHeaders?.length) {
-       generateIntelligentSuggestions();
-     }
-   }, [csvHeaders, generateIntelligentSuggestions]);
+     // Debounce della generazione suggerimenti (evita lavoro ripetuto in rapidi cambi)
+  const generateRef = useRef();
+  const debouncedGenerate = useCallback(() => {
+    clearTimeout(generateRef.current);
+    generateRef.current = setTimeout(() => {
+      if (csvHeaders?.length) {
+        generateIntelligentSuggestions();
+      }
+    }, 120);
+  }, [generateIntelligentSuggestions, csvHeaders]);
+  
+  // Genera suggerimenti intelligenti quando cambiano gli header
+  useEffect(() => {
+    debouncedGenerate();
+  }, [debouncedGenerate, csvHeaders, mapping]);
 
   // =========================
   // HANDLERS
@@ -816,10 +948,16 @@ const ColumnMappingStep = ({
     
     setMapping(newMapping);
     
+    // Se l'utente cancella manualmente un mapping, riabilita il suggerimento
+    if (dbField === 'none' || dbField === undefined) {
+      console.log('🔄 Riabilito suggerimento per:', csvHeader);
+      dismissedHeadersRef.current.delete(normalizeHeader(csvHeader));
+    }
+    
     // 🔍 Validazione immediata del set minimo
     const validation = validateMinimumData(newMapping);
     setMinimumDataValidation(validation);
-  }, [mapping, validateMinimumData]);
+  }, [mapping, validateMinimumData, normalizeHeader]);
 
   const validateMapping = useMemo(() => {
     const requiredFields = Object.entries(fieldDefinitions)
@@ -891,51 +1029,136 @@ const ColumnMappingStep = ({
   };
 
      // 👇 funzione per aggiungere un campo custom
-   const addCustomField = (label) => {
-     const slug = label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-     const newField = {
-       value: `custom.${slug}`,
-       label: `${label} (custom)`
-     };
-     setCustomFields(prev => [...prev, newField]);
-     return newField.value;
-   };
+     const addCustomField = (label) => {
+    const slug = label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    const newField = {
+      value: `custom.${slug}`,
+      label: `${label} (custom)`
+    };
+    setCustomFields(prev => [...prev, newField]);
+    return newField.value;
+  };
+  
+  // Helper per verificare se un campo ha suggerimenti disponibili
+  const hasSuggestionForField = useCallback((dbField) => {
+    return Object.values(suggestions).some(suggestion => 
+      suggestion.suggestedField === dbField && 
+      !dismissedHeadersRef.current.has(normalizeHeader(suggestion.csvHeader))
+    );
+  }, [suggestions, normalizeHeader]);
 
-   // =========================
-   // GESTIONE SUGGERIMENTI
-   // =========================
-   const acceptSuggestion = useCallback((csvHeader, suggestedField) => {
-     const newMapping = {
-       ...mapping,
-       [csvHeader]: suggestedField
-     };
-     
-     setMapping(newMapping);
-     
-     // Rimuovi dai pending
-     setPendingSuggestions(prev => {
-       const newPending = { ...prev };
-       delete newPending[csvHeader];
-       return newPending;
-     });
-     
-     // 🔍 Validazione immediata del set minimo
-     const validation = validateMinimumData(newMapping);
-     setMinimumDataValidation(validation);
-     
-     console.log(`✅ Suggerimento accettato: ${csvHeader} → ${suggestedField}`);
-   }, [mapping, validateMinimumData]);
+     // =========================
+  // GESTIONE SUGGERIMENTI MIGLIORATA
+  // =========================
+  const acceptSuggestion = useCallback((suggestion) => {
+    console.log('🔵 CLICK ACCETTA - Inizio funzione acceptSuggestion');
+    console.log('🔵 Suggerimento ricevuto:', suggestion);
+    console.log('🔵 Mapping attuale:', mapping);
+    
+    // Unicità del target (evita che due header finiscano sullo stesso campo DB)
+    const isTargetAlreadyUsed = Object.values(mapping).includes(suggestion.suggestedField);
+    if (isTargetAlreadyUsed) {
+      const conflictingHeader = Object.keys(mapping).find(key => mapping[key] === suggestion.suggestedField);
+      console.log('⚠️ Target già utilizzato:', suggestion.suggestedField, 'da', conflictingHeader);
+      
+      // Se c'è un conflitto, mostra errore e non procedere
+      console.log('⚠️ Target già utilizzato:', suggestion.suggestedField, 'da', conflictingHeader);
+      setError(`Il campo "${suggestion.suggestedField}" è già mappato da "${conflictingHeader}". Rimuovi prima il mapping esistente o usa un campo diverso.`);
+      return;
+    }
+    
+        // Se non c'è conflitto, procedi normalmente
+    const newMapping = {
+      ...mapping,
+      [suggestion.csvHeader]: suggestion.suggestedField
+    };
+    
+    console.log('🔵 Nuovo mapping:', newMapping);
+    
+    setMapping(newMapping);
+    
+    // Rimuovi dai pending E dai suggestions
+    setPendingSuggestions(prev => {
+      console.log('🔵 PendingSuggestions prima:', prev);
+      const newPending = { ...prev };
+      delete newPending[suggestion.csvHeader];
+      console.log('🔵 PendingSuggestions dopo:', newPending);
+      return newPending;
+    });
+    
+    setSuggestions(prev => {
+      console.log('🔵 Suggestions prima:', prev);
+      const newSuggestions = { ...prev };
+      delete newSuggestions[suggestion.csvHeader];
+      console.log('🔵 Suggestions dopo:', newSuggestions);
+      return newSuggestions;
+    });
+    
+    // Aggiungi al set dei rifiutati per evitare reiniezione
+    dismissedHeadersRef.current.add(normalizeHeader(suggestion.csvHeader));
+    
+    // 🔍 Validazione immediata del set minimo
+    const validation = validateMinimumData(newMapping);
+    setMinimumDataValidation(validation);
+    
+    console.log(`✅ Suggerimento accettato: ${suggestion.csvHeader} → ${suggestion.suggestedField}`);
+    console.log('🔵 CLICK ACCETTA - Fine funzione acceptSuggestion');
+  }, [mapping, validateMinimumData]);
 
-   const rejectSuggestion = useCallback((csvHeader) => {
-     // Rimuovi dai pending
-     setPendingSuggestions(prev => {
-       const newPending = { ...prev };
-       delete newPending[csvHeader];
-       return newPending;
-     });
+  const handleAlternative = useCallback((suggestion) => {
+    // Per ora, rifiuta il suggerimento corrente (l'utente può poi mappare manualmente)
+    console.log(`🔍 Alternative per: ${suggestion.csvHeader}`, suggestion.alternatives);
+    
+    // Rimuovi dai pending E dai suggestions
+    setPendingSuggestions(prev => {
+      const newPending = { ...prev };
+      delete newPending[suggestion.csvHeader];
+      return newPending;
+    });
+    
+    setSuggestions(prev => {
+      const newSuggestions = { ...prev };
+      delete newSuggestions[suggestion.csvHeader];
+      return newSuggestions;
+    });
+    
+         // Aggiungi al set dei rifiutati per evitare reiniezione
+     dismissedHeadersRef.current.add(normalizeHeader(suggestion.csvHeader));
      
-     console.log(`❌ Suggerimento rifiutato: ${csvHeader}`);
-   }, []);
+     console.log(`🔄 Suggerimento rifiutato per alternative: ${suggestion.csvHeader}`);
+  }, []);
+
+  const rejectSuggestion = useCallback((suggestion) => {
+    console.log('🔴 CLICK RIFIUTA - Inizio funzione rejectSuggestion');
+    console.log('🔴 Suggerimento ricevuto:', suggestion);
+    console.log('🔴 PendingSuggestions attuali:', pendingSuggestions);
+    console.log('🔴 Suggestions attuali:', suggestions);
+    
+    // Rimuovi dai pending E dai suggestions senza mappare
+    setPendingSuggestions(prev => {
+      console.log('🔴 PendingSuggestions prima:', prev);
+      const newPending = { ...prev };
+      delete newPending[suggestion.csvHeader];
+      console.log('🔴 PendingSuggestions dopo:', newPending);
+      return newPending;
+    });
+    
+    setSuggestions(prev => {
+      console.log('🔴 Suggestions prima:', prev);
+      const newSuggestions = { ...prev };
+      delete newSuggestions[suggestion.csvHeader];
+      console.log('🔴 Suggestions dopo:', newSuggestions);
+      return newSuggestions;
+    });
+    
+         // Aggiungi al set dei rifiutati per evitare reiniezione
+     dismissedHeadersRef.current.add(normalizeHeader(suggestion.csvHeader));
+     
+     console.log(`❌ Suggerimento rifiutato: ${suggestion.csvHeader}`);
+    console.log('🔴 CLICK RIFIUTA - Fine funzione rejectSuggestion');
+  }, [pendingSuggestions, suggestions]);
+
+
 
    const applyAllSuggestions = useCallback(() => {
      Object.entries(pendingSuggestions).forEach(([csvHeader, suggestion]) => {
@@ -953,6 +1176,222 @@ const ColumnMappingStep = ({
      setPendingSuggestions({});
      console.log(`❌ Rifiutati tutti i suggerimenti`);
    }, []);
+
+  // =========================
+  // COMPONENTI UI MIGLIORATI
+  // =========================
+  
+  // Helper per raggruppare suggerimenti per categoria
+  const groupSuggestionsByCategory = useCallback((suggestions) => {
+    const grouped = {};
+    Object.values(suggestions).forEach(suggestion => {
+      const category = suggestion.category || 'Altri';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(suggestion);
+    });
+    return grouped;
+  }, []);
+
+  // Helper per ottenere icona categoria
+  const getCategoryIcon = useCallback((category) => {
+    const icons = {
+      'Performance': '🏃‍♂️',
+      'Fisiologico': '💓',
+      'Temporale': '⏱️',
+      'Identificazione': '👤',
+      'Accelerazioni': '⚡',
+      'Decelerazioni': '🔄',
+      'Informazioni': '📋',
+      'Campi Personalizzati': '📝',
+      'Non Riconosciuto': '❓'
+    };
+    return icons[category] || '📊';
+  }, []);
+
+  // Helper per ottenere colore categoria
+  const getCategoryColor = useCallback((category) => {
+    const colors = {
+      'Performance': '#3B82F6',
+      'Fisiologico': '#EF4444',
+      'Temporale': '#10B981',
+      'Identificazione': '#8B5CF6',
+      'Accelerazioni': '#F59E0B',
+      'Decelerazioni': '#DC2626',
+      'Informazioni': '#6B7280',
+      'Campi Personalizzati': '#059669',
+      'Non Riconosciuto': '#9CA3AF'
+    };
+    return colors[category] || '#6B7280';
+  }, []);
+
+  // Componente per singolo suggerimento migliorato
+  const ImprovedSuggestionCard = ({ suggestion, onAccept, onAlternative, onReject }) => {
+    console.log('🎯 RENDERING ImprovedSuggestionCard per:', suggestion.csvHeader);
+    console.log('🎯 Props ricevute:', { onAccept: !!onAccept, onAlternative: !!onAlternative, onReject: !!onReject });
+    console.log('🎯 Timestamp render:', new Date().toISOString());
+    
+    const categoryColor = getCategoryColor(suggestion.category);
+    const confidenceStyle = getConfidenceStyle(suggestion.confidence);
+    
+    return (
+      <div className="improved-suggestion-card">
+        <div className="suggestion-header">
+          <div className="csv-column">
+            <span className="csv-name">{suggestion.csvHeader}</span>
+            <span className="csv-category" style={{ color: categoryColor }}>
+              {getCategoryIcon(suggestion.category)} {suggestion.category}
+            </span>
+          </div>
+          <ArrowRight size={20} color="#9CA3AF" />
+          <div className="suggested-field">
+            <span className="field-name">
+              {suggestion.suggestedField.startsWith('custom.') 
+                ? suggestion.suggestedField.replace('custom.', '') 
+                : fieldDefinitions[suggestion.suggestedField]?.label || suggestion.suggestedField
+              }
+            </span>
+            <span className="field-db">{suggestion.suggestedField}</span>
+          </div>
+        </div>
+        
+        <div className="suggestion-details">
+          <div className="confidence-bar">
+            <div 
+              className="confidence-fill" 
+              style={{ 
+                width: `${suggestion.confidence}%`, 
+                backgroundColor: confidenceStyle.color 
+              }} 
+            />
+            <span className="confidence-text" style={{ color: confidenceStyle.color }}>
+              {suggestion.confidence}% confidenza
+            </span>
+          </div>
+          
+          <div className="suggestion-explanation">
+            <p className="explanation-text">{suggestion.explanation}</p>
+            <p className="example-text">
+              <strong>Esempio:</strong> {suggestion.example}
+            </p>
+          </div>
+        </div>
+        
+        <div className="suggestion-actions">
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🟢 CLICK PULSANTE ACCETTA - Suggerimento:', suggestion);
+              console.log('🟢 Event object:', e);
+              onAccept(suggestion);
+            }}
+            className="btn btn-success btn-sm"
+            title="Accetta questo suggerimento"
+            style={{ position: 'relative', zIndex: 10 }}
+          >
+            <CheckCircle size={14} /> Accetta
+          </button>
+          
+
+          
+          {suggestion.alternatives && suggestion.alternatives.length > 0 && (
+            <button 
+              onClick={() => onAlternative(suggestion)}
+              className="btn btn-outline btn-sm"
+              title="Vedi alternative"
+            >
+              <Info size={14} /> Alternative
+            </button>
+          )}
+          
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🟡 CLICK PULSANTE RIFIUTA - Suggerimento:', suggestion);
+              console.log('🟡 Event object:', e);
+              onReject(suggestion);
+            }}
+            className="btn btn-danger btn-sm"
+            title="Rifiuta questo suggerimento"
+            style={{ position: 'relative', zIndex: 10 }}
+          >
+            <X size={14} /> Rifiuta
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Componente per sezione suggerimenti migliorata
+  const ImprovedSuggestionsSection = ({ suggestions, onAccept, onAlternative, onReject }) => {
+    console.log('📋 RENDERING ImprovedSuggestionsSection');
+    console.log('📋 Suggerimenti ricevuti:', Object.keys(suggestions));
+    console.log('📋 Callbacks ricevuti:', { onAccept: !!onAccept, onAlternative: !!onAlternative, onReject: !!onReject });
+    
+    const groupedSuggestions = groupSuggestionsByCategory(suggestions);
+    
+    return (
+      <div className="improved-suggestions-section">
+        <div className="suggestions-header">
+          <h3>🧠 Suggerimenti Intelligenti</h3>
+          <p>Abbiamo analizzato le tue colonne e trovato {Object.keys(suggestions).length} possibili corrispondenze</p>
+          <div className="suggestions-summary">
+            <span className="summary-item">
+              <CheckCircle size={16} color="#10B981" />
+              {Object.values(suggestions).filter(s => s.confidence >= 85).length} alta confidenza
+            </span>
+            <span className="summary-item">
+              <AlertTriangle size={16} color="#F59E0B" />
+              {Object.values(suggestions).filter(s => s.confidence >= 75 && s.confidence < 85).length} media confidenza
+            </span>
+            <span className="summary-item">
+              <Edit3 size={16} color="#3B82F6" />
+              {Object.values(suggestions).filter(s => s.suggestedField.startsWith('custom.')).length} campi personalizzati
+            </span>
+          </div>
+        </div>
+        
+        <div className="suggestions-categories">
+          {Object.entries(groupedSuggestions).map(([category, categorySuggestions]) => (
+            <div key={category} className="suggestion-category">
+              <div className="category-header" style={{ borderLeftColor: getCategoryColor(category) }}>
+                <h4>
+                  {getCategoryIcon(category)} {category} 
+                  <span className="category-count">({categorySuggestions.length})</span>
+                </h4>
+                <p className="category-description">
+                  {category === 'Performance' && 'Metriche di prestazione fisica'}
+                  {category === 'Fisiologico' && 'Dati cardiovascolari e fisiologici'}
+                  {category === 'Temporale' && 'Informazioni su durata e date'}
+                  {category === 'Identificazione' && 'Dati di identificazione giocatore'}
+                  {category === 'Accelerazioni' && 'Metriche di accelerazione'}
+                  {category === 'Decelerazioni' && 'Metriche di decelerazione'}
+                  {category === 'Informazioni' && 'Informazioni aggiuntive sessione'}
+                  {category === 'Campi Personalizzati' && 'Campi specifici da creare'}
+                  {category === 'Non Riconosciuto' && 'Campi non riconosciuti automaticamente'}
+                </p>
+              </div>
+              
+              <div className="category-suggestions">
+                {categorySuggestions.map(suggestion => (
+                  <ImprovedSuggestionCard
+                    key={suggestion.csvHeader}
+                    suggestion={suggestion}
+                    onAccept={onAccept}
+                    onAlternative={onAlternative}
+                    onReject={onReject}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // =========================
   // STATES: LOADING / ERROR
@@ -1087,78 +1526,20 @@ const ColumnMappingStep = ({
         )}
 
                  {/* Suggerimenti Intelligenti */}
-         {Object.keys(pendingSuggestions).length > 0 && (
-           <div className="suggestions-section">
-             <div className="suggestions-header">
-               <h3>🧠 Suggerimenti Intelligenti</h3>
-               <p>Abbiamo trovato {Object.keys(pendingSuggestions).length} possibili corrispondenze. Vuoi accettarle?</p>
-               <div className="suggestions-actions">
-                 <button 
-                   onClick={applyAllSuggestions}
-                   className="btn btn-success btn-sm"
-                 >
-                   <CheckCircle size={16} /> Accetta Tutti
-                 </button>
-                 <button 
-                   onClick={rejectAllSuggestions}
-                   className="btn btn-outline btn-sm"
-                 >
-                   <XCircle size={16} /> Rifiuta Tutti
-                 </button>
-               </div>
-             </div>
-             
-             <div className="suggestions-grid">
-               {Object.entries(pendingSuggestions).map(([csvHeader, suggestion]) => {
-                 const fieldDef = fieldDefinitions[suggestion.suggestedField];
-                 const Icon = fieldDef?.icon;
-                 
-                 return (
-                   <div key={csvHeader} className="suggestion-card">
-                     <div className="suggestion-content">
-                       <div className="suggestion-header">
-                         <div className="csv-column">
-                           <span className="csv-name">{csvHeader}</span>
-                         </div>
-                         <ArrowRight size={16} color="#9CA3AF" />
-                         <div className="suggested-field">
-                           {Icon && <Icon size={16} color={fieldDef.color} />}
-                           <span className="field-name">{fieldDef?.label}</span>
-                         </div>
-                       </div>
-                       
-                       <div className="suggestion-details">
-                         <div className="confidence-badge" style={{
-                           backgroundColor: suggestion.confidence >= 85 ? '#ECFDF5' : '#FFFBEB',
-                           color: suggestion.confidence >= 85 ? '#10B981' : '#F59E0B'
-                         }}>
-                           {suggestion.confidence}% confidenza
-                         </div>
-                         <div className="suggestion-reason">
-                           {suggestion.reason}
-                         </div>
-                       </div>
-                       
-                       <div className="suggestion-actions">
-                         <button 
-                           onClick={() => acceptSuggestion(csvHeader, suggestion.suggestedField)}
-                           className="btn btn-success btn-xs"
-                         >
-                           <CheckCircle size={14} /> Accetta
-                         </button>
-                         <button 
-                           onClick={() => rejectSuggestion(csvHeader)}
-                           className="btn btn-outline btn-xs"
-                         >
-                           <XCircle size={14} /> Rifiuta
-                         </button>
-                       </div>
-                     </div>
-                   </div>
-                 );
-               })}
-             </div>
-           </div>
+         {(() => {
+           console.log('🔍 CONTROLLO CONDIZIONE SUGGERIMENTI');
+           console.log('🔍 pendingSuggestions:', pendingSuggestions);
+           console.log('🔍 Object.keys(pendingSuggestions):', Object.keys(pendingSuggestions));
+           console.log('🔍 Object.keys(pendingSuggestions).length:', Object.keys(pendingSuggestions).length);
+           console.log('🔍 Condizione è vera?', Object.keys(pendingSuggestions).length > 0);
+           return Object.keys(pendingSuggestions).length > 0;
+         })() && (
+                       <ImprovedSuggestionsSection
+              suggestions={pendingSuggestions}
+              onAccept={acceptSuggestion}
+              onAlternative={handleAlternative}
+              onReject={rejectSuggestion}
+            />
          )}
 
          {/* Obbligatori */}
@@ -1292,11 +1673,15 @@ const ColumnMappingStep = ({
                          <option value="none">-- Non mappare --</option>
                          
                          {/* Mostra tutte le colonne CSV disponibili */}
-                         {csvHeaders?.map((header) => (
-                           <option key={header} value={header}>
-                             {header}
-                           </option>
-                         ))}
+                         {csvHeaders?.map((header) => {
+                           const hasSuggestion = suggestions[header] && 
+                             !dismissedHeadersRef.current.has(normalizeHeader(header));
+                           return (
+                             <option key={header} value={header}>
+                               {header} {hasSuggestion ? '💡' : ''}
+                             </option>
+                           );
+                         })}
                        </select>
                      </div>
 
@@ -1342,6 +1727,18 @@ const ColumnMappingStep = ({
                           <Icon size={16} color={cfg.color} />
                           <span className="field-ref-name">{cfg.label}</span>
                           {cfg.required && <span className="required-mark">*</span>}
+                          {hasSuggestionForField(field) && (
+                            <span style={{ 
+                              background: '#F59E0B', 
+                              color: 'white', 
+                              fontSize: '10px', 
+                              padding: '2px 6px', 
+                              borderRadius: '4px',
+                              marginLeft: '8px'
+                            }}>
+                              💡 Suggerito
+                            </span>
+                          )}
                         </div>
                         <div className="field-ref-description">{cfg.description}</div>
                         <div className="field-ref-example">Esempio: {cfg.example}</div>

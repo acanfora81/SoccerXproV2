@@ -1,0 +1,166 @@
+/* ============================================================================
+   UI Components - Tabs e Select
+   ============================================================================ */
+
+/* Tabs Component */
+.tabs {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs-list {
+  display: flex;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 2px;
+}
+
+.tabs-trigger {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.tabs-trigger:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.tabs-trigger.selected {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Select Component */
+.select {
+  position: relative;
+  display: inline-block;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 200px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.select-trigger:hover {
+  border-color: #3b82f6;
+}
+
+.select-trigger:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.select-arrow {
+  transition: transform 0.2s ease;
+  margin-left: 8px;
+}
+
+.select-arrow.open {
+  transform: rotate(180deg);
+}
+
+.select-value {
+  color: #374151;
+}
+
+.select-content {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.select-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: background-color 0.2s ease;
+}
+
+.select-item:hover {
+  background: #f3f4f6;
+}
+
+.select-item:first-child {
+  border-radius: 6px 6px 0 0;
+}
+
+.select-item:last-child {
+  border-radius: 0 0 6px 6px;
+}
+
+/* 🎯 SELECT CON RUOLI - Organizzazione per ruoli */
+.select-content-roles {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.role-section {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.role-section:last-child {
+  margin-bottom: 0;
+}
+
+.role-header {
+  padding: 8px 12px 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  background: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.select-content-roles .select-item {
+  border-radius: 0;
+  padding: 8px 12px 8px 16px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #374151;
+}
+
+.select-content-roles .select-item:hover {
+  background: #f3f4f6;
+}
+
+.select-content-roles .select-item:first-child {
+  border-radius: 0;
+}

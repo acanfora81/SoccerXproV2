@@ -1,0 +1,51 @@
+/* client/src/styles/performance-pages.css */
+
+.performance-players-list,
+.performance-players-dossier {
+  padding: var(--spacing-lg);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: var(--spacing-xl);
+}
+
+.page-header h1 {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.page-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .performance-players-list,
+  .performance-players-dossier {
+    padding: var(--spacing-md);
+  }
+  
+  .page-header {
+    padding: 20px 24px;
+  }
+  
+  .page-header h1 {
+    font-size: 24px;
+  }
+  
+  .page-header p {
+    font-size: 14px;
+  }
+}
