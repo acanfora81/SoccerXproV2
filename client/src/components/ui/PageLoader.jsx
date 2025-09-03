@@ -1,21 +1,12 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
-import '../../styles/global.css';
+import '../../styles/loading.css';
 
-const PageLoader = ({ pageName = "pagina" }) => {
+const PageLoader = ({ message = 'Caricamento dati...', minHeight = 220 }) => {
   return (
-    <div className="page-loader">
-      <div className="loader-content">
-        <div className="loader-spinner">
-          <Loader2 size={48} className="animate-spin" />
-        </div>
-        <h2 className="loader-title">
-          Caricamento {pageName}
-        </h2>
-        <p className="loader-subtitle">
-          Stiamo preparando i tuoi dati...
-        </p>
-      </div>
+    <div className="sx-loader" style={{ minHeight }}>
+      <Loader2 className="sx-loader__spinner" size={28} />
+      <p className="sx-loader__text">{message}</p>
     </div>
   );
 };

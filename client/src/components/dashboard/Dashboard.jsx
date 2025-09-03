@@ -1,5 +1,5 @@
 // client/src/components/dashboard/Dashboard.jsx
-// Dashboard principale per SoccerXpro V2
+// Dashboard principale per Athlos
 
 import { Users, FileText, Activity, AlertTriangle, TrendingUp, Calendar } from 'lucide-react';
 
@@ -43,8 +43,8 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>Dashboard SoccerXpro V2</h1>
-        <p>Panoramica generale del sistema di gestione</p>
+        <h1>Dashboard Generale</h1>
+        <p>Panoramica Generale del Sistema di Gestione</p>
       </div>
 
       {/* Statistics Cards */}

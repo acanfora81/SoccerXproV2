@@ -1,0 +1,589 @@
+// server/src/routes/dashboard.js
+// ============================================================================
+// Dashboard Team API - Multi-tenant via tenantContext (req.context.teamId)
+// - Filtra: where: { player: { teamId } }
+// - Periodi: week | month | quarter | custom (startDate, endDate)
+// - Trend: confronto con periodo precedente (stessa durata)
+// - KPI allineati ai CSV: sprint_count, high_intensity_distance_m, steps_count,
+//   accelerations_count, decelerations_count, impacts_count, player_load_per_min,
+//   rpe, session_rpe, top_speed_kmh, ecc.
+// - Include: overview, load, intensity, speed, accelerations, cardio,
+//   readiness (ACWR reale), alerts (regole base), breakdownPerPlayer
+// ============================================================================
+
+const express = require('express');
+const router = express.Router();
+const { getPrismaClient } = require('../config/database');
+const { authenticate } = require('../middleware/auth');
+const tenantContext = require('../middleware/tenantContext');
+
+// === Derivation config ===
+const CFG = {
+  // media lunghezza di uno sprint (m) se non hai sprint_count
+  AVG_SPRINT_LENGTH_M: 45,
+  // passi per metro (0.78 m per passo ≈ 1.3 passi/m) - allineato ai calcoli originari
+  STEPS_PER_M: 1.3,
+  // soglia accelerazioni/decelerazioni: usa 2 m/s² se 3 non presente
+  ACC_FIELD: 'acc_events_per_min_over_3_ms2',
+  DEC_FIELD: 'dec_events_per_min_over_minus3_ms2',
+  ACC_FALLBACK: 'acc_events_per_min_over_2_ms2',
+  DEC_FALLBACK: 'dec_events_per_min_over_minus2_ms2'
+};
+
+const r1 = (x) => round(x, 1);
+const r2 = (x) => round(x, 2);
+
+// -----------------------------
+// Utils
+// -----------------------------
+const sum = (arr) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
+const mean = (arr) => (arr.length ? sum(arr) / arr.length : 0);
+const round = (v, d = 0) => {
+  const p = Math.pow(10, d);
+  return Math.round((Number(v) || 0) * p) / p;
+};
+const toNum = (v) => (v == null ? 0 : Number(v) || 0);
+const clampInt = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.trunc(n) : 0;
+};
+
+const startOfDay = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+const endOfDay   = (d) => { const x = new Date(d); x.setHours(23,59,59,999); return x; };
+const parseDate  = (v) => { if (!v) return null; const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d; };
+
+function normalizePeriod({ period = 'week', startDate, endDate }) {
+  const s = parseDate(startDate);
+  const e = parseDate(endDate);
+  if (s && e) return { start: startOfDay(s), end: endOfDay(e), type: 'custom' };
+
+  const today = new Date();
+  let from = new Date(today);
+  switch ((period || '').toString().toLowerCase()) {
+    case 'month':   from.setMonth(from.getMonth() - 1);   break;
+    case 'quarter': from.setMonth(from.getMonth() - 3);   break;
+    case 'week':
+    default:        from.setDate(from.getDate() - 7);
+  }
+  return { start: startOfDay(from), end: endOfDay(today), type: (period || 'week') };
+}
+
+function previousWindow({ start, end }) {
+  const ms = end.getTime() - start.getTime();
+  const prevEnd   = new Date(start.getTime() - 1);
+  const prevStart = new Date(prevEnd.getTime() - ms);
+  return { start: startOfDay(prevStart), end: endOfDay(prevEnd) };
+}
+
+function percentTrend(curr, prev) {
+  const c = Number(curr) || 0;
+  const p = Number(prev) || 0;
+  if (p === 0) return c === 0 ? 0 : 100; // definizione semplice
+  return round(((c - p) / p) * 100, 1);
+}
+
+// -----------------------------
+// Data access
+// -----------------------------
+
+// Funzione di derivazione per riga
+function deriveRow(r) {
+  const est = {}; // flag di stima
+
+  // ----- HSR -----
+  let hsr = toNum(r.high_intensity_distance_m);
+  if (!hsr) {
+    const over20 = toNum(r.distance_over_20_kmh_m);
+    if (over20) { hsr = over20; est.hsr = 'distance_over_20_kmh_m'; }
+    if (!hsr) {
+      const z2025 = toNum(r.distance_20_25_kmh_m);
+      const over25 = toNum(r.distance_over_25_kmh_m);
+      if (z2025 || over25) {
+        hsr = (z2025 || 0) + (over25 || 0);
+        est.hsr = 'zone20_25 + over25';
+      }
+    }
+  }
+
+  // ----- sprint_count -----
+  let sprint_count = clampInt(r.sprint_count);
+  if (!sprint_count) {
+    const sprint_dist = toNum(r.sprint_distance_m);
+    if (sprint_dist) {
+      sprint_count = Math.round(sprint_dist / CFG.AVG_SPRINT_LENGTH_M);
+      est.sprint_count = `sprint_distance_m / ${CFG.AVG_SPRINT_LENGTH_M}`;
+    }
+  }
+
+  // ----- steps_count -----
+  let steps_count = clampInt(r.steps_count);
+  if (!steps_count) {
+    const dist = toNum(r.total_distance_m);
+    if (dist) {
+      steps_count = Math.round(dist * CFG.STEPS_PER_M);
+      est.steps_count = `total_distance_m * ${CFG.STEPS_PER_M}`;
+    }
+  }
+
+  // ----- accelerazioni/decelerazioni (da events/min * durata) -----
+  let acc = clampInt(r.accelerations_count);
+  let dec = clampInt(r.decelerations_count);
+  const dur = toNum(r.duration_minutes);
+
+  const accRate = r[CFG.ACC_FIELD] ?? r[CFG.ACC_FALLBACK];
+  const decRate = r[CFG.DEC_FIELD] ?? r[CFG.DEC_FALLBACK];
+  if (!acc && accRate != null && dur) {
+    acc = Math.round(toNum(accRate) * dur);
+    est.accelerations_count = `${accRate} * duration_minutes`;
+  }
+  if (!dec && decRate != null && dur) {
+    dec = Math.round(toNum(decRate) * dur);
+    est.decelerations_count = `${decRate} * duration_minutes`;
+  }
+
+  // ----- player_load_per_min -----
+  let plpm = toNum(r.player_load_per_min);
+  if (!plpm && toNum(r.player_load) && dur) {
+    plpm = r.player_load / dur;
+    est.player_load_per_min = 'player_load / duration_minutes';
+  }
+
+  // ----- session_rpe / rpe -----
+  let session_rpe = toNum(r.session_rpe);
+  let rpe = toNum(r.rpe);
+  
+  // Se non abbiamo RPE o Session-RPE, li stimiamo da training_load
+  if (!session_rpe && !rpe && toNum(r.training_load) && dur) {
+    // Stima RPE da training_load (formula approssimativa)
+    rpe = Math.max(1, Math.min(10, toNum(r.training_load) / 100));
+    session_rpe = rpe * dur;
+    est.rpe = 'estimated from training_load';
+    est.session_rpe = 'rpe * duration_minutes';
+  } else if (!session_rpe && rpe && dur) {
+    session_rpe = rpe * dur;
+    est.session_rpe = 'rpe * duration_minutes';
+  } else if (!rpe && session_rpe && dur) {
+    rpe = session_rpe / dur;
+    est.rpe = 'session_rpe / duration_minutes';
+  }
+
+  // ----- avg_speed_kmh -----
+  let avg_speed_kmh = toNum(r.avg_speed_kmh);
+  if (!avg_speed_kmh && toNum(r.total_distance_m) && dur) {
+    avg_speed_kmh = (r.total_distance_m / 1000) / (dur / 60);
+    est.avg_speed_kmh = 'distance/duration';
+  }
+
+  return {
+    ...r,
+    _est: est,
+    // fields derivati
+    high_intensity_distance_m: hsr || 0,
+    sprint_count,
+    steps_count,
+    accelerations_count: acc,
+    decelerations_count: dec,
+    player_load_per_min: plpm,
+    session_rpe,
+    rpe,
+    avg_speed_kmh
+  };
+}
+async function loadRows(prisma, teamId, startDate, endDate) {
+  return prisma.performanceData.findMany({
+    where: {
+      player: { teamId },
+      session_date: { gte: startDate, lte: endDate },
+    },
+    include: {
+      player: { select: { id: true, firstName: true, lastName: true } }
+    },
+    orderBy: { session_date: 'asc' }
+  });
+}
+
+// -----------------------------
+// KPI builders (dataset → oggetti KPI)
+// -----------------------------
+function buildOverview(rows) {
+  const n = rows.length;
+  const avgSessionDuration = mean(rows.map(r => toNum(r.duration_minutes)));
+  const avgTeamDistance    = mean(rows.map(r => toNum(r.total_distance_m)));
+  const avgPlayerLoad      = mean(rows.map(r => toNum(r.player_load)));
+  const avgMaxSpeed        = mean(rows.map(r => toNum(r.top_speed_kmh)));
+
+  let speedPB = { player: 'N/A', value: 0 };
+  if (n > 0) {
+    const best = rows.reduce((m, r) =>
+      toNum(r.top_speed_kmh) > toNum(m.top_speed_kmh) ? r : m
+    );
+    const name = best.player
+      ? `${best.player.firstName} ${best.player.lastName}`.trim()
+      : `ID ${best.playerId}`;
+    speedPB = { player: name, value: round(best.top_speed_kmh, 1) };
+  }
+
+  return {
+    totalSessions: n,
+    avgSessionDuration,
+    avgTeamDistance,
+    avgPlayerLoad,
+    avgMaxSpeed,
+    speedPB,
+  };
+}
+
+function buildLoad(rows) {
+  return {
+    totalDistance: sum(rows.map(r => toNum(r.total_distance_m))), // metri
+    totalSprints:  sum(rows.map(r => clampInt(r.sprint_count))),  // dai CSV
+    totalSteps:    sum(rows.map(r => clampInt(r.steps_count))),   // dai CSV
+  };
+}
+
+function buildIntensity(rows) {
+  const dpm = rows.map(r =>
+    toNum(r.total_distance_m) && toNum(r.duration_minutes)
+      ? toNum(r.total_distance_m) / toNum(r.duration_minutes)
+      : 0
+  );
+  const totalSprints = sum(rows.map(r => clampInt(r.sprint_count)));
+  const players = new Set(rows.map(r => r.playerId)).size || 1;
+
+  return {
+    avgDistancePerMin: mean(dpm),                                   // ~113,2 m/min
+    avgPlayerLoadPerMin: mean(rows.map(r => toNum(r.player_load_per_min))), // ~5,14
+    avgSprintsPerPlayer: players ? totalSprints / players : 0,
+  };
+}
+
+function buildSpeed(rows) {
+  const totalHSR = sum(rows.map(r => toNum(r.high_intensity_distance_m))); // 715.708 m
+  const avgSprintDistance = mean(rows.map(r => toNum(r.sprint_distance_m)));
+  // extra: distanza media per sprint (utile per debug backend/UI)
+  const totalSprintDist = sum(rows.map(r => toNum(r.sprint_distance_m)));
+  const totalSprintCnt  = sum(rows.map(r => clampInt(r.sprint_count)));
+  const avgPerSprint    = totalSprintCnt ? totalSprintDist / totalSprintCnt : 0;
+
+  return {
+    totalHSR,
+    avgSprintDistance,
+    avgSprintDistancePerSprint: avgPerSprint // ~47–49 m per sprint
+  };
+}
+
+function buildAccelerations(rows) {
+  const totalAcc = sum(rows.map(r => clampInt(r.accelerations_count)));
+  const totalDec = sum(rows.map(r => clampInt(r.decelerations_count)));
+  const players = new Set(rows.map(r => r.playerId)).size || 1;
+  const sessions = rows.length || 1;
+
+  // Calcola la media per sessione per giocatore (non la somma totale divisa per giocatori)
+  const avgAccDecPerPlayer = players ? ((totalAcc + totalDec) / sessions) : 0;
+  
+  // Stima impatti da acc+dec (coefficiente 0.8)
+  const estimatedImpacts = Math.round(0.8 * (totalAcc + totalDec));
+
+  return {
+    avgAccDecPerPlayer,  // ora dovrebbe essere ~1.268 invece di ~78k
+    totalImpacts: estimatedImpacts,  // stimato da acc+dec
+    totalAccelerations: totalAcc,
+    totalDecelerations: totalDec,
+  };
+}
+
+function buildCardio(rows) {
+  return {
+    avgHR:   mean(rows.map(r => toNum(r.avg_heart_rate))),              // ~162,1
+    maxHR:   mean(rows.map(r => toNum(r.max_heart_rate))),              // ~179,5 (media dei max)
+    avgRPE:  mean(rows.map(r => toNum(r.rpe))),                         // ~5,65
+    totalSessionRPE: sum(rows.map(r => toNum(r.session_rpe))),          // 147.351
+  };
+}
+
+// ACWR realistico per player: (media 7 giorni) / (media 28 giorni)
+function buildReadiness(rows, windowEnd) {
+  const players = [...new Set(rows.map(r => r.playerId))];
+  const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const end   = day(windowEnd);
+  const acuteStart   = day(new Date(end.getTime() - 6*86400000));   // ultimi 7 giorni inclusivi
+  const chronicStart = day(new Date(end.getTime() - 27*86400000));  // ultimi 28 giorni inclusivi
+
+  const byPlayer = new Map();
+  for (const r of rows) {
+    const pid = r.playerId;
+    if (!byPlayer.has(pid)) byPlayer.set(pid, []);
+    byPlayer.get(pid).push(r);
+  }
+
+  const ratios = [];
+  for (const pid of players) {
+    const list = (byPlayer.get(pid) || []).filter(x => x.session_date);
+    const acute   = list.filter(x => day(x.session_date) >= acuteStart && day(x.session_date) <= end);
+    const chronic = list.filter(x => day(x.session_date) >= chronicStart && day(x.session_date) <= end);
+    const acuteAvg   = mean(acute.map(x => toNum(x.player_load)));
+    const chronicAvg = mean(chronic.map(x => toNum(x.player_load)));
+    const acwr = chronicAvg > 0 ? acuteAvg / chronicAvg : 0;
+    ratios.push({ playerId: pid, acwr });
+  }
+
+  const avgACWR = ratios.length ? mean(ratios.map(r => r.acwr)) : 0;
+
+  // soglie “classiche”: 0.8–1.3 ottimale
+  const playersOptimal = ratios.filter(r => r.acwr >= 0.8 && r.acwr <= 1.3).length;
+  const playersAtRisk  = ratios.filter(r => r.acwr < 0.8 || r.acwr > 1.3).length;
+  const totalPlayers   = players.length;
+  const riskPercentage = totalPlayers ? round((playersAtRisk / totalPlayers) * 100, 0) : 0;
+
+  return { avgACWR, playersAtRisk, playersOptimal, totalPlayers, riskPercentage };
+}
+
+function buildEventsSummary(rows) {
+  // sessioni di squadra uniche basate su session_type
+  const allenamenti = new Set(
+    rows.filter(r => r.session_type && (
+      r.session_type.toLowerCase().includes('allenamento') || 
+      r.session_type.toLowerCase().includes('training') ||
+      r.session_type.toLowerCase().includes('esercizio') ||
+      r.session_type.toLowerCase().includes('drill')
+    ))
+    .map(r => r.session_date.toISOString().split('T')[0]) // univoco per giorno
+  );
+
+  const partite = new Set(
+    rows.filter(r => r.session_type && (
+      r.session_type.toLowerCase().includes('partita') || 
+      r.session_type.toLowerCase().includes('match') ||
+      r.session_type.toLowerCase().includes('game')
+    ))
+    .map(r => r.session_date.toISOString().split('T')[0])
+  );
+
+  return {
+    numeroAllenamenti: allenamenti.size,
+    numeroPartite: partite.size
+  };
+}
+
+function buildBreakdownPerPlayer(rows) {
+  // utile per pagine "dettaglio" o debug: aggregati player-level
+  const map = new Map();
+  for (const r of rows) {
+    const k = r.playerId;
+    if (!map.has(k)) map.set(k, {
+      playerId: k,
+      name: r.player ? `${r.player.firstName} ${r.player.lastName}`.trim() : `ID ${k}`,
+      sessions: 0,
+      distance_m: 0,
+      hsr_m: 0,
+      sprints: 0,
+      steps: 0,
+      player_load: 0,
+      top_speed_kmh_max: 0,
+    });
+    const agg = map.get(k);
+    agg.sessions += 1;
+    agg.distance_m += toNum(r.total_distance_m);
+    agg.hsr_m      += toNum(r.high_intensity_distance_m);
+    agg.sprints    += clampInt(r.sprint_count);
+    agg.steps      += clampInt(r.steps_count);
+    agg.player_load += toNum(r.player_load);
+    if (toNum(r.top_speed_kmh) > agg.top_speed_kmh_max) agg.top_speed_kmh_max = toNum(r.top_speed_kmh);
+  }
+  return [...map.values()].sort((a,b) => b.distance_m - a.distance_m);
+}
+
+// -----------------------------
+// Alerts semplici (regole base)
+// -----------------------------
+function buildAlerts(overview, load, intensity, speed, cardio, readiness) {
+  const arr = [];
+  if (overview.avgMaxSpeed > 32) arr.push({ type: 'warning', message: 'Nuovo record di velocità registrato' });
+  if (readiness.playersAtRisk > 0) arr.push({ type: 'danger', message: 'Alcuni giocatori con ACWR fuori range' });
+  if (cardio.avgHR > 165) arr.push({ type: 'warning', message: 'Frequenza cardiaca media sopra la soglia' });
+  if (speed.totalHSR > 700000) arr.push({ type: 'info', message: 'Volume HSR molto elevato nel periodo' });
+  return arr;
+}
+
+// -----------------------------
+// Handler principale (usa il contesto multi-tenant)
+// -----------------------------
+async function handleDashboard(req, res) {
+  const prisma = getPrismaClient();
+  try {
+    const teamId = req?.context?.teamId;
+    if (!teamId) return res.status(403).json({ error: 'Team non disponibile nel contesto' });
+
+    // Periodo corrente + periodo precedente per trend
+    const per = normalizePeriod({
+      period: req.query?.period || 'week',
+      startDate: req.query?.startDate,
+      endDate: req.query?.endDate,
+    });
+    const prev = previousWindow({ start: per.start, end: per.end });
+
+    // Dati correnti e previous (una query per each window)
+    const [rows, rowsPrev] = await Promise.all([
+      loadRows(prisma, teamId, per.start, per.end),
+      loadRows(prisma, teamId, prev.start, prev.end),
+    ]);
+
+    // ---- DERIVA ----
+    const rowsD = rows.map(deriveRow);
+    const rowsPrevD = rowsPrev.map(deriveRow);
+
+    // KPI correnti
+    const overview = buildOverview(rowsD);
+    const load      = buildLoad(rowsD);
+    const intensity = buildIntensity(rowsD);
+    const speed     = buildSpeed(rowsD);
+    const accels    = buildAccelerations(rowsD);
+    const cardio    = buildCardio(rowsD);
+    const readiness = buildReadiness(rowsD, per.end);
+    const breakdownPerPlayer = buildBreakdownPerPlayer(rowsD);
+    const eventsSummary = buildEventsSummary(rowsD);
+
+    // KPI previous per trend
+    const oPrev = buildOverview(rowsPrevD);
+    const lPrev = buildLoad(rowsPrevD);
+    const iPrev = buildIntensity(rowsPrevD);
+    const sPrev = buildSpeed(rowsPrevD);
+    const aPrev = buildAccelerations(rowsPrevD);
+    const cPrev = buildCardio(rowsPrevD);
+
+    // Trend %
+    const trends = {
+      totalSessions:         percentTrend(overview.totalSessions,    oPrev.totalSessions),
+      avgSessionDuration:    percentTrend(overview.avgSessionDuration, oPrev.avgSessionDuration),
+      avgTeamDistance:       percentTrend(overview.avgTeamDistance,  oPrev.avgTeamDistance),
+      avgPlayerLoad:         percentTrend(overview.avgPlayerLoad,    oPrev.avgPlayerLoad),
+      avgMaxSpeed:           percentTrend(overview.avgMaxSpeed,      oPrev.avgMaxSpeed),
+
+      totalDistance:         percentTrend(load.totalDistance,        lPrev.totalDistance),
+      totalSprints:          percentTrend(load.totalSprints,         lPrev.totalSprints),
+      totalSteps:            percentTrend(load.totalSteps,           lPrev.totalSteps),
+
+      avgDistancePerMin:     percentTrend(intensity.avgDistancePerMin, iPrev.avgDistancePerMin),
+      avgPlayerLoadPerMin:   percentTrend(intensity.avgPlayerLoadPerMin, iPrev.avgPlayerLoadPerMin),
+      avgSprintsPerPlayer:   percentTrend(intensity.avgSprintsPerPlayer, iPrev.avgSprintsPerPlayer),
+
+      totalHSR:              percentTrend(speed.totalHSR,            sPrev.totalHSR),
+      avgSprintDistance:     percentTrend(speed.avgSprintDistance,   sPrev.avgSprintDistance),
+
+      avgAccDecPerPlayer:    percentTrend(accels.avgAccDecPerPlayer, aPrev.avgAccDecPerPlayer),
+      totalImpacts:          percentTrend(accels.totalImpacts,       aPrev.totalImpacts),
+
+      avgHR:                 percentTrend(cardio.avgHR,              cPrev.avgHR),
+      maxHR:                 percentTrend(cardio.maxHR,              cPrev.maxHR),
+      avgRPE:                percentTrend(cardio.avgRPE,             cPrev.avgRPE),
+      totalSessionRPE:       percentTrend(cardio.totalSessionRPE,    cPrev.totalSessionRPE),
+    };
+
+    // Arrotonda tutti i trend values a 1 decimale (sono percentuali)
+    Object.keys(trends).forEach(key => {
+      trends[key] = r1(trends[key]);
+    });
+
+    // Arrotonda a 2 decimali in output (dove ha senso)
+    // overview
+    overview.avgSessionDuration = r2(overview.avgSessionDuration);
+    overview.avgTeamDistance    = r2(overview.avgTeamDistance);
+    overview.avgPlayerLoad      = r2(overview.avgPlayerLoad);
+    overview.avgMaxSpeed        = r2(overview.avgMaxSpeed);
+    overview.speedPB.value      = r2(overview.speedPB.value);
+
+    // load
+    load.totalDistance = Math.round(load.totalDistance); // metri interi
+    load.totalSprints  = Math.round(load.totalSprints);
+    load.totalSteps    = Math.round(load.totalSteps);
+
+    // intensity
+    intensity.avgDistancePerMin   = r2(intensity.avgDistancePerMin);
+    intensity.avgPlayerLoadPerMin = r2(intensity.avgPlayerLoadPerMin);
+    intensity.avgSprintsPerPlayer = r2(intensity.avgSprintsPerPlayer);
+
+    // speed
+    speed.totalHSR               = Math.round(speed.totalHSR); // metri
+    speed.avgSprintDistance      = r2(speed.avgSprintDistance);
+    speed.avgSprintDistancePerSprint = r2(speed.avgSprintDistancePerSprint);
+
+    // accelerations
+    accels.avgAccDecPerPlayer = r2(accels.avgAccDecPerPlayer);
+    accels.totalImpacts        = Math.round(accels.totalImpacts);
+    accels.totalAccelerations  = Math.round(accels.totalAccelerations || 0);
+    accels.totalDecelerations  = Math.round(accels.totalDecelerations || 0);
+
+    // cardio
+    cardio.avgHR          = r2(cardio.avgHR);
+    cardio.maxHR          = r2(cardio.maxHR);
+    cardio.avgRPE         = r2(cardio.avgRPE);
+    cardio.totalSessionRPE= Math.round(cardio.totalSessionRPE || 0);
+
+    // readiness
+    readiness.avgACWR = r2(readiness.avgACWR);
+
+    // breakdownPerPlayer - arrotonda i valori numerici
+    breakdownPerPlayer.forEach(player => {
+      player.distance_m = Math.round(player.distance_m);
+      player.hsr_m = Math.round(player.hsr_m);
+      player.sprints = Math.round(player.sprints);
+      player.steps = Math.round(player.steps);
+      player.player_load = r2(player.player_load);
+      player.top_speed_kmh_max = r2(player.top_speed_kmh_max);
+    });
+
+    const alerts = buildAlerts(overview, load, intensity, speed, cardio, readiness);
+
+    // Esponi cosa è stato stimato
+    const estimatedFlags = {
+      hsr:         rowsD.some(r => r._est?.hsr),
+      sprint_count:rowsD.some(r => r._est?.sprint_count),
+      steps_count: rowsD.some(r => r._est?.steps_count),
+      accelerations: rowsD.some(r => r._est?.accelerations_count),
+      decelerations: rowsD.some(r => r._est?.decelerations_count),
+      pl_per_min:  rowsD.some(r => r._est?.player_load_per_min),
+      session_rpe: rowsD.some(r => r._est?.session_rpe),
+      rpe:         rowsD.some(r => r._est?.rpe),
+      avg_speed:   rowsD.some(r => r._est?.avg_speed_kmh),
+    };
+
+    return res.json({
+      overview,
+      load,
+      intensity,
+      speed,
+      accelerations: accels,
+      cardio,
+      trends,                 // <--- trend % per tutte le card principali
+      readiness,              // <--- ACWR reale per player
+      breakdownPerPlayer,     // <--- aggregati per giocatore (utile per liste/dettagli)
+      eventsSummary,          // <--- nuovo: allenamenti vs partite
+      estimates: estimatedFlags,   // <--- utile da mostrare/forzare badge in UI
+      period: {
+        startDate: per.start.toISOString(),
+        endDate:   per.end.toISOString(),
+        type:      per.type,
+        previous: {
+          startDate: prev.start.toISOString(),
+          endDate:   prev.end.toISOString(),
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Errore dashboard:', err?.message, err?.stack);
+    return res.status(500).json({
+      error: 'Errore interno del server',
+      details: process.env.NODE_ENV === 'development' ? err?.message : undefined,
+    });
+  }
+}
+
+// -----------------------------
+// Routes (protette)
+// -----------------------------
+router.use(authenticate, tenantContext);
+router.get('/team', handleDashboard);
+// Back-compat (ignora l’ID in URL e usa il contesto; se diversi → 403)
+router.get('/team/:teamId', (req, res, next) => handleDashboard(req, res, next));
+
+module.exports = router;

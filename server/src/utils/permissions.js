@@ -131,7 +131,7 @@ const ROLE_PERMISSIONS = {
   ]
 };
 
-console.log('🟢 Sistema RBAC aggiornato con PREPARATORE_ATLETICO'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Sistema RBAC aggiornato con PREPARATORE_ATLETICO'); // INFO - rimuovere in produzione
 
 /**
  * ✅ Verifica se un ruolo ha un permesso specifico
@@ -140,7 +140,7 @@ function hasPermission(userRole, permission) {
   const rolePerms = ROLE_PERMISSIONS[userRole] || [];
   const hasAccess = rolePerms.includes(permission);
   
-  console.log(`🔵 Check permesso: ${userRole} → ${permission} = ${hasAccess}`); // INFO - rimuovere in produzione
+  console.log(`🔵 [DEBUG] Check permesso: ${userRole} → ${permission} = ${hasAccess}`); // INFO - rimuovere in produzione
   
   return hasAccess;
 }
@@ -150,17 +150,17 @@ function hasPermission(userRole, permission) {
  */
 function checkRole(user, allowedRoles = []) {
   if (!user || !user.role) {
-    console.log('🟡 Utente o ruolo mancante'); // WARNING - rimuovere in produzione
+    console.log('🟡 [WARN] Utente o ruolo mancante'); // WARNING - rimuovere in produzione
     throw new Error('Utente non autenticato');
   }
   
   const userRole = user.role;
   const hasRole = allowedRoles.includes(userRole);
   
-  console.log(`🔵 Check ruolo: ${userRole} in [${allowedRoles.join(', ')}] = ${hasRole}`); // INFO - rimuovere in produzione
+  console.log(`🔵 [DEBUG] Check ruolo: ${userRole} in [${allowedRoles.join(', ')}] = ${hasRole}`); // INFO - rimuovere in produzione
   
   if (!hasRole) {
-    console.log(`🟡 Accesso negato per ruolo: ${userRole}`); // WARNING - rimuovere in produzione
+    console.log(`🟡 [WARN] Accesso negato per ruolo: ${userRole}`); // WARNING - rimuovere in produzione
     throw new Error(`Accesso negato. Ruolo richiesto: ${allowedRoles.join(' o ')}`);
   }
   
@@ -172,14 +172,14 @@ function checkRole(user, allowedRoles = []) {
  */
 function checkPermission(user, permission) {
   if (!user || !user.role) {
-    console.log('🟡 Utente o ruolo mancante per permesso'); // WARNING - rimuovere in produzione
+    console.log('🟡 [WARN] Utente o ruolo mancante per permesso'); // WARNING - rimuovere in produzione
     throw new Error('Utente non autenticato');
   }
   
   const hasAccess = hasPermission(user.role, permission);
   
   if (!hasAccess) {
-    console.log(`🟡 Permesso negato: ${user.role} → ${permission}`); // WARNING - rimuovere in produzione
+    console.log(`🟡 [WARN] Permesso negato: ${user.role} → ${permission}`); // WARNING - rimuovere in produzione
     throw new Error(`Permesso negato: ${permission}`);
   }
   
@@ -193,7 +193,7 @@ function requireRole(...allowedRoles) {
   return (req, res, next) => {
     try {
       checkRole(req.user, allowedRoles);
-      console.log(`🟢 Accesso autorizzato: ${req.user.role}`); // INFO - rimuovere in produzione
+      console.log(`🟢 [INFO] Accesso autorizzato: ${req.user.role}`); // INFO - rimuovere in produzione
       next();
     } catch (error) {
       console.log(`🔴 Accesso negato: ${error.message}`); // ERROR - mantenere essenziali
@@ -215,7 +215,7 @@ function requirePermission(permission) {
   return (req, res, next) => {
     try {
       checkPermission(req.user, permission);
-      console.log(`🟢 Permesso autorizzato: ${permission}`); // INFO - rimuovere in produzione
+      console.log(`🟢 [INFO] Permesso autorizzato: ${permission}`); // INFO - rimuovere in produzione
       next();
     } catch (error) {
       console.log(`🔴 Permesso negato: ${error.message}`); // ERROR - mantenere essenziali

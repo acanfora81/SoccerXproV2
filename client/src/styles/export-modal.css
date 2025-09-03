@@ -1,0 +1,243 @@
+/* Export Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.export-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header */
+.export-modal .modal-header {
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.export-modal .modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.export-modal .modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.export-modal .modal-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+/* Body */
+.export-modal .modal-body {
+  padding: 24px;
+}
+
+.export-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.export-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
+}
+
+.export-option:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.export-option input[type="radio"] {
+  display: none;
+}
+
+.radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+}
+
+.export-option input[type="radio"]:checked + .radio-custom {
+  border-color: #3b82f6;
+  background-color: #3b82f6;
+}
+
+.export-option input[type="radio"]:checked + .radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  border-radius: 50%;
+}
+
+.export-option input[type="radio"]:checked ~ .option-content .option-title {
+  color: #1f2937;
+}
+
+.export-option:has(input[type="radio"]:checked) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 4px 0;
+  transition: color 0.2s ease;
+}
+
+.option-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Footer */
+.export-modal .modal-footer {
+  padding: 16px 24px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.btn-export {
+  padding: 10px 20px;
+  background: #3b82f6;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-export:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-export:active {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .export-modal {
+    margin: 10px;
+    max-width: none;
+  }
+  
+  .export-modal .modal-header,
+  .export-modal .modal-body,
+  .export-modal .modal-footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .export-modal .modal-title {
+    font-size: 18px;
+  }
+  
+  .export-option {
+    padding: 14px;
+  }
+  
+  .option-title {
+    font-size: 15px;
+  }
+  
+  .option-description {
+    font-size: 13px;
+  }
+}

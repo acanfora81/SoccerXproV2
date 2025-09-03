@@ -1,9 +1,12 @@
 // client/src/components/layout/MainLayout.jsx
-// Layout principale con sidebar RBAC-aware per SoccerXpro V2
+// Layout principale con sidebar RBAC-aware per Athlos
 
 import ThemeToggle from '../ui/ThemeToggle';
+import Logo from '../ui/Logo';
 import useAuthStore from '../../store/authStore';
+import '../../styles/logo.css';
 import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Users, 
   FileText, 
@@ -17,7 +20,9 @@ import {
   Shield,
   Stethoscope,
   Target,
-  BarChart3
+  BarChart3,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 // Mappa completa di tutti i menu possibili con permessi richiesti
@@ -36,6 +41,7 @@ const ALL_MENU_ITEMS = [
     path: '/players',
     requiredPermission: 'players:read',
     submenu: [
+      { id: 'players', label: 'Gestione Giocatori', path: '/players', requiredPermission: 'players:read' },
       { 
         id: 'players-stats', 
         label: 'Statistiche', 
@@ -45,22 +51,28 @@ const ALL_MENU_ITEMS = [
     ]
   },
   {
-    id: 'performance', // NUOVO MENU!
+    id: 'performance',
     label: 'Performance',
     icon: BarChart3,
     path: '/performance',
     requiredPermission: 'performance:read',
     submenu: [
       {
-        id: 'performance-analytics',
-        label: 'Analytics',
-        path: '/performance/analytics',
+        id: 'performance-dashboard',
+        label: 'Dashboard Squadra',
+        path: '/performance/team',
         requiredPermission: 'performance:analytics'
       },
+             {
+         id: 'performance-players',
+         label: 'Vista Giocatori',
+         path: '/performance/players',
+         requiredPermission: 'performance:analytics'
+       },
       {
         id: 'performance-analytics-advanced',
         label: 'Analytics Avanzate',
-        path: '/performance/analytics-advanced',
+        path: '/performance/analytics',
         requiredPermission: 'performance:analytics'
       },
       {
@@ -229,8 +241,10 @@ const filterMenuItems = (menuItems, userRole) => {
   });
 };
 
-const MainLayout = ({ children, currentSection = 'dashboard', onSectionChange, onLogout }) => {
+const MainLayout = ({ children, onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [openMenus, setOpenMenus] = useState(new Set());
+  const location = useLocation();
   
   // 🪝 Ottieni dati utente reali dallo store
   const { user } = useAuthStore();
@@ -251,12 +265,18 @@ const MainLayout = ({ children, currentSection = 'dashboard', onSectionChange, o
     }
   };
 
-  // 📱 Handler cambio sezione
-  const handleSectionChange = (sectionId) => {
-    console.log('🔵 MainLayout: cambio sezione a', sectionId); // INFO DEV - rimuovere in produzione
-    if (onSectionChange) {
-      onSectionChange(sectionId);
-    }
+  // 📱 Handler toggle menu (apre/chiude sottomenu)
+  const handleMenuToggle = (menuId) => {
+    console.log('🔵 MainLayout: toggle menu', menuId); // INFO DEV - rimuovere in produzione
+    setOpenMenus(prev => {
+      const newOpenMenus = new Set(prev);
+      if (newOpenMenus.has(menuId)) {
+        newOpenMenus.delete(menuId);
+      } else {
+        newOpenMenus.add(menuId);
+      }
+      return newOpenMenus;
+    });
   };
 
   const toggleSidebar = () => {
@@ -313,15 +333,40 @@ const MainLayout = ({ children, currentSection = 'dashboard', onSectionChange, o
     return roleMap[role] || role || 'Utente';
   };
 
+  // 🔎 Ricava il titolo pagina dal pathname corrente
+  const getPageTitle = () => {
+    const pathname = location.pathname;
+    
+    // Cerca il menu item che corrisponde al pathname corrente
+    for (const item of menuItems) {
+      if (item.path === pathname) return item.label;
+      
+      if (item.submenu) {
+        for (const subItem of item.submenu) {
+          if (subItem.path === pathname) return subItem.label;
+          
+          if (subItem.submenu) {
+            for (const nestedItem of subItem.submenu) {
+              if (nestedItem.path === pathname) return nestedItem.label;
+            }
+          }
+        }
+      }
+    }
+    
+    // Fallback per route speciali
+    if (pathname.startsWith('/performance/dossier/')) return 'Dossier Giocatore';
+    if (pathname === '/performance/compare') return 'Confronto Giocatori';
+    
+    return 'Athlos';
+  };
+
   return (
     <div className="main-layout">
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
-          <div className="logo">
-            <Target size={24} />
-            <span className="logo-text">SoccerXpro V2</span>
-          </div>
+          <Logo size="medium" showText={true} className="sidebar-logo" />
           <button className="sidebar-toggle" onClick={toggleSidebar}>
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -330,31 +375,81 @@ const MainLayout = ({ children, currentSection = 'dashboard', onSectionChange, o
         <nav className="sidebar-nav">
           {menuItems.map(item => {
             const Icon = item.icon;
-            const isActive = currentSection === item.id;
+            const isMenuOpen = openMenus.has(item.id);
+            const hasSubmenu = item.submenu && item.submenu.length > 0;
             
             return (
               <div key={item.id} className="nav-item-group">
-                <div 
-                  className={`nav-item ${isActive ? 'active' : ''}`}
-                  onClick={() => handleSectionChange(item.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <Icon size={20} />
-                  <span className="nav-label">{item.label}</span>
-                </div>
+                {hasSubmenu ? (
+                  // Menu con submenu - usa div per toggle
+                  <div 
+                    className="nav-item"
+                    onClick={() => handleMenuToggle(item.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <Icon size={20} />
+                    <span className="nav-label">{item.label}</span>
+                    <div className="menu-toggle-icon">
+                      {isMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </div>
+                  </div>
+                ) : (
+                  // Menu senza submenu - usa NavLink
+                  <NavLink 
+                    to={item.path}
+                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon size={20} />
+                    <span className="nav-label">{item.label}</span>
+                  </NavLink>
+                )}
                 
-                {item.submenu && isActive && (
+                {hasSubmenu && isMenuOpen && (
                   <div className="submenu">
-                    {item.submenu.map(subItem => (
-                      <div 
-                        key={subItem.id} 
-                        className="submenu-item"
-                        onClick={() => handleSectionChange(subItem.id)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <span className="submenu-label">{subItem.label}</span>
-                      </div>
-                    ))}
+                    {item.submenu.map(subItem => {
+                      const hasNestedSubmenu = subItem.submenu && subItem.submenu.length > 0;
+                      const isNestedMenuOpen = openMenus.has(subItem.id);
+                      
+                      return (
+                        <div key={subItem.id}>
+                          {hasNestedSubmenu ? (
+                            // Submenu con nested submenu - usa div per toggle
+                            <div 
+                              className="submenu-item"
+                              onClick={() => handleMenuToggle(subItem.id)}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <span className="submenu-label">{subItem.label}</span>
+                              <div className="menu-toggle-icon">
+                                {isNestedMenuOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                              </div>
+                            </div>
+                          ) : (
+                            // Submenu senza nested - usa NavLink
+                            <NavLink 
+                              to={subItem.path}
+                              className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
+                            >
+                              <span className="submenu-label">{subItem.label}</span>
+                            </NavLink>
+                          )}
+                          
+                          {hasNestedSubmenu && isNestedMenuOpen && (
+                            <div className="nested-submenu">
+                              {subItem.submenu.map(nestedItem => (
+                                <NavLink 
+                                  key={nestedItem.id}
+                                  to={nestedItem.path}
+                                  className={({ isActive }) => `nested-submenu-item ${isActive ? 'active' : ''}`}
+                                >
+                                  <span className="nested-submenu-label">{nestedItem.label}</span>
+                                </NavLink>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -362,10 +457,22 @@ const MainLayout = ({ children, currentSection = 'dashboard', onSectionChange, o
           })}
         </nav>
 
-        <div className="sidebar-footer">
-          {/* Toggle tema nella sidebar footer */}
+        {/* Toggle tema posizionato sopra le informazioni utente */}
+        <div 
+          className="theme-toggle-container"
+          style={{
+            padding: '15px 20px',
+            borderTop: '1px solid var(--border-color)',
+            display: sidebarOpen ? 'flex' : 'none',
+            justifyContent: 'center',
+            width: '100%',
+            marginBottom: '10px'
+          }}
+        >
           <ThemeToggle />
-          
+        </div>
+
+        <div className="sidebar-footer">
           <div className="user-info">
             <div className="user-avatar">
               {getUserInitials()}
@@ -394,7 +501,7 @@ const MainLayout = ({ children, currentSection = 'dashboard', onSectionChange, o
             <Menu size={24} />
           </button>
           <h1 className="page-title">
-            {menuItems.find(item => item.id === currentSection)?.label || 'SoccerXpro V2'}
+            {getPageTitle()}
           </h1>
         </header>
 

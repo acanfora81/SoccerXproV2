@@ -1,0 +1,47 @@
+/* Gruppo contenitore - Stile identico alla Dashboard Squadra */
+.seg-group {
+  display: inline-flex;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 4px;
+  gap: 2px;
+  overflow: hidden;
+}
+
+/* dimensioni */
+.seg-sm .seg-btn{ padding:6px 12px; font-size: .85rem; }
+.seg-md .seg-btn{ padding:8px 16px; font-size: .9rem; }
+
+/* Pulsanti - Stile identico alla Dashboard Squadra */
+.seg-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  line-height: 1;
+  position: relative;
+  white-space: nowrap;
+}
+
+.seg-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Stato attivo - Stile identico alla Dashboard Squadra */
+.seg-btn.is-active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* focus */
+.seg-btn:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}

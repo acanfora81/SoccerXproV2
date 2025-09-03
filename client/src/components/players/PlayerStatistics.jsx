@@ -1,5 +1,5 @@
 // client/src/components/players/PlayerStatistics.jsx
-// Componente statistiche giocatori per SoccerXpro V2 (cookie HttpOnly ready)
+// Componente statistiche giocatori per Athlos (cookie HttpOnly ready)
 
 import { useState, useEffect, useCallback } from 'react';
 import { Users, Calendar, Ruler, Target, Activity } from 'lucide-react';

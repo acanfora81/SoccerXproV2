@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { getPrismaClient } = require('../config/database');
 const redisClient = require('../config/redis');
 
-console.log('🟢 Inizializzazione Smart Column Mapper (full auto)…');
+console.log('🟢 [INFO] Inizializzazione Smart Column Mapper (full auto)…');
 
 /**
  * 🔧 Helper: identifica campi custom
@@ -27,7 +27,7 @@ class SmartColumnMapper {
   // PATTERN ENGINE
   // =========================
   initializePatterns() {
-    console.log('🔵 Inizializzazione pattern riconoscimento…');
+    console.log('🔵 [DEBUG] Inizializzazione pattern riconoscimento…');
 
     // 👤 PLAYER PATTERNS - Multi-lingua + GPS vendors
     this.playerPatterns = [
@@ -186,7 +186,7 @@ class SmartColumnMapper {
       /^(possesso[\s_]*palla|tiri[\s_]*in[\s_]*porta|passing[\s_]*drills)$/i
     ];
 
-    console.log('🟢 Pattern riconoscimento inizializzati (inclusi 32 nuovi campi)');
+    console.log('🟢 [INFO] Pattern riconoscimento inizializzati (inclusi 32 nuovi campi)');
   }
 
   // =========================
@@ -335,7 +335,7 @@ class SmartColumnMapper {
   // =========================
   async generateSmartMapping(csvHeaders, teamId) {
     try {
-      console.log('🔵 Generazione smart mapping per', csvHeaders.length, 'headers');
+      console.log('🔵 [DEBUG] Generazione smart mapping per', csvHeaders.length, 'headers');
       const suggestions = {};
       const confidence = {};
       const warnings = [];
@@ -345,9 +345,9 @@ class SmartColumnMapper {
         if (suggestion.dbField) {
           suggestions[header] = suggestion;
           confidence[header] = suggestion.confidence;
-          console.log(`🟢 Mapping: "${header}" → ${suggestion.dbField} (${suggestion.confidence}%)`);
+          console.log(`🟢 [INFO] Mapping: "${header}" → ${suggestion.dbField} (${suggestion.confidence}%)`);
         } else {
-          console.log(`🟡 Header non riconosciuto: "${header}"`);
+          console.log(`🟡 [WARN] Header non riconosciuto: "${header}"`);
           warnings.push(`Header "${header}" non riconosciuto automaticamente`);
         }
       }
@@ -357,7 +357,7 @@ class SmartColumnMapper {
       const mappedFields = Object.values(suggestions).map(s => s.dbField);
       for (const required of requiredFields) {
         if (!mappedFields.includes(required)) {
-          console.log(`🟡 Campo obbligatorio mancante: ${required}`);
+          console.log(`🟡 [WARN] Campo obbligatorio mancante: ${required}`);
           warnings.push(`Campo obbligatorio "${required}" non trovato negli headers`);
         }
       }
@@ -833,7 +833,7 @@ class SmartColumnMapper {
   // =========================
   async saveTemplate(templateName, mapping, teamId) {
     try {
-      console.log('🔵 Salvataggio template mapping:', templateName);
+      console.log('🔵 [DEBUG] Salvataggio template mapping:', templateName);
       const template = {
         name: templateName,
         mapping,
@@ -845,7 +845,7 @@ class SmartColumnMapper {
       if (redisClient?.isHealthy?.()) {
         const cacheKey = `template:${teamId}:${templateName}`;
         await redisClient.setEx(cacheKey, 7 * 24 * 60 * 60, JSON.stringify(template));
-        console.log('🟢 Template salvato in Redis cache');
+        console.log('🟢 [INFO] Template salvato in Redis cache');
       }
 
       return true;
@@ -857,10 +857,10 @@ class SmartColumnMapper {
 
   async loadTemplates(teamId) {
     try {
-      console.log('🔵 Caricamento template per team:', teamId);
+      console.log('🔵 [DEBUG] Caricamento template per team:', teamId);
       // (Qui potresti listare chiavi Redis se mantieni un indice separato dei "template:*")
       const templates = [];
-      console.log('🟢 Template caricati:', templates.length);
+      console.log('🟢 [INFO] Template caricati:', templates.length);
       return templates;
     } catch (error) {
       console.log('🔴 Errore caricamento template:', error.message);
@@ -873,7 +873,7 @@ class SmartColumnMapper {
   // =========================
   async applyMapping(csvData, mapping, teamId) {
     try {
-      console.log('🔵 Applicazione mapping a', csvData.length, 'righe');
+      console.log('🔵 [DEBUG] Applicazione mapping a', csvData.length, 'righe');
 
       const transformedData = [];
       const errors = [];
@@ -886,7 +886,7 @@ class SmartColumnMapper {
         const transformedRow = {};
         const rowErrors = [];
 
-        console.log('🔵 Processing riga', i + 1, '/', csvData.length);
+        console.log('🔵 [DEBUG] Processing riga', i + 1, '/', csvData.length);
 
         transformedRow.extras = {};
 
@@ -900,7 +900,7 @@ class SmartColumnMapper {
           if (isCustomField(mappingConfig.dbField)) {
             const key = mappingConfig.dbField.replace('custom.', '');
             transformedRow.extras[key] = rawValue;
-            console.log('🟢 Custom field in extras:', key, '=', rawValue);
+            console.log('🟢 [INFO] Custom field in extras:', key, '=', rawValue);
             continue;
           }
 
@@ -918,7 +918,7 @@ class SmartColumnMapper {
               rowErrors.push(`Campo obbligatorio "${csvHeader}" vuoto o non valido`);
             }
           } catch (transformError) {
-            console.log(`🟡 Errore trasformazione riga ${i + 1}, campo "${csvHeader}":`, transformError.message);
+            console.log(`🟡 [WARN] Errore trasformazione riga ${i + 1}, campo "${csvHeader}":`, transformError.message);
 
             if (transformError.message.includes('Player not found')) {
               playersNotFound.add(rawValue);
@@ -945,7 +945,7 @@ class SmartColumnMapper {
           // Rete di sicurezza cast tipi
           const normalized = this.normalizeRowForDB(transformedRow);
           transformedData.push(normalized);
-          console.log('🟢 Riga', i + 1, 'trasformata con successo');
+          console.log('🟢 [INFO] Riga', i + 1, 'trasformata con successo');
         } else {
           if (!hasPlayerId) rowErrors.push('Player ID mancante o non valido');
           if (!hasSessionDate) rowErrors.push('Data sessione mancante o non valida');
@@ -971,7 +971,7 @@ class SmartColumnMapper {
       const errorRows = errors.length;
       const successRate = totalRows > 0 ? Math.round((successRows / totalRows) * 100) : 0;
 
-      console.log('🟢 Mapping applicato:', {
+      console.log('🟢 [INFO] Mapping applicato:', {
         total: totalRows,
         success: successRows,
         errors: errorRows,
@@ -1016,7 +1016,7 @@ class SmartColumnMapper {
     if (value === null || value === undefined || value === '') return null;
 
     const stringValue = String(value).trim();
-    console.log('🔵 Transform:', transformType, 'value:', stringValue);
+    console.log('🔵 [DEBUG] Transform:', transformType, 'value:', stringValue);
 
     try {
       switch (transformType) {
@@ -1053,7 +1053,7 @@ class SmartColumnMapper {
           return this.parseDurationToMinutes(stringValue);
 
         default:
-          console.log(`🟡 Trasformazione sconosciuta: ${transformType}`);
+          console.log(`🟡 [WARN] Trasformazione sconosciuta: ${transformType}`);
           return stringValue;
       }
     } catch (error) {
@@ -1129,10 +1129,10 @@ class SmartColumnMapper {
     if (importStats.successRate >= 80) {
       const saved = await this.saveTemplateForFingerprint(teamId, csvHeaders, mapping, meta);
       await this.indexTemplateFingerprint(teamId, csvHeaders);
-      console.log('🟢 Template auto-salvato:', saved.fingerprint);
+      console.log('🟢 [INFO] Template auto-salvato:', saved.fingerprint);
       return true;
     }
-    console.log('🟡 Import non sufficientemente pulito per auto-salvataggio');
+    console.log('🟡 [WARN] Import non sufficientemente pulito per auto-salvataggio');
     return false;
   }
 
@@ -1141,7 +1141,7 @@ class SmartColumnMapper {
   // =========================
   async resolvePlayer(playerString, teamId) {
     try {
-      console.log('🔵 Player lookup:', playerString, 'team:', teamId);
+      console.log('🔵 [DEBUG] Player lookup:', playerString, 'team:', teamId);
 
       const tokens = playerString.split(/\s+/).filter(Boolean);
       const first = tokens[0] || '';
@@ -1176,13 +1176,13 @@ class SmartColumnMapper {
           select: { id: true, firstName: true, lastName: true, shirtNumber: true }
         });
         if (playerByShirt) {
-          console.log('🟢 Player found by shirt number:', playerByShirt.shirtNumber);
+          console.log('🟢 [INFO] Player found by shirt number:', playerByShirt.shirtNumber);
           return playerByShirt.id;
         }
       }
 
       if (players.length === 1) {
-        console.log('🟢 Player found:', players[0].firstName, players[0].lastName);
+        console.log('🟢 [INFO] Player found:', players[0].firstName, players[0].lastName);
         return players[0].id;
       } else if (players.length > 1) {
         const fullNameMatch = players.find(
@@ -1191,10 +1191,10 @@ class SmartColumnMapper {
             playerString.toLowerCase().includes(p.lastName.toLowerCase())
         );
         if (fullNameMatch) {
-          console.log('🟢 Best match found:', fullNameMatch.firstName, fullNameMatch.lastName);
+          console.log('🟢 [INFO] Best match found:', fullNameMatch.firstName, fullNameMatch.lastName);
           return fullNameMatch.id;
         }
-        console.log('🟡 Multiple players found, taking first:', players[0].firstName, players[0].lastName);
+        console.log('🟡 [WARN] Multiple players found, taking first:', players[0].firstName, players[0].lastName);
         return players[0].id;
       }
 
@@ -1206,13 +1206,13 @@ class SmartColumnMapper {
   }
 
   parseSmartDate(dateString) {
-    console.log('🔵 Smart date parse:', dateString);
+    console.log('🔵 [DEBUG] Smart date parse:', dateString);
 
     // YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       const date = new Date(`${dateString}T00:00:00.000Z`);
       if (!isNaN(date.getTime())) {
-        console.log('🟢 ISO date parsed:', date);
+        console.log('🟢 [INFO] ISO date parsed:', date);
         return date;
       }
     }
@@ -1223,7 +1223,7 @@ class SmartColumnMapper {
       const [, day, month, year] = italianMatch;
       const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       if (!isNaN(date.getTime()) && date.getFullYear() === parseInt(year)) {
-        console.log('🟢 Italian date parsed:', date);
+        console.log('🟢 [INFO] Italian date parsed:', date);
         return date;
       }
     }
@@ -1234,7 +1234,7 @@ class SmartColumnMapper {
       const [, month, day, year] = americanMatch;
       const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       if (!isNaN(date.getTime()) && date.getFullYear() === parseInt(year)) {
-        console.log('🟢 American date parsed:', date);
+        console.log('🟢 [INFO] American date parsed:', date);
         return date;
       }
     }
@@ -1244,7 +1244,7 @@ class SmartColumnMapper {
     if (!isNaN(timestamp) && timestamp > 1000000000) {
       const date = new Date(timestamp * (timestamp < 1000000000000 ? 1000 : 1));
       if (!isNaN(date.getTime())) {
-        console.log('🟢 Timestamp parsed:', date);
+        console.log('🟢 [INFO] Timestamp parsed:', date);
         return date;
       }
     }
@@ -1252,7 +1252,7 @@ class SmartColumnMapper {
     // Fallback nativo
     const nativeDate = new Date(dateString);
     if (!isNaN(nativeDate.getTime())) {
-      console.log('🟢 Native date parsed:', nativeDate);
+      console.log('🟢 [INFO] Native date parsed:', nativeDate);
       return nativeDate;
     }
 
@@ -1263,19 +1263,19 @@ class SmartColumnMapper {
     const normalizedValue = String(value).replace(',', '.');
     const parsed = parseFloat(normalizedValue);
     if (isNaN(parsed)) throw new Error(`Invalid float value: "${value}"`);
-    if (parsed < 0 || parsed > 100000) console.log('🟡 Unusual float value:', parsed);
+    if (parsed < 0 || parsed > 100000) console.log('🟡 [WARN] Unusual float value:', parsed);
     return parsed;
   }
 
   parseIntValue(value) {
     const parsed = parseInt(String(value), 10);
     if (isNaN(parsed)) throw new Error(`Invalid integer value: "${value}"`);
-    if (parsed < 0 || parsed > 1000000) console.log('🟡 Unusual integer value:', parsed);
+    if (parsed < 0 || parsed > 1000000) console.log('🟡 [WARN] Unusual integer value:', parsed);
     return parsed;
   }
 
   parseDurationToMinutes(durationString) {
-    console.log('🔵 Duration parse:', durationString);
+    console.log('🔵 [DEBUG] Duration parse:', durationString);
 
     // solo cifre (minuti)
     if (/^\d+$/.test(durationString)) return parseInt(durationString, 10);
@@ -1285,7 +1285,7 @@ class SmartColumnMapper {
     if (hhmmssMatch) {
       const [, hours, minutes, seconds] = hhmmssMatch.map(Number);
       const totalMinutes = hours * 60 + minutes + seconds / 60;
-      console.log('🟢 HH:MM:SS → minuti:', totalMinutes);
+      console.log('🟢 [INFO] HH:MM:SS → minuti:', totalMinutes);
       return Math.round(totalMinutes * 100) / 100;
     }
 
@@ -1294,7 +1294,7 @@ class SmartColumnMapper {
     if (hhmmMatch) {
       const [, hours, minutes] = hhmmMatch.map(Number);
       const totalMinutes = hours * 60 + minutes;
-      console.log('🟢 HH:MM → minuti:', totalMinutes);
+      console.log('🟢 [INFO] HH:MM → minuti:', totalMinutes);
       return totalMinutes;
     }
 
@@ -1304,14 +1304,14 @@ class SmartColumnMapper {
       const hours = parseInt(textMatch[1], 10);
       const minutes = parseInt(textMatch[2] || '0', 10);
       const totalMinutes = hours * 60 + minutes;
-      console.log('🟢 Testo → minuti:', totalMinutes);
+      console.log('🟢 [INFO] Testo → minuti:', totalMinutes);
       return totalMinutes;
     }
 
     const minutesMatch = durationString.match(/(\d+)m/i);
     if (minutesMatch) {
       const minutes = parseInt(minutesMatch[1], 10);
-      console.log('🟢 Minuti soli:', minutes);
+      console.log('🟢 [INFO] Minuti soli:', minutes);
       return minutes;
     }
 
@@ -1321,6 +1321,6 @@ class SmartColumnMapper {
 
 // Export singleton
 const smartColumnMapper = new SmartColumnMapper();
-console.log('🟢 Smart Column Mapper inizializzato e pronto');
+console.log('🟢 [INFO] Smart Column Mapper inizializzato e pronto');
 
 module.exports = smartColumnMapper;

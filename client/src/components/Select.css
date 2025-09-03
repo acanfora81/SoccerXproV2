@@ -1,0 +1,77 @@
+.select-trigger {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  padding: 8px 12px;
+  width: 200px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.select-arrow {
+  margin-left: 6px;
+  transition: transform 0.2s;
+}
+.select-arrow.open {
+  transform: rotate(180deg);
+}
+
+.select-content {
+  background: #fff;
+  border: none;
+  box-shadow: none;
+  margin-top: 2px;
+  padding: 0;
+  border-radius: 0;
+}
+
+.select-content-roles {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.role-section {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.role-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin: 0;
+  padding: 8px 12px;
+  text-align: center;
+  font-weight: 600;
+  background: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.select-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #374151;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 0;
+  text-align: left;
+}
+.select-item:hover {
+  background: #f3f4f6;
+}
+
+.select-item:first-child {
+  border-radius: 0;
+}
+
+.select-item:last-child {
+  border-radius: 0;
+}

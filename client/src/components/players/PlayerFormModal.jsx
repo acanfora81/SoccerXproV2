@@ -1,5 +1,5 @@
 // client/src/components/players/PlayerFormModal.jsx
-// Form modale per creazione/modifica giocatori - SoccerXpro V2 (cookie HttpOnly ready)
+// Form modale per creazione/modifica giocatori - Athlos (cookie HttpOnly ready)
 
 import { useState, useEffect } from 'react';
 import { X, Save, User } from 'lucide-react';

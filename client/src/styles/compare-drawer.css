@@ -1,0 +1,547 @@
+/* CompareDrawer Styles - Basato su DossierDrawer */
+
+.compare-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 800px;
+  height: 100vh;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border-color);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.compare-drawer.refreshing {
+  position: relative;
+}
+
+.compare-drawer.refreshing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  z-index: 1001;
+  animation: loadingBar 2s infinite;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes loadingBar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Header */
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  min-height: 80px;
+}
+
+.compare-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.compare-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.compare-details h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.compare-details p {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Players List in Header */
+.players-list {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+  flex-wrap: wrap;
+}
+
+.player-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+/* Filters Section */
+.drawer-filters-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.filters-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filters-toggle-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-color);
+}
+
+.drawer-filters-expanded {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 300px;
+  padding: 1rem;
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.close-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 6px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: var(--danger-color);
+  color: white;
+}
+
+/* KPI Header con confronto diretto */
+.kpi-header {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kpi-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.kpi-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.player-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: var(--bg-primary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.player-kpi .player-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  padding: 0;
+}
+
+.player-kpi .kpi-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Tabs rimossi - ora mostriamo tutte le sezioni insieme */
+
+/* Classi content rimosse - ora usiamo compare-drawer__content */
+
+/* Classi per player comparison rimosse - ora usiamo le sezioni di AnalyticsAdvanced */
+
+/* Classi per sessioni e statistiche rimosse - ora usiamo le sezioni di AnalyticsAdvanced */
+
+/* Classe accdec-value rimossa */
+
+/* Footer */
+.drawer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.drawer-footer__left,
+.drawer-footer__right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Classi loading-skeleton rimosse - ora usiamo loading-state */
+
+/* Refresh Indicator */
+.drawer-refresh-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-color);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.refresh-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--danger-color);
+}
+
+.error-state p {
+  margin-bottom: 1rem;
+}
+
+/* Classi btn-secondary rimosse - ora usiamo le classi standard */
+
+/* Responsive */
+@media (max-width: 768px) {
+  .compare-drawer {
+    width: 100%;
+    max-width: none;
+  }
+  
+  .kpi-header {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Tabs rimossi */
+  
+  /* Classe dossier-drawer__content rimossa */
+
+  /* Classi per player comparison rimosse */
+}
+
+/* Chart Card Styles */
+.chart-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.chart-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chart-title h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chart-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chart-content {
+  padding: 1.5rem;
+  min-height: 300px;
+}
+
+.chart-no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.chart-no-data h3 {
+  margin: 1rem 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.chart-no-data p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* =========================
+   NUOVI STILI PER SEZIONI SENZA TAB
+   ========================= */
+
+/* Container per ogni sezione */
+.section-container {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.section-container:last-child {
+  margin-bottom: 0;
+}
+
+/* Header di ogni sezione */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.section-header svg {
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.section-header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Miglioramenti per i grafici nelle sezioni */
+.section-container .chart-card {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-container .chart-card:last-child {
+  margin-bottom: 0;
+}
+
+.section-container .chart-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.section-container .chart-title h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Responsive per le sezioni */
+@media (max-width: 768px) {
+  .section-container {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    text-align: left;
+  }
+  
+  .section-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .section-container .chart-content {
+    padding: 1rem;
+    min-height: 250px;
+  }
+}
+
+/* Loading e Error States */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.error-state h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.error-state p {
+  margin: 0 0 1.5rem 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Miglioramenti per il contenuto del drawer */
+.compare-drawer__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.compare-drawer__content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.compare-drawer__content::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.compare-drawer__content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.compare-drawer__content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

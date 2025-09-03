@@ -1,9 +1,11 @@
 // client/src/components/auth/LoginForm.jsx
-// 🔐 FORM LOGIN/REGISTER per SoccerXpro V2 - Con store Zustand
+// 🔐 FORM LOGIN/REGISTER per Athlos - Con store Zustand
 
 import { useState, useEffect } from 'react';
 import { LogIn, Mail, Lock, User, UserPlus } from 'lucide-react';
+import Logo from '../ui/Logo';
 import useAuthStore from '../../store/authStore';
+import '../../styles/logo.css';
 
 const LoginForm = () => {
   // 🏪 Hook per lo store di autenticazione
@@ -124,13 +126,16 @@ const LoginForm = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
+          <div className="auth-logo-container">
+            <Logo size="large" showText={true} className="auth-logo" />
+          </div>
           <h1 className="auth-title">
             {isRegisterMode ? (
               <UserPlus size={32} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
             ) : (
               <LogIn size={32} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
             )}
-            SoccerXpro V2
+            {isRegisterMode ? 'Registrazione' : 'Accesso'}
           </h1>
           <p className="auth-subtitle">
             {isRegisterMode ? 'Crea un nuovo account' : 'Accedi al sistema di gestione'}

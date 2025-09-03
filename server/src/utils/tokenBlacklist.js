@@ -3,7 +3,7 @@
 
 const redisClient = require('../config/redis');
 const jwt = require('jsonwebtoken');
-console.log('🟢 Caricamento token blacklist manager...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Caricamento token blacklist manager...'); // INFO - rimuovere in produzione
 
 class TokenBlacklist {
   
@@ -12,12 +12,12 @@ class TokenBlacklist {
    */
   static async addToBlacklist(token) {
     try {
-      console.log('🔵 Aggiunta token a blacklist...'); // INFO DEV - rimuovere in produzione
+      console.log('🔵 [DEBUG] Aggiunta token a blacklist...'); // INFO DEV - rimuovere in produzione
       
       // Decodifica token per ottenere exp (scadenza)
       const decoded = jwt.decode(token);
       if (!decoded || !decoded.exp) {
-        console.log('🟡 Token non decodificabile o senza scadenza'); // WARNING - rimuovere in produzione
+        console.log('🟡 [WARN] Token non decodificabile o senza scadenza'); // WARNING - rimuovere in produzione
         return false;
       }
       
@@ -26,7 +26,7 @@ class TokenBlacklist {
       const timeToExpire = decoded.exp - now;
       
       if (timeToExpire <= 0) {
-        console.log('🔵 Token già scaduto, skip blacklist'); // INFO DEV - rimuovere in produzione
+        console.log('🔵 [DEBUG] Token già scaduto, skip blacklist'); // INFO DEV - rimuovere in produzione
         return true; // Token già scaduto, non serve blacklist
       }
       
@@ -45,9 +45,9 @@ class TokenBlacklist {
       );
       
       if (success) {
-        console.log('🟢 Token aggiunto a blacklist con TTL:', timeToExpire); // INFO - rimuovere in produzione
+        console.log('🟢 [INFO] Token aggiunto a blacklist con TTL:', timeToExpire); // INFO - rimuovere in produzione
       } else {
-        console.log('🟡 Fallback: Token blacklist in memoria'); // WARNING - rimuovere in produzione
+        console.log('🟡 [WARN] Fallback: Token blacklist in memoria'); // WARNING - rimuovere in produzione
         // Fallback in memoria per sviluppo senza Redis
         this.memoryBlacklist.set(this.getTokenHash(token), {
           addedAt: Date.now(),
@@ -75,7 +75,7 @@ class TokenBlacklist {
       if (redisClient.isHealthy()) {
         const exists = await redisClient.exists(blacklistKey);
         if (exists) {
-          console.log('🔵 Token trovato in blacklist Redis'); // INFO DEV - rimuovere in produzione
+          console.log('🔵 [DEBUG] Token trovato in blacklist Redis'); // INFO DEV - rimuovere in produzione
           return true;
         }
       }
@@ -85,7 +85,7 @@ class TokenBlacklist {
       if (memoryEntry) {
         // Controlla se scaduto
         if (Date.now() < memoryEntry.expiresAt) {
-          console.log('🔵 Token trovato in blacklist memoria'); // INFO DEV - rimuovere in produzione
+          console.log('🔵 [DEBUG] Token trovato in blacklist memoria'); // INFO DEV - rimuovere in produzione
           return true;
         } else {
           // Rimuovi entry scaduta
@@ -107,19 +107,19 @@ class TokenBlacklist {
    */
   static async clearUserTokens(userId) {
     try {
-      console.log('🔵 Pulizia token utente:', userId); // INFO DEV - rimuovere in produzione
+      console.log('🔵 [DEBUG] Pulizia token utente:', userId); // INFO DEV - rimuovere in produzione
       
       if (redisClient.isHealthy()) {
         const pattern = `blacklist:*`;
         const deletedCount = await redisClient.deletePattern(pattern);
-        console.log(`🟢 Eliminati ${deletedCount} token blacklist per logout globale`); // INFO - rimuovere in produzione
+        console.log(`🟢 [INFO] Eliminati ${deletedCount} token blacklist per logout globale`); // INFO - rimuovere in produzione
         return deletedCount;
       }
       
       // Fallback memoria: pulisci tutto (semplificato)
       const sizeBefore = this.memoryBlacklist.size;
       this.memoryBlacklist.clear();
-      console.log(`🟡 Pulita blacklist memoria: ${sizeBefore} entries`); // WARNING - rimuovere in produzione
+      console.log(`🟡 [WARN] Pulita blacklist memoria: ${sizeBefore} entries`); // WARNING - rimuovere in produzione
       return sizeBefore;
       
     } catch (error) {
@@ -144,7 +144,7 @@ class TokenBlacklist {
           const keys = await redisClient.client.keys('blacklist:*');
           stats.redisSize = keys.length;
         } catch (error) {
-          console.log('🟡 Errore conteggio chiavi Redis:', error.message); // WARNING - rimuovere in produzione
+          console.log('🟡 [WARN] Errore conteggio chiavi Redis:', error.message); // WARNING - rimuovere in produzione
         }
       }
       
@@ -191,7 +191,7 @@ class TokenBlacklist {
       }
       
       if (cleanedCount > 0) {
-        console.log(`🔵 Garbage collection: rimossi ${cleanedCount} token scaduti dalla memoria`); // INFO DEV - rimuovere in produzione
+        console.log(`🔵 [DEBUG] Garbage collection: rimossi ${cleanedCount} token scaduti dalla memoria`); // INFO DEV - rimuovere in produzione
       }
     }, 5 * 60 * 1000); // Ogni 5 minuti
   }
@@ -201,7 +201,7 @@ class TokenBlacklist {
    */
   static async initialize() {
     try {
-      console.log('🟢 Inizializzazione TokenBlacklist...'); // INFO - rimuovere in produzione
+      console.log('🟢 [INFO] Inizializzazione TokenBlacklist...'); // INFO - rimuovere in produzione
       
       // Avvia pulizia memoria
       this.startMemoryCleanup();
@@ -212,10 +212,10 @@ class TokenBlacklist {
         const success = await redisClient.setEx(testKey, 1, 'test');
         if (success) {
           await redisClient.del(testKey);
-          console.log('🟢 TokenBlacklist Redis test passed'); // INFO - rimuovere in produzione
+          console.log('🟢 [INFO] TokenBlacklist Redis test passed'); // INFO - rimuovere in produzione
         }
       } else {
-        console.log('🟡 TokenBlacklist: modalità memoria attiva'); // WARNING - rimuovere in produzione
+        console.log('🟡 [WARN] TokenBlacklist: modalità memoria attiva'); // WARNING - rimuovere in produzione
       }
       
       return true;

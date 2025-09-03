@@ -1,5 +1,5 @@
 // client/src/store/authStore.js
-// 🏪 Store Zustand per gestione autenticazione SoccerXpro V2
+// 🏪 Store Zustand per gestione autenticazione Athlos
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';

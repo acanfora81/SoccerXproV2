@@ -4,7 +4,7 @@
 const { getPrismaClient } = require('../config/database');
 const redisClient = require('../config/redis');
 
-console.log('🟢 Inizializzazione Player Lookup Engine...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Inizializzazione Player Lookup Engine...'); // INFO - rimuovere in produzione
 
 /**
  * 🧠 FUZZY PLAYER LOOKUP CLASS
@@ -22,7 +22,7 @@ class FuzzyPlayerLookup {
    * 🔧 Inizializza normalizzatori testo
    */
   initializeNormalizers() {
-    console.log('🔵 Inizializzazione normalizzatori testo...'); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] Inizializzazione normalizzatori testo...'); // INFO DEV - rimuovere in produzione
 
     // Mappa caratteri speciali → ASCII
     this.accentMap = {
@@ -64,7 +64,7 @@ class FuzzyPlayerLookup {
       singleName: /^([a-zA-Zàáäâāąåãèéëêēęėìíïîīįòóöôōøõùúüûūųçčćñńšśžźżłľřŕťýÿđď\s'-]+)$/
     };
 
-    console.log('🟢 Normalizzatori inizializzati con successo'); // INFO - rimuovere in produzione
+    console.log('🟢 [INFO] Normalizzatori inizializzati con successo'); // INFO - rimuovere in produzione
   }
 
   /**
@@ -79,13 +79,13 @@ class FuzzyPlayerLookup {
         throw new Error('Player string e team ID richiesti');
       }
 
-      console.log('🔵 Risoluzione player:', playerString, 'per team:', teamId); // INFO DEV - rimuovere in produzione
+      console.log('🔵 [DEBUG] Risoluzione player:', playerString, 'per team:', teamId); // INFO DEV - rimuovere in produzione
 
       // 🚀 Step 1: Cache lookup
       const cacheKey = `${teamId}:${this.normalizeString(playerString)}`;
       if (this.playerCache.has(cacheKey)) {
         const cached = this.playerCache.get(cacheKey);
-        console.log('🟢 Player trovato in cache:', cached); // INFO - rimuovere in produzione
+        console.log('🟢 [INFO] Player trovato in cache:', cached); // INFO - rimuovere in produzione
         return cached;
       }
 
@@ -114,12 +114,12 @@ class FuzzyPlayerLookup {
         };
         
         this.cacheResult(cacheKey, result);
-        console.log('🟢 Single fuzzy match trovato:', fuzzyMatches[0].firstName, fuzzyMatches[0].lastName, `(${fuzzyMatches[0].confidence}%)`); // INFO - rimuovere in produzione
+        console.log('🟢 [INFO] Single fuzzy match trovato:', fuzzyMatches[0].firstName, fuzzyMatches[0].lastName, `(${fuzzyMatches[0].confidence}%)`); // INFO - rimuovere in produzione
         return result;
         
       } else if (fuzzyMatches.length > 1) {
         // Multiple matches - need disambiguation
-        console.log('🟡 Multiple fuzzy matches trovati:', fuzzyMatches.length, 'opzioni'); // WARNING - rimuovere in produzione
+        console.log('🟡 [WARN] Multiple fuzzy matches trovati:', fuzzyMatches.length, 'opzioni'); // WARNING - rimuovere in produzione
         
         return {
           success: false,
@@ -173,13 +173,13 @@ class FuzzyPlayerLookup {
         const cached = await redisClient.get(cacheKey);
         if (cached) {
           const players = JSON.parse(cached);
-          console.log('🟢 Team players caricati da Redis cache:', players.length); // INFO - rimuovere in produzione
+          console.log('🟢 [INFO] Team players caricati da Redis cache:', players.length); // INFO - rimuovere in produzione
           return players;
         }
       }
 
       // 💾 Load from database
-      console.log('🔵 Caricamento team players da database...'); // INFO DEV - rimuovere in produzione
+      console.log('🔵 [DEBUG] Caricamento team players da database...'); // INFO DEV - rimuovere in produzione
       
       const players = await this.prisma.player.findMany({
         where: { 
@@ -201,7 +201,7 @@ class FuzzyPlayerLookup {
         ]
       });
 
-      console.log('🟢 Team players caricati da DB:', players.length); // INFO - rimuovere in produzione
+      console.log('🟢 [INFO] Team players caricati da DB:', players.length); // INFO - rimuovere in produzione
 
       // 🚀 Cache in Redis per 10 minuti
       if (redisClient.isHealthy()) {
@@ -225,13 +225,13 @@ class FuzzyPlayerLookup {
   async findExactMatch(playerString, teamPlayers) {
     const normalized = this.normalizeString(playerString);
     
-    console.log('🔵 Ricerca exact match per:', normalized); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] Ricerca exact match per:', normalized); // INFO DEV - rimuovere in produzione
 
     for (const player of teamPlayers) {
       // 🎯 Full name exact match
       const fullName = this.normalizeString(`${player.firstName} ${player.lastName}`);
       if (normalized === fullName) {
-        console.log('🟢 Exact full name match:', player.firstName, player.lastName); // INFO - rimuovere in produzione
+        console.log('🟢 [INFO] Exact full name match:', player.firstName, player.lastName); // INFO - rimuovere in produzione
         return {
           success: true,
           playerId: player.id,
@@ -245,7 +245,7 @@ class FuzzyPlayerLookup {
       // 🎯 Shirt number exact match
       const shirtMatch = playerString.match(this.namePatterns.shirtNumber);
       if (shirtMatch && player.shirtNumber && player.shirtNumber === parseInt(shirtMatch[1], 10)) {
-        console.log('🟢 Exact shirt number match:', player.shirtNumber); // INFO - rimuovere in produzione
+        console.log('🟢 [INFO] Exact shirt number match:', player.shirtNumber); // INFO - rimuovere in produzione
         return {
           success: true,
           playerId: player.id,
@@ -259,7 +259,7 @@ class FuzzyPlayerLookup {
       // 🎯 Reversed name exact match "Rossi, Mario"
       const reversedName = this.normalizeString(`${player.lastName}, ${player.firstName}`);
       if (normalized === reversedName || normalized === this.normalizeString(`${player.lastName} ${player.firstName}`)) {
-        console.log('🟢 Exact reversed name match:', player.lastName, player.firstName); // INFO - rimuovere in produzione
+        console.log('🟢 [INFO] Exact reversed name match:', player.lastName, player.firstName); // INFO - rimuovere in produzione
         return {
           success: true,
           playerId: player.id,
@@ -284,11 +284,11 @@ class FuzzyPlayerLookup {
     const matches = [];
     const normalized = this.normalizeString(playerString);
     
-    console.log('🔵 Ricerca fuzzy matches per:', normalized); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] Ricerca fuzzy matches per:', normalized); // INFO DEV - rimuovere in produzione
 
     // 🔍 Analizza formato input per strategie specifiche
     const inputFormat = this.detectInputFormat(playerString);
-    console.log('🔵 Formato input rilevato:', inputFormat.type); // INFO DEV - rimuovere in produzione
+    console.log('🔵 [DEBUG] Formato input rilevato:', inputFormat.type); // INFO DEV - rimuovere in produzione
 
     for (const player of teamPlayers) {
       const playerMatches = [];
@@ -410,7 +410,7 @@ class FuzzyPlayerLookup {
       .filter(match => match.confidence >= 60) // Soglia minima 60%
       .sort((a, b) => b.confidence - a.confidence);
 
-    console.log('🟢 Fuzzy matches trovati:', filteredMatches.length); // INFO - rimuovere in produzione
+    console.log('🟢 [INFO] Fuzzy matches trovati:', filteredMatches.length); // INFO - rimuovere in produzione
     filteredMatches.forEach(match => {
       console.log(`  - ${match.firstName} ${match.lastName} (${match.confidence}%) - ${match.matchReason}`); // INFO - rimuovere in produzione
     });
@@ -591,11 +591,11 @@ class FuzzyPlayerLookup {
           this.playerCache.delete(key);
         }
       }
-      console.log('🟡 Cache cleared per team:', teamId); // WARNING - rimuovere in produzione
+      console.log('🟡 [WARN] Cache cleared per team:', teamId); // WARNING - rimuovere in produzione
     } else {
       // Clear tutto
       this.playerCache.clear();
-      console.log('🟡 Cache completamente cleared'); // WARNING - rimuovere in produzione
+      console.log('🟡 [WARN] Cache completamente cleared'); // WARNING - rimuovere in produzione
     }
 
     // Clear Redis cache
@@ -622,6 +622,6 @@ class FuzzyPlayerLookup {
 // Export singleton instance
 const fuzzyPlayerLookup = new FuzzyPlayerLookup();
 
-console.log('🟢 Fuzzy Player Lookup inizializzato e pronto'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Fuzzy Player Lookup inizializzato e pronto'); // INFO - rimuovere in produzione
 
 module.exports = fuzzyPlayerLookup;

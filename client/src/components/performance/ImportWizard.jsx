@@ -147,7 +147,7 @@ const [loading, setLoading] = useState(false);
           <div className="header-title">
             <Upload size={32} color="#3B82F6" />
             <div>
-              <h1> Import Dati Performance</h1>
+              <h1> Import Dati Atleti</h1>
               <p>Carica facilmente i dati delle performance dei tuoi giocatori da file CSV o Excel</p>
             </div>
           </div>

@@ -7,13 +7,13 @@ const { requireRole, requirePermission, ROLES, PERMISSIONS } = require('../utils
 
 const router = express.Router();
 
-console.log('🟢 Caricamento route test auth...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Caricamento route test auth...'); // INFO - rimuovere in produzione
 
 /**
  * 🔐 Test endpoint protetto (richiede autenticazione)
  */
 router.get('/protected', authenticate, (req, res) => {
-  console.log('🟢 Accesso endpoint protetto autorizzato'); // INFO - rimuovere in produzione
+  console.log('🟢 [INFO] Accesso endpoint protetto autorizzato'); // INFO - rimuovere in produzione
   
   res.json({
     message: 'Accesso autorizzato!',
@@ -34,7 +34,7 @@ router.get('/protected', authenticate, (req, res) => {
 router.get('/optional', optionalAuth, (req, res) => {
   const isAuthenticated = req.user.role !== 'GUEST';
   
-  console.log('🔵 Accesso endpoint opzionale:', isAuthenticated ? 'autenticato' : 'guest'); // INFO - rimuovere in produzione
+  console.log('🔵 [DEBUG] Accesso endpoint opzionale:', isAuthenticated ? 'autenticato' : 'guest'); // INFO - rimuovere in produzione
   
   res.json({
     message: isAuthenticated ? 'Benvenuto utente!' : 'Benvenuto ospite!',
@@ -48,7 +48,7 @@ router.get('/optional', optionalAuth, (req, res) => {
  * 📊 Test info utente dettagliate
  */
 router.get('/me', authenticate, (req, res) => {
-  console.log('🟢 Richiesta info utente'); // INFO - rimuovere in produzione
+  console.log('🟢 [INFO] Richiesta info utente'); // INFO - rimuovere in produzione
   
   res.json({
     message: 'Informazioni utente',

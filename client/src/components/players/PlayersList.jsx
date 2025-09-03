@@ -1,8 +1,9 @@
 // client/src/components/players/PlayersList.jsx
-// Componente lista giocatori per SoccerXpro V2
+// Componente lista giocatori per Athlos
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Plus, Search, Filter } from 'lucide-react';
+import { Users, Plus, Search, Filter, Edit3, Trash2 } from 'lucide-react';
+import PageLoader from '../ui/PageLoader';
 import PlayerFormModal from './PlayerFormModal';
 import '../../styles/players.css';
 
@@ -165,17 +166,7 @@ const PlayersList = () => {
   };
 
   if (loading) {
-    return (
-      <div className="players-list">
-        <div className="players-header">
-          <h2>Gestione Giocatori</h2>
-        </div>
-        <div className="loading-state">
-          <Users size={32} />
-          <p>Caricamento giocatori...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Caricamento giocatori…" minHeight={360} />;
   }
 
   if (error) {
@@ -266,64 +257,92 @@ const PlayersList = () => {
       ) : (
         <div className="players-grid">
           {sortedPlayers.map(player => (
-            <div key={player.id} className="card player-card">
-              <div className="player-card-header">
-                <div className="player-name">
-                  <h3>{player.firstName} {player.lastName}</h3>
-                </div>
-                {player.shirtNumber && (
-                  <div className="shirt-number">
-                    {player.shirtNumber}
-                  </div>
-                )}
-              </div>
-              
-              <div className="player-position-section">
-                <span className="player-position">
+            <div key={player.id} className="player-card-modern">
+                             {/* Header con avatar e numero */}
+               <div className="player-card-header-modern">
+                 <div className="player-avatar">
+                   <div className="avatar-circle">
+                     {player.firstName?.[0]}{player.lastName?.[0]}
+                   </div>
+                 </div>
+                 <div className="player-header-info">
+                   <h3 className="player-name-modern">{player.firstName} {player.lastName}</h3>
+                   {player.shirtNumber && (
+                     <div className="shirt-number-modern">#{player.shirtNumber}</div>
+                   )}
+                 </div>
+               </div>
+
+              {/* Badge posizione */}
+              <div className="position-badge-container">
+                <span className={`position-badge position-${player.position?.toLowerCase()}`}>
                   {getPositionLabel(player.position)}
                 </span>
               </div>
 
-              <div className="player-card-body">
-                <div className="player-info">
-                  <div className="info-item">
-                    <span className="label">Età:</span>
-                    <span className="value">{calculateAge(player.dateOfBirth)} anni</span>
+              {/* Informazioni principali */}
+              <div className="player-stats-grid">
+                <div className="stat-item">
+                  <div className="stat-content">
+                    <span className="stat-label-strong">Età</span>
+                    <span className="stat-value">{calculateAge(player.dateOfBirth)} anni</span>
                   </div>
-                  <div className="info-item">
-                    <span className="label">Nazionalità:</span>
-                    <span className="value">{player.nationality}</span>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-content">
+                    <span className="stat-label-strong">Nazionalità</span>
+                    <span className="stat-value">{player.nationality}</span>
                   </div>
-                  {player.height && (
-                    <div className="info-item">
-                      <span className="label">Altezza:</span>
-                      <span className="value">{player.height} cm</span>
-                    </div>
-                  )}
-                  {player.weight && (
-                    <div className="info-item">
-                      <span className="label">Peso:</span>
-                      <span className="value">{player.weight} kg</span>
-                    </div>
-                  )}
                 </div>
-
-                <div className="player-status">
-                  <span className={`status-badge ${player.isActive ? 'active' : 'inactive'}`}>
-                    {player.isActive ? 'Attivo' : 'Non Attivo'}
-                  </span>
-                </div>
+                {player.height && (
+                  <div className="stat-item">
+                    <div className="stat-content">
+                      <span className="stat-label-strong">Altezza</span>
+                      <span className="stat-value">{player.height} cm</span>
+                    </div>
+                  </div>
+                )}
+                {player.weight && (
+                  <div className="stat-item">
+                    <div className="stat-content">
+                      <span className="stat-label-strong">Peso</span>
+                      <span className="stat-value">{player.weight} kg</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="player-card-footer">
-                <small>Aggiunto il {formatDate(player.createdAt)}</small>
-                <button 
-                  onClick={() => handleEditPlayer(player)}
-                  className="btn btn-secondary edit-btn"
-                >
-                  Modifica
-                </button>
-              </div>
+                             {/* Status e data */}
+               <div className="player-card-footer-modern">
+                 <div className="status-container">
+                   <span className={`status-indicator ${player.isActive ? 'active' : 'inactive'}`}>
+                     <div className="status-dot"></div>
+                     {player.isActive ? 'Attivo' : 'Non Attivo'}
+                   </span>
+                 </div>
+                 <div className="date-info">
+                   <small>Aggiunto il {formatDate(player.createdAt)}</small>
+                 </div>
+               </div>
+               
+               {/* Pulsanti azioni */}
+               <div className="player-actions">
+                 <button 
+                   onClick={() => handleEditPlayer(player)}
+                   className="action-btn edit-btn-modern"
+                   title="Modifica giocatore"
+                 >
+                   <Edit3 size={16} />
+                   Modifica
+                 </button>
+                 <button 
+                   className="action-btn delete-btn-modern"
+                   title="Elimina giocatore"
+                 >
+                   <Trash2 size={16} />
+                   Elimina
+                 </button>
+               </div>
             </div>
           ))}
         </div>
