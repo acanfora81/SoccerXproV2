@@ -310,7 +310,7 @@ router.post(
       try { 
         await fsAsync.unlink(filePath); 
       } catch (e) { 
-        logger.warn({ err: e?.message }, "Temp file cleanup failed"); 
+        dwarn("Temp file cleanup failed:", e?.message); 
       }
 
       if (rows.length === 0) {
@@ -781,7 +781,7 @@ try {
           isolationLevel: 'ReadCommitted' // 🔴 FIX: Aggiunto isolamento
         });
 
-        logger.info({ batchIndex, batchSize: batch.length }, "Import batch processed");
+        dlog("Import batch processed:", { batchIndex, batchSize: batch.length });
 
         // 🟠 Pausa tra batch per evitare sovraccarico database (configurabile)
         if (BATCH_DELAY_MS > 0 && (batchIndex + 1 < batches.length)) {
@@ -789,7 +789,7 @@ try {
         }
 
       } catch (batchError) {
-        logger.error({ err: batchError?.message }, "Import batch error");
+        derr("Import batch error:", batchError?.message);
         
         // Segna tutto il batch come fallito
         batch.forEach((rowData) => {
@@ -823,7 +823,7 @@ try {
     try { 
       await fsAsync.unlink(filePath); 
     } catch (e) { 
-      logger.warn({ err: e?.message }, "Temp file cleanup failed"); 
+      dwarn("Temp file cleanup failed:", e?.message); 
     }
 
     return res.json({
@@ -836,7 +836,7 @@ try {
       },
     });
   } catch (error) {
-    logger.error({ err: error?.message }, "Import error");
+    derr("Import error:", error?.message);
 
     return res.status(500).json({
       error: "Errore interno durante import finale",
@@ -1522,7 +1522,7 @@ router.get("/stats/players", async (req, res) => {
     
     const teamId = req.context.teamId;
 
-    logger.debug({ teamId, filters: req.query }, "[STATS/PLAYERS] request");
+    dlog("[STATS/PLAYERS] request:", { teamId, filters: req.query });
 
     const prisma = getPrismaClient();
 
@@ -1672,7 +1672,7 @@ router.get("/stats/players", async (req, res) => {
       const hsr = computeHSR(playerData);
       const sprintPer90 = computeSprintPer90(playerData);
 
-      logger.debug({ playerId: player.id, hsr, sprintPer90 }, "KPI calcolati");
+      dlog("KPI calcolati:", { playerId: player.id, hsr, sprintPer90 });
 
       // Top Speed = MAX(top_speed_kmh)
       const topSpeed = Math.max(...playerData.map(p => safeNum(p.top_speed_kmh)), 0);
@@ -1946,7 +1946,7 @@ router.get("/stats/players", async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ err: error?.message }, "Stats error");
+    derr("Stats error:", error?.message);
     res.status(500).json({
       error: 'Errore interno del server',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -2049,7 +2049,7 @@ router.delete(
       }
 
       if (performanceData.createdById !== req.context.userId) {
-        logger.warn({ role: req.user?.role }, "Unauthorized team stats access attempt");
+        dwarn("Unauthorized team stats access attempt:", { role: req.user?.role });
         return res.status(403).json({
           error: "Puoi eliminare solo i dati performance che hai creato",
           code: "OWNERSHIP_REQUIRED",
@@ -2145,7 +2145,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
       try { 
         await fsAsync.unlink(filePath); 
       } catch (e) { 
-        logger.warn({ err: e?.message }, "Temp file cleanup failed"); 
+        dwarn("Temp file cleanup failed:", e?.message); 
       }
       return res.status(400).json({
         error: "Formato file non supportato",
@@ -2157,7 +2157,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
     try { 
       await fsAsync.unlink(filePath); 
     } catch (e) { 
-      logger.warn({ err: e?.message }, "Temp file cleanup failed"); 
+      dwarn("Temp file cleanup failed:", e?.message); 
     }
 
     if (allRows.length === 0) {
@@ -2396,7 +2396,7 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
           isolationLevel: 'ReadCommitted' // 🟠 Ottimizzazione isolamento
         });
 
-        logger.info({ batchIndex, batchSize: batch.length }, "Import batch processed");
+        dlog("Import batch processed:", { batchIndex, batchSize: batch.length });
 
         // 🟠 Pausa tra batch per evitare sovraccarico database (configurabile)
         if (BATCH_DELAY_MS > 0 && (batchIndex + 1 < batches.length)) {
@@ -2465,8 +2465,8 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ err: error?.message }, "Import error");
-    logger.error({ stack: error.stack }, "Import error stack");
+    derr("Import error:", error?.message);
+    derr("Import error stack:", error.stack);
 
     return res.status(500).json({
       error: "Errore interno durante import finale",
@@ -2499,7 +2499,7 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
     const sessionTypeFilter = parseSessionTypeFilterSimple(sessionType);
     const sessionNameFilter = parseSessionTypeFilter(sessionName);
 
-    logger.debug({ playerId, period, sessionType, sessionName, teamId }, "[DOSSIER] request");
+    dlog("[DOSSIER] request:", { playerId, period, sessionType, sessionName, teamId });
     console.log('🔍 DEBUG DOSSIER - Filtri applicati:', {
       sessionType,
       sessionTypeFilter,
@@ -2783,7 +2783,7 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
     });
 
   } catch (err) {
-    logger.error({ err: err?.message, stack: err?.stack }, "[DOSSIER] crash");
+    derr("[DOSSIER] crash:", err?.message, err?.stack);
     return res.status(500).json({ error: "Internal Server Error", code: "DOSSIER_500" });
   }
 });
@@ -2977,7 +2977,7 @@ router.get("/compare", async (req, res) => {
     res.json(playersWithStats);
 
   } catch (error) {
-    logger.error({ err: error?.message }, "Compare error");
+    derr("Compare error:", error?.message);
     res.status(500).json({
       error: 'Errore interno del server',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
