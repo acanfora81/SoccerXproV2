@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const { getPrismaClient } = require('../config/database');
+const { parseSessionTypeFilter, parseSessionTypeFilterSimple, computeHSR } = require('../utils/kpi');
 
 // 🔧 FIX: Aggiorna parsing dei filtri in dashboard.js per allineamento
 function parseFiltersForDashboard(req) {
@@ -275,17 +276,32 @@ function deriveRow(r) {
   let acc = clampInt(r.accelerations_count);
   let dec = clampInt(r.decelerations_count);
 
-  if (!acc || !dec) {
-    const accRate = r[CFG.ACC_FIELD] ?? r[CFG.ACC_FALLBACK];
-    const decRate = r[CFG.DEC_FIELD] ?? r[CFG.DEC_FALLBACK];
-    
-    if (!acc && accRate != null && dur) {
-      acc = Math.round(toNum(accRate) * dur);
-      est.accelerations_count = `${accRate} * duration_minutes`;
+  // 🔧 FIX: Priorità ai campi numerici raw che contengono i dati reali
+  if (!acc) {
+    const accRaw = clampInt(r.num_acc_over_3_ms2);
+    if (accRaw > 0) {
+      acc = accRaw;
+      est.accelerations_count = 'num_acc_over_3_ms2';
+    } else {
+      const accRate = r[CFG.ACC_FIELD] ?? r[CFG.ACC_FALLBACK];
+      if (accRate != null && dur) {
+        acc = Math.round(toNum(accRate) * dur);
+        est.accelerations_count = `${accRate} * duration_minutes`;
+      }
     }
-    if (!dec && decRate != null && dur) {
-      dec = Math.round(toNum(decRate) * dur);
-      est.decelerations_count = `${decRate} * duration_minutes`;
+  }
+  
+  if (!dec) {
+    const decRaw = clampInt(r.num_dec_over_minus3_ms2);
+    if (decRaw > 0) {
+      dec = decRaw;
+      est.decelerations_count = 'num_dec_over_minus3_ms2';
+    } else {
+      const decRate = r[CFG.DEC_FIELD] ?? r[CFG.DEC_FALLBACK];
+      if (decRate != null && dur) {
+        dec = Math.round(toNum(decRate) * dur);
+        est.decelerations_count = `${decRate} * duration_minutes`;
+      }
     }
   }
 
@@ -469,15 +485,51 @@ async function loadRows(prisma, teamId, startDate, endDate, sessionTypeFilter, s
 // KPI builders - VERSIONE CORRETTA
 // -----------------------------
 
+// === HELPER SPRINT (fallback sicuro) ===
+function getSprintCountRow(r) {
+  const direct = Number(r?.sprint_count);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+
+  const hir = Number(r?.high_intensity_runs); // proxy se disponibile
+  if (Number.isFinite(hir) && hir > 0) return hir;
+
+  const sprintDist = Number(r?.sprint_distance_m); // stima da distanza sprint
+  if (Number.isFinite(sprintDist) && sprintDist > 0) return Math.round(sprintDist / 30);
+
+  return 0;
+}
+
 function buildOverview(rows) {
   const n = rows.length;
-  if (!n) return { totalSessions: 0, totalDistance: 0, totalMinutes: 0, avgDistance: 0, avgMinutes: 0 };
+  if (!n) return { 
+    totalSessions: 0, 
+    totalDistance: 0, 
+    totalMinutes: 0, 
+    avgDistance: 0, 
+    avgMinutes: 0,
+    avgSessionDuration: 0,
+    avgTeamDistance: 0,
+    avgPlayerLoad: 0,
+    avgMaxSpeed: 0,
+    speedPB: { player: 'N/A', value: 0 }
+  };
   
   // 🔧 FIX: Filtra record vuoti (giorni senza sessioni)
   const validRows = rows.filter(r => r.playerId && r.player);
   const validCount = validRows.length;
   
-  if (!validCount) return { totalSessions: 0, totalDistance: 0, totalMinutes: 0, avgDistance: 0, avgMinutes: 0 };
+  if (!validCount) return { 
+    totalSessions: 0, 
+    totalDistance: 0, 
+    totalMinutes: 0, 
+    avgDistance: 0, 
+    avgMinutes: 0,
+    avgSessionDuration: 0,
+    avgTeamDistance: 0,
+    avgPlayerLoad: 0,
+    avgMaxSpeed: 0,
+    speedPB: { player: 'N/A', value: 0 }
+  };
   
   const avgSessionDuration = mean(validRows.map(r => toNum(r.duration_minutes)));
   // CORRETTO: Distanza media in metri (per compatibilità frontend)
@@ -513,7 +565,7 @@ function buildLoad(rows) {
   return {
     // CORRETTO: Distanza totale in metri (solo periodo selezionato)
     totalDistance: sum(validRows.map(r => toNum(r.total_distance_m))),
-    totalSprints: sum(validRows.map(r => clampInt(r.sprint_count))),
+    totalSprints: validRows.reduce((s, r) => s + getSprintCountRow(r), 0),
     // CORRETTO: Passi interi (solo periodo selezionato)
     totalSteps: sum(validRows.map(r => clampInt(r.steps_count))),
   };
@@ -546,12 +598,7 @@ function buildSpeed(rows) {
   const validRows = rows.filter(r => r.playerId && r.player);
   
   // 🔧 FIX: HSR standardizzato - una sola definizione coerente
-  const totalHSR = sum(validRows.map(r => {
-    // Priorità: high_intensity_distance_m > distance_over_15_kmh_m > distance_over_20_kmh_m
-    return toNum(r.high_intensity_distance_m) || 
-           toNum(r.distance_over_15_kmh_m) || 
-           toNum(r.distance_over_20_kmh_m) || 0;
-  }));
+  const totalHSR = computeHSR(validRows);
   const avgSprintDistance = mean(validRows.map(r => toNum(r.sprint_distance_m)));
   
   // Distanza media per singolo sprint
@@ -575,7 +622,7 @@ function buildAccelerations(rows) {
   const sessions = validRows.length || 1;
 
   // CORRETTO: Media accelerazioni+decelerazioni per sessione
-  const avgAccDecPerSession = (totalAcc + totalDec) / sessions;
+  const avgAccDecPerSession = sessions > 0 ? (totalAcc + totalDec) / sessions : 0;
   
   // Stima impatti da acc+dec (coefficiente 0.8)
   const estimatedImpacts = Math.round(0.8 * (totalAcc + totalDec));
@@ -765,12 +812,23 @@ async function handleDashboard(req, res) {
     if (!teamId) return res.status(403).json({ error: 'Team non disponibile nel contesto' });
 
     // 🔧 FIX: Leggi e processa sessionType, sessionName e roles (players rimosso)
-    const { parseSessionTypeFilter, parseSessionTypeFilterSimple } = require('../utils/kpi');
     const sessionType = req.query?.sessionType || 'all';
     const sessionName = req.query?.sessionName || 'all';
     const roles = (req.query?.roles || '').split(',').filter(Boolean);
     const sessionTypeFilter = parseSessionTypeFilterSimple(sessionType);
     const sessionNameFilter = parseSessionTypeFilter(sessionName);
+    
+    // 🔧 FIX: Estrai il valore dal filtro se è un oggetto
+    const sessionTypeValue = sessionTypeFilter && typeof sessionTypeFilter === 'object' && sessionTypeFilter.in 
+      ? sessionTypeFilter.in[0] 
+      : sessionTypeFilter;
+    const sessionNameValue = sessionNameFilter && typeof sessionNameFilter === 'object' && sessionNameFilter.in 
+      ? sessionNameFilter.in[0] 
+      : sessionNameFilter;
+    
+    // 🔧 FIX: Converti "all" in null per non filtrare
+    const finalSessionTypeValue = sessionTypeValue === 'all' ? null : sessionTypeValue;
+    const finalSessionNameValue = sessionNameValue === 'all' ? null : sessionNameValue;
     
 
 
@@ -784,8 +842,8 @@ async function handleDashboard(req, res) {
 
     // Carica dati con filtri sessionType, sessionName e roles (players rimosso)
     const [rows, rowsPrev] = await Promise.all([
-      loadRows(prisma, teamId, per.start, per.end, sessionTypeFilter, sessionNameFilter),
-      loadRows(prisma, teamId, prev.start, prev.end, sessionTypeFilter, sessionNameFilter),
+      loadRows(prisma, teamId, per.start, per.end, finalSessionTypeValue, finalSessionNameValue),
+      loadRows(prisma, teamId, prev.start, prev.end, finalSessionTypeValue, finalSessionNameValue),
     ]);
 
     // 🔧 NUOVO: Filtra per ruoli se specificati
@@ -949,7 +1007,7 @@ async function handleDashboard(req, res) {
       alerts,
       filters: {
         sessionType: sessionType,
-        sessionTypeFilter: sessionTypeFilter
+        sessionTypeFilter: finalSessionTypeValue
       },
       period: {
         startDate: per.start.toISOString(),
