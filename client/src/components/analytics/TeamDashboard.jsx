@@ -315,12 +315,15 @@ const TeamDashboard = () => {
     };
   }, [filters.period, filters.startDate, filters.endDate]);
 
-  // Componente MetricCard ottimizzato CON TREND
-  const MetricCard = useCallback(({ title, value, unit, icon: Icon, trend }) => (
+  // Componente MetricCard ottimizzato CON TREND e supporto "stimato"
+  const MetricCard = useCallback(({ title, value, unit, icon: Icon, trend, isEstimated }) => (
     <div className="metric-card">
       <div className="metric-header">
         {Icon && <Icon size={20} />}
-        <span className="metric-title">{title}</span>
+        <span className="metric-title">
+          {title}
+          {isEstimated && <span className="estimated-badge">stimato</span>}
+        </span>
       </div>
       <div className="metric-value">
         {value}
@@ -619,15 +622,17 @@ const TeamDashboard = () => {
             />
             <MetricCard
               title="RPE Medio"
-              value={fmtDec(data.cardio?.avgRPE || 0)}
+              value={data.cardio?.avgRPE !== null ? fmtDec(data.cardio.avgRPE) : 'N/A'}
               trend={dashboardData.trends?.avgRPE}
               icon={ShieldCheck}
+              isEstimated={data.cardio?.isRPEEstimated}
             />
             <MetricCard
               title="Session-RPE Totale"
-              value={fmtInt(data.cardio?.totalSessionRPE || 0)}
+              value={data.cardio?.totalSessionRPE !== null ? fmtInt(data.cardio.totalSessionRPE) : 'N/A'}
               trend={dashboardData.trends?.totalSessionRPE}
               icon={Dumbbell}
+              isEstimated={data.cardio?.isRPEEstimated}
             />
           </div>
         </div>
@@ -664,6 +669,20 @@ const TeamDashboard = () => {
                 <span className="metric-value">
                   {fmtDec(data.readiness?.avgACWR || 0)}
                 </span>
+                <div className="acwr-ranges">
+                  <div className="range-item">
+                    <span className="range-label">Basso</span>
+                    <span className="range-value">&lt; 0.8</span>
+                  </div>
+                  <div className="range-item optimal">
+                    <span className="range-label">Ottimale</span>
+                    <span className="range-value">0.8 - 1.3</span>
+                  </div>
+                  <div className="range-item">
+                    <span className="range-label">Alto</span>
+                    <span className="range-value">&gt; 1.3</span>
+                  </div>
+                </div>
               </div>
               <div className="readiness-metric">
                 <span className="metric-label">Giocatori a Rischio</span>
