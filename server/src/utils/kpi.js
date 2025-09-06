@@ -1,451 +1,342 @@
-// server/src/utils/kpi.js
-const { dlog, dwarn, derr } = require("./logger");
-
 /**
- * Calcola HSR (High Speed Running) - Distanza percorsa sopra i 15 km/h
- * @param {Array} rows - Array di sessioni con dati di velocità
- * @returns {number} Distanza totale HSR in metri
- */
-function computeHSR(rows) {
-  if (!rows || !Array.isArray(rows)) return 0;
-  
-  return rows.reduce((sum, p) => {
-    // Calcola HSR dalle zone di velocità (15+ km/h)
-    let hsr = (Number(p?.distance_over_15_kmh_m) || 0) +
-              (Number(p?.distance_15_20_kmh_m) || 0) +
-              (Number(p?.distance_20_25_kmh_m) || 0) +
-              (Number(p?.distance_over_25_kmh_m) || 0);
-    
-    // Validazione: HSR non può essere maggiore della distanza totale
-    const totalDistance = Number(p?.total_distance_m) || 0;
-    if (totalDistance > 0 && hsr > totalDistance) {
-      dwarn(`HSR (${hsr}m) maggiore della distanza totale (${totalDistance}m)`);
-      hsr = totalDistance * 0.3; // Stima conservativa: 30% della distanza totale
-    }
-    
-    // Se ancora 0, stima da sprint distance (fallback)
-    if (hsr === 0 && Number(p?.sprint_distance_m) > 0) {
-      hsr = Math.round(Number(p.sprint_distance_m) * 2.5);
-    }
-    
-    return sum + hsr;
-  }, 0);
-}
-
-/**
- * Calcola il numero di sprint per 90 minuti
- * @param {Array} rows - Array di sessioni con dati di sprint
- * @returns {number} Sprint normalizzati per 90 minuti
- */
-function computeSprintPer90(rows) {
-  if (!rows || !Array.isArray(rows)) return 0;
-  
-  const totSprints = rows.reduce((sum, p) => {
-    // Priorità: sprint_count > derivazione da accelerazioni > fallback
-    let sprints = Number(p?.sprint_count) || 0;
-    
-    // Stima da accelerazioni intense se sprint_count non disponibile
-    if (sprints === 0 && Number(p?.num_acc_over_3_ms2) > 0) {
-      sprints = Math.round(Number(p.num_acc_over_3_ms2) * 0.7); // Stima conservativa
-    }
-    
-    // Validazione: numero ragionevole di sprint per sessione
-    if (sprints > 100) {
-      dwarn(`Numero sprint anomalo: ${sprints} per sessione`);
-      sprints = 100; // Cap massimo ragionevole
-    }
-    
-    return sum + sprints;
-  }, 0);
-  
-  const totalMinutes = rows.reduce((sum, p) => sum + (Number(p?.duration_minutes) || 0), 0);
-  return totalMinutes > 0 ? (totSprints * 90) / totalMinutes : 0;
-}
-
-/**
- * Calcola ACWR (Acute:Chronic Workload Ratio) per un giocatore
- * Usa finestre rolling di 7 giorni (acuto) e 28 giorni (cronico)
+ * KPI utilities — rev2 compatibile (versione debug)
  * 
- * @param {Array} sessions - Array di sessioni individuali con training_load
- * @returns {Array} Array di oggetti con ACWR calcolato per ogni data
+ * Versione semplificata per identificare il problema specifico
  */
-function calculateACWR(sessions) {
-  if (!sessions || sessions.length === 0) return [];
 
-  // Ordina sessioni per data
-  sessions.sort((a, b) => new Date(a.session_date) - new Date(b.session_date));
+// ============================
+// Helpers numerici e date UTC
+// ============================
 
-  // Raggruppa per giocatore
-  const sessionsByPlayer = {};
-  for (const s of sessions) {
-    const playerId = s.playerId || s.player_id;
-    if (!sessionsByPlayer[playerId]) sessionsByPlayer[playerId] = [];
-    sessionsByPlayer[playerId].push(s);
-  }
-
-  const results = [];
-
-  // Calcola ACWR per ogni giocatore
-  for (const playerId of Object.keys(sessionsByPlayer)) {
-    const playerSessions = sessionsByPlayer[playerId];
-
-    for (let i = 0; i < playerSessions.length; i++) {
-      const currentDate = new Date(playerSessions[i].session_date);
-
-      // Finestra ultimi 7 giorni (acuto) - CORRETTO
-      const acuteWindow = playerSessions.filter(s => {
-        const d = new Date(s.session_date);
-        const diffDays = (currentDate - d) / (1000 * 60 * 60 * 24);
-        return diffDays >= 0 && diffDays < 7;
-      });
-
-      // Finestra ultimi 28 giorni (cronico) - CORRETTO
-      const chronicWindow = playerSessions.filter(s => {
-        const d = new Date(s.session_date);
-        const diffDays = (currentDate - d) / (1000 * 60 * 60 * 24);
-        return diffDays >= 0 && diffDays < 28;
-      });
-
-      // Calcola carichi medi giornalieri
-      const acuteLoad = acuteWindow.reduce((sum, s) => {
-        const load = s.training_load || s.player_load || 0;
-        return sum + load;
-      }, 0) / 7; // Media su 7 giorni
-
-      const chronicLoad = chronicWindow.reduce((sum, s) => {
-        const load = s.training_load || s.player_load || 0;
-        return sum + load;
-      }, 0) / 28; // Media su 28 giorni
-
-      // Calcola ACWR con gestione sicura della divisione
-      let acwr = null;
-      let riskLevel = 'N/A';
-      
-      if (chronicLoad > 0) {
-        acwr = acuteLoad / chronicLoad;
-        
-        // Classificazione del rischio secondo letteratura scientifica
-        if (acwr < 0.8) {
-          riskLevel = 'Sotto-carico (rischio medio)';
-        } else if (acwr >= 0.8 && acwr <= 1.3) {
-          riskLevel = 'Ottimale (rischio basso)';
-        } else if (acwr > 1.3 && acwr <= 1.5) {
-          riskLevel = 'Carico elevato (rischio medio)';
-        } else {
-          riskLevel = 'Sovraccarico (rischio alto)';
-        }
-      }
-
-      results.push({
-        playerId: Number(playerId),
-        date: currentDate.toISOString().split("T")[0],
-        acuteLoad: round(acuteLoad, 2),
-        chronicLoad: round(chronicLoad, 2),
-        acwr: round(acwr, 2),
-        riskLevel,
-        sessionsInAcute: acuteWindow.length,
-        sessionsInChronic: chronicWindow.length
-      });
-    }
-  }
-
-  return results;
+/** Arrotonda un valore con n decimali; restituisce null se non numerico. */
+function round(v, d = 2) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  const f = 10 ** d;
+  return Math.round(n * f) / f;
 }
 
+/** Inizio giorno UTC (00:00:00.000). */
+function startOfDayUTC(date) {
+  const d = new Date(date instanceof Date ? date.getTime() : Date.parse(date));
+  if (isNaN(d)) return new Date(NaN);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+}
+
+/** Fine giorno UTC (23:59:59.999). */
+function endOfDayUTC(date) {
+  const d = new Date(date instanceof Date ? date.getTime() : Date.parse(date));
+  if (isNaN(d)) return new Date(NaN);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+}
+
+/** Somma giorni in UTC. */
+function addDaysUTC(date, days) {
+  const d = new Date(date instanceof Date ? date.getTime() : Date.parse(date));
+  if (isNaN(d)) return new Date(NaN);
+  d.setUTCDate(d.getUTCDate() + Number(days || 0));
+  return d;
+}
+
+// ==========================================
+// Periodi: week / month / quarter / season / custom (tutto UTC)
+// ==========================================
+
 /**
- * Calcola la distanza per minuto (intensità del lavoro)
- * @param {Array} rows - Array di sessioni
- * @returns {number} Metri per minuto medi
+ * buildPeriodRange(period, customStart, customEnd)
+ * Ritorna oggetto con { startDate, endDate } (UTC inclusivi) e alias { periodStart, periodEnd } per compatibilità.
  */
+function buildPeriodRange(period = 'week', customStart, customEnd) {
+  const now = new Date();
+  const todayUTC = startOfDayUTC(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())));
+
+  let start, end;
+  switch ((period || '').toLowerCase()) {
+    case 'week': {
+      end = endOfDayUTC(todayUTC);
+      start = startOfDayUTC(addDaysUTC(todayUTC, -6));
+      break;
+    }
+    case 'month': {
+      end = endOfDayUTC(todayUTC);
+      start = startOfDayUTC(addDaysUTC(todayUTC, -29));
+      break;
+    }
+    case 'quarter': {
+      end = endOfDayUTC(todayUTC);
+      start = startOfDayUTC(addDaysUTC(todayUTC, -89));
+      break;
+    }
+    case 'season': {
+      const seasonStart = new Date(Date.UTC(todayUTC.getUTCFullYear(), 7, 1)); // 1 Agosto anno corrente
+      start = startOfDayUTC(seasonStart);
+      end = endOfDayUTC(todayUTC);
+      break;
+    }
+    case 'custom': {
+      if (!customStart || !customEnd) throw new Error('Custom range richiede customStart e customEnd');
+      const s = new Date(customStart);
+      const e = new Date(customEnd);
+      if (isNaN(s) || isNaN(e)) throw new Error('Date custom non valide');
+      start = startOfDayUTC(s);
+      end = endOfDayUTC(e);
+      break;
+    }
+    default: {
+      end = endOfDayUTC(todayUTC);
+      start = startOfDayUTC(addDaysUTC(todayUTC, -6));
+    }
+  }
+  // oggetto compatibile
+  const out = { startDate: start, endDate: end };
+  // alias legacy
+  out.periodStart = out.startDate;
+  out.periodEnd = out.endDate;
+  return out;
+}
+
+// ==========================
+// Filtri sessione (mapping)
+// ==========================
+
+/** Versione semplice: normalizza alcune varianti note; altrimenti ritorna il valore original (compat). */
+function parseSessionTypeFilterSimple(value) {
+  if (!value) return null;
+  const v = String(value).trim().toLowerCase();
+  const map = {
+    'Partita': ['gara', 'partita', 'match'],
+    'Allenamento': ['allenamento', 'training', 'pratica'],
+    'Prepartita': ['prepartita', 'pregara', 'rifinitura'],
+    'Recupero': ['recupero', 'recovery'],
+  };
+  for (const [key, list] of Object.entries(map)) {
+    if (list.includes(v)) return key;
+  }
+  return v; // compat: restituisce comunque il valore normalizzato
+}
+
+/** Per query ORM: { session_name: { in: [...] } } (il chiamante deve incapsulare sul campo). */
+function parseSessionTypeFilter(value) {
+  const s = parseSessionTypeFilterSimple(value);
+  if (!s) return null;
+  return { in: [s] };
+}
+
+// ======================
+// KPI: HSR e Sprint/90
+// ======================
+
+/**
+ * computeHSR(rows, opts)
+ * - Se presenti le fasce 15-20/20-25/>25 km/h, usa solo quelle.
+ * - Altrimenti usa distance_over_15_kmh_m.
+ * - Fallback opzionale da sprint_distance_m * hsrFactor (default 2.5).
+ * - Clamp ≤ total_distance_m.
+ */
+function computeHSR(rows, opts = {}) {
+  const hsrFactor = Number(opts.hsrFactor ?? 2.5);
+  if (!rows || !Array.isArray(rows)) return 0;
+  return rows.reduce((sum, p) => {
+    const td = Number(p?.total_distance_m) || 0;
+    const hasBins = ['distance_15_20_kmh_m', 'distance_20_25_kmh_m', 'distance_over_25_kmh_m']
+      .some((k) => p && p[k] != null);
+
+    let hsr = 0;
+    if (hasBins) {
+      hsr = (Number(p?.distance_15_20_kmh_m) || 0)
+          + (Number(p?.distance_20_25_kmh_m) || 0)
+          + (Number(p?.distance_over_25_kmh_m) || 0);
+    } else {
+      hsr = Number(p?.distance_over_15_kmh_m) || 0;
+    }
+
+    if (!hsr && Number(p?.sprint_distance_m) > 0) {
+      hsr = Math.round(Number(p.sprint_distance_m) * hsrFactor);
+    }
+    return sum + Math.min(hsr, td);
+  }, 0);
+}
+
+/** Sprint per 90 minuti: (somma sprint / somma minuti) * 90 */
+function computeSprintPer90(rows) {
+  if (!rows || !Array.isArray(rows) || rows.length === 0) return 0;
+  const sprints = rows.reduce((s, r) => s + (Number(r?.sprint_count) || 0), 0);
+  const minutes = rows.reduce((s, r) => s + (Number(r?.duration_minutes) || 0), 0);
+  return minutes > 0 ? (sprints * 90) / minutes : 0;
+}
+
+/** Distanza per minuto sul set di righe (compat helper). */
 function computeDistancePerMinute(rows) {
-  if (!rows || !Array.isArray(rows)) return 0;
-  
-  const totalDistance = rows.reduce((sum, p) => sum + (Number(p?.total_distance_m) || 0), 0);
-  const totalMinutes = rows.reduce((sum, p) => sum + (Number(p?.duration_minutes) || 0), 0);
-  
-  return totalMinutes > 0 ? totalDistance / totalMinutes : 0;
+  if (!rows || !Array.isArray(rows) || rows.length === 0) return 0;
+  const dist = rows.reduce((s, r) => s + (Number(r?.total_distance_m) || 0), 0);
+  const minutes = rows.reduce((s, r) => s + (Number(r?.duration_minutes) || 0), 0);
+  return minutes > 0 ? dist / minutes : 0;
 }
 
-/**
- * Calcola il PlayerLoad per minuto
- * @param {Array} rows - Array di sessioni
- * @returns {number} PlayerLoad per minuto medio
- */
+/** Player load per minuto sul set di righe (compat helper). */
 function computePlayerLoadPerMinute(rows) {
-  if (!rows || !Array.isArray(rows)) return 0;
-  
-  const totalLoad = rows.reduce((sum, p) => sum + (Number(p?.player_load) || 0), 0);
-  const totalMinutes = rows.reduce((sum, p) => sum + (Number(p?.duration_minutes) || 0), 0);
-  
-  return totalMinutes > 0 ? totalLoad / totalMinutes : 0;
+  if (!rows || !Array.isArray(rows) || rows.length === 0) return 0;
+  const load = rows.reduce((s, r) => s + (Number(r?.player_load ?? r?.training_load ?? 0) || 0), 0);
+  const minutes = rows.reduce((s, r) => s + (Number(r?.duration_minutes) || 0), 0);
+  return minutes > 0 ? load / minutes : 0;
+}
+
+// =============
+// KPI: ACWR
+// =============
+
+/** Serie ACWR giornaliera: (sum7 / sum28). */
+function calculateACWR(sessions) {
+  if (!Array.isArray(sessions) || sessions.length === 0) return [];
+  const items = sessions
+    .filter((s) => s && s.session_date)
+    .map((s) => ({ date: new Date(s.session_date), load: Number(s.player_load ?? s.training_load ?? 0) || 0 }))
+    .filter((x) => !isNaN(x.date));
+  if (items.length === 0) return [];
+
+  const byDay = new Map();
+  for (const it of items) {
+    const key = Date.UTC(it.date.getUTCFullYear(), it.date.getUTCMonth(), it.date.getUTCDate());
+    byDay.set(key, (byDay.get(key) || 0) + it.load);
+  }
+
+  const days = Array.from(byDay.entries()).sort((a, b) => a[0] - b[0]);
+  const out = [];
+
+  for (let i = 0; i < days.length; i++) {
+    const [key] = days[i];
+    const end = new Date(key);
+    const start7 = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate() - 6);
+    const start28 = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate() - 27);
+
+    let sum7 = 0, sum28 = 0;
+    for (let j = 0; j <= i; j++) {
+      const [k, v] = days[j];
+      if (k >= start7 && k <= key) sum7 += v;
+      if (k >= start28 && k <= key) sum28 += v;
+    }
+    const acwr = sum28 > 0 ? sum7 / sum28 : 0;
+    out.push({ date: new Date(key), acwr });
+  }
+  return out;
+}
+
+/** Valore ACWR puntuale a una refDate (default: max data). */
+function computeACWRAt(sessions, refDate) {
+  if (!Array.isArray(sessions) || sessions.length === 0) return 0;
+  let maxDate = null;
+  const items = sessions
+    .filter((s) => s && s.session_date)
+    .map((s) => {
+      const d = new Date(s.session_date);
+      if (!maxDate || d > maxDate) maxDate = d;
+      return { date: d, load: Number(s.player_load ?? s.training_load ?? 0) || 0 };
+    })
+    .filter((x) => !isNaN(x.date));
+
+  const ref = refDate ? new Date(refDate) : maxDate;
+  if (!ref || isNaN(ref)) return 0;
+
+  const end = endOfDayUTC(ref);
+  const start7 = startOfDayUTC(addDaysUTC(ref, -6));
+  const start28 = startOfDayUTC(addDaysUTC(ref, -27));
+
+  let sum7 = 0, sum28 = 0;
+  for (const it of items) {
+    if (it.date >= start7 && it.date <= end) sum7 += it.load;
+    if (it.date >= start28 && it.date <= end) sum28 += it.load;
+  }
+  return sum28 > 0 ? sum7 / sum28 : 0;
 }
 
 /**
- * Costruisce il range di date per il periodo specificato
- * @param {string} period - Tipo di periodo (week, month, quarter, season, custom)
- * @param {Date} customStart - Data inizio per periodo custom
- * @param {Date} customEnd - Data fine per periodo custom
- * @returns {Object} Oggetto con periodStart e periodEnd
+ * Alias di compatibilità: alcuni moduli si aspettano `computeACWR(allLoads, periodEnd)`
+ * Ritorna ACWR (sum7/sum28) al giorno `periodEnd` (o all'ultima data se non passato).
  */
-function buildPeriodRange(period, customStart, customEnd) {
-  const today = new Date();
-  today.setHours(23, 59, 59, 999); // Fine del giorno corrente
-
-  switch (period) {
-    case "week": {
-      const start = new Date(today);
-      start.setDate(today.getDate() - 6); // Ultimi 7 giorni incluso oggi
-      start.setHours(0, 0, 0, 0);
-      return { periodStart: start, periodEnd: today };
-    }
-
-    case "month": {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      start.setHours(0, 0, 0, 0);
-      return { periodStart: start, periodEnd: today };
-    }
-
-    case "quarter": {
-      // Calcola il trimestre corrente
-      const currentQuarter = Math.floor(today.getMonth() / 3);
-      const start = new Date(today.getFullYear(), currentQuarter * 3, 1);
-      start.setHours(0, 0, 0, 0);
-      return { periodStart: start, periodEnd: today };
-    }
-
-    case "season": {
-      // Stagione calcistica (agosto - maggio)
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth();
-      let seasonStart;
-      
-      if (currentMonth >= 7) { // Agosto o dopo
-        seasonStart = new Date(currentYear, 7, 1); // 1 agosto anno corrente
-      } else { // Prima di agosto
-        seasonStart = new Date(currentYear - 1, 7, 1); // 1 agosto anno precedente
-      }
-      seasonStart.setHours(0, 0, 0, 0);
-      return { periodStart: seasonStart, periodEnd: today };
-    }
-
-    case "custom": {
-      // 🔧 FIX: Gestione robusta delle date per evitare problemi di fuso orario
-      let start = null;
-      let end = null;
-      
-      // 🔧 DEBUG: Log delle date di input
-      dlog(`🔍 buildPeriodRange custom - Input: startDate="${customStart}", endDate="${customEnd}"`);
-      
-      if (customStart) {
-        // Assicurati che la data sia interpretata come UTC per evitare problemi di fuso orario
-        start = new Date(customStart + 'T00:00:00.000Z');
-        dlog(`🔍 buildPeriodRange custom - periodStart: ${start.toISOString()}`);
-      }
-      
-      if (customEnd) {
-        // Assicurati che la data sia interpretata come UTC e includa tutto il giorno
-        end = new Date(customEnd + 'T23:59:59.999Z');
-        dlog(`🔍 buildPeriodRange custom - periodEnd: ${end.toISOString()}`);
-      }
-      
-      // 🔧 DEBUG: Verifica che il 31/08 sia incluso se richiesto
-      if (customEnd && customEnd.includes('08-31')) {
-        const testDate = new Date('2025-08-31T00:00:00.000Z');
-        const isIncluded = testDate >= start && testDate <= end;
-        dlog(`🔍 Verifica inclusione 31/08: ${isIncluded} (testDate: ${testDate.toISOString()}, range: ${start.toISOString()} - ${end.toISOString()})`);
-      }
-      
-      return {
-        periodStart: start,
-        periodEnd: end,
-      };
-    }
-
-    default:
-      return { periodStart: null, periodEnd: null };
-  }
+function computeACWR(allLoads, periodEnd) {
+  return computeACWRAt(allLoads, periodEnd);
 }
 
-/**
- * Parsing del filtro per tipo di sessione (nomi specifici)
- * @param {string} sessionType - Tipo di sessione da filtrare
- * @returns {Object|undefined} Oggetto filtro per Prisma o undefined
- */
-function parseSessionTypeFilter(sessionType) {
-  // Mapping con i valori effettivi del database (colonna 'session_name')
-  const typeMap = {
-    // Categorie generali
-    'training': ['Aerobico', 'Intermittente', 'Palestra+Campo', 'Situazionale', 'Pre-gara', 'Rigenerante'],
-    'allenamento': ['Aerobico', 'Intermittente', 'Palestra+Campo', 'Situazionale', 'Pre-gara', 'Rigenerante'],
-    'match': ['Campionato/Amichevole'],
-    'partita': ['Campionato/Amichevole'],
-    'test': ['Test', 'Valutazione'],
-    
-    // Tipi specifici
-    'aerobico': ['Aerobico'],
-    'intermittente': ['Intermittente'],
-    'palestra+campo': ['Palestra+Campo'],
-    'situazionale': ['Situazionale'],
-    'pre-gara': ['Pre-gara'],
-    'rigenerante': ['Rigenerante'],
-    'campionato/amichevole': ['Campionato/Amichevole'],
-    'campionato': ['Campionato/Amichevole'],
-    'amichevole': ['Campionato/Amichevole']
-  };
+// =====================
+// Statistiche base
+// =====================
 
-  const key = (sessionType || 'all').toLowerCase();
-  
-  if (key === 'all' || !typeMap[key]) {
-    return undefined; // Nessun filtro = tutte le sessioni
-  }
-  
-  return { in: typeMap[key] };
+function calculateStats(arr, { useSample = false } = {}) {
+  const vals = (Array.isArray(arr) ? arr : []).map(Number).filter(Number.isFinite);
+  const n = vals.length;
+  if (n === 0) return { min: null, max: null, mean: null, stddev: null };
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const mean = vals.reduce((s, v) => s + v, 0) / n;
+  const denom = useSample && n > 1 ? (n - 1) : n;
+  const variance = denom > 0 ? vals.reduce((s, v) => s + (v - mean) ** 2, 0) / denom : 0;
+  const stddev = Math.sqrt(variance);
+  return { min, max, mean, stddev };
 }
 
-/**
- * Parsing del filtro per tipo di sessione semplificato
- * @param {string} sessionType - Tipo di sessione (Allenamento/Partita)
- * @returns {string|undefined} Valore filtro o undefined
- */
-function parseSessionTypeFilterSimple(sessionType) {
-  // Mapping per la colonna session_type (Allenamento/Partita)
-  const typeMap = {
-    'allenamento': 'Allenamento',
-    'training': 'Allenamento',
-    'partita': 'Partita',
-    'match': 'Partita',
-    'gara': 'Partita'
-  };
+// =====================
+// Validazione sessione
+// =====================
 
-  const key = (sessionType || 'all').toLowerCase();
-  
-  if (key === 'all' || !typeMap[key]) {
-    return undefined; // Nessun filtro = tutte le sessioni
-  }
-  
-  return typeMap[key];
-}
-
-/**
- * Arrotonda un valore a N decimali
- * @param {number} v - Valore da arrotondare
- * @param {number} d - Numero di decimali (default 2)
- * @returns {number|null} Valore arrotondato o null se non valido
- */
-const round = (v, d = 2) => {
-  if (!Number.isFinite(v)) return null;
-  return Number(v.toFixed(d));
-};
-
-/**
- * Calcola statistiche aggregate per KPI
- * @param {Array} data - Array di valori numerici
- * @returns {Object} Oggetto con min, max, avg, stdDev
- */
-function calculateStats(data) {
-  if (!data || data.length === 0) {
-    return { min: null, max: null, avg: null, stdDev: null };
-  }
-
-  const validData = data.filter(v => Number.isFinite(v));
-  if (validData.length === 0) {
-    return { min: null, max: null, avg: null, stdDev: null };
-  }
-
-  const min = Math.min(...validData);
-  const max = Math.max(...validData);
-  const avg = validData.reduce((sum, v) => sum + v, 0) / validData.length;
-  
-  // Calcola deviazione standard
-  const variance = validData.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / validData.length;
-  const stdDev = Math.sqrt(variance);
-
-  return {
-    min: round(min, 2),
-    max: round(max, 2),
-    avg: round(avg, 2),
-    stdDev: round(stdDev, 2)
-  };
-}
-
-/**
- * Valida i dati di una sessione per anomalie
- * @param {Object} session - Dati della sessione
- * @returns {Array} Array di warning/errori trovati
- */
 function validateSessionData(session) {
   const issues = [];
+  const td = Number(session?.total_distance_m) || 0;
+  const dur = Number(session?.duration_minutes) || 0;
+  const type = (session?.session_type || '').toLowerCase();
 
-  // Validazione distanza
-  const totalDistance = Number(session?.total_distance_m) || 0;
-  const duration = Number(session?.duration_minutes) || 0;
-  
-  if (duration > 0) {
-    const distancePerMin = totalDistance / duration;
-    
-    // Controlli di plausibilità
-    if (distancePerMin > 300) {
-      issues.push(`Distanza/minuto anomala: ${distancePerMin.toFixed(1)} m/min`);
-    }
-    
-    if (distancePerMin < 20 && session?.session_type === 'Partita') {
-      issues.push(`Distanza/minuto troppo bassa per una partita: ${distancePerMin.toFixed(1)} m/min`);
-    }
+  if (dur > 0) {
+    const mpm = td / dur;
+    const maxMpm = type === 'partita' ? 300 : 250;
+    if (mpm > maxMpm) issues.push(`Distanza/minuto anomala: ${round(mpm, 1)} m/min`);
+    if (type === 'partita' && mpm < 20) issues.push(`Distanza/minuto troppo bassa per una partita: ${round(mpm, 1)} m/min`);
   }
 
-  // Validazione velocità massima
-  const maxSpeed = Number(session?.max_speed_kmh) || 0;
-  if (maxSpeed > 40) {
-    issues.push(`Velocità massima improbabile: ${maxSpeed} km/h`);
-  }
+  const vmax = Number(session?.max_speed_kmh) || 0;
+  if (vmax > 40) issues.push(`Velocità massima improbabile: ${round(vmax, 1)} km/h`);
+  if (type === 'partita' && vmax < 20) issues.push(`Velocità massima troppo bassa per una partita: ${round(vmax, 1)} km/h`);
 
-  // Validazione HSR vs distanza totale
-  const hsr = computeHSR([session]);
-  if (hsr > totalDistance) {
-    issues.push(`HSR (${hsr}m) maggiore della distanza totale (${totalDistance}m)`);
-  }
+  // HSR RAW (per controllo)
+  const hasBins = ['distance_15_20_kmh_m', 'distance_20_25_kmh_m', 'distance_over_25_kmh_m']
+    .some((k) => session && session[k] != null);
+  const rawHSR = hasBins
+    ? (Number(session?.distance_15_20_kmh_m) || 0)
+    + (Number(session?.distance_20_25_kmh_m) || 0)
+    + (Number(session?.distance_over_25_kmh_m) || 0)
+    : (Number(session?.distance_over_15_kmh_m) || 0);
 
-  // Validazione sprint
+  if (rawHSR > td) issues.push(`HSR (${round(rawHSR, 0)} m) maggiore della distanza totale (${round(td, 0)} m)`);
+
   const sprintCount = Number(session?.sprint_count) || 0;
-  if (sprintCount > 100) {
-    issues.push(`Numero sprint anomalo: ${sprintCount}`);
-  }
+  if (sprintCount > 100) issues.push(`Numero sprint anomalo: ${sprintCount}`);
 
   return issues;
 }
 
-// 🔧 BACKWARD COMPATIBILITY: Mantiene la funzione computeACWR originale per compatibilità
-function computeACWR(allLoads, periodEnd) {
-  const end = new Date(periodEnd);
-  const acuteStart = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const chronicStart = new Date(end.getTime() - 28 * 24 * 60 * 60 * 1000);
-
-  const acute = allLoads
-    .filter(p => new Date(p.session_date) >= acuteStart && new Date(p.session_date) <= end)
-    .reduce((s, p) => s + (Number(p?.player_load) || 0), 0);
-
-  const chronicSum = allLoads
-    .filter(p => new Date(p.session_date) >= chronicStart && new Date(p.session_date) <= end)
-    .reduce((s, p) => s + (Number(p?.player_load) || 0), 0);
-
-  const chronicWeekly = chronicSum / 4; // media 4 settimane
-  return chronicWeekly > 0 ? acute / chronicWeekly : 0;
-}
+// =====================
+// Export API
+// =====================
 
 module.exports = {
-  // Funzioni principali KPI
+  // base utils
+  round,
+  startOfDayUTC,
+  endOfDayUTC,
+  addDaysUTC,
+  // periodi
+  buildPeriodRange,
+  // mapping sessione
+  parseSessionTypeFilterSimple,
+  parseSessionTypeFilter,
+  // KPI
   computeHSR,
   computeSprintPer90,
-  calculateACWR,
-  computeACWR, // Backward compatibility
   computeDistancePerMinute,
   computePlayerLoadPerMinute,
-  
-  // Funzioni di utilità
-  buildPeriodRange,
-  parseSessionTypeFilter,
-  parseSessionTypeFilterSimple,
-  round,
+  // ACWR (nuovo + alias compat)
+  calculateACWR,
+  computeACWRAt,
+  computeACWR, // alias compat
+  // statistiche e validazione
   calculateStats,
-  validateSessionData
+  validateSessionData,
 };
