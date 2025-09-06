@@ -266,6 +266,21 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.estimated-badge {
+  background: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .metric-value {
@@ -454,6 +469,44 @@
 
 .readiness-metric .metric-value.percentage {
   color: #F59E0B;
+}
+
+/* ACWR Ranges */
+.acwr-ranges {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.range-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 11px;
+}
+
+.range-item.optimal {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.range-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.range-value {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.range-item.optimal .range-label,
+.range-item.optimal .range-value {
+  color: #10B981;
 }
 
 /* Responsive */

@@ -316,16 +316,20 @@ function deriveRow(r) {
   let session_rpe = toNum(r.session_rpe);
   let rpe = toNum(r.rpe);
   
-  // Solo se mancano entrambi, stima da training_load
-  if (!session_rpe && !rpe && toNum(r.training_load) && dur) {
-    rpe = Math.max(1, Math.min(10, toNum(r.training_load) / 80)); // Divisore più basso
+  // 🔧 FIX: Logica RPE migliorata - stima sempre da training_load se mancano dati diretti
+  const trainingLoad = toNum(r.training_load);
+  const hasDirectRPE = session_rpe > 0 || rpe > 0;
+  
+  if (!hasDirectRPE && trainingLoad > 0 && dur > 0) {
+    // Stima RPE da training_load (formula migliorata)
+    rpe = Math.max(1, Math.min(10, trainingLoad / 100)); // Divisore ottimizzato
     session_rpe = rpe * dur;
     est.rpe = 'estimated from training_load';
     est.session_rpe = 'rpe * duration_minutes';
-  } else if (!session_rpe && rpe && dur) {
+  } else if (!session_rpe && rpe > 0 && dur > 0) {
     session_rpe = rpe * dur;
     est.session_rpe = 'rpe * duration_minutes';
-  } else if (!rpe && session_rpe && dur) {
+  } else if (!rpe && session_rpe > 0 && dur > 0) {
     rpe = session_rpe / dur;
     est.rpe = 'session_rpe / duration_minutes';
   }
@@ -642,11 +646,20 @@ function buildCardio(rows) {
   // 🔧 FIX: Filtra record vuoti (giorni senza sessioni)
   const validRows = rows.filter(r => r.playerId && r.player);
   
+  // 🔧 FIX: Gestione RPE con supporto "N/A"
+  const rpeValues = validRows.map(r => toNum(r.rpe)).filter(v => v > 0);
+  const sessionRpeValues = validRows.map(r => toNum(r.session_rpe)).filter(v => v > 0);
+  
+  const avgRPE = rpeValues.length > 0 ? mean(rpeValues) : null;
+  const totalSessionRPE = sessionRpeValues.length > 0 ? sum(sessionRpeValues) : null;
+  
   return {
     avgHR: mean(validRows.map(r => toNum(r.avg_heart_rate))),
     maxHR: mean(validRows.map(r => toNum(r.max_heart_rate))),
-    avgRPE: mean(validRows.map(r => toNum(r.rpe))),
-    totalSessionRPE: sum(validRows.map(r => toNum(r.session_rpe))),
+    avgRPE: avgRPE,
+    totalSessionRPE: totalSessionRPE,
+    // 🔧 FIX: Flag per indicare se i valori sono stimati
+    isRPEEstimated: validRows.some(r => r._est?.rpe || r._est?.session_rpe),
   };
 }
 
@@ -924,8 +937,9 @@ async function handleDashboard(req, res) {
 
       avgHR: percentTrend(cardio.avgHR, cPrev.avgHR),
       maxHR: percentTrend(cardio.maxHR, cPrev.maxHR),
-      avgRPE: percentTrend(cardio.avgRPE, cPrev.avgRPE),
-      totalSessionRPE: percentTrend(cardio.totalSessionRPE, cPrev.totalSessionRPE),
+      // 🔧 FIX: Gestione null per trend RPE
+      avgRPE: (cardio.avgRPE !== null && cPrev.avgRPE !== null) ? percentTrend(cardio.avgRPE, cPrev.avgRPE) : null,
+      totalSessionRPE: (cardio.totalSessionRPE !== null && cPrev.totalSessionRPE !== null) ? percentTrend(cardio.totalSessionRPE, cPrev.totalSessionRPE) : null,
     };
 
     // Arrotonda trend (escludendo null)
@@ -963,8 +977,9 @@ async function handleDashboard(req, res) {
 
     cardio.avgHR = r2(cardio.avgHR);
     cardio.maxHR = r2(cardio.maxHR);
-    cardio.avgRPE = r2(cardio.avgRPE);
-    cardio.totalSessionRPE = Math.round(cardio.totalSessionRPE);
+    // 🔧 FIX: Gestione null per RPE
+    cardio.avgRPE = cardio.avgRPE !== null ? r2(cardio.avgRPE) : null;
+    cardio.totalSessionRPE = cardio.totalSessionRPE !== null ? Math.round(cardio.totalSessionRPE) : null;
 
     readiness.avgACWR = r2(readiness.avgACWR);
 
@@ -1086,6 +1101,7 @@ router.get('/stats/player/:id', async (req, res) => {
         name: `${player.firstName} ${player.lastName}`
       },
       period: {
+
         startDate: per.start.toISOString(),
         endDate: per.end.toISOString(),
         type: per.type
