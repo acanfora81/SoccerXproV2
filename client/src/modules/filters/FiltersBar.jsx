@@ -260,18 +260,6 @@ export function FiltersBar({
       });
       active.push({ key: 'roles', label: `Ruoli: ${roleLabels.join(', ')}` });
     }
-    if (filters.status && filters.status !== 'all') {
-      const status = FILTER_OPTIONS.status.find(s => s.value === filters.status);
-      active.push({ key: 'status', label: `Stato: ${status?.label || filters.status}` });
-    }
-    if (filters.sortBy && filters.sortBy !== 'acwr') {
-      const sortBy = FILTER_OPTIONS.sortBy.find(s => s.value === filters.sortBy);
-      active.push({ key: 'sortBy', label: `Ordinamento: ${sortBy?.label || filters.sortBy}` });
-    }
-    if (filters.density && filters.density !== 'medium') {
-      const density = FILTER_OPTIONS.density.find(d => d.value === filters.density);
-      active.push({ key: 'density', label: `Densità: ${density?.label || filters.density}` });
-    }
     
     return active;
   }, [filters]);
@@ -294,15 +282,6 @@ export function FiltersBar({
         break;
       case 'roles':
         updateFilter('roles', []);
-        break;
-      case 'status':
-        updateFilter('status', 'all');
-        break;
-      case 'sortBy':
-        updateFilter('sortBy', 'acwr');
-        break;
-      case 'density':
-        updateFilter('density', 'medium');
         break;
     }
   }, [updateFilter]);
@@ -413,60 +392,6 @@ export function FiltersBar({
             </div>
           </div>
 
-          {/* ⚡ Stato */}
-          <div className="filter-group">
-            <div className="filter-label">Stato</div>
-            <div className="filter-select">
-              <select
-                value={filters.status}
-                onChange={(e) => updateFilter('status', e.target.value)}
-              >
-                {FILTER_OPTIONS.status.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-
-
-          {/* 🔄 Ordinamento - Solo se richiesto */}
-          {showSort && (
-            <div className="filter-group">
-              <div className="filter-label">Ordinamento</div>
-              <div className="filter-select">
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => updateFilter('sortBy', e.target.value)}
-                >
-                  {FILTER_OPTIONS.sortBy.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-
-          {/* 📏 Densità */}
-          <div className="filter-group">
-            <div className="filter-label">Densità</div>
-            <div className="filter-select">
-              <select
-                value={filters.density}
-                onChange={(e) => updateFilter('density', e.target.value)}
-              >
-                {FILTER_OPTIONS.density.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
         </div>
 
         {/* Filtri attivi per rimozione */}

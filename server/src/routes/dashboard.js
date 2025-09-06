@@ -46,6 +46,7 @@ console.log("🟢 Dashboard routes caricate...");
 function buildDashboardData(rows, windowEnd) {
   return {
     summary: buildOverview(rows),
+    eventsSummary: buildEventsSummary(rows), // 🔧 FIX: Aggiungi conteggio allenamenti e partite (corretto nome proprietà)
     load: buildLoad(rows),
     intensity: buildIntensity(rows),
     speed: buildSpeed(rows),
@@ -86,13 +87,21 @@ const clampInt = (v) => {
   return Number.isFinite(n) ? Math.trunc(n) : 0;
 };
 
-const startOfDay = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
-const endOfDay   = (d) => { const x = new Date(d); x.setHours(23,59,59,999); return x; };
-// 🔧 FIX: Date handling sicuro
+// 🔧 FIX: Funzioni UTC per evitare problemi di fuso orario
+const startOfDay = (d) => { 
+  const x = new Date(d); 
+  return new Date(Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate(), 0, 0, 0, 0)); 
+};
+const endOfDay = (d) => { 
+  const x = new Date(d); 
+  return new Date(Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate(), 23, 59, 59, 999)); 
+};
+// 🔧 FIX: Date handling sicuro con UTC per evitare problemi di fuso orario
 const parseDate = (v) => { 
   if (!v) return null; 
   try {
-    const d = new Date(v);
+    // 🔧 FIX: Forza interpretazione UTC per evitare problemi di fuso orario
+    const d = new Date(v + 'T00:00:00.000Z');
     return Number.isNaN(d.getTime()) ? null : d;
   } catch (error) {
     console.warn('Errore parsing data:', v, error);
@@ -135,9 +144,30 @@ const formatSpeed = (metersPerSecond) => ({
 });
 
 function normalizePeriod({ period = 'week', startDate, endDate }) {
+  // 🔧 DEBUG: Log delle date di input per custom period
+  if (period === 'custom') {
+    console.log(`🔍 normalizePeriod custom - Input: startDate="${startDate}", endDate="${endDate}"`);
+  }
+  
   const s = parseDate(startDate);
   const e = parseDate(endDate);
-  if (s && e) return { start: startOfDay(s), end: endOfDay(e), type: 'custom' };
+  if (s && e) {
+    const result = { start: startOfDay(s), end: endOfDay(e), type: 'custom' };
+    
+    // 🔧 DEBUG: Log delle date elaborate per custom period
+    if (period === 'custom') {
+      console.log(`🔍 normalizePeriod custom - Elaborate: start=${result.start.toISOString()}, end=${result.end.toISOString()}`);
+      
+      // 🔧 DEBUG: Verifica che il 31/08 sia incluso se richiesto
+      if (endDate && endDate.includes('08-31')) {
+        const testDate = new Date('2025-08-31T00:00:00.000Z');
+        const isIncluded = testDate >= result.start && testDate <= result.end;
+        console.log(`🔍 Verifica inclusione 31/08: ${isIncluded} (testDate: ${testDate.toISOString()}, range: ${result.start.toISOString()} - ${result.end.toISOString()})`);
+      }
+    }
+    
+    return result;
+  }
 
   const today = new Date();
   let from = new Date(today);
@@ -307,20 +337,41 @@ function deriveRow(r) {
   };
 }
 
-async function loadRows(prisma, teamId, startDate, endDate, sessionTypeFilter, sessionNameFilter) {
+async function loadRows(prisma, teamId, startDate, endDate, sessionTypeFilter, sessionNameFilter, playerId = null) {
+  console.log('🔍 loadRows chiamata con parametri:');
+  console.log('  - teamId:', teamId);
+  console.log('  - startDate:', startDate.toISOString());
+  console.log('  - endDate:', endDate.toISOString());
+  console.log('  - sessionTypeFilter:', sessionTypeFilter);
+  console.log('  - sessionNameFilter:', sessionNameFilter);
+  console.log('  - playerId:', playerId, 'type:', typeof playerId);
+  
   // 🔧 FIX: Carica sessioni esistenti
+  const whereClause = {
+    player: { teamId },
+    session_date: { gte: startDate, lte: endDate },
+    ...(sessionTypeFilter && { session_type: sessionTypeFilter }),
+    ...(sessionNameFilter && { session_name: sessionNameFilter }),
+    ...(playerId && !isNaN(parseInt(playerId)) && { playerId: parseInt(playerId) }) // 🔧 FIX: Filtra per giocatore specifico con validazione
+  };
+  
+  console.log('🔍 Where clause generata:', JSON.stringify(whereClause, null, 2));
+  
   const existingSessions = await prisma.performanceData.findMany({
-    where: {
-      player: { teamId },
-      session_date: { gte: startDate, lte: endDate },
-      ...(sessionTypeFilter && { session_type: sessionTypeFilter }),
-      ...(sessionNameFilter && { session_name: sessionNameFilter })
-    },
+    where: whereClause,
     include: {
       player: { select: { id: true, firstName: true, lastName: true, position: true } }
     },
     orderBy: { session_date: 'asc' }
   });
+  
+  console.log('📊 Sessioni caricate dal database:', existingSessions.length);
+  if (existingSessions.length > 0) {
+    console.log('📊 Prime 5 sessioni caricate:');
+    existingSessions.slice(0, 5).forEach((session, index) => {
+      console.log(`  ${index + 1}. Giocatore: ${session.player?.firstName} ${session.player?.lastName} (ID: ${session.playerId}), Data: ${session.session_date.toISOString().split('T')[0]}, Tipo: ${session.session_type}, Nome: ${session.session_name}`);
+    });
+  }
 
   // 🔧 FIX: Genera array di tutti i giorni del periodo (anche vuoti)
   const allDays = [];
@@ -599,8 +650,11 @@ function buildReadiness(rows, windowEnd) {
 }
 
 function buildEventsSummary(rows) {
+  console.log('🔍 buildEventsSummary chiamata con', rows.length, 'righe');
+  
   // 🔧 FIX: Filtra record vuoti (giorni senza sessioni)
   const validRows = rows.filter(r => r.playerId && r.player);
+  console.log('📊 Righe valide:', validRows.length);
   
   // MIGLIORATO: Conteggio più accurato per tipo con sinonimi
   const sessionsByType = new Map();
@@ -610,7 +664,10 @@ function buildEventsSummary(rows) {
     const date = r.session_date.toISOString().split('T')[0];
     const key = `${type}-${date}`;
     sessionsByType.set(key, true);
+    console.log(`📅 Sessione: ${type} il ${date} (giocatore: ${r.playerId})`);
   });
+
+  console.log('📊 Sessioni per tipo:', Array.from(sessionsByType.keys()));
 
   const allenamenti = Array.from(sessionsByType.keys())
     .filter(k => {
@@ -630,6 +687,11 @@ function buildEventsSummary(rows) {
              type.includes('gara') || 
              type.includes('amichevole');
     }).length;
+
+  console.log('📊 Conteggi buildEventsSummary:');
+  console.log(`  - Allenamenti: ${allenamenti}`);
+  console.log(`  - Partite: ${partite}`);
+  console.log(`  - Totale: ${validRows.length}`);
 
   return {
     numeroAllenamenti: allenamenti,
@@ -926,7 +988,9 @@ router.get('/stats/player/:id', async (req, res) => {
     if (!teamId) return res.status(403).json({ error: 'Team non disponibile nel contesto' });
 
     const playerId = parseInt(req.params.id);
+    console.log('🔍 Player endpoint - playerId:', playerId, 'type:', typeof playerId);
     if (!playerId || isNaN(playerId)) {
+      console.log('❌ Player endpoint - ID giocatore non valido:', req.params.id);
       return res.status(400).json({ error: 'ID giocatore non valido' });
     }
 
@@ -948,7 +1012,7 @@ router.get('/stats/player/:id', async (req, res) => {
     });
 
     // Carica dati performance per il giocatore specifico
-    const rows = await loadRows(prisma, teamId, per.start, per.end, null, null);
+    const rows = await loadRows(prisma, teamId, per.start, per.end, null, null, playerId);
     
     // Deriva campi mancanti
     const rowsD = rows.map(deriveRow);

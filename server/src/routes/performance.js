@@ -14,7 +14,7 @@ const {
 const { getPrismaClient } = require("../config/database");
 const smartColumnMapper = require("../utils/columnMapper");
 const { dlog, dwarn, derr } = require("../utils/logger");
-const { computeHSR, computeSprintPer90, computeACWR, buildPeriodRange, parseSessionTypeFilter, parseSessionTypeFilterSimple, round } = require("../utils/kpi");
+const { computeHSR, computeSprintPer90, calculateACWR, buildPeriodRange, parseSessionTypeFilter, parseSessionTypeFilterSimple, round } = require("../utils/kpi");
 
 const { validateMapping } = require("../validation/mappingSchema");
 const fsAsync = require("fs").promises;
@@ -1009,8 +1009,8 @@ router.get(
         recentSessions,
       ] = await Promise.all([
         prisma.performanceData.count({
-          where: {
-            playerId,
+        where: {
+          playerId,
             player: { teamId }, // 🔧 FILTRO INDIRETTO VIA RELATION
           },
         }),
@@ -1023,7 +1023,7 @@ router.get(
           _avg: {
             // ================= CAMPI ESISTENTI =================
             total_distance_m: true,
-            sprint_distance_m: true,
+          sprint_distance_m: true,
             top_speed_kmh: true,
             avg_speed_kmh: true,
             player_load: true,
@@ -1263,7 +1263,7 @@ router.get(
         "filtri:",
         req.query
       );
-
+      
       const prisma = getPrismaClient();
 
       // 🔧 CALCOLO PERIODO CORRENTE E PRECEDENTE PER TREND
@@ -1679,7 +1679,24 @@ router.get("/stats/players", async (req, res) => {
 
       // ================= ACWR CALCULATION =================
       
-      const acwr = computeACWR(playerAcwrData, acwrEndDate);
+      const acwr = (() => {
+        // Prepara i dati nel formato corretto per calculateACWR
+        const sessions = playerAcwrData.map(d => ({
+          playerId: d.playerId,
+          session_date: d.session_date,
+          training_load: d.player_load || 0
+        }));
+        
+        // Calcola ACWR per questo giocatore
+        const acwrResults = calculateACWR(sessions);
+        
+        // Prendi l'ACWR più recente (ultima data)
+        if (acwrResults.length > 0) {
+          const latest = acwrResults[acwrResults.length - 1];
+          return latest.acwr || 0;
+        }
+        return 0;
+      })();
 
       // ================= TREND CALCULATION =================
       
@@ -2471,7 +2488,7 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
     const safeNum = v => Number.isFinite(Number(v)) ? Number(v) : 0;
     const safeDate = v => (v instanceof Date ? v : new Date(v || Date.now()));
 
-    const { buildPeriodRange, parseSessionTypeFilter, computeHSR, computeSprintPer90, computeACWR, round } = require("../utils/kpi");
+    const { buildPeriodRange, parseSessionTypeFilter, computeHSR, computeSprintPer90, calculateACWR, round } = require("../utils/kpi");
     
     const playerId = Number(req.params.playerId);
     const { period = 'week', sessionType = 'all', sessionName = 'all', roles = '', startDate, endDate } = req.query;
@@ -2565,10 +2582,28 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
       },
       select: { session_date: true, player_load: true }
     });
-    const acwr = computeACWR(
-      acwrData.map(r => ({ session_date: safeDate(r.session_date), player_load: safeNum(r.player_load) })),
-      acwrEndDate
-    );
+    const acwr = (() => {
+      // Prepara i dati nel formato corretto per calculateACWR
+      const sessions = acwrData.map(r => ({
+        playerId: playerId,
+        session_date: r.session_date,
+        training_load: r.player_load || 0
+      }));
+      
+      // Calcola ACWR per questo giocatore
+      const acwrResults = calculateACWR(sessions);
+      
+      // Prendi l'ACWR più recente (ultima data nel periodo)
+      if (acwrResults.length > 0) {
+        // Trova il risultato più vicino a periodEnd
+        const targetDate = acwrEndDate.toISOString().split('T')[0];
+        const closest = acwrResults.reduce((prev, curr) => {
+          return (Math.abs(new Date(curr.date) - acwrEndDate) < Math.abs(new Date(prev.date) - acwrEndDate)) ? curr : prev;
+        });
+        return closest.acwr || 0;
+      }
+      return 0;
+    })();
 
     // top speed nel periodo (fallback 0)
     const topSpeedKmh = sessions.reduce((m, s) => {
@@ -2886,7 +2921,24 @@ router.get("/compare", async (req, res) => {
 
       // ACWR calculation (filtra i record della finestra 28gg per il singolo giocatore)
       const playerAcwrData = acwrData.filter(p => p.playerId === player.id);
-      const acwr = computeACWR(playerAcwrData, periodEnd);
+      const acwr = (() => {
+        // Prepara i dati nel formato corretto per calculateACWR
+        const sessions = playerAcwrData.map(d => ({
+          playerId: d.playerId,
+          session_date: d.session_date,
+          training_load: d.player_load || 0
+        }));
+        
+        // Calcola ACWR per questo giocatore
+        const acwrResults = calculateACWR(sessions);
+        
+        // Prendi l'ACWR più recente
+        if (acwrResults.length > 0) {
+          const latest = acwrResults[acwrResults.length - 1];
+          return latest.acwr || 0;
+        }
+        return 0;
+      })();
 
       // Sanitizza numeri
       const round = (v, d = 2) => Number.isFinite(v) ? Number(v.toFixed(d)) : null;

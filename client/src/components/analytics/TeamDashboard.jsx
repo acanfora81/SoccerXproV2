@@ -193,10 +193,18 @@ const TeamDashboard = () => {
       
       console.log('🟢 TeamDashboard: risposta API player ricevuta:', {
         player: responseData.player,
-        totalSessions: responseData.data?.summary?.totalSessions
+        totalSessions: responseData.data?.summary?.totalSessions,
+        eventsSummary: responseData.data?.eventsSummary,
+        fullResponse: responseData
       });
       
       setData(responseData.data || responseData);
+      setDashboardData(responseData.data || responseData); // 🔧 FIX: Passa i dati corretti a dashboardData
+      console.log('🔍 TeamDashboard: dashboardData aggiornato con:', {
+        eventsSummary: responseData.data?.eventsSummary,
+        hasEventsSummary: !!responseData.data?.eventsSummary,
+        fullDashboardData: responseData.data || responseData
+      });
       setLastFetchTime(Date.now());
     } catch (err) {
       console.error('Errore nel caricamento dati dashboard player:', err);
@@ -386,7 +394,6 @@ const TeamDashboard = () => {
         {showFilters && (
           <div className="drawer-filters-expanded">
             <FiltersBar 
-              showSort={true}
               mode="compact"
             />
           </div>
@@ -426,13 +433,29 @@ const TeamDashboard = () => {
             />
             <MetricCard
               title="Allenamenti Totali"
-              value={fmtInt(dashboardData.eventsSummary?.numeroAllenamenti || 0)}
+              value={(() => {
+                const value = fmtInt(dashboardData.eventsSummary?.numeroAllenamenti || 0);
+                console.log('🔍 Card Allenamenti Totali:', {
+                  dashboardDataEventsSummary: dashboardData.eventsSummary,
+                  numeroAllenamenti: dashboardData.eventsSummary?.numeroAllenamenti,
+                  finalValue: value
+                });
+                return value;
+              })()}
               unit="giorni"
               icon={Users}
             />
             <MetricCard
               title="Partite Disputate"
-              value={fmtInt(dashboardData.eventsSummary?.numeroPartite || 0)}
+              value={(() => {
+                const value = fmtInt(dashboardData.eventsSummary?.numeroPartite || 0);
+                console.log('🔍 Card Partite Disputate:', {
+                  dashboardDataEventsSummary: dashboardData.eventsSummary,
+                  numeroPartite: dashboardData.eventsSummary?.numeroPartite,
+                  finalValue: value
+                });
+                return value;
+              })()}
               unit="giorni"
               icon={Target}
             />
