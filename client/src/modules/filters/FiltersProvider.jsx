@@ -14,8 +14,8 @@ function buildSearchFromFilters(f) {
   // Ordine stabile dei parametri
   const order = [
     'period','startDate','endDate',
-    'sessionType','sessionName','roles','status',
-    'normalize','sortBy','density','viewMode','all'
+    'sessionType','sessionName','roles',
+    'normalize','viewMode','all'
   ];
   const qp = new URLSearchParams();
   for (const k of order) {
