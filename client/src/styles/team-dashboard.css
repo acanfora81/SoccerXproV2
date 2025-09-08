@@ -225,17 +225,17 @@
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
   margin-bottom: 20px;
 }
 
 .metric-card {
   background: var(--bg-primary);
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
-  padding: 24px;
-  min-height: 160px;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 80px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -248,7 +248,7 @@
 .metric-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px var(--shadow-color);
-  border-color: var(--accent);
+  border-color: var(--accent-strong);
 }
 
 .metric-header {
@@ -284,7 +284,7 @@
 }
 
 .metric-value {
-  font-size: 40px !important;
+  font-size: 32px !important;
   font-weight: 900 !important;
   color: var(--text-primary);
   line-height: 1;
@@ -294,10 +294,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: none !important;
+  background: none !important;
+  border: none !important;
 }
 
 .metric-unit {
-  font-size: 26px !important;
+  font-size: 20px !important;
   font-weight: 700 !important;
   color: var(--text-secondary);
   margin-left: 4px;

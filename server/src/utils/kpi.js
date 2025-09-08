@@ -99,20 +99,29 @@ function buildPeriodRange(period = 'week', customStart, customEnd) {
 // Filtri sessione (mapping)
 // ==========================
 
-/** Versione semplice: normalizza alcune varianti note; altrimenti ritorna il valore original (compat). */
+/**
+ * Versione semplice: normalizza alcune varianti note e ritorna il valore
+ * CANONICO in minuscolo usato nel DB. Se il valore è "all" o falsy, ritorna null
+ * per non applicare alcun filtro.
+ */
 function parseSessionTypeFilterSimple(value) {
   if (!value) return null;
   const v = String(value).trim().toLowerCase();
-  const map = {
-    'Partita': ['gara', 'partita', 'match'],
-    'Allenamento': ['allenamento', 'training', 'pratica'],
-    'Prepartita': ['prepartita', 'pregara', 'rifinitura'],
-    'Recupero': ['recupero', 'recovery'],
+  if (v === 'all' || v === 'tutte' || v === 'tutti') return null;
+
+  // Mappa sinonimi -> canonico (minuscolo)
+  const synonyms = {
+    allenamento: ['allenamento', 'training', 'pratica'],
+    partita: ['gara', 'partita', 'match'],
+    prepartita: ['prepartita', 'pregara', 'rifinitura'],
+    recupero: ['recupero', 'recovery']
   };
-  for (const [key, list] of Object.entries(map)) {
-    if (list.includes(v)) return key;
+
+  for (const [canonical, list] of Object.entries(synonyms)) {
+    if (list.includes(v)) return canonical;
   }
-  return v; // compat: restituisce comunque il valore normalizzato
+  // Ritorna comunque il valore in minuscolo per compatibilità
+  return v;
 }
 
 /** Per query ORM: { session_name: { in: [...] } } (il chiamante deve incapsulare sul campo). */
@@ -157,12 +166,32 @@ function computeHSR(rows, opts = {}) {
   }, 0);
 }
 
-/** Sprint per 90 minuti: (somma sprint / somma minuti) * 90 */
+/**
+ * Sprint per 90 minuti: (somma sprint / somma minuti) * 90
+ * Fallback robusto:
+ * 1) Usa sprint_count se presente
+ * 2) Altrimenti usa high_intensity_runs come proxy del numero sprint
+ * 3) Altrimenti stima da sprint_distance_m / 30m
+ */
 function computeSprintPer90(rows) {
   if (!rows || !Array.isArray(rows) || rows.length === 0) return 0;
-  const sprints = rows.reduce((s, r) => s + (Number(r?.sprint_count) || 0), 0);
+  const SPRINT_MEAN_DISTANCE_M = 30; // stima media distanza per sprint
+
+  const totalSprints = rows.reduce((sum, r) => {
+    const fromCount = Number(r?.sprint_count);
+    if (Number.isFinite(fromCount) && fromCount > 0) return sum + fromCount;
+
+    const fromHIR = Number(r?.high_intensity_runs);
+    if (Number.isFinite(fromHIR) && fromHIR > 0) return sum + fromHIR;
+
+    const fromDist = Number(r?.sprint_distance_m);
+    if (Number.isFinite(fromDist) && fromDist > 0) return sum + Math.round(fromDist / SPRINT_MEAN_DISTANCE_M);
+
+    return sum;
+  }, 0);
+
   const minutes = rows.reduce((s, r) => s + (Number(r?.duration_minutes) || 0), 0);
-  return minutes > 0 ? (sprints * 90) / minutes : 0;
+  return minutes > 0 ? (totalSprints * 90) / minutes : 0;
 }
 
 /** Distanza per minuto sul set di righe (compat helper). */

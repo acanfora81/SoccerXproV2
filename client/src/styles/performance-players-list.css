@@ -1,3 +1,304 @@
+/* Compare overlay/page grid for side-by-side player cards in Dettagli Grafici */
+.compare-overlay .charts-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+.compare-overlay .chart-card {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.compare-overlay .compare-kpi-list {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  row-gap: 10px !important;
+  column-gap: 12px !important;
+}
+
+.compare-overlay .compare-kpi-row {
+  display: contents !important;
+}
+
+.compare-overlay .compare-kpi-row span:first-child {
+  color: var(--text-secondary, #6b7280) !important;
+}
+
+.compare-overlay .compare-kpi-row span:last-child {
+  text-align: right !important;
+  font-weight: 600 !important;
+}
+
+@media (max-width: 900px) {
+  .compare-overlay .charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Compare table styles for side-by-side comparison */
+.compare-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 16px 0 !important;
+  background: white !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  table-layout: fixed !important;
+}
+.compare-table tbody { display: table-row-group !important; }
+.compare-table tr { display: table-row !important; }
+.compare-table th, .compare-table td { display: table-cell !important; vertical-align: middle !important; white-space: nowrap !important; }
+
+
+.compare-table th {
+  background: #f8fafc !important;
+  padding: 8px 12px !important;
+  text-align: left !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.compare-table th:not(:first-child) {
+  text-align: center !important;
+}
+
+.compare-table th:first-child {
+  width: 35% !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+}
+
+.compare-table td {
+  padding: 6px 12px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  font-size: 11px !important;
+}
+
+.compare-table .metric-label {
+  color: #64748b !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+}
+
+.compare-table .metric-value {
+  text-align: center !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  font-size: 12px !important;
+}
+
+.compare-table tr:hover {
+  background: #f8fafc !important;
+}
+
+.compare-table tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* ===== Dettagli Grafici (ComparePage) - stile come DossierDrawer ===== */
+.compare-page-drawer {
+  position: fixed;
+  top: 0;
+  right: 0; /* Quando non espanso, si apre da destra come drawer normale */
+  height: 100vh;
+  width: min(1000px, 100%); /* Larghezza normale del drawer */
+  background: var(--bg-primary);
+  border-left: 2px solid var(--border-color);
+  box-shadow: -24px 0 40px rgba(0, 0, 0, 0.18);
+  z-index: 1100;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  transition: width 0.3s ease, left 0.3s ease, right 0.3s ease; /* Transizione smooth per l'espansione */
+}
+
+/* ===== CompareOverlay espanso - stile come ComparePage ===== */
+.dossier-drawer.expanded {
+  position: fixed;
+  top: 0;
+  left: 280px; /* Inizia dal bordo destro della sidebar (280px) */
+  right: auto; /* Rimuove il posizionamento da destra */
+  height: 100vh;
+  width: calc(100vw - 280px); /* 100% viewport width - 280px sidebar */
+  max-width: none; /* Rimuove il limite massimo quando espanso */
+  background: var(--bg-primary);
+  border-left: 2px solid var(--border-color);
+  box-shadow: -24px 0 40px rgba(0, 0, 0, 0.18);
+  z-index: 1100;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  transition: width 0.3s ease, left 0.3s ease, right 0.3s ease;
+}
+
+/* Quando espanso, il drawer si sposta a sinistra e si espande fino al bordo destro */
+.compare-page-drawer.expanded {
+  left: 280px; /* Inizia dal bordo destro della sidebar (280px) */
+  right: auto; /* Rimuove il posizionamento da destra */
+  width: calc(100vw - 280px); /* 100% viewport width - 280px sidebar */
+  max-width: none; /* Rimuove il limite massimo quando espanso */
+}
+
+/* Quando la sidebar è chiusa, il drawer normale rimane a destra */
+.sidebar.closed ~ .main-content .compare-page-drawer {
+  /* Mantiene il posizionamento normale da destra */
+}
+
+/* Quando la sidebar è chiusa e il drawer è espanso */
+.sidebar.closed ~ .main-content .compare-page-drawer.expanded {
+  left: 70px; /* Inizia dal bordo destro della sidebar chiusa (70px) */
+  right: auto; /* Rimuove il posizionamento da destra */
+  width: calc(100vw - 70px); /* 100% viewport width - 70px sidebar chiusa */
+  max-width: none; /* Rimuove il limite massimo quando espanso */
+}
+
+/* Quando la sidebar è chiusa e il CompareOverlay è espanso */
+.sidebar.closed ~ .main-content .dossier-drawer.expanded {
+  left: 70px; /* Inizia dal bordo destro della sidebar chiusa (70px) */
+  right: auto; /* Rimuove il posizionamento da destra */
+  width: calc(100vw - 70px); /* 100% viewport width - 70px sidebar chiusa */
+  max-width: none; /* Rimuove il limite massimo quando espanso */
+}
+
+.compare-page-drawer .compare-header {
+  background: #ffffff !important;
+  border: 1px solid #e6eefb !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 4px 14px rgba(28, 51, 84, 0.06) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 12px !important;
+}
+
+.compare-page-drawer .compare-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.compare-page-drawer .compare-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+}
+
+.compare-page-drawer .drawer-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 12px !important; /* Aumentato gap tra le tab */
+  margin-bottom: 16px !important; /* Aumentato margine inferiore */
+  padding: 16px 20px !important; /* Aggiunto padding per più spazio */
+}
+
+.compare-page-drawer .tab-btn {
+  background: #f3f6fb !important;
+  border: 1px solid #e3ecfb !important;
+  color: #264166 !important;
+  padding: 12px 16px !important; /* Aumentato padding per più spazio */
+  border-radius: 10px !important;
+  font-size: 14px !important; /* Aumentato font size per migliore leggibilità */
+  font-weight: 600 !important;
+  min-height: 44px !important; /* Altezza minima per consistenza */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important; /* Spazio tra icona e testo */
+}
+
+.compare-page-drawer .tab-btn.active {
+  background: #2d6cdf !important;
+  color: #ffffff !important;
+  border-color: #2d6cdf !important;
+}
+
+.compare-page-drawer .charts-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+
+.compare-page-drawer .chart-card {
+  background: #ffffff !important;
+  border: 1px solid #e6eefb !important;
+  border-radius: 12px !important;
+  padding: 8px 10px 12px !important;
+  box-shadow: 0 6px 18px rgba(28, 51, 84, 0.06) !important;
+}
+
+.compare-page-drawer .chart-header h4 {
+  margin: 6px 0 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #1e2b3c !important;
+}
+
+@media (max-width: 1200px) {
+  .compare-page-drawer .drawer-tabs {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+  }
+  
+  .compare-page-drawer .tab-btn {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    min-height: 40px !important;
+  }
+}
+
+@media (max-width: 800px) {
+  .compare-page-drawer .charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Loading state per ComparePage */
+.compare-page-drawer .loading-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.compare-page-drawer .skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+.compare-page-drawer .skeleton-text {
+  flex: 1;
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+.compare-page-drawer .skeleton-kpi {
+  height: 60px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 /* Performance Players List - Schede Giocatori */
 
 .players-list-container {
@@ -524,39 +825,157 @@
 
 /* Grid Giocatori - Design Pulito */
 .players-grid {
-  padding: 1rem;
+  padding: 0.75rem;
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Forza layout a 3 colonne per tutte le varianti */
+.players-list-container .players-grid,
+.players-list-container .players-grid.density-compact,
+.players-list-container .players-grid.density-medium,
+.players-list-container .players-grid.density-wide {
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Forza font più piccoli per i valori KPI */
+.players-list-container .kpi-value,
+.players-list-container .density-compact .kpi-value,
+.players-list-container .density-medium .kpi-value,
+.players-list-container .density-wide .kpi-value {
+  font-size: 0.6rem !important;
+}
+
+/* Forza font più piccoli per i titoli/label KPI */
+.players-list-container .kpi-label,
+.players-list-container .density-compact .kpi-label,
+.players-list-container .density-medium .kpi-label,
+.players-list-container .density-wide .kpi-label {
+  font-size: 0.6rem !important;
+}
+
+/* Elimina completamente lo spazio superiore delle card */
+.players-list-container .player-card {
+  padding-top: 0.1rem !important;
+}
+
+.players-list-container .density-compact .player-card {
+  padding-top: 0.05rem !important;
+}
+
+.players-list-container .density-medium .player-card {
+  padding-top: 0.1rem !important;
+}
+
+.players-list-container .density-wide .player-card {
+  padding-top: 0.15rem !important;
+}
+
+/* Elimina completamente lo spazio superiore - regola ultra-aggressiva */
+.players-list-container .player-card .card-header {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.players-list-container .player-card .player-info {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Elimina anche i margini del nome del giocatore */
+.players-list-container .player-card .player-name {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  line-height: 1.1 !important;
+}
+
+.players-list-container .player-card .player-role {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  line-height: 1.1 !important;
+}
+
+/* Forza layout tab a 4 per riga */
+.players-list-container .player-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 4px !important;
+}
+
+.players-list-container .player-tab-btn {
+  font-size: 0.65rem !important;
+  padding: 4px 6px !important;
+  min-height: 28px !important;
+  gap: 3px !important;
+}
+
+.players-list-container .player-tab-btn svg {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* Regola ultra-aggressiva per eliminare TUTTO lo spazio superiore */
+.players-list-container .player-card {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.players-list-container .player-card > *:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.players-list-container .player-card .card-header:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Forza spacing tra dati KPI e pulsanti footer */
+.players-list-container .card-footer {
+  margin-top: 0.8rem !important;
+}
+
+.players-list-container .density-compact .card-footer {
+  margin-top: 0.6rem !important;
+}
+
+.players-list-container .density-medium .card-footer {
+  margin-top: 0.8rem !important;
+}
+
+.players-list-container .density-wide .card-footer {
+  margin-top: 1rem !important;
 }
 
 .players-grid.cards {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr) !important;
 }
 
 .players-grid.cards.compact {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.6rem;
 }
 
 .players-grid.cards.wide {
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1rem;
 }
 
 /* Density-specific grid layouts */
 .players-grid.density-compact {
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.6rem;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.5rem;
 }
 
 .players-grid.density-medium {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.8rem;
 }
 
 .players-grid.density-wide {
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1rem;
 }
 
 /* Responsive grid */
@@ -566,6 +985,23 @@
   .players-grid.density-wide {
     grid-template-columns: 1fr;
     gap: 0.8rem;
+  }
+  
+  /* Su mobile, mantieni 4 tab per riga ma riduci ulteriormente */
+  .players-list-container .player-tabs {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 2px !important;
+  }
+  
+  .players-list-container .player-tab-btn {
+    font-size: 0.6rem !important;
+    padding: 3px 4px !important;
+    min-height: 24px !important;
+  }
+  
+  .players-list-container .player-tab-btn svg {
+    width: 10px !important;
+    height: 10px !important;
   }
 }
 
@@ -579,15 +1015,15 @@
 
 @media (min-width: 1025px) {
   .players-grid.density-compact {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(3, 1fr) !important;
   }
   
   .players-grid.density-medium {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, 1fr) !important;
   }
   
   .players-grid.density-wide {
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    grid-template-columns: repeat(3, 1fr) !important;
   }
 }
 
@@ -618,7 +1054,7 @@
   background: #fff;
   border: 1px solid #dce3f0;
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.3rem 0.75rem 0.75rem 0.75rem;
   display: flex;
   flex-direction: column;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -629,17 +1065,17 @@
 
 /* Density-specific card styling */
 .density-compact .player-card {
-  padding: 0.75rem;
+  padding: 0.25rem 0.6rem 0.6rem 0.6rem;
   border-radius: 8px;
 }
 
 .density-medium .player-card {
-  padding: 1rem;
+  padding: 0.3rem 0.75rem 0.75rem 0.75rem;
   border-radius: 12px;
 }
 
 .density-wide .player-card {
-  padding: 1.25rem;
+  padding: 0.35rem 0.9rem 0.9rem 0.9rem;
   border-radius: 16px;
 }
 
@@ -650,37 +1086,51 @@
 }
 
 .player-card.selected {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--text-on-accent);
+  border-color: rgba(147, 197, 253, 0.4) !important; /* Celestino chiaro per il bordo */
+  background: rgba(147, 197, 253, 0.06) !important; /* Celestino chiarissimo trasparente */
+  color: var(--text-primary) !important; /* Mantiene il testo leggibile */
+  position: relative;
+  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.3) !important; /* Bordo celestino sottile */
+}
+
+.player-card.selected::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(147, 197, 253, 0.5); /* Celestino chiaro per la barra in alto */
+  border-radius: 8px 8px 0 0;
 }
 
 .player-card.selected .kpi-value,
 .player-card.selected .kpi-label,
 .player-card.selected .player-name,
 .player-card.selected .player-role {
-  color: var(--text-on-accent);
+  color: var(--text-primary); /* Testo normale su sfondo trasparente */
 }
+
 
 /* Header Semplificato */
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.4rem;
 }
 
 /* Density-specific header styling */
 .density-compact .card-header {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .density-medium .card-header {
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.4rem;
 }
 
 .density-wide .card-header {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .player-info {
@@ -690,35 +1140,39 @@
 }
 
 .player-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent); /* Blu del progetto per default */
+  color: #fff; /* Testo bianco per default */
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   font-size: 0.9rem;
+  margin-top: 8px; /* Margine superiore per distanziare dal bordo della card */
 }
 
 /* Density-specific avatar sizing */
 .density-compact .player-avatar {
-  width: 32px;
-  height: 32px;
-  font-size: 0.75rem;
+  width: 28px;
+  height: 28px;
+  font-size: 0.7rem;
+  margin-top: 6px;
 }
 
 .density-medium .player-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   font-size: 0.9rem;
+  margin-top: 8px;
 }
 
 .density-wide .player-avatar {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   font-size: 1rem;
+  margin-top: 10px;
 }
 
 .player-avatar img {
@@ -798,6 +1252,91 @@
   font-size: 0.8rem;
 }
 
+/* Tabs inside player card */
+.player-tab-content {
+  margin-top: 6px;
+  background: #f9fafb;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+/* Dropdown menu per tre puntini */
+.player-menu {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+  padding: 6px;
+  z-index: 10;
+  min-width: 220px;
+}
+
+.player-menu-item {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.player-menu-item:hover {
+  background: var(--bg-secondary);
+}
+
+.player-menu-item.active {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+/* Tabs stile Dossier */
+.player-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 6px 0 8px;
+}
+
+.player-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.65rem;
+  min-height: 28px;
+}
+
+.player-tab-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.player-tab-btn.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
+
+/* Ottimizza le icone delle tab per il layout compatto */
+.player-tab-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
 /* Density-specific KPI grid styling */
 .density-compact .kpi-grid {
   gap: 0.3rem;
@@ -837,8 +1376,8 @@
   align-items: center;
   gap: 3px;
   color: #6b7280;
-  font-size: 0.7rem;
-  margin-bottom: 0.2rem;
+  font-size: 0.6rem !important;
+  margin-bottom: 0.15rem;
 }
 
 .kpi-value {
@@ -848,7 +1387,7 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.1rem;
-  font-size: 0.8rem;
+  font-size: 0.6rem !important;
 }
 
 .kpi-trend {
@@ -867,13 +1406,13 @@
 
 /* Density-specific KPI text sizing */
 .density-compact .kpi-label {
-  font-size: 0.6rem;
+  font-size: 0.55rem !important;
   gap: 2px;
   margin-bottom: 0.1rem;
 }
 
 .density-compact .kpi-value {
-  font-size: 0.7rem;
+  font-size: 0.55rem !important;
   gap: 0.3rem;
   margin-bottom: 0.05rem;
 }
@@ -888,13 +1427,13 @@
 }
 
 .density-medium .kpi-label {
-  font-size: 0.7rem;
+  font-size: 0.6rem !important;
   gap: 3px;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
 }
 
 .density-medium .kpi-value {
-  font-size: 0.8rem;
+  font-size: 0.6rem !important;
   gap: 0.5rem;
   margin-bottom: 0.1rem;
 }
@@ -909,13 +1448,13 @@
 }
 
 .density-wide .kpi-label {
-  font-size: 0.75rem;
+  font-size: 0.65rem !important;
   gap: 4px;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .density-wide .kpi-value {
-  font-size: 0.9rem;
+  font-size: 0.65rem !important;
   gap: 0.6rem;
   margin-bottom: 0.15rem;
 }
@@ -1033,6 +1572,20 @@
   justify-content: space-between;
   gap: 0.5rem;
   flex-wrap: wrap;
+  margin-top: 0.8rem;
+}
+
+/* Density-specific footer spacing */
+.density-compact .card-footer {
+  margin-top: 0.6rem;
+}
+
+.density-medium .card-footer {
+  margin-top: 0.8rem;
+}
+
+.density-wide .card-footer {
+  margin-top: 1rem;
 }
 
 .btn-sm {
@@ -1310,7 +1863,7 @@
   z-index: 1100;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .dossier-drawer__header {
@@ -1518,8 +2071,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   font-weight: 600;
+  background: var(--accent); /* Blu del progetto */
+  color: #fff; /* Testo bianco */
+  border-radius: 50%; /* Cerchio */
 }
 
 .player-details h3 {
@@ -1912,14 +2468,7 @@
 }
 
 /* === COMPARE OVERLAY === */
-.compare-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 1100;
-  display: flex;
-  flex-direction: column;
-}
+/* RIMOSSO: conflitto con la definizione principale di .compare-overlay */
 
 /* contenitore centrale con max-width fluido */
 .compare-overlay__inner {
@@ -1941,7 +2490,7 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
   display: grid;
   grid-template-rows: auto 1fr auto;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* header/footer sticky nel contenitore */
@@ -2430,3 +2979,404 @@
     font-size: 16px;
   }
 }
+
+/* === CompareOverlay Drawer Style === */
+
+/* KPI Header con grafici comparativi */
+.compare-kpi-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.compare-kpi-item {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.compare-kpi-item .kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.compare-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.compare-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.compare-bar {
+  height: 20px;
+  border-radius: 10px;
+  min-width: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.compare-bar:hover {
+  transform: scaleY(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.compare-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Legenda giocatori */
+.compare-legend {
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.compare-legend h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-item span {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.legend-role {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #6b7280 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Metriche dettagliate */
+.compare-detailed-metrics h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.metrics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 100px;
+}
+
+.metric-values {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.metric-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.value-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.metric-value span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.status-text.active {
+  color: #059669;
+}
+
+.status-text.inactive {
+  color: #dc2626;
+}
+
+/* Responsive per compare drawer */
+@media (max-width: 768px) {
+  .compare-kpi-header {
+    grid-template-columns: 1fr;
+  }
+  
+  .legend-items {
+    flex-direction: column;
+  }
+  
+  .metric-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .metric-values {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* === Tab Navigation per Compare === */
+.drawer-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.tab-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.tab-btn.active {
+  background: var(--tab-color, #3b82f6);
+  color: white;
+  border-color: var(--tab-color, #3b82f6);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab-btn svg {
+  flex-shrink: 0;
+}
+
+/* === Charts Grid === */
+.tab-content {
+  padding: 1.5rem;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.chart-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-card.chart-wide {
+  grid-column: 1 / -1;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.chart-header h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.chart-header svg {
+  color: #6b7280;
+}
+
+/* === Responsive Charts === */
+@media (max-width: 1200px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .drawer-tabs {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    justify-content: center;
+  }
+  
+  .chart-card {
+    padding: 0.75rem;
+  }
+  
+  .chart-header h4 {
+    font-size: 0.875rem;
+  }
+}
+
+/* === Chart Tooltip Styles === */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.recharts-tooltip-label {
+  color: #374151 !important;
+  font-weight: 600 !important;
+}
+
+/* === Legend Styles === */
+.recharts-legend-wrapper {
+  padding-top: 1rem !important;
+}
+
+.recharts-legend-item-text {
+  color: #6b7280 !important;
+  font-size: 0.875rem !important;
+}
+
+/* === KPI List per Compare Tab === */
+.compare-kpi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+/* ===== Grafici Styling ===== */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
+.chart-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-header h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.compare-kpi-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.compare-kpi-row:last-child {
+  border-bottom: none;
+}
+
+.compare-kpi-row span:first-child {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.compare-kpi-row span:last-child {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 600;
+}
+

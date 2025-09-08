@@ -69,6 +69,7 @@ export function FiltersProvider({ children }) {
   // 🔧 FIX: Ref anti-loop per evitare rimbalzi URL ↔ State
   const syncingRef = useRef(false);
   const hydratedRef = useRef(false);
+  const skipUrlSyncRef = useRef(false);
 
   // 🔧 FIX: 1) HYDRATE una sola volta all'avvio (o quando l'utente usa back/forward)
   useEffect(() => {
@@ -87,10 +88,14 @@ export function FiltersProvider({ children }) {
 
   // 🔧 FIX: 2) SCRITTURA URL da filters (chiamata quando cambiano i filtri)
   const writeUrl = (filters) => {
+    // Skip URL sync se il drawer è aperto
+    if (skipUrlSyncRef.current) return;
+    
     const next = buildSearchFromFilters(filters);
     if (next !== location.search) {
       syncingRef.current = true;
-      navigate({ search: next }, { replace: true });
+      // Usa window.history.replaceState per evitare la navigazione
+      window.history.replaceState(null, '', `${location.pathname}${next}`);
       // rilascio il flag dopo il microtask, così l'useEffect di sopra non re-entra
       queueMicrotask(() => { syncingRef.current = false; });
     }
@@ -143,12 +148,23 @@ export function FiltersProvider({ children }) {
     });
   }
 
+  // Funzioni per controllare la sincronizzazione URL
+  const skipUrlSync = () => {
+    skipUrlSyncRef.current = true;
+  };
+  
+  const enableUrlSync = () => {
+    skipUrlSyncRef.current = false;
+  };
+
   const value = {
     filters,
     updateFilter,
     setFilters,
     resetFilters,
-    updateFilters // 🔧 FIX: Espone updateFilters per update atomici
+    updateFilters, // 🔧 FIX: Espone updateFilters per update atomici
+    skipUrlSync,
+    enableUrlSync
   };
 
   return (

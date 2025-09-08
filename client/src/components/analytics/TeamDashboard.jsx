@@ -40,6 +40,7 @@ import PageLoader from '../ui/PageLoader';
 import Segmented from '../ui/Segmented';
 import '../../modules/filters/filters.css';
 import '../../components/ui/ui-components.css';
+import '../../styles/team-dashboard.css';
 
 // Cache per i dati della dashboard
 const dashboardCache = new Map();
@@ -470,7 +471,7 @@ const TeamDashboard = () => {
               icon={Clock}
             />
             <MetricCard
-              title="Distanza Media Squadra"
+              title={viewMode === 'player' ? 'Distanza Media Giocatore' : 'Distanza Media Squadra'}
               value={fmtDec(data.summary?.avgTeamDistance || 0)}
               unit="m"
               trend={dashboardData.trends?.avgTeamDistance}
@@ -607,14 +608,14 @@ const TeamDashboard = () => {
           <h2>Cardio & Percezione</h2>
           <div className="metrics-grid">
             <MetricCard
-              title="HR Medio Squadra"
+              title={viewMode === 'player' ? 'HR Medio Giocatore' : 'HR Medio Squadra'}
               value={fmtDec(data.cardio?.avgHR || 0)}
               unit="bpm"
               trend={dashboardData.trends?.avgHR}
               icon={HeartPulse}
             />
             <MetricCard
-              title="HR Max Squadra"
+              title={viewMode === 'player' ? 'HR Max Giocatore' : 'HR Max Squadra'}
               value={fmtDec(data.cardio?.maxHR || 0)}
               unit="bpm"
               trend={dashboardData.trends?.maxHR}
@@ -661,13 +662,13 @@ const TeamDashboard = () => {
           <div className="team-readiness">
             <div className="readiness-header">
               <Users size={24} />
-              <span>Readiness Squadra (ACWR)</span>
+              <span>{viewMode === 'player' ? 'Readiness Giocatore (ACWR)' : 'Readiness Squadra (ACWR)'}</span>
             </div>
             <div className="readiness-metrics-grid">
               <div className="readiness-metric">
                 <span className="metric-label">ACWR Medio</span>
                 <span className="metric-value">
-                  {fmtDec(data.readiness?.avgACWR || 0)}
+                  {Number.isFinite(Number(data.readiness?.avgACWR)) ? fmtDec(data.readiness.avgACWR) : 'N/A'}
                 </span>
                 <div className="acwr-ranges">
                   <div className="range-item">

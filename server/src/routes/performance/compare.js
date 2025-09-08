@@ -80,42 +80,96 @@ router.get('/', authenticate, tenantContext, async (req, res) => {
       }); // DEBUG
     }
 
-    // Calcola KPI per ogni giocatore
+    // Calcola KPI per ogni giocatore (allineati a Dashboard/Dossier)
     const playersWithStats = players.map(player => {
       const playerSessions = sessions.filter(s => s.playerId === player.id);
-      
-      // Calcoli KPI
-      const hsr = computeHSR(playerSessions);
+
+      // Totali base
+      const totalPlayerLoad = playerSessions.reduce((sum, s) => sum + (s.player_load || 0), 0);
+      const totalMinutes = playerSessions.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+      const totalDistance = playerSessions.reduce((sum, s) => sum + (s.total_distance_m || 0), 0);
+      const totalSessions = playerSessions.length;
+
+      // KPI comuni
+      const hsrTot = computeHSR(playerSessions);
       const sprintPer90 = computeSprintPer90(playerSessions);
-      
-      // PL/min
-      const totalPL = playerSessions.reduce((sum, s) => sum + (s.player_load || 0), 0);
-      const totalMin = playerSessions.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
-      const plPerMin = totalMin > 0 ? totalPL / totalMin : 0;
-      
-      // Top Speed
-      const topSpeed = Math.max(...playerSessions.map(s => s.top_speed_kmh || 0), 0);
-      
-      // ACWR (ultimi 28 giorni)
+      const plPerMin = totalMinutes > 0 ? totalPlayerLoad / totalMinutes : 0;
+      const topSpeedMax = Math.max(...playerSessions.map(s => s.top_speed_kmh || 0), 0);
+
+      // ACWR (ultimi 28 giorni) con scaling x4 per media settimanale
       const acwrEndDate = periodEnd;
       const acwrStartDate = new Date(acwrEndDate.getTime() - 28 * 86400000);
-      const acwrSessions = sessions.filter(s => 
-        s.playerId === player.id && 
-        s.session_date >= acwrStartDate && 
-        s.session_date <= acwrEndDate
-      );
-      const acwr = computeACWR(acwrSessions, acwrEndDate);
+      const acwrSessions = playerSessions.filter(s => s.session_date >= acwrStartDate && s.session_date <= acwrEndDate);
+      const acwr = computeACWR(acwrSessions, acwrEndDate) * 4;
+
+      // Cardio
+      const avgHeartRate = totalSessions > 0
+        ? playerSessions.reduce((sum, s) => sum + (s.avg_heart_rate || 0), 0) / totalSessions
+        : 0;
+      const maxHeartRate = Math.max(...playerSessions.map(s => s.max_heart_rate || 0), 0);
+
+      // Acc/Dec
+      const totalAccelerations = playerSessions.reduce((sum, s) => sum + (s.num_acc_over_3_ms2 || 0), 0);
+      const totalDecelerations = playerSessions.reduce((sum, s) => sum + (s.num_dec_over_minus3_ms2 || 0), 0);
+      const accelPerMinute = totalMinutes > 0 ? totalAccelerations / totalMinutes : 0;
+      const decelPerMinute = totalMinutes > 0 ? totalDecelerations / totalMinutes : 0;
+
+      // Zone velocità
+      const distance15_20 = playerSessions.reduce((sum, s) => sum + (s.distance_15_20_kmh_m || 0), 0);
+      const distance20_25 = playerSessions.reduce((sum, s) => sum + (s.distance_20_25_kmh_m || 0), 0);
+      const distanceOver25 = playerSessions.reduce((sum, s) => sum + (s.distance_over_25_kmh_m || 0), 0);
+      const sprintCount = playerSessions.reduce((sum, s) => sum + (s.sprint_count || 0), 0);
+
+      // Helper
+      const r = (v, d = 2) => (Number.isFinite(v) ? Number(v.toFixed(d)) : 0);
 
       return {
         ...player,
         summary: {
-          plPerMin: round(plPerMin, 2),
-          hsrTot: round(hsr),
-          sprintPer90: round(sprintPer90, 2),
-          topSpeedMax: round(topSpeed, 2),
-          acwr: round(acwr, 2)
+          plPerMin: r(plPerMin, 2),
+          hsrTot: Math.round(hsrTot),
+          sprintPer90: r(sprintPer90, 2),
+          topSpeedMax: r(topSpeedMax, 2),
+          acwr: r(acwr, 2)
         },
-        sessions: playerSessions
+        sessions: playerSessions,
+        detailed: {
+          // Carico & Volumi
+          totalDistance: Math.round(totalDistance),
+          totalPlayerLoad: Math.round(totalPlayerLoad),
+          totalSessions: totalSessions,
+          totalMinutes: Math.round(totalMinutes),
+          avgSessionLoad: totalSessions > 0 ? r(totalPlayerLoad / totalSessions, 1) : 0,
+          avgSessionDuration: totalSessions > 0 ? r(totalMinutes / totalSessions, 1) : 0,
+
+          // Intensità
+          plPerMin: r(plPerMin, 2),
+          avgSpeed: totalMinutes > 0 ? r((totalDistance / totalMinutes) * 60 / 1000, 2) : 0, // km/h
+
+          // Alta Velocità & Sprint
+          distance15_20: Math.round(distance15_20),
+          distance20_25: Math.round(distance20_25),
+          distanceOver25: Math.round(distanceOver25),
+          hsrTotal: Math.round(hsrTot),
+          hsrPercentage: totalDistance > 0 ? r((hsrTot / totalDistance) * 100, 1) : 0,
+          sprintCount: sprintCount,
+          topSpeedMax: r(topSpeedMax, 2),
+
+          // Accelerazioni & Decelerazioni
+          totalAccelerations: totalAccelerations,
+          totalDecelerations: totalDecelerations,
+          accelPerMinute: r(accelPerMinute, 2),
+          decelPerMinute: r(decelPerMinute, 2),
+
+          // Energetico & Metabolico
+          avgHeartRate: r(avgHeartRate, 1),
+          maxHeartRate: Math.round(maxHeartRate),
+
+          // Rischio & Recupero
+          acwr: r(acwr, 2),
+          monotony: 0,
+          strain: r(totalPlayerLoad, 1)
+        }
       };
     });
 

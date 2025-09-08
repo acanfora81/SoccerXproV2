@@ -96,7 +96,10 @@ export function SelectContentWithRoles({ players = [], className = "" }) {
   
   // Organizza giocatori per ruoli con ordine fisso
   const organizedPlayers = players.reduce((acc, player) => {
-    const role = player.position || 'UNKNOWN';
+    // Supporta sia position estesa che codici brevi (POR/DIF/CEN/ATT)
+    const roleMap = { POR: 'GOALKEEPER', DIF: 'DEFENDER', CEN: 'MIDFIELDER', ATT: 'FORWARD' };
+    const normalizedRole = roleMap[player.role] || player.position || 'UNKNOWN';
+    const role = normalizedRole;
     if (!acc[role]) {
       acc[role] = [];
     }
