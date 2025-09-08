@@ -54,7 +54,23 @@ router.get('/', authenticate, tenantContext, async (req, res) => {
     const { period = 'week', sessionType = 'all', startDate, endDate } = req.query;
     const { periodStart, periodEnd } = buildPeriodRange(period, startDate, endDate);
     console.log(`📊 /compare -> periodo=${period} start=${periodStart.toISOString()} end=${periodEnd.toISOString()}`);
-    const sessionTypeFilter = parseSessionTypeFilter(sessionType);
+    
+    // Parsing corretto del sessionType - mapping per session_type
+    let sessionTypeFilter = null;
+    if (sessionType && sessionType !== 'all') {
+      // Mapping frontend -> database
+      const mapping = {
+        'training': 'Allenamento',
+        'match': 'Partita',
+        'allenamento': 'Allenamento',
+        'partita': 'Partita'
+      };
+      sessionTypeFilter = mapping[sessionType.toLowerCase()] || sessionType;
+    }
+    
+    // Debug per sessionType
+    console.log('🔍 COMPARE: sessionType ricevuto:', sessionType);
+    console.log('🔍 COMPARE: sessionTypeFilter applicato:', sessionTypeFilter);
 
     // Query performance data con filtri e include player
     const sessions = await prisma.performanceData.findMany({
@@ -62,7 +78,7 @@ router.get('/', authenticate, tenantContext, async (req, res) => {
         playerId: { in: ids },
         player: { teamId },
         session_date: { gte: periodStart, lte: periodEnd },
-        ...(sessionTypeFilter && { session_name: sessionTypeFilter })
+        ...(sessionTypeFilter && { session_type: sessionTypeFilter })
       },
       include: {
         player: true
@@ -182,6 +198,155 @@ router.get('/', authenticate, tenantContext, async (req, res) => {
     });
   } catch (err) {
     console.error('Compare error:', err);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Nuovo endpoint per dati temporali dei grafici
+router.get('/charts-data', authenticate, tenantContext, async (req, res) => {
+  try {
+    console.log('🟢 [INFO] CHARTS-DATA ROUTE: richiesta ricevuta:', req.url, req.query);
+    
+    const teamId = req.context?.teamId;
+    if (!teamId) {
+      return res.status(401).json({ error: 'Team non valido', code: 'INVALID_TEAM' });
+    }
+
+    const playerIds = parsePlayers(req);
+    if (playerIds.length === 0) {
+      return res.status(400).json({ error: 'Nessun giocatore specificato' });
+    }
+
+    // Filtri temporali
+    const { period, sessionType, startDate, endDate } = req.query;
+    
+    // Calcola date in base al periodo
+    let dateFrom, dateTo;
+    const now = new Date();
+    
+    if (period === 'lastWeek') {
+      dateTo = new Date(now);
+      dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (period === 'lastMonth') {
+      dateTo = new Date(now);
+      dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else if (startDate && endDate) {
+      dateFrom = new Date(startDate);
+      dateTo = new Date(endDate);
+    } else {
+      // Default: ultima settimana
+      dateTo = new Date(now);
+      dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    // Parsing corretto del sessionType - mapping per session_type
+    let sessionTypeFilter = null;
+    if (sessionType && sessionType !== 'all') {
+      // Mapping frontend -> database
+      const mapping = {
+        'training': 'Allenamento',
+        'match': 'Partita',
+        'allenamento': 'Allenamento',
+        'partita': 'Partita'
+      };
+      sessionTypeFilter = mapping[sessionType.toLowerCase()] || sessionType;
+    }
+    
+    console.log('📅 [DEBUG] Periodo selezionato:', { period, dateFrom, dateTo });
+    console.log('🔍 CHARTS-DATA: sessionType ricevuto:', sessionType);
+    console.log('🔍 CHARTS-DATA: sessionTypeFilter applicato:', sessionTypeFilter);
+
+    // Query per ottenere dati temporali
+    const timeSeriesData = await prisma.performanceData.findMany({
+      where: {
+        playerId: { in: playerIds },
+        teamId: teamId,
+        session_date: {
+          gte: dateFrom,
+          lte: dateTo
+        },
+        ...(sessionTypeFilter && { session_type: sessionTypeFilter })
+      },
+      select: {
+        playerId: true,
+        session_date: true,
+        session_type: true,
+        duration_minutes: true,
+        total_distance_m: true,
+        player_load: true,
+        avg_speed_kmh: true,
+        high_intensity_runs: true,
+        sprint_distance_m: true,
+        max_heart_rate: true,
+        avg_heart_rate: true,
+        acc_events_per_min_over_2_ms2: true,
+        dec_events_per_min_over_minus2_ms2: true,
+        player: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: [
+        { playerId: 'asc' },
+        { session_date: 'asc' }
+      ]
+    });
+
+    // Raggruppa dati per giocatore e crea serie temporali
+    const playersData = {};
+    const playerColors = [
+      '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#f97316',
+      '#06b6d4', '#22c55e', '#eab308', '#a855f7', '#fb7185', '#0ea5e9'
+    ];
+
+    timeSeriesData.forEach((record, index) => {
+      const playerId = record.playerId;
+      if (!playersData[playerId]) {
+        playersData[playerId] = {
+          id: playerId,
+          name: `${record.player.firstName} ${record.player.lastName}`,
+          color: playerColors[index % playerColors.length],
+          timeSeries: []
+        };
+      }
+
+      playersData[playerId].timeSeries.push({
+        date: record.session_date.toISOString().split('T')[0], // YYYY-MM-DD
+        sessions: 1, // Ogni record è una sessione
+        distance: record.total_distance_m || 0,
+        playerLoad: record.player_load || 0,
+        duration: record.duration_minutes || 0,
+        avgSpeed: record.avg_speed_kmh || 0,
+        hsrPercentage: record.high_intensity_runs || 0,
+        sprintCount: record.sprint_distance_m || 0,
+        accelerations: record.acc_events_per_min_over_2_ms2 || 0,
+        decelerations: record.dec_events_per_min_over_minus2_ms2 || 0,
+        avgHeartRate: record.avg_heart_rate || 0,
+        maxHeartRate: record.max_heart_rate || 0
+      });
+    });
+
+    // Converti in array
+    const result = Object.values(playersData);
+
+    console.log('📊 [DEBUG] Dati temporali generati per', result.length, 'giocatori');
+    
+    return res.json({
+      success: true,
+      data: result,
+      filters: { 
+        period, 
+        sessionType, 
+        startDate: dateFrom.toISOString().split('T')[0], 
+        endDate: dateTo.toISOString().split('T')[0] 
+      }
+    });
+
+  } catch (err) {
+    console.error('Charts-data error:', err);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
