@@ -32,7 +32,9 @@ import {
   Crown,
   ArrowUpRight,
   ArrowDownRight,
-  Activity
+  Activity,
+  Layers,
+  ArrowLeftRight
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { apiFetch } from '../../utils/http';
@@ -60,7 +62,7 @@ const CACHE_DURATION = 2 * 60 * 1000; // 2 minuti
 
 const PerformancePlayersList = () => {
   const { user } = useAuthStore();
-  const { filters } = useFilters();
+  const { filters, skipUrlSync, enableUrlSync } = useFilters();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -70,6 +72,13 @@ const PerformancePlayersList = () => {
   const [error, setError] = useState(null);
   const [selectedPlayers, setSelectedPlayers] = useState(new Set());
   const [compareMode, setCompareMode] = useState(false);
+  // Tab selezionata per ciascuna card giocatore
+  const [cardTabById, setCardTabById] = useState(new Map());
+  // Dati dettagliati per tab (Dashboard Giocatore)
+  const [playerDashById, setPlayerDashById] = useState(new Map());
+  const [playerDashLoading, setPlayerDashLoading] = useState(new Map());
+  // In-flight guard per richieste dettagli
+  const [playerDashInFlight, setPlayerDashInFlight] = useState(new Map());
   const [showFilters, setShowFilters] = useState(false);
   
   // Stati per Drawer e Overlay
@@ -197,17 +206,72 @@ const PerformancePlayersList = () => {
     return () => controller.abort();
   }, [user?.teamId, filters, debouncedSearch]);
 
-  // 🔧 FIX: Funzione per refresh manuale
-  const handleForceRefresh = useCallback(() => {
-    console.log('🟢 PerformancePlayersList: Refresh manuale richiesto'); // INFO - rimuovere in produzione
-    playersCache.clear(); // Pulisci tutta la cache
-    fetchPlayers(); // Ricarica i dati
-  }, [fetchPlayers]);
+
+  // Fetch dettagli Dashboard per singolo giocatore (lazy on tab open)
+  const fetchPlayerDashboard = useCallback(async (playerId) => {
+    if (!playerId) return;
+    if (playerDashById.get(playerId)) return; // cache hit
+    if (playerDashInFlight.get(playerId)) return; // già in corso
+
+    setPlayerDashInFlight(prev => new Map(prev).set(playerId, true));
+    setPlayerDashLoading(prev => new Map(prev).set(playerId, true));
+    try {
+      const params = new URLSearchParams();
+      if (filters.period) params.set('period', filters.period);
+      if (filters.startDate) params.set('startDate', filters.startDate);
+      if (filters.endDate) params.set('endDate', filters.endDate);
+
+      const res = await apiFetch(`/api/dashboard/stats/player/${playerId}?${params.toString()}`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const data = json?.data || {};
+      setPlayerDashById(prev => new Map(prev).set(playerId, data));
+    } catch (e) {
+      console.error('Errore fetch dashboard player', playerId, e);
+      setPlayerDashById(prev => new Map(prev).set(playerId, { error: true }));
+    } finally {
+      setPlayerDashLoading(prev => new Map(prev).set(playerId, false));
+      setPlayerDashInFlight(prev => new Map(prev).set(playerId, false));
+    }
+  }, [filters.period, filters.startDate, filters.endDate, playerDashById]);
+
+  // Pulisci cache dettagli quando cambiano i filtri periodo/date
+  useEffect(() => {
+    setPlayerDashById(new Map());
+  }, [filters.period, filters.startDate, filters.endDate]);
 
   // Effetto per caricamento iniziale e cambio filtri
   useEffect(() => {
     fetchPlayers();
   }, [fetchPlayers]);
+
+  // Imposta tab di default "summary" (Panoramica) per tutte le card quando i giocatori sono caricati
+  // E pre-carica automaticamente i dati Panoramica per tutti i giocatori
+  useEffect(() => {
+    if (!Array.isArray(players) || players.length === 0) return;
+    
+    // Imposta tab di default
+    setCardTabById((prev) => {
+      const next = new Map(prev);
+      let changed = false;
+      players.forEach((p) => {
+        if (!next.has(p.id)) {
+          next.set(p.id, 'summary');
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+
+    // Pre-carica i dati Panoramica per tutti i giocatori
+    players.forEach((player) => {
+      if (!playerDashById.get(player.id) && !playerDashInFlight.get(player.id)) {
+        fetchPlayerDashboard(player.id);
+      }
+    });
+  }, [players, fetchPlayerDashboard, playerDashById, playerDashInFlight]);
 
   // Gestione selezione giocatori
   const togglePlayerSelection = useCallback((playerId) => {
@@ -243,6 +307,7 @@ const PerformancePlayersList = () => {
 
   // Handler per Compare
   const handleOpenCompareQuick = useCallback(() => {
+    console.log('🟢 PerformancePlayersList: handleOpenCompareQuick chiamato');
     setCompareOverlay({ open: true });
   }, []);
 
@@ -268,6 +333,7 @@ const PerformancePlayersList = () => {
     
     navigate(`/performance/compare?${params.toString()}`);
   }, [navigate, selectedPlayers, filters]);
+
 
   const selectAllRole = useCallback((role) => {
     const rolePlayers = players.filter(p => p.role === role).map(p => p.id);
@@ -300,7 +366,20 @@ const PerformancePlayersList = () => {
   }, [players]);
 
   // Componente Card Giocatore - Design Pulito
-  const PlayerCard = useCallback(({ player, isSelected, onToggleSelection }) => (
+  const PlayerCard = useCallback(({ player, isSelected, onToggleSelection }) => {
+    const selectedTab = cardTabById.get(player.id) || 'summary';
+    const setTab = (tab) => {
+      setCardTabById(prev => {
+        const next = new Map(prev);
+        next.set(player.id, tab);
+        return next;
+      });
+      // Carica dati dashboard alla prima apertura di una tab
+      if (tab && !playerDashById.get(player.id)) fetchPlayerDashboard(player.id);
+    };
+
+
+    return (
     <div className={`player-card ${isSelected ? 'selected' : ''}`}>
       {/* Badge Selezionato */}
       {isSelected && (
@@ -327,86 +406,127 @@ const PerformancePlayersList = () => {
             </div>
           </div>
         </div>
-        <button className="menu-btn">
-          <MoreHorizontal size={18} />
+        {/* Tabs visibili (compatte) per maggiore chiarezza */}
+      </div>
+
+      {/* Tabs stile Dashboard (compatte dentro la card) */}
+      <div className="player-tabs">
+        <button className={`player-tab-btn ${selectedTab==='summary'?'active':''}`} onClick={()=>setTab('summary')}>
+          <BarChart3 size={14} /> Panoramica
+        </button>
+        <button className={`player-tab-btn ${selectedTab==='load'?'active':''}`} onClick={()=>setTab('load')}>
+          <Layers size={14} /> Sessioni
+        </button>
+        <button className={`player-tab-btn ${selectedTab==='intensity'?'active':''}`} onClick={()=>setTab('intensity')}>
+          <Zap size={14} /> Intensità
+        </button>
+        <button className={`player-tab-btn ${selectedTab==='cardio'?'active':''}`} onClick={()=>setTab('cardio')}>
+          <Heart size={14} /> Cardio
+        </button>
+        <button className={`player-tab-btn ${selectedTab==='acc'?'active':''}`} onClick={()=>setTab('acc')}>
+          <ArrowLeftRight size={14} /> Acc/Dec
+        </button>
+        <button className={`player-tab-btn ${selectedTab==='speed'?'active':''}`} onClick={()=>setTab('speed')}>
+          <ArrowUpRight size={14} /> Sprint
+        </button>
+        <button className={`player-tab-btn ${selectedTab==='readiness'?'active':''}`} onClick={()=>setTab('readiness')}>
+          <Crown size={14} /> Readiness
         </button>
       </div>
 
-      {/* KPI Grid 2x2 Compatta */}
-      <div className="kpi-grid">
-        <div className="kpi-item">
-          <div className="kpi-label">
-            <Zap size={14} /> PL/min
-          </div>
-          <div className="kpi-value">
-            {safeDec(player.plMin, 2)}
-            <span className="kpi-trend">
-              {getTrendIcon(safePct(player.plMinTrend))}
-              {safePct(player.plMinTrend) !== null ? `${Math.abs(safePct(player.plMinTrend))}%` : ''}
-            </span>
-          </div>
-          <div className="kpi-percentile">P{player.plMinPercentile ?? 0} ruolo</div>
-        </div>
-
-        <div className="kpi-item">
-          <div className="kpi-label">
-            <Activity size={14} /> HSR
-          </div>
-          <div className="kpi-value">
-            {safeInt(player.hsr)} m
-            <span className="kpi-trend">
-              {getTrendIcon(safePct(player.hsrTrend))}
-              {safePct(player.hsrTrend) !== null ? `${Math.abs(safePct(player.hsrTrend))}%` : ''}
-            </span>
-          </div>
-          <div className="kpi-percentile">P{player.hsrPercentile ?? 0} ruolo</div>
-        </div>
-
-        <div className="kpi-item">
-          <div className="kpi-label">
-            <ArrowUpRight size={14} /> Sprint/90
-          </div>
-          <div className="kpi-value">
-            {safeDec(player.sprintPer90, 2)}
-            <span className="kpi-trend">
-              {getTrendIcon(safePct(player.sprintTrend))}
-              {safePct(player.sprintTrend) !== null ? `${Math.abs(safePct(player.sprintTrend))}%` : ''}
-            </span>
-          </div>
-          <div className="kpi-percentile">P{player.sprintPercentile ?? 0} ruolo</div>
-        </div>
-
-        <div className="kpi-item">
-          <div className="kpi-label">
-            <Target size={14} /> Vel. max
-          </div>
-          <div className="kpi-value">
-            {safeDec(player.topSpeed, 2)} km/h
-            <span className="kpi-trend">
-              {getTrendIcon(safePct(player.speedTrend))}
-              {safePct(player.speedTrend) !== null ? `${Math.abs(safePct(player.speedTrend))}%` : ''}
-            </span>
-          </div>
-          <div className="kpi-percentile">P{player.speedPercentile ?? 0} ruolo</div>
-        </div>
+      <div className="player-tab-content">
+        {selectedTab && playerDashLoading.get(player.id) && (
+          <div className="kpi-grid"><div className="kpi-item">Caricamento…</div></div>
+        )}
+        {playerDashById.get(player.id)?.error && (
+          <div className="kpi-grid"><div className="kpi-item">Errore nel caricamento</div></div>
+        )}
+        {selectedTab === 'summary' && playerDashById.get(player.id) && (() => {
+          const d = playerDashById.get(player.id);
+          const s = d?.summary || {};
+          const e = d?.eventsSummary || {};
+          return (
+            <>
+              <div className="kpi-grid">
+                <div className="kpi-item"><div className="kpi-label">Sessioni totali</div><div className="kpi-value">{fmtInt(s.totalSessions)}</div></div>
+                <div className="kpi-item"><div className="kpi-label">Allenamenti totali</div><div className="kpi-value">{fmtInt(e.numeroAllenamenti)}</div></div>
+                <div className="kpi-item"><div className="kpi-label">Partite disputate</div><div className="kpi-value">{fmtInt(e.numeroPartite)}</div></div>
+                <div className="kpi-item"><div className="kpi-label">Durata media sessione</div><div className="kpi-value">{fmtDec(s.avgSessionDuration, 2)} min</div></div>
+                <div className="kpi-item"><div className="kpi-label">Distanza media squadra</div><div className="kpi-value">{fmtInt(s.avgTeamDistance)} m</div></div>
+                <div className="kpi-item"><div className="kpi-label">Player load medio</div><div className="kpi-value">{fmtDec(s.avgPlayerLoad, 2)}</div></div>
+                <div className="kpi-item"><div className="kpi-label">Velocità max media</div><div className="kpi-value">{fmtDec(s.avgMaxSpeed, 2)} km/h</div></div>
+              </div>
+            </>
+          );
+        })()}
+        {selectedTab === 'load' && (() => {
+          const d = playerDashById.get(player.id);
+          const l = d?.load || {};
+          return (
+            <div className="kpi-grid">
+              <div className="kpi-item"><div className="kpi-label">Distanza totale</div><div className="kpi-value">{fmtInt(l.totalDistance)} m</div></div>
+              <div className="kpi-item"><div className="kpi-label">Sprint totali</div><div className="kpi-value">{fmtInt(l.totalSprints)} sprint</div></div>
+              <div className="kpi-item"><div className="kpi-label">Passi totali</div><div className="kpi-value">{fmtInt(l.totalSteps)} passi</div></div>
+            </div>
+          );
+        })()}
+        {selectedTab === 'intensity' && (() => {
+          const d = playerDashById.get(player.id);
+          const i = d?.intensity || {};
+          return (
+            <div className="kpi-grid">
+              <div className="kpi-item"><div className="kpi-label">Distanza/min</div><div className="kpi-value">{safeDec(i.avgDistancePerMin, 2)} m/min</div></div>
+              <div className="kpi-item"><div className="kpi-label">Player load/min</div><div className="kpi-value">{safeDec(i.avgPlayerLoadPerMin, 2)} load/min</div></div>
+              <div className="kpi-item"><div className="kpi-label">Sprint per sessione</div><div className="kpi-value">{safeDec(i.avgSprintsPerSession, 2)} sprint/sess.</div></div>
+            </div>
+          );
+        })()}
+        {selectedTab === 'speed' && (() => {
+          const d = playerDashById.get(player.id);
+          const sp = d?.speed || {};
+          return (
+            <div className="kpi-grid">
+              <div className="kpi-item"><div className="kpi-label">HSR totale</div><div className="kpi-value">{fmtInt(sp.totalHSR)} m</div></div>
+              <div className="kpi-item"><div className="kpi-label">Sprint distance media</div><div className="kpi-value">{safeDec(sp.avgSprintDistance, 2)} m</div></div>
+              <div className="kpi-item"><div className="kpi-label">Distanza per sprint</div><div className="kpi-value">{safeDec(sp.avgSprintDistancePerSprint, 2)} m</div></div>
+              <div className="kpi-item"><div className="kpi-label">Vel. max media</div><div className="kpi-value">{safeDec(player.topSpeed, 2)} km/h</div></div>
+            </div>
+          );
+        })()}
+        {selectedTab === 'acc' && (() => {
+          const d = playerDashById.get(player.id);
+          const a = d?.accelerations || {};
+          return (
+            <div className="kpi-grid">
+              <div className="kpi-item"><div className="kpi-label">Acc+Dec per sessione</div><div className="kpi-value">{safeDec(a.avgAccDecPerSession, 2)}</div></div>
+              <div className="kpi-item"><div className="kpi-label">Impatti stimati</div><div className="kpi-value">{fmtInt(a.totalImpacts)}</div></div>
+            </div>
+          );
+        })()}
+        {selectedTab === 'cardio' && (() => {
+          const d = playerDashById.get(player.id);
+          const c = d?.cardio || {};
+          return (
+            <div className="kpi-grid">
+              <div className="kpi-item"><div className="kpi-label">HR medio</div><div className="kpi-value">{safeDec(c.avgHR, 2)} bpm</div></div>
+              <div className="kpi-item"><div className="kpi-label">HR max</div><div className="kpi-value">{safeDec(c.maxHR, 2)} bpm</div></div>
+              <div className="kpi-item"><div className="kpi-label">RPE medio</div><div className="kpi-value">{safeDec(c.avgRPE, 2)}</div></div>
+              <div className="kpi-item"><div className="kpi-label">Session-RPE totale</div><div className="kpi-value">{safeDec(c.totalSessionRPE, 2)}</div></div>
+            </div>
+          );
+        })()}
+        {selectedTab === 'readiness' && (() => {
+          const d = playerDashById.get(player.id);
+          const r = d?.readiness || {};
+          return (
+            <div className="kpi-grid">
+              <div className="kpi-item"><div className="kpi-label">ACWR</div><div className="kpi-value">{safeDec(r.acwr ?? player.acwr, 2)}</div></div>
+            </div>
+          );
+        })()}
       </div>
 
-      {/* ACWR Badge Semplificato */}
-      <div className={`acwr-badge ${getACWRColor(player.acwr ?? 0)}`}>
-        ACWR: {safeDec(player.acwr, 2)}
-        {(player.acwr ?? 0) >= 0.8 && (player.acwr ?? 0) <= 1.3 ? ' 🟢 OK' : 
-         (player.acwr ?? 0) > 1.3 ? ' 🟡 Attenzione' : ' 🔴 Scarico'}
-      </div>
-
-      {/* Ultima Sessione Compatta */}
-      <div className="last-session">
-        <div className="session-info">
-          {player.lastSession?.type || 'N/A'} • {player.lastSession?.minutes || '0'}' • {player.lastSession?.date || 'N/A'}
-        </div>
-        <div className={`session-delta ${(player.lastSession?.delta ?? 0) > 0 ? 'positive' : 'negative'}`}>
-          Δ {player.lastSession?.delta > 0 ? '+' : ''}{player.lastSession?.delta != null ? safeDec(player.lastSession?.delta, 1) : 'N/A'}%
-        </div>
-      </div>
+      {/* Rimosse badge ACWR e last session per lasciare solo le tab dentro la card */}
 
       {/* Footer Azioni Compatte */}
       <div className="card-footer">
@@ -437,7 +557,8 @@ const PerformancePlayersList = () => {
         )}
       </div>
     </div>
-  ), [fmtDec, fmtInt, getTrendIcon, getACWRColor, selectedPlayers.size]);
+  );
+  }, [cardTabById, fmtDec, fmtInt, getTrendIcon, getACWRColor, selectedPlayers.size]);
 
   // Loading state
   if (isLoading && players.length === 0) {
@@ -461,26 +582,6 @@ const PerformancePlayersList = () => {
 
     return (
     <div className={`players-list-container density-${filters.density}`}>
-      {/* 🔧 FIX: Pulsante refresh manuale */}
-      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-        <button 
-          className="btn btn-ghost btn-sm" 
-          onClick={handleForceRefresh}
-          title="Aggiorna dati dal database"
-          style={{ 
-            marginLeft: '8px',
-            padding: '8px 16px',
-            border: '1px solid #e5e7eb',
-            borderRadius: '6px',
-            backgroundColor: '#f9fafb',
-            color: '#374151',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          🔄 Aggiorna
-        </button>
-      </div>
 
       {/* FilterBar minimal come DossierDrawer */}
       <div className="drawer-filters-section">
@@ -549,7 +650,6 @@ const PerformancePlayersList = () => {
            count={selectedPlayers.size}
            onClear={clearSelection}
            onOpenQuick={handleOpenCompareQuick}
-           onOpenExtended={handleOpenCompareExtended}
          />
        )}
 
@@ -567,7 +667,6 @@ const PerformancePlayersList = () => {
             playerIds={Array.from(selectedPlayers)}
             filters={filters}
             onClose={handleCloseCompareOverlay}
-            onOpenExtended={handleOpenCompareExtended}
           />
         )}
      </div>

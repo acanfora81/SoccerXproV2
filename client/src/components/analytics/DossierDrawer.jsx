@@ -209,13 +209,12 @@ const DossierDrawer = ({
             <Zap size={14} /> PL/min
           </div>
           <div className="kpi-value">
-            {safeDec(player.summary.plPerMin, 2)}
+            {Number.isFinite(Number(player.summary?.plPerMin)) ? safeDec(player.summary.plPerMin, 2) : 'N/A'}
             <span className="kpi-trend">
               {getTrendIcon(safePct(player.summary.trend?.plPerMin))}
               {safePct(player.summary.trend?.plPerMin) !== null ? `${Math.abs(safePct(player.summary.trend?.plPerMin))}%` : ''}
             </span>
           </div>
-          <div className="kpi-percentile">P{Math.round((player.percentiles?.plPerMin || 0) * 100)} ruolo</div>
         </div>
 
         <div className="kpi-item">
@@ -223,13 +222,12 @@ const DossierDrawer = ({
             <Activity size={14} /> HSR
           </div>
           <div className="kpi-value">
-            {safeInt(player.summary.hsrTot)} m
+            {Number.isFinite(Number(player.summary?.hsrTot)) ? `${safeInt(player.summary.hsrTot)} m` : 'N/A'}
             <span className="kpi-trend">
               {getTrendIcon(safePct(player.summary.trend?.hsrTot))}
               {safePct(player.summary.trend?.hsrTot) !== null ? `${Math.abs(safePct(player.summary.trend?.hsrTot))}%` : ''}
             </span>
           </div>
-          <div className="kpi-percentile">P{Math.round((player.percentiles?.hsrTot || 0) * 100)} ruolo</div>
         </div>
 
         <div className="kpi-item">
@@ -237,13 +235,12 @@ const DossierDrawer = ({
             <ArrowUpRight size={14} /> Sprint/90
           </div>
           <div className="kpi-value">
-            {safeDec(player.summary.sprintPer90, 2)}
+            {Number.isFinite(Number(player.summary?.sprintPer90)) ? safeDec(player.summary.sprintPer90, 2) : 'N/A'}
             <span className="kpi-trend">
               {getTrendIcon(safePct(player.summary.trend?.sprintPer90))}
               {safePct(player.summary.trend?.sprintPer90) !== null ? `${Math.abs(safePct(player.summary.trend?.sprintPer90))}%` : ''}
             </span>
           </div>
-          <div className="kpi-percentile">P{Math.round((player.percentiles?.sprintPer90 || 0) * 100)} ruolo</div>
         </div>
 
         <div className="kpi-item">
@@ -251,13 +248,12 @@ const DossierDrawer = ({
             <Target size={14} /> Vel. max
           </div>
           <div className="kpi-value">
-            {safeDec(player.summary.topSpeedMax, 2)} km/h
+            {Number.isFinite(Number(player.summary?.topSpeedMax)) ? `${safeDec(player.summary.topSpeedMax, 2)} km/h` : 'N/A'}
             <span className="kpi-trend">
               {getTrendIcon(safePct(player.summary.trend?.topSpeedMax))}
               {safePct(player.summary.trend?.topSpeedMax) !== null ? `${Math.abs(safePct(player.summary.trend?.topSpeedMax))}%` : ''}
             </span>
           </div>
-          <div className="kpi-percentile">P{Math.round((player.percentiles?.topSpeedMax || 0) * 100)} ruolo</div>
         </div>
       </div>
 
@@ -309,12 +305,14 @@ const DossierDrawer = ({
                 <span className="stat-label">Minuti totali</span>
                 <span className="stat-value">{safeInt(player.summary.minutesTot)}'</span>
               </div>
+              {Number(player.summary?.stepsTot) > 0 && (
+                <div className="stat-item">
+                  <span className="stat-label">Passi totali</span>
+                  <span className="stat-value">{safeInt(player.summary.stepsTot)}</span>
+                </div>
+              )}
               <div className="stat-item">
-                <span className="stat-label">Passi totali</span>
-                <span className="stat-value">{safeInt(player.summary.stepsTot)}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">ACWR</span>
+                <span className="stat-label">ACWR (media settimanale)</span>
                 <span className="stat-value">{safeDec(player.summary.acwr, 2)}</span>
               </div>
             </div>

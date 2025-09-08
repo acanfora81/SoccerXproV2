@@ -515,6 +515,8 @@ function buildOverview(rows) {
     avgTeamDistance: 0,
     avgPlayerLoad: 0,
     avgMaxSpeed: 0,
+    avgSpeed: 0,
+    playerLoad: 0,
     speedPB: { player: 'N/A', value: 0 }
   };
   
@@ -532,6 +534,8 @@ function buildOverview(rows) {
     avgTeamDistance: 0,
     avgPlayerLoad: 0,
     avgMaxSpeed: 0,
+    avgSpeed: 0,
+    playerLoad: 0,
     speedPB: { player: 'N/A', value: 0 }
   };
   
@@ -554,6 +558,9 @@ function buildOverview(rows) {
 
   return {
     totalSessions: validCount,
+    totalDistance: sum(validRows.map(r => toNum(r.total_distance_m))),
+    avgSpeed: mean(validRows.map(r => toNum(r.avg_speed_kmh))),
+    playerLoad: sum(validRows.map(r => toNum(r.player_load))),
     avgSessionDuration,
     avgTeamDistance, // Ora in metri
     avgPlayerLoad,
@@ -566,10 +573,15 @@ function buildLoad(rows) {
   // 🔧 FIX: Filtra record vuoti (giorni senza sessioni)
   const validRows = rows.filter(r => r.playerId && r.player);
   
+  const sessions = validRows.length;
+  const totalSprints = validRows.reduce((s, r) => s + getSprintCountRow(r), 0);
+  
   return {
     // CORRETTO: Distanza totale in metri (solo periodo selezionato)
     totalDistance: sum(validRows.map(r => toNum(r.total_distance_m))),
-    totalSprints: validRows.reduce((s, r) => s + getSprintCountRow(r), 0),
+    totalSessions: sessions,
+    totalSprints: totalSprints,
+    sprintsPerSession: sessions > 0 ? totalSprints / sessions : 0,
     // CORRETTO: Passi interi (solo periodo selezionato)
     totalSteps: sum(validRows.map(r => clampInt(r.steps_count))),
   };
@@ -613,6 +625,7 @@ function buildSpeed(rows) {
   return {
     totalHSR, // Ora in metri
     avgSprintDistance,
+    sprintDistanceAvg: avgSprintDistance, // Alias per compatibilità
     avgSprintDistancePerSprint: avgPerSprint
   };
 }
@@ -663,38 +676,39 @@ function buildCardio(rows) {
   };
 }
 
-// 🔧 FIX: ACWR calculation - VERSIONE CORRETTA secondo letteratura scientifica
+// 🔧 FIX: ACWR calculation - ALLINEATO alla Vista Giocatori con calculateACWR
 function buildReadiness(rows, windowEnd) {
+  const { calculateACWR } = require('../utils/kpi');
   // 🔧 FIX: Filtra record vuoti (giorni senza sessioni)
   const validRows = rows.filter(r => r.playerId && r.player);
   
   const players = [...new Set(validRows.map(r => r.playerId))];
-  const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const end = day(windowEnd);
-  const acuteStart = day(new Date(end.getTime() - 6*86400000));    // 6 giorni indietro = 7 giorni totali
-  const chronicStart = day(new Date(end.getTime() - 27*86400000));  // 27 giorni indietro = 28 giorni totali
-
-  // Raggruppa per giocatore
-  const byPlayer = new Map();
-  for (const r of validRows) {
-    const pid = r.playerId;
-    if (!byPlayer.has(pid)) byPlayer.set(pid, []);
-    byPlayer.get(pid).push(r);
-  }
-
   const ratios = [];
+  
   for (const pid of players) {
-    const list = (byPlayer.get(pid) || []).filter(x => x.session_date);
-    const acute = list.filter(x => day(x.session_date) >= acuteStart && day(x.session_date) <= end);
-    const chronic = list.filter(x => day(x.session_date) >= chronicStart && day(x.session_date) <= end);
+    const playerRows = validRows.filter(r => r.playerId === pid);
+    if (playerRows.length === 0) continue;
     
-    // 🔧 FIX: ACWR CORRETTO - SOMMA per acute, MEDIA SETTIMANALE per chronic
-    const acuteLoad = acute.reduce((sum, x) => sum + toNum(x.player_load), 0); // SOMMA, non media
-    const chronicLoad = chronic.reduce((sum, x) => sum + toNum(x.player_load), 0) / 4; // Media settimanale
-    const acwr = chronicLoad > 0 ? acuteLoad / chronicLoad : 0;
+    // Usa la stessa logica di Vista Giocatori/Dossier
+    const sessions = playerRows.map(r => ({
+      playerId: pid,
+      session_date: r.session_date,
+      training_load: r.player_load || 0
+    }));
     
-    if (acwr > 0) { // Solo giocatori con dati validi
-      ratios.push({ playerId: pid, acwr });
+    const acwrResults = calculateACWR(sessions);
+    if (acwrResults.length > 0) {
+      // Prendi l'ACWR più recente (ultima data nel periodo)
+      const targetDate = windowEnd;
+      const closest = acwrResults.reduce((prev, curr) => {
+        return (Math.abs(new Date(curr.date) - targetDate) < Math.abs(new Date(prev.date) - targetDate)) ? curr : prev;
+      });
+      const acwr = Number(closest.acwr || 0);
+      // Scala a media settimanale per allineare alla Vista Giocatori
+      const scaledAcwr = acwr * 4;
+      if (scaledAcwr > 0) {
+        ratios.push({ playerId: pid, acwr: scaledAcwr });
+      }
     }
   }
 
@@ -753,9 +767,20 @@ function buildEventsSummary(rows) {
   console.log(`  - Partite: ${partite}`);
   console.log(`  - Totale: ${validRows.length}`);
 
+  // Calcola metriche aggiuntive
+  const totalSprints = sum(validRows.map(r => getSprintCountRow(r)));
+  const totalHSR = computeHSR(validRows);
+  const totalAcc = sum(validRows.map(r => toNum(r.num_acc_over_3_ms2)));
+  const totalDec = sum(validRows.map(r => toNum(r.num_dec_over_minus3_ms2)));
+  const sessions = validRows.length;
+  const avgAccDecPerSession = sessions > 0 ? (totalAcc + totalDec) / sessions : 0;
+
   return {
     numeroAllenamenti: allenamenti,
-    numeroPartite: partite
+    numeroPartite: partite,
+    totalSprints,
+    totalHSR,
+    avgAccDecPerSession
   };
 }
 
@@ -1070,7 +1095,7 @@ router.get('/stats/player/:id', async (req, res) => {
     // Verifica che il giocatore appartenga al team
     const player = await prisma.player.findFirst({
       where: { id: playerId, teamId },
-      select: { id: true, firstName: true, lastName: true }
+      select: { id: true, firstName: true, lastName: true, position: true, shirtNumber: true }
     });
 
     if (!player) {
@@ -1098,7 +1123,10 @@ router.get('/stats/player/:id', async (req, res) => {
       data,
       player: {
         id: player.id,
-        name: `${player.firstName} ${player.lastName}`
+        firstName: player.firstName,
+        lastName: player.lastName,
+        position: player.position,
+        shirtNumber: player.shirtNumber
       },
       period: {
 

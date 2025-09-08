@@ -97,23 +97,6 @@
    COMPONENTI COMUNI
    ========================= */
 
-/* Tab Squadra/Giocatore */
-.flex {
-  display: flex;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
 /* Analytics Avanzate - Sezioni */
 .charts-grid {
   display: grid;
@@ -347,9 +330,9 @@
 }
 
 .player-card.selected {
-  border-color: var(--accent-primary);
-  background-color: var(--accent-primary);
-  color: var(--bg-primary);
+  border-color: rgba(147, 197, 253, 0.4) !important; /* Celestino chiaro per il bordo */
+  background-color: rgba(147, 197, 253, 0.06) !important; /* Celestino chiarissimo trasparente */
+  color: var(--text-primary) !important; /* Testo normale */
 }
 
 .player-info {
@@ -372,6 +355,7 @@
 .player-card.selected .player-position {
   opacity: 90%;
 }
+
 
 .selection-indicator {
   width: 24px;

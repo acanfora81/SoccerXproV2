@@ -105,9 +105,13 @@ export function buildPerformanceQuery(filters) {
   
   // 📅 Periodo (sempre incluso)
   if (filters.period) params.set('period', filters.period);
-  
-  // 🔧 FIX: Forza startDate ed endDate per month e quarter
-  if (filters.period === 'month' || filters.period === 'quarter') {
+
+  // PRIORITÀ CUSTOM: se presenti entrambe le date, forza period=custom
+  if (filters.startDate && filters.endDate) {
+    params.set('period', 'custom');
+    params.set('startDate', filters.startDate);
+    params.set('endDate', filters.endDate);
+  } else if (filters.period === 'month' || filters.period === 'quarter') {
     const today = new Date();
     
     console.log('🔍 DEBUG buildPerformanceQuery - Calcolo periodo:', {
@@ -174,7 +178,7 @@ export function buildPerformanceQuery(filters) {
       });
     }
   } else {
-    // Per week e custom, usa le date esistenti
+    // Per week o singole date, usa quelle esistenti
     if (filters.startDate) params.set('startDate', filters.startDate);
     if (filters.endDate) params.set('endDate', filters.endDate);
   }

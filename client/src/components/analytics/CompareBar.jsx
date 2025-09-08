@@ -14,30 +14,24 @@ const CompareBar = ({
     <div className="compare-bar">
       <div className="compare-info">
         <span>Selezionati: {count} giocatori</span>
-        {count > 8 && (
-          <span className="warning">(confronto esteso per {count} giocatori)</span>
-        )}
         {count === 1 && (
           <span className="hint">(seleziona almeno 2 giocatori per confrontare)</span>
         )}
       </div>
       
       <div className="compare-actions">
-        {!isDisabled && !isExtended && (
+        {!isDisabled && (
           <button 
+            type="button"
             className="btn-primary"
-            onClick={onOpenQuick}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 CompareBar: cliccato Confronta, chiamando onOpenQuick');
+              onOpenQuick();
+            }}
           >
-            <BarChart3 size={16} /> Confronto Rapido ({count})
-          </button>
-        )}
-        
-        {!isDisabled && isExtended && (
-          <button 
-            className="btn-primary"
-            onClick={onOpenExtended}
-          >
-            <BarChart3 size={16} /> Confronto Esteso ({count})
+            <BarChart3 size={16} /> Confronta ({count})
           </button>
         )}
         

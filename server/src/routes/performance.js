@@ -1731,12 +1731,20 @@ router.get("/stats/players", async (req, res) => {
               est.sprint_count = 'estimated from sprint_distance_m';
             }
           }
+
+          // Deriva player_load_per_min come in Dashboard
+          let player_load_per_min = toNum(r.player_load_per_min);
+          if (player_load_per_min === 0 && toNum(r.player_load) > 0 && dur > 0) {
+            player_load_per_min = toNum(r.player_load) / dur;
+            est.player_load_per_min = 'player_load / duration_minutes';
+          }
           
           return {
             ...r,
             _est: est,
             high_intensity_distance_m: hsr,
-            sprint_count: sprint_count
+            sprint_count: sprint_count,
+            player_load_per_min
           };
         });
         
@@ -1750,7 +1758,9 @@ router.get("/stats/players", async (req, res) => {
         const toNum = v => Number.isFinite(Number(v)) ? Number(v) : 0;
         
         totalPlayerLoad = sum(validRows.map(r => toNum(r.player_load)));
-        totalHSR = sum(validRows.map(r => toNum(r.high_intensity_distance_m)));
+        // Allinea HSR alla Dashboard usando la stessa utility
+        const { computeHSR } = require('../utils/kpi');
+        totalHSR = computeHSR(validRows);
         totalSprints = sum(validRows.map(r => toNum(r.sprint_count)));
         avgMaxSpeed = mean(validRows.map(r => toNum(r.top_speed_kmh)));
         
@@ -1771,11 +1781,14 @@ router.get("/stats/players", async (req, res) => {
         const chronicLoad = acwrData.reduce((sum, d) => sum + toNum(d.player_load), 0) / 4;
         avgACWR = chronicLoad > 0 ? acuteLoad / chronicLoad : 0;
         
-        // Calcola i KPI finali
-        totalDuration = totalSessions * 90; // Approssimazione 90 min per sessione
-        plMin = totalDuration > 0 ? totalPlayerLoad / totalDuration : 0;
+        // Calcola i KPI finali (allineati alla Dashboard)
+        totalDuration = sum(validRows.map(r => toNum(r.duration_minutes)));
+        // Dashboard: media semplice delle pl/min di sessione
+        const plpmArray = validRows.map(r => toNum(r.player_load_per_min)).filter(v => v > 0);
+        plMin = plpmArray.length > 0 ? (plpmArray.reduce((a,b)=>a+b,0) / plpmArray.length) : 0;
         hsr = totalHSR;
-        sprintPer90 = totalSessions > 0 ? totalSprints / totalSessions : 0;
+        // Sprint/90 coerente: (somma sprint / somma minuti) * 90
+        sprintPer90 = totalDuration > 0 ? (totalSprints * 90) / totalDuration : 0;
         topSpeed = avgMaxSpeed;
         acwr = avgACWR;
         
@@ -2537,6 +2550,7 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
       },
       select: { session_date: true, player_load: true }
     });
+    // ACWR: usa calculateACWR e scala a media settimanale (sum7 / (sum28/4))
     const acwr = (() => {
       // Prepara i dati nel formato corretto per calculateACWR
       const sessions = acwrData.map(r => ({
@@ -2555,7 +2569,10 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
         const closest = acwrResults.reduce((prev, curr) => {
           return (Math.abs(new Date(curr.date) - acwrEndDate) < Math.abs(new Date(prev.date) - acwrEndDate)) ? curr : prev;
         });
-        return closest.acwr || 0;
+        const val = Number(closest.acwr || 0);
+        // Scala a media settimanale per allineare all'aspettativa (Vista Giocatori)
+        const scaledVal = val * 4;
+        return Number.isFinite(scaledVal) ? Number(scaledVal.toFixed(2)) : 0;
       }
       return 0;
     })();
@@ -2647,8 +2664,9 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
     });
 
     const cardio = {
-      avgHR: avgHRValues.length ? Math.round(avgHRValues.reduce((a, b) => a + b, 0) / avgHRValues.length) : null,
-      maxHR: maxHRValues.length ? Math.max(...maxHRValues) : null,
+      // Allineamento con Dashboard: usare medie e 2 decimali
+      avgHR: avgHRValues.length ? Number((avgHRValues.reduce((a, b) => a + b, 0) / avgHRValues.length).toFixed(2)) : null,
+      maxHR: maxHRValues.length ? Number((maxHRValues.reduce((a, b) => a + b, 0) / maxHRValues.length).toFixed(2)) : null,
       // RPE medio (media dei Borg > 0)
       rpeAvg: (() => {
         const vals = rpeRows.map(r => r.rpe).filter(v => v > 0);
@@ -2761,7 +2779,8 @@ router.get("/compare", async (req, res) => {
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
 
-    console.log('[COMPARE] filters', { playerIds, period, sessionType, roles, status, startDate, endDate, teamId });
+    console.log('[COMPARE] filters ricevuti:', { playerIds, period, sessionType, roles, status, startDate, endDate, teamId });
+    console.log('[COMPARE] filtri query originali:', req.query);
 
     if (playerIds.length === 0) {
       return res.status(400).json({
@@ -2860,76 +2879,131 @@ router.get("/compare", async (req, res) => {
         select: { playerId: true, session_date: true, player_load: true }
       });
 
-    // Calcola KPI per ogni giocatore
+    // Importa utilities per i calcoli KPI
+    const { buildPeriodRange, parseSessionTypeFilterSimple, computeHSR, computeSprintPer90, calculateACWR } = require('../utils/kpi');
+
+    // Calcola KPI per ogni giocatore usando la stessa logica di Dashboard
     const playersWithStats = await Promise.all(players.map(async (player) => {
       const playerData = performanceData.filter(p => p.playerId === player.id);
+      console.log(`[COMPARE] Player ${player.id}: ${playerData.length} sessions found`);
 
+      // Calcoli allineati con Dashboard/Dossier
       const totalPlayerLoad = playerData.reduce((sum, p) => sum + (p.player_load || 0), 0);
       const totalDuration = playerData.reduce((sum, p) => sum + (p.duration_minutes || 0), 0);
-      const plMin = totalDuration > 0 ? totalPlayerLoad / totalDuration : 0;
+      const plPerMin = totalDuration > 0 ? totalPlayerLoad / totalDuration : 0;
 
-      // ✅ Usa util KPI comuni
-      const hsr = computeHSR(playerData);
+      // HSR usando la funzione comune
+      const hsrTot = computeHSR(playerData);
+
+      // Sprint/90 usando la funzione comune
       const sprintPer90 = computeSprintPer90(playerData);
 
-      const topSpeed = Math.max(...playerData.map(p => p.top_speed_kmh || 0), 0);
+      // Top Speed
+      const topSpeedMax = Math.max(...playerData.map(p => p.top_speed_kmh || 0), 0);
 
-      // ACWR calculation (filtra i record della finestra 28gg per il singolo giocatore)
+      // ACWR con scaling x4 per allineare con Dashboard
       const playerAcwrData = acwrData.filter(p => p.playerId === player.id);
       const acwr = (() => {
-        // Prepara i dati nel formato corretto per calculateACWR
-        const sessions = playerAcwrData.map(d => ({
-          playerId: d.playerId,
-          session_date: d.session_date,
-          training_load: d.player_load || 0
-        }));
+        if (playerAcwrData.length === 0) return 0;
         
-        // Calcola ACWR per questo giocatore
-        const acwrResults = calculateACWR(sessions);
-        
-        // Prendi l'ACWR più recente
-        if (acwrResults.length > 0) {
-          const latest = acwrResults[acwrResults.length - 1];
-          return latest.acwr || 0;
-        }
-        return 0;
+        const acwrValue = calculateACWR(playerAcwrData, acwrEndDate);
+        return acwrValue * 4; // Scala per media settimanale
       })();
 
-      // Sanitizza numeri
-      const round = (v, d = 2) => Number.isFinite(v) ? Number(v.toFixed(d)) : null;
+      // Altre metriche per completezza
+      const totalDistance = playerData.reduce((sum, p) => sum + (p.total_distance_m || 0), 0);
+      const totalSessions = playerData.length;
 
-      // Formatta output
-      const roleMap = {
-        'GOALKEEPER': 'POR',
-        'DEFENDER': 'DIF',
-        'MIDFIELDER': 'CEN', 
-        'FORWARD': 'ATT'
-      };
+      // Cardio HR (se disponibile)
+      const avgHR = playerData.length > 0 ? 
+        playerData.reduce((sum, p) => sum + (p.avg_heart_rate || 0), 0) / playerData.length : 0;
+      const maxHR = Math.max(...playerData.map(p => p.max_heart_rate || 0), 0);
 
-      return {
+      // Accelerazioni/Decelerazioni
+      const totalAccel = playerData.reduce((sum, p) => sum + (p.num_acc_over_3_ms2 || 0), 0);
+      const totalDecel = playerData.reduce((sum, p) => sum + (p.num_dec_over_minus3_ms2 || 0), 0);
+
+      // Zone di velocità
+      const distance15_20 = playerData.reduce((sum, p) => sum + (p.distance_15_20_kmh_m || 0), 0);
+      const distance20_25 = playerData.reduce((sum, p) => sum + (p.distance_20_25_kmh_m || 0), 0);
+      const distanceOver25 = playerData.reduce((sum, p) => sum + (p.distance_over_25_kmh_m || 0), 0);
+
+      // Helper di formattazione
+      const round = (v, d = 2) => Number.isFinite(v) ? Number(v.toFixed(d)) : 0;
+
+      const result = {
         id: player.id,
-        name: `${player.firstName} ${player.lastName}`,
-        role: roleMap[player.position] || player.position,
-        number: player.shirtNumber,
-        status: player.isActive ? 'active' : 'inactive',
-        kpis: {
-          plMin: round(plMin, 2),
-          hsr: Number.isFinite(hsr) ? Math.round(hsr) : null,
+        firstName: player.firstName,
+        lastName: player.lastName,
+        position: player.position,
+        shirtNumber: player.shirtNumber,
+        isActive: player.isActive,
+        
+        // Summary principale (compatibile con frontend attuale)
+        summary: {
+          plPerMin: round(plPerMin, 2),
+          hsrTot: Math.round(hsrTot),
           sprintPer90: round(sprintPer90, 2),
-          topSpeed: round(topSpeed, 2),
+          topSpeedMax: round(topSpeedMax, 2),
           acwr: round(acwr, 2)
         },
-        summary: {
-          totalSessions: playerData.length,
-          totalDuration: totalDuration,
-          totalPlayerLoad: totalPlayerLoad,
-          avgSessionDuration: playerData.length > 0 ? totalDuration / playerData.length : 0,
-          avgPlayerLoad: playerData.length > 0 ? totalPlayerLoad / playerData.length : 0
+
+        // Sessions per conteggio
+        sessions: playerData,
+
+        // Dati dettagliati per grafici nelle tab
+        detailed: {
+          // Carico & Volumi
+          totalDistance: Math.round(totalDistance),
+          totalPlayerLoad: Math.round(totalPlayerLoad),
+          totalSessions: totalSessions,
+          totalMinutes: Math.round(totalDuration),
+          avgSessionLoad: totalSessions > 0 ? round(totalPlayerLoad / totalSessions, 1) : 0,
+          avgSessionDuration: totalSessions > 0 ? round(totalDuration / totalSessions, 1) : 0,
+
+          // Intensità
+          plPerMin: round(plPerMin, 2),
+          avgSpeed: totalDuration > 0 ? round(totalDistance / totalDuration * 60 / 1000, 2) : 0, // km/h
+          
+          // Alta Velocità & Sprint
+          distance15_20: Math.round(distance15_20),
+          distance20_25: Math.round(distance20_25),
+          distanceOver25: Math.round(distanceOver25),
+          hsrTotal: Math.round(hsrTot),
+          hsrPercentage: totalDistance > 0 ? round(hsrTot / totalDistance * 100, 1) : 0,
+          sprintCount: playerData.reduce((sum, p) => sum + (p.sprint_count || 0), 0),
+          topSpeedMax: round(topSpeedMax, 2),
+
+          // Accelerazioni & Decelerazioni
+          totalAccelerations: totalAccel,
+          totalDecelerations: totalDecel,
+          accelPerMinute: totalDuration > 0 ? round(totalAccel / totalDuration, 2) : 0,
+          decelPerMinute: totalDuration > 0 ? round(totalDecel / totalDuration, 2) : 0,
+
+          // Energetico & Metabolico
+          avgHeartRate: round(avgHR, 1),
+          maxHeartRate: Math.round(maxHR),
+
+          // Rischio & Recupero
+          acwr: round(acwr, 2),
+          monotony: 0, // TODO: calcolare se necessario
+          strain: round(totalPlayerLoad, 1)
         }
       };
+      
+      console.log(`[COMPARE] Player ${player.id} result has detailed:`, !!result.detailed);
+      return result;
     }));
 
-    res.json(playersWithStats);
+    res.json({
+      players: playersWithStats,
+      filters: { period, sessionType, sessionName, startDate, endDate },
+      metadata: {
+        playerCount: playersWithStats.length,
+        periodStart: periodStart.toISOString(),
+        periodEnd: periodEnd.toISOString()
+      }
+    });
 
   } catch (error) {
     derr("Compare error:", error?.message);
