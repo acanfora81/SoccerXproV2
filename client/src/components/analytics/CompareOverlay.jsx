@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   X, 
   ArrowLeft,
@@ -62,6 +62,7 @@ const CompareOverlay = ({
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
   const [isExpanded, setIsExpanded] = useState(false); // Nuovo stato per espansione
+  const [timeSeriesData, setTimeSeriesData] = useState(null); // Dati temporali per i grafici
 
   // Helper per formattazione sicura
   const safeDec = (v, d=2) => Number.isFinite(v) ? Number(v).toLocaleString('it-IT', { minimumFractionDigits:d, maximumFractionDigits:d }) : 'N/A';
@@ -89,6 +90,133 @@ const CompareOverlay = ({
     });
   };
 
+  // Helper per grafici a torta
+  const toPieChartData = (label, accessor) => {
+    return players.map((p, idx) => {
+      const rawValue = accessor(p);
+      let numericValue = 0;
+      if (typeof rawValue === 'number') {
+        numericValue = rawValue;
+      } else if (typeof rawValue === 'string') {
+        const cleanValue = rawValue.replace(/[^\d.,]/g, '').replace(',', '.');
+        numericValue = parseFloat(cleanValue) || 0;
+      }
+      
+      return { 
+        name: `${p.firstName} ${p.lastName}`, 
+        value: numericValue,
+        fill: playerColors[idx % playerColors.length]
+      };
+    });
+  };
+
+  // Helper per grafici a linea
+  const toLineChartData = (label, accessor) => {
+    return players.map((p, idx) => {
+      const rawValue = accessor(p);
+      let numericValue = 0;
+      if (typeof rawValue === 'number') {
+        numericValue = rawValue;
+      } else if (typeof rawValue === 'string') {
+        const cleanValue = rawValue.replace(/[^\d.,]/g, '').replace(',', '.');
+        numericValue = parseFloat(cleanValue) || 0;
+      }
+      
+      return { 
+        name: `${p.firstName} ${p.lastName}`, 
+        value: numericValue,
+        stroke: playerColors[idx % playerColors.length]
+      };
+    });
+  };
+
+  // Helper per grafici radar
+  const toRadarChartData = () => {
+    if (players.length === 0) return [];
+    
+    const metrics = [
+      { key: 'Sessioni', accessor: (p) => p.detailed?.totalSessions || 0 },
+      { key: 'Distanza', accessor: (p) => p.detailed?.totalDistance || 0 },
+      { key: 'Player Load', accessor: (p) => p.detailed?.avgSessionLoad || 0 },
+      { key: 'Velocità Media', accessor: (p) => p.detailed?.avgSpeed || 0 },
+      { key: 'HSR %', accessor: (p) => p.detailed?.hsrPercentage || 0 },
+      { key: 'Sprint', accessor: (p) => p.detailed?.sprintCount || 0 }
+    ];
+
+    return players.map((p, idx) => {
+      const data = metrics.map(metric => ({
+        metric: metric.key,
+        value: metric.accessor(p),
+        fullMark: 100 // Valore massimo per normalizzazione
+      }));
+
+      return {
+        name: `${p.firstName} ${p.lastName}`,
+        data: data,
+        fill: playerColors[idx % playerColors.length],
+        stroke: playerColors[idx % playerColors.length]
+      };
+    });
+  };
+
+  // Helper per convertire dati temporali in grafici a linea
+  const toTimeSeriesLineData = (metricKey) => {
+    if (!timeSeriesData || timeSeriesData.length === 0) return [];
+    
+    return timeSeriesData.map((player, index) => {
+      // Trova il giocatore corrispondente nella lista principale per ottenere il colore corretto
+      const mainPlayer = players.find(p => p.id === player.id);
+      const correctColor = mainPlayer ? playerColors[players.indexOf(mainPlayer) % playerColors.length] : playerColors[index % playerColors.length];
+      
+      console.log(`🎨 Colore per ${player.name}:`, {
+        playerId: player.id,
+        apiColor: player.color,
+        correctColor: correctColor,
+        mainPlayerFound: !!mainPlayer
+      });
+      
+      return {
+        name: player.name,
+        color: correctColor, // Usa il colore corretto dalla lista principale
+        data: player.timeSeries.map(point => ({
+          date: point.date,
+          value: point[metricKey] || 0
+        }))
+      };
+    });
+  };
+
+  // Helper per convertire dati temporali in grafici a barre aggregate
+  const toTimeSeriesBarData = (metricKey, aggregateBy = 'week') => {
+    if (!timeSeriesData || timeSeriesData.length === 0) return [];
+    
+    return timeSeriesData.map(player => {
+      // Aggrega i dati per settimana
+      const aggregated = {};
+      player.timeSeries.forEach(point => {
+        const date = new Date(point.date);
+        const weekKey = aggregateBy === 'week' 
+          ? `${date.getFullYear()}-W${Math.ceil((date.getDate() + new Date(date.getFullYear(), date.getMonth(), 1).getDay()) / 7)}`
+          : point.date;
+        
+        if (!aggregated[weekKey]) {
+          aggregated[weekKey] = { total: 0, count: 0 };
+        }
+        aggregated[weekKey].total += point[metricKey] || 0;
+        aggregated[weekKey].count += 1;
+      });
+
+      return {
+        name: player.name,
+        color: player.color,
+        data: Object.entries(aggregated).map(([period, values]) => ({
+          period,
+          value: values.total / values.count // Media
+        }))
+      };
+    });
+  };
+
   const ChartCard = ({ title, data, unit }) => (
     <div className="chart-card">
       <div className="chart-header"><h4>{title}</h4></div>
@@ -99,7 +227,13 @@ const CompareOverlay = ({
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip formatter={(value, name) => [`${value}${unit || ''}`, name]} />
-            <Legend />
+            <Legend 
+              formatter={(value, entry) => (
+                <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                  {value}
+                </span>
+              )}
+            />
             <Bar dataKey="value">
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -110,6 +244,216 @@ const CompareOverlay = ({
       </div>
     </div>
   );
+
+  // Componente per grafici a torta
+  const PieChartCard = ({ title, data, unit }) => (
+    <div className="chart-card">
+      <div className="chart-header"><h4>{title}</h4></div>
+      <div style={{ width: '100%', height: 220 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value) => [`${value}${unit || ''}`, 'Valore']} />
+            <Legend 
+              formatter={(value, entry) => (
+                <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                  {value}
+                </span>
+              )}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+
+  // Componente per grafici a linea
+  const LineChartCard = ({ title, data, unit }) => (
+    <div className="chart-card">
+      <div className="chart-header"><h4>{title}</h4></div>
+      <div style={{ width: '100%', height: 220 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip formatter={(value, name) => [`${value}${unit || ''}`, name]} />
+            <Legend 
+              formatter={(value, entry) => (
+                <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                  {value}
+                </span>
+              )}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="value" 
+              stroke="#8884d8" 
+              strokeWidth={2}
+              dot={{ fill: '#8884d8', strokeWidth: 2, r: 4 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+
+  // Componente per grafici radar
+  const RadarChartCard = ({ title, data }) => (
+    <div className="chart-card">
+      <div className="chart-header"><h4>{title}</h4></div>
+      <div style={{ width: '100%', height: 220 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <PolarGrid />
+            <PolarAngleAxis dataKey="metric" />
+            <PolarRadiusAxis angle={30} domain={[0, 100]} />
+            <Radar
+              name="Giocatore"
+              dataKey="value"
+              stroke="#8884d8"
+              fill="#8884d8"
+              fillOpacity={0.6}
+            />
+            <Legend 
+              formatter={(value, entry) => (
+                <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                  {value}
+                </span>
+              )}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+
+  // Componente per grafici a barre orizzontali
+  const HorizontalBarChartCard = ({ title, data, unit }) => (
+    <div className="chart-card">
+      <div className="chart-header"><h4>{title}</h4></div>
+      <div style={{ width: '100%', height: 220 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart 
+            data={data} 
+            layout="horizontal"
+            margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" />
+            <YAxis dataKey="name" type="category" width={80} />
+            <Tooltip formatter={(value, name) => [`${value}${unit || ''}`, name]} />
+            <Legend 
+              formatter={(value, entry) => (
+                <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                  {value}
+                </span>
+              )}
+            />
+            <Bar dataKey="value">
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+
+  // Componente per grafici a linea temporali
+  const TimeSeriesLineChartCard = ({ title, timeSeriesData, metricKey, unit }) => {
+    if (!timeSeriesData || timeSeriesData.length === 0) {
+      return (
+        <div className="chart-card">
+          <div className="chart-header"><h4>{title}</h4></div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 220 }}>
+            <p>Caricamento dati temporali...</p>
+          </div>
+        </div>
+      );
+    }
+
+    // Prepara i dati per il grafico a linea
+    const chartData = [];
+    const allDates = new Set();
+    
+    timeSeriesData.forEach(player => {
+      player.data.forEach(point => {
+        allDates.add(point.date);
+      });
+    });
+
+    const sortedDates = Array.from(allDates).sort();
+    
+    sortedDates.forEach(date => {
+      const dataPoint = { date };
+      timeSeriesData.forEach(player => {
+        const point = player.data.find(p => p.date === date);
+        dataPoint[player.name] = point ? point.value : 0;
+      });
+      chartData.push(dataPoint);
+    });
+
+    return (
+      <div className="chart-card">
+        <div className="chart-header"><h4>{title}</h4></div>
+        <div style={{ width: '100%', height: 220 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={(value) => new Date(value).toLocaleDateString('it-IT', { month: 'short', day: 'numeric' })}
+              />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => [`${value}${unit || ''}`, name]}
+                labelFormatter={(value) => new Date(value).toLocaleDateString('it-IT')}
+              />
+              <Legend 
+                formatter={(value, entry) => (
+                  <span style={{ color: entry.color, fontWeight: 'bold' }}>
+                    {value}
+                  </span>
+                )}
+              />
+              {timeSeriesData.map((player, index) => {
+                // Usa il colore specifico del giocatore, fallback ai colori predefiniti
+                const playerColor = player.color || playerColors[index % playerColors.length];
+                
+                return (
+                  <Line 
+                    key={player.name}
+                    type="monotone" 
+                    dataKey={player.name}
+                    stroke={playerColor}
+                    strokeWidth={3}
+                    dot={{ fill: playerColor, strokeWidth: 2, r: 5 }}
+                    activeDot={{ r: 7, fill: playerColor, stroke: '#fff', strokeWidth: 2 }}
+                    name={player.name}
+                  />
+                );
+              })}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  };
 
   // Helper per role icon
   const getRoleIcon = (role) => {
@@ -201,6 +545,14 @@ const CompareOverlay = ({
 
         const url = `/api/performance/compare?${qs.toString()}`;
         console.log('🔵 CompareOverlay: fetch URL:', url);
+        console.log('🔍 CompareOverlay: filtri ricevuti:', {
+          period: filters.period,
+          sessionType: filters.sessionType,
+          roles: filters.roles,
+          status: filters.status,
+          startDate: filters.startDate,
+          endDate: filters.endDate
+        });
 
         const response = await apiFetch(url);
         
@@ -243,6 +595,63 @@ const CompareOverlay = ({
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
   }, [onClose]);
+
+  // Carica dati temporali per i grafici
+  const loadTimeSeriesData = useCallback(async () => {
+    try {
+      console.log('📊 Caricamento dati temporali...');
+      const params = new URLSearchParams();
+      params.set('players', playerIds.join(','));
+      
+      // Usa i filtri attuali
+      if (filters.period) params.set('period', filters.period);
+      if (filters.startDate) params.set('startDate', filters.startDate);
+      if (filters.endDate) params.set('endDate', filters.endDate);
+      if (filters.sessionType) params.set('sessionType', filters.sessionType);
+      
+      const response = await apiFetch(`/api/performance/compare/charts-data?${params}`);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setTimeSeriesData(data.data);
+        console.log('✅ Dati temporali caricati:', data.data.length, 'giocatori');
+      }
+    } catch (error) {
+      console.error('❌ Errore caricamento dati temporali:', error);
+    }
+  }, [playerIds, filters]);
+
+  // Carica dati temporali quando il drawer si espande o i filtri cambiano
+  useEffect(() => {
+    if (isExpanded) {
+      // Reset dei dati temporali quando i filtri cambiano
+      setTimeSeriesData(null);
+      loadTimeSeriesData();
+    }
+  }, [isExpanded, loadTimeSeriesData]);
+
+  // Debug per i colori dei giocatori
+  useEffect(() => {
+    if (players.length > 0) {
+      console.log('🎨 Colori giocatori principali:', players.map((p, idx) => ({
+        name: `${p.firstName} ${p.lastName}`,
+        id: p.id,
+        color: playerColors[idx % playerColors.length]
+      })));
+    }
+  }, [players]);
+
+  // Debug per i filtri
+  useEffect(() => {
+    console.log('🔄 CompareOverlay: filtri cambiati:', {
+      period: filters.period,
+      sessionType: filters.sessionType,
+      roles: filters.roles,
+      status: filters.status,
+      startDate: filters.startDate,
+      endDate: filters.endDate
+    });
+  }, [filters]);
 
   if (isLoading) {
     return (
@@ -421,23 +830,33 @@ const CompareOverlay = ({
 
     return (
       <div className="charts-grid">
-        <ChartCard 
-          title="Sessioni totali" 
-          data={toChartData('Sessioni', p => p.detailed?.totalSessions || 0)}
+        {/* Grafico a linea temporale - Player Load */}
+        <TimeSeriesLineChartCard 
+          title="Player Load nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('playerLoad')}
+          metricKey="playerLoad"
         />
-        <ChartCard 
-          title="Durata media sessione" 
-          data={toChartData('Durata', p => p.detailed?.avgSessionDuration || 0)}
-          unit="min"
-        />
-        <ChartCard 
-          title="Distanza totale" 
-          data={toChartData('Distanza', p => p.detailed?.totalDistance || 0)}
+        
+        {/* Grafico a linea temporale - Distanza */}
+        <TimeSeriesLineChartCard 
+          title="Distanza nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('distance')}
+          metricKey="distance"
           unit="m"
         />
+        
+        {/* Grafico a linea temporale - Durata */}
+        <TimeSeriesLineChartCard 
+          title="Durata Sessioni nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('duration')}
+          metricKey="duration"
+          unit="min"
+        />
+        
+        {/* Grafico a barre - Confronto totale */}
         <ChartCard 
-          title="Player load medio" 
-          data={toChartData('Player Load', p => p.detailed?.avgSessionLoad || 0)}
+          title="Confronto Totale" 
+          data={toChartData('Sessioni', p => p.detailed?.totalSessions || 0)}
         />
       </div>
     );
@@ -448,9 +867,21 @@ const CompareOverlay = ({
 
     return (
       <div className="charts-grid">
-        <ChartCard title="Distanza totale" data={toChartData('Distanza', (p) => p.detailed?.totalDistance || 0)} unit="m" />
+        {/* Grafici temporali */}
+        <TimeSeriesLineChartCard 
+          title="Player Load nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('playerLoad')}
+          metricKey="playerLoad"
+        />
+        <TimeSeriesLineChartCard 
+          title="Distanza nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('distance')}
+          metricKey="distance"
+          unit="m"
+        />
+        
+        {/* Grafici statici per confronto */}
         <ChartCard title="Player load totale" data={toChartData('PL', (p) => p.detailed?.totalPlayerLoad || 0)} />
-        <ChartCard title="Durata totale" data={toChartData('Minuti', (p) => p.detailed?.totalMinutes || 0)} unit="min" />
         <ChartCard title="Carico medio per sessione" data={toChartData('PL medio', (p) => p.detailed?.avgSessionLoad || 0)} />
       </div>
     );
@@ -461,8 +892,21 @@ const CompareOverlay = ({
 
     return (
       <div className="charts-grid">
+        {/* Grafici temporali */}
+        <TimeSeriesLineChartCard 
+          title="Velocità Media nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('avgSpeed')}
+          metricKey="avgSpeed"
+          unit="km/h"
+        />
+        <TimeSeriesLineChartCard 
+          title="Corsa ad Alta Intensità nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('highIntensityRuns')}
+          metricKey="highIntensityRuns"
+        />
+        
+        {/* Grafici statici per confronto */}
         <ChartCard title="PL/min" data={toChartData('PL/min', (p) => p.detailed?.plPerMin || 0)} />
-        <ChartCard title="Velocità media" data={toChartData('Velocità media', (p) => p.detailed?.avgSpeed || 0)} unit="km/h" />
         <ChartCard title="Sprint per 90'" data={toChartData('Sprint90', (p) => p.summary?.sprintPer90 || 0)} />
       </div>
     );
@@ -473,8 +917,23 @@ const CompareOverlay = ({
 
     return (
       <div className="charts-grid">
-        <ChartCard title="FC media" data={toChartData('FC media', (p) => p.detailed?.avgHeartRate || 0)} unit="bpm" />
-        <ChartCard title="FC max" data={toChartData('FC max', (p) => p.detailed?.maxHeartRate || 0)} unit="bpm" />
+        {/* Grafici temporali */}
+        <TimeSeriesLineChartCard 
+          title="Frequenza Cardiaca Media nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('avgHeartRate')}
+          metricKey="avgHeartRate"
+          unit="bpm"
+        />
+        <TimeSeriesLineChartCard 
+          title="Frequenza Cardiaca Max nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('maxHeartRate')}
+          metricKey="maxHeartRate"
+          unit="bpm"
+        />
+        
+        {/* Grafici statici per confronto */}
+        <ChartCard title="FC media - Confronto" data={toChartData('FC media', (p) => p.detailed?.avgHeartRate || 0)} unit="bpm" />
+        <ChartCard title="FC max - Confronto" data={toChartData('FC max', (p) => p.detailed?.maxHeartRate || 0)} unit="bpm" />
       </div>
     );
   };
@@ -484,10 +943,23 @@ const CompareOverlay = ({
 
     return (
       <div className="charts-grid">
+        {/* Grafici temporali */}
+        <TimeSeriesLineChartCard 
+          title="Accelerazioni nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('accEventsPerMinOver2Ms2')}
+          metricKey="accEventsPerMinOver2Ms2"
+          unit="/min"
+        />
+        <TimeSeriesLineChartCard 
+          title="Decelerazioni nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('decEventsPerMinOverMinus2Ms2')}
+          metricKey="decEventsPerMinOverMinus2Ms2"
+          unit="/min"
+        />
+        
+        {/* Grafici statici per confronto */}
         <ChartCard title="Accelerazioni totali" data={toChartData('Acc', (p) => p.detailed?.totalAccelerations || 0)} />
         <ChartCard title="Decelerazioni totali" data={toChartData('Dec', (p) => p.detailed?.totalDecelerations || 0)} />
-        <ChartCard title="Accel./min" data={toChartData('Acc/min', (p) => p.detailed?.accelPerMinute || 0)} />
-        <ChartCard title="Decel./min" data={toChartData('Dec/min', (p) => p.detailed?.decelPerMinute || 0)} />
       </div>
     );
   };
@@ -497,10 +969,23 @@ const CompareOverlay = ({
 
     return (
       <div className="charts-grid">
-        <ChartCard title="HSR totale" data={toChartData('HSR', (p) => p.detailed?.hsrTotal || 0)} unit="m" />
+        {/* Grafici temporali */}
+        <TimeSeriesLineChartCard 
+          title="Distanza Sprint nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('sprintDistance')}
+          metricKey="sprintDistance"
+          unit="m"
+        />
+        <TimeSeriesLineChartCard 
+          title="Velocità Media nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('avgSpeed')}
+          metricKey="avgSpeed"
+          unit="km/h"
+        />
+        
+        {/* Grafici statici per confronto */}
         <ChartCard title="HSR %" data={toChartData('HSR%', (p) => p.detailed?.hsrPercentage || 0)} unit="%" />
         <ChartCard title="Sprint totali" data={toChartData('Sprint', (p) => p.detailed?.sprintCount || 0)} />
-        <ChartCard title="Top speed" data={toChartData('Top Speed', (p) => p.detailed?.topSpeedMax || 0)} unit="km/h" />
       </div>
     );
   };
@@ -510,8 +995,23 @@ const CompareOverlay = ({
 
     return (
       <div className="charts-grid">
-        <ChartCard title="ACWR" data={toChartData('ACWR', (p) => p.detailed?.acwr || 0)} />
-        <ChartCard title="Strain" data={toChartData('Strain', (p) => p.detailed?.strain || 0)} />
+        {/* Grafici temporali */}
+        <TimeSeriesLineChartCard 
+          title="Player Load nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('playerLoad')}
+          metricKey="playerLoad"
+          unit=""
+        />
+        <TimeSeriesLineChartCard 
+          title="Durata Sessioni nel Tempo" 
+          timeSeriesData={toTimeSeriesLineData('duration')}
+          metricKey="duration"
+          unit="min"
+        />
+        
+        {/* Grafici statici per confronto */}
+        <ChartCard title="ACWR - Confronto" data={toChartData('ACWR', (p) => p.detailed?.acwr || 0)} />
+        <ChartCard title="Strain - Confronto" data={toChartData('Strain', (p) => p.detailed?.strain || 0)} />
       </div>
     );
   };
