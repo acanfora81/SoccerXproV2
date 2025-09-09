@@ -32,7 +32,6 @@ import {
 
 // STEP 5: Import UI components per toggle Team/Player
 import { Tabs, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import { Select, SelectTrigger, SelectValue, SelectContentWithRoles, SelectItem } from "../../components/Select";
 import useAuthStore from '../../store/authStore';
 import { apiFetch } from '../../utils/http';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '../../modules/filters/index.js';
@@ -55,11 +54,10 @@ const TeamDashboard = () => {
   const [players, setPlayers] = useState([]);
   const [error, setError] = useState(null);
   const [lastFetchTime, setLastFetchTime] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
 
   // STEP 6: Stato per toggle Team/Player
   const [viewMode, setViewMode] = useState("team"); // "team" | "player"
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState('');
   const [data, setData] = useState({});
 
   // Helper per formattazione numeri
@@ -385,23 +383,13 @@ const TeamDashboard = () => {
         </div>
       </div>
 
-      {/* FilterBar minimal come DossierDrawer */}
-      <div className="drawer-filters-section">
-        <button 
-          className="filters-toggle-btn"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={12} />
-          Filtri {showFilters ? '−' : '+'}
-        </button>
-        
-        {showFilters && (
-          <div className="drawer-filters-expanded">
-            <FiltersBar 
-              mode="compact"
-            />
-          </div>
-        )}
+      {/* Filtri unificati - stesso stile dei contratti */}
+      <div className="filters-container">
+        <FiltersBar 
+          mode="team"
+          showSort={false}
+          showNormalize={false}
+        />
       </div>
 
       {/* Contenuto Dashboard */}
@@ -416,12 +404,24 @@ const TeamDashboard = () => {
           </Tabs>
 
           {viewMode === "player" && (
-            <Select onValueChange={setSelectedPlayer} players={players}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Seleziona giocatore" />
-              </SelectTrigger>
-              <SelectContentWithRoles players={players} />
-            </Select>
+            <div className="filter-box">
+              {/* Icona utente */}
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <select
+                value={selectedPlayer || ''}
+                onChange={(e) => setSelectedPlayer(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Seleziona giocatore</option>
+                {players.map(player => (
+                  <option key={player.id} value={player.id}>
+                    {(player.lastName || '').toUpperCase()} {player.firstName || ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
 

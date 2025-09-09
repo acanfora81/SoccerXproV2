@@ -41,10 +41,10 @@ function parseSessionTypeFilterFixed(sessionType) {
   
   // Mapping esplicito frontend → database
   const mapping = {
-    'training': 'allenamento',
-    'match': 'partita',
-    'allenamento': 'allenamento', // già corretto
-    'partita': 'partita' // già corretto
+    'training': 'Allenamento',
+    'match': 'Partita',
+    'allenamento': 'Allenamento', // già corretto
+    'partita': 'Partita' // già corretto
   };
   
   const mapped = mapping[sessionType.toLowerCase()] || sessionType;
@@ -2841,8 +2841,8 @@ router.get("/compare", async (req, res) => {
           // Filtro session type (session_type)
       const sessionTypeFilter = (() => {
         switch (sessionType) {
-          case 'allenamento': return 'allenamento';
-          case 'partita': return 'partita';
+          case 'allenamento': return 'Allenamento';
+          case 'partita': return 'Partita';
           case 'all':
           default: return undefined;
         }

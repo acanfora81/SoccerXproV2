@@ -33,7 +33,6 @@ export default function DossierPage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('panoramica');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   console.log('🟢 DossierPage: componente inizializzato con loading ottimizzato'); // INFO - rimuovere in produzione
 
@@ -189,25 +188,12 @@ export default function DossierPage() {
         </div>
       </div>
 
-      {/* FilterBar minimal come DossierDrawer */}
-      <div className="drawer-filters-section">
-        <button 
-          className="filters-toggle-btn"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={16} />
-          Filtri {showFilters ? '−' : '+'}
-        </button>
-        
-        {showFilters && (
-          <div className="drawer-filters-expanded">
-            <FiltersBar 
-
-              showSort={true}
-              mode="compact"
-            />
-          </div>
-        )}
+      {/* Filtri unificati - stesso stile dei contratti */}
+      <div className="filters-container">
+        <FiltersBar 
+          mode="dossier"
+          showSort={true}
+        />
       </div>
 
       {/* KPI Header */}

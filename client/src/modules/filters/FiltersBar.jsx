@@ -9,19 +9,19 @@ import './filters.css';
 
 // Icone SVG inline
 const SearchIcon = () => (
-  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
   </svg>
 );
 
 const CloseIcon = () => (
-  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
   </svg>
 );
 
 const CalendarIcon = () => (
-  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
   </svg>
 );
@@ -289,109 +289,100 @@ export function FiltersBar({
   return (
     <>
       <div className="filters-container">
-        {/* 🎯 FILTRI UNIFORMI - Tutti dropdown compatti */}
-        <div className="filters-row">
-          {/* 🔍 Ricerca */}
-          {showSearch && (
-            <div className="filter-group">
-              <div className="filter-label">Ricerca</div>
-              <div className="filter-search">
-                <SearchIcon />
-                <input
-                  type="text"
-                  placeholder="Cerca giocatori..."
-                  value={filters.search || ''}
-                  onChange={(e) => updateFilter('search', e.target.value)}
-                />
-              </div>
-            </div>
-          )}
+        {/* 🎯 FILTRI UNIFORMI - Stile identico ai Contratti */}
+        {/* 🔍 Ricerca */}
+        {showSearch && (
+          <div className="search-box">
+            <SearchIcon />
+            <input
+              type="text"
+              placeholder="Cerca giocatori..."
+              value={filters.search || ''}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className="search-input"
+            />
+          </div>
+        )}
 
           {/* 👤 DROPDOWN GIOCATORI - RIMOSSO: non più necessario con toggle Team/Player */}
 
-          {/* 📅 Periodo */}
-          <div className="filter-group">
-            <div className="filter-label">Periodo</div>
-            <div className="filter-select">
-              <select
-                value={filters.period}
-                onChange={(e) => handlePeriodChange(e.target.value)}
-              >
-                {FILTER_OPTIONS.period.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* 📅 Periodo */}
+        <div className="filter-box">
+          <CalendarIcon />
+          <select
+            value={filters.period}
+            onChange={(e) => handlePeriodChange(e.target.value)}
+            className="filter-select"
+          >
+            {FILTER_OPTIONS.period.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          {/* 🏃‍♂️ Tipo Sessione */}
-          <div className="filter-group">
-            <div className="filter-label">Tipo Sessione</div>
-            <div className="filter-select">
-              <select
-                value={filters.sessionType}
-                onChange={(e) => updateFilter('sessionType', e.target.value)}
-              >
-                {FILTER_OPTIONS.sessionType.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* 🏃‍♂️ Tipo Sessione */}
+        <div className="filter-box">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          <select
+            value={filters.sessionType}
+            onChange={(e) => updateFilter('sessionType', e.target.value)}
+            className="filter-select"
+          >
+            {FILTER_OPTIONS.sessionType.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          {/* 🎯 Dettaglio Sessione */}
-          <div className="filter-group">
-            <div className="filter-label">Dettaglio Sessione</div>
-            <div className="filter-select">
-              <select
-                value={filters.sessionName}
-                onChange={(e) => updateFilter('sessionName', e.target.value)}
-              >
-                {FILTER_OPTIONS.sessionName?.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                )) || (
-                  <>
-                    <option value="all">Tutte</option>
-                    <option value="Aerobico">Aerobico</option>
-                    <option value="Intermittente">Intermittente</option>
-                    <option value="Situazionale">Situazionale</option>
-                  </>
-                )}
-              </select>
-            </div>
-          </div>
+        {/* 🎯 Dettaglio Sessione */}
+        <div className="filter-box">
+          <select
+            value={filters.sessionName}
+            onChange={(e) => updateFilter('sessionName', e.target.value)}
+            className="filter-select"
+          >
+            {FILTER_OPTIONS.sessionName?.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            )) || (
+              <>
+                <option value="all">Tutte</option>
+                <option value="Aerobico">Aerobico</option>
+                <option value="Intermittente">Intermittente</option>
+                <option value="Situazionale">Situazionale</option>
+              </>
+            )}
+          </select>
+        </div>
 
-          {/* 👥 Ruoli */}
-          <div className="filter-group">
-            <div className="filter-label">Ruoli</div>
-            <div className="filter-select">
-              <select
-                value={filters.roles?.length === 0 ? 'all' : filters.roles?.join(',')}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === 'all') {
-                    updateFilter('roles', []);
-                  } else {
-                    updateFilter('roles', [value]);
-                  }
-                }}
-              >
-                <option value="all">Tutti i ruoli</option>
-                {FILTER_OPTIONS.roles.filter(r => r.value !== 'all').map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
+        {/* 👥 Ruoli */}
+        <div className="filter-box">
+          <select
+            value={filters.roles?.length === 0 ? 'all' : filters.roles?.join(',')}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'all') {
+                updateFilter('roles', []);
+              } else {
+                updateFilter('roles', [value]);
+              }
+            }}
+            className="filter-select"
+          >
+            <option value="all">Tutti i ruoli</option>
+            {FILTER_OPTIONS.roles.filter(r => r.value !== 'all').map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Filtri attivi per rimozione */}

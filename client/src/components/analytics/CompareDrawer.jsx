@@ -44,7 +44,6 @@ const CompareDrawer = ({
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
 
   console.log('🟢 CompareDrawer: apertura drawer per confronto', playerIds.length, 'giocatori');
 
@@ -203,24 +202,12 @@ const CompareDrawer = ({
           </div>
         </div>
         
-        {/* FilterBar compatta per drawer */}
-        <div className="drawer-filters-section">
-          <button 
-            className="filters-toggle-btn"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={16} />
-            Filtri {showFilters ? '−' : '+'}
-          </button>
-          
-          {showFilters && (
-            <div className="drawer-filters-expanded">
-              <FiltersBar 
-                showSort={true}
-                mode="compact"
-              />
-            </div>
-          )}
+        {/* FilterBar unificata */}
+        <div className="filters-container">
+          <FiltersBar 
+            showSort={true}
+            mode="compact"
+          />
         </div>
         
         <div className="header-actions">

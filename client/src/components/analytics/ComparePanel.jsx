@@ -54,7 +54,6 @@ const ComparePanel = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('panoramica');
-  const [showFilters, setShowFilters] = useState(false);
 
   console.log('🟢 ComparePanel: apertura confronto per', players.length, 'giocatori');
 
@@ -124,10 +123,6 @@ const ComparePanel = ({
     fetchCompareData();
   }, [players, filters.period, filters.sessionType, filters.sessionName, filters.roles, filters.startDate, filters.endDate, filters.normalize, filters.sortBy]);
 
-  // Toggle filtri
-  const toggleFilters = () => {
-    setShowFilters(!showFilters);
-  };
 
   if (!players || players.length === 0) {
     return (
@@ -225,24 +220,12 @@ const ComparePanel = ({
           </div>
         </div>
         
-        {/* FilterBar compatta per drawer */}
-        <div className="drawer-filters-section">
-          <button 
-            className="filters-toggle-btn"
-            onClick={toggleFilters}
-          >
-            <Filter size={16} />
-            Filtri {showFilters ? '−' : '+'}
-          </button>
-          
-          {showFilters && (
-            <div className="drawer-filters-expanded">
-              <FiltersBar 
-                showSort={true}
-                mode="compact"
-              />
-            </div>
-          )}
+        {/* FilterBar unificata */}
+        <div className="filters-container">
+          <FiltersBar 
+            showSort={true}
+            mode="compact"
+          />
         </div>
         
         <div className="header-actions">

@@ -185,12 +185,12 @@ export function buildPerformanceQuery(filters) {
   
   // 🏃‍♂️ Tipo Sessione - MAPPING CORRETTO per backend
   if (filters.sessionType && filters.sessionType !== 'all') {
-    // Frontend: 'training'|'match' → Backend: 'allenamento'|'partita'
+    // Frontend: 'training'|'match' → Backend: 'Allenamento'|'Partita'
     const sessionTypeMap = {
-      'training': 'allenamento',
-      'match': 'partita',
-      'allenamento': 'allenamento', // già corretto
-      'partita': 'partita' // già corretto
+      'training': 'Allenamento',
+      'match': 'Partita',
+      'allenamento': 'Allenamento', // già corretto
+      'partita': 'Partita' // già corretto
     };
     const mappedSessionType = sessionTypeMap[filters.sessionType] || filters.sessionType;
     params.set('sessionType', mappedSessionType);

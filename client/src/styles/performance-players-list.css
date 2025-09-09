@@ -314,156 +314,11 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Filtri Segmentati - Design Migliorato */
-.filters-wrap {
-  background: #fff;
-  border: 1px solid #dfe6f5;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 2rem;
-}
-
-/* Righe con gerarchia visiva */
-.filters-wrap .row.primary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f0f4f8;
-}
-
-.filters-wrap .row.secondary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.filters-wrap .row:last-child {
-  margin-bottom: 0;
-}
-
-/* Search compatta */
-.filters-wrap .search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid #cfe0ff;
-  border-radius: 8px;
-  padding: 6px 12px;
-  min-width: 200px;
-  background: #fff;
-}
-
-.filters-wrap .search input {
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 14px;
-  color: var(--text-primary);
-  min-width: 140px;
-}
-
-.filters-wrap .search input::placeholder {
-  color: var(--text-secondary);
-}
-
-.filters-wrap .search svg {
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
+/* Filtri - ora usa il sistema unificato in filters.css */
 
 /* Componente Segment - RIMOSSO: ora usa Segmented.jsx unificato */
 
-/* Sezione ruoli con badge contatore */
-.roles-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.active-badge {
-  font-size: 0.75rem;
-  color: var(--accent);
-  font-weight: 600;
-  background: #e8f0ff;
-  padding: 2px 6px;
-  border-radius: 12px;
-}
-
-/* Bottoni compatti */
-.filters-wrap .btn.compact {
-  border: 1px solid #dfe6f5;
-  background: #fff;
-  border-radius: 8px;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-}
-
-/* Evita spazi vuoti quando i segmenti sono nascosti */
-.filters-wrap .row:empty {
-  display: none;
-}
-
-.filters-wrap .btn.compact:hover {
-  background: #f7f9fe;
-  color: var(--text-primary);
-  border-color: var(--accent);
-}
-
-.spacer {
-  flex: 1;
-}
-
-/* Chips Filtri Attivi */
-.active-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #f0f4f8;
-}
-
-.active-chip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: #e8f0ff;
-  color: var(--accent);
-  padding: 4px 8px;
-  border-radius: 16px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.active-chip .remove-btn {
-  background: none;
-  border: none;
-  color: var(--accent);
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  transition: background 0.2s ease;
-}
-
- .active-chip .remove-btn:hover {
-   background: rgba(0, 0, 0, 0.1);
- }
+/* Stili per ruoli e badge - ora usa il sistema unificato */
 
 /* DatePicker Styles */
 .datepicker-overlay {
@@ -669,116 +524,9 @@
   cursor: not-allowed;
 }
 
-/* Filtri legacy (da rimuovere gradualmente) */
-.filters-row {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
+/* Filtri legacy rimossi - ora usa il sistema unificato in filters.css */
 
-.filters-row:last-child {
-  margin-bottom: 0;
-}
-
-.search-box {
-  position: relative;
-  flex: 1;
-  max-width: 300px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--bg-primary);
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 16px;
-  transition: border-color 0.3s ease;
-}
-
-.search-box:focus-within {
-  border-color: var(--accent);
-}
-
-.search-box input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  flex: 1;
-  min-width: 120px;
-}
-
-.search-box input::placeholder {
-  color: var(--text-secondary);
-}
-
-.search-box svg {
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--bg-primary);
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 16px;
-  transition: border-color 0.3s ease;
-  min-width: 150px;
-}
-
-.filter-group:focus-within {
-  border-color: var(--accent);
-}
-
-.filter-group select {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  min-width: 120px;
-}
-
-.view-controls,
-.density-controls {
-  display: flex;
-  gap: 8px;
-}
-
-.view-btn,
-.density-btn {
-  padding: 8px 16px;
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-color);
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.view-btn:hover,
-.density-btn:hover {
-  background: var(--warning);
-  color: white;
-  border-color: var(--warning);
-}
-
-.view-btn.active,
-.density-btn.active {
-  background: var(--text-primary);
-  color: var(--bg-primary);
-  border-color: var(--text-primary);
-}
+/* Controlli di vista rimossi - ora usa il sistema unificato */
 
 /* Contenuto Principale */
 .players-content {
@@ -1722,63 +1470,7 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  /* Nuovi filtri segmentati */
-  .filters-wrap .row.primary,
-  .filters-wrap .row.secondary {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  
-  .filters-wrap .search {
-    min-width: auto;
-    width: 100%;
-  }
-  
-  /* Segmented ora usa il componente unificato */
-  
-  .filters-wrap .btn.compact {
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-  
-  .roles-section {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-  
-  .active-filters {
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .active-chip {
-    justify-content: space-between;
-  }
-  
-  /* Filtri legacy */
-  .filters-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  
-  .search-box {
-    max-width: none;
-  }
-  
-  .filter-group {
-    min-width: auto;
-    width: 100%;
-  }
-  
-  /* Segmented controls legacy rimossi */
-  
-  .view-controls,
-  .density-controls {
-    justify-content: center;
-  }
+  /* Filtri responsive - ora usa il sistema unificato in filters.css */
   
   .players-grid.cards {
     grid-template-columns: 1fr;
@@ -1943,22 +1635,7 @@
   color: var(--text-primary);
 }
 
-/* FilterBar nel dossier - stile compatto */
-.dossier-header .filters-wrap {
-  margin: 0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--bg-secondary);
-}
-
-.dossier-header .filters-wrap .row.primary {
-  margin-bottom: 4px;
-  padding-bottom: 4px;
-}
-
-.dossier-header .filters-wrap .row.secondary {
-  margin-bottom: 0;
-}
+/* FilterBar nel dossier - ora usa il sistema unificato */
 
 .dossier-drawer__content {
   overflow: auto;

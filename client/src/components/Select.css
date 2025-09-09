@@ -1,77 +1,153 @@
+/* =========================
+   SELECT COMPONENT - STILE UNIFICATO
+   Identico ai filter-box degli altri filtri
+   ========================= */
+
 .select-trigger {
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  color: #333;
-  cursor: pointer;
-  padding: 8px 12px;
-  width: 200px;
-  text-align: left;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 15px;
+  min-width: 200px;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-align: left;
+  width: 100%;
+  outline: none;
+}
+
+.select-trigger:focus {
+  border-color: var(--border-color);
+  outline: none;
+}
+
+.select-trigger:hover {
+  border-color: var(--border-color);
+}
+
+.select-trigger svg {
+  color: var(--text-primary);
+  opacity: 60%;
+  flex-shrink: 0;
 }
 
 .select-arrow {
-  margin-left: 6px;
   transition: transform 0.2s;
 }
+
 .select-arrow.open {
   transform: rotate(180deg);
 }
 
-.select-content {
-  background: #fff;
+.select-value {
+  background: transparent;
   border: none;
-  box-shadow: none;
-  margin-top: 2px;
-  padding: 0;
-  border-radius: 0;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* =========================
+   DROPDOWN CONTENT - STILE MODERNO
+   ========================= */
+
+.select-content {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  overflow: hidden;
 }
 
 .select-content-roles {
   max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* =========================
+   ROLE SECTIONS - STILE PULITO
+   ========================= */
+
 .role-section {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.role-section:last-child {
   border-bottom: none;
-  margin-bottom: 0;
 }
 
 .role-header {
   font-size: 11px;
   text-transform: uppercase;
-  color: #6b7280;
-  margin: 0;
-  padding: 8px 12px;
-  text-align: center;
+  color: var(--text-secondary);
   font-weight: 600;
-  background: #f9fafb;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 8px 15px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.5px;
 }
 
+/* =========================
+   SELECT ITEMS - STILE MODERNO
+   ========================= */
+
 .select-item {
-  padding: 8px 12px;
-  font-size: 13px;
-  color: #374151;
+  padding: 12px 15px;
+  font-size: 14px;
+  color: var(--text-primary);
   background: none;
   border: none;
   cursor: pointer;
-  border-radius: 0;
   text-align: left;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
 }
+
+.select-item:last-child,
+.select-item.last-item {
+  border-bottom: none;
+}
+
 .select-item:hover {
-  background: #f3f4f6;
+  background: var(--accent-light);
+  color: var(--accent);
 }
 
-.select-item:first-child {
-  border-radius: 0;
+.select-item:active {
+  background: var(--accent);
+  color: white;
 }
 
-.select-item:last-child {
-  border-radius: 0;
+/* =========================
+   SCROLLBAR PERSONALIZZATA
+   ========================= */
+
+.select-content-roles::-webkit-scrollbar {
+  width: 6px;
+}
+
+.select-content-roles::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.select-content-roles::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.select-content-roles::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }

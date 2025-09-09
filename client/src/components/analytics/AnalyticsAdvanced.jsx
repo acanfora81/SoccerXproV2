@@ -39,7 +39,6 @@ import ReportCoach from './sections/ReportCoach';
 
 // Import per le tab Squadra/Giocatore
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { Select, SelectTrigger, SelectValue, SelectContentWithRoles, SelectItem } from "../Select";
 
 
 // =========================
@@ -221,7 +220,7 @@ const AnalyticsAdvanced = () => {
   
   // Tab Squadra/Giocatore
   const [viewMode, setViewMode] = useState("team"); // "team" | "player"
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState('');
   const [dashboardData, setDashboardData] = useState({});
 
   // State per comparazione (disattivata in questa pagina)
@@ -229,7 +228,6 @@ const AnalyticsAdvanced = () => {
   // Export
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFormat, setExportFormat] = useState('csv');
-  const [showFilters, setShowFilters] = useState(false);
 
   console.log('🟢 AnalyticsAdvanced: sezione', activeSection, 'con filtri compatti'); // INFO - rimuovere in produzione
 
@@ -326,7 +324,7 @@ const AnalyticsAdvanced = () => {
 
   // Funzione per caricare i dati del giocatore
   const fetchPlayerData = useCallback(async () => {
-    if (!selectedPlayer) return;
+    if (!selectedPlayer || selectedPlayer === '') return;
     
     try {
       setLoading(true);
@@ -337,7 +335,9 @@ const AnalyticsAdvanced = () => {
       const query = buildPerformanceQuery(filters);
       
       // Carica dati dashboard per le card
-      const response = await apiFetch(`/api/dashboard/stats/player/${selectedPlayer}?${query}`, {
+      const playerId = parseInt(selectedPlayer);
+      console.log('🔍 Invio richiesta dashboard con playerId:', playerId, '(tipo:', typeof playerId, ')');
+      const response = await apiFetch(`/api/dashboard/stats/player/${playerId}?${query}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -350,7 +350,8 @@ const AnalyticsAdvanced = () => {
       setDashboardData(responseData.data || {});
       
       // Per i grafici, carica anche i dati performance aggregati del giocatore
-      const performanceResponse = await apiFetch(`/api/performance?${query}&playerId=${selectedPlayer}`, {
+      console.log('🔍 Invio richiesta performance con playerId:', playerId, '(tipo:', typeof playerId, ')');
+      const performanceResponse = await apiFetch(`/api/performance?${query}&playerId=${playerId}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -538,7 +539,7 @@ const AnalyticsAdvanced = () => {
   useEffect(() => {
     if (viewMode === "team") {
       fetchTeamData();
-    } else if (viewMode === "player" && selectedPlayer) {
+    } else if (viewMode === "player" && selectedPlayer && selectedPlayer !== '') {
       fetchPlayerData();
     }
   }, [viewMode, selectedPlayer, fetchTeamData, fetchPlayerData]);
@@ -585,11 +586,24 @@ const AnalyticsAdvanced = () => {
       isArray: Array.isArray(performanceData), 
       firstItem: performanceData?.[0] || 'N/A',
       viewMode,
-      selectedPlayer
+      selectedPlayer,
+      dashboardDataKeys: Object.keys(dashboardData || {})
     }); // TEMP DEBUG - rimuovere dopo diagnosi
     console.log('🔄 Ricalcolo filtri - period:', filters.period, 'sessionType:', filters.sessionType);
     
-    if (!performanceData || !performanceData.length) {
+    // 🔧 FIX: Usa dati diversi in base alla modalità
+    let sourceData;
+    if (viewMode === "player" && selectedPlayer) {
+      // In modalità player, usa i dati del giocatore selezionato
+      sourceData = performanceData; // I dati del giocatore sono già in performanceData
+      console.log('🎯 Modalità PLAYER - usando dati giocatore:', selectedPlayer);
+    } else {
+      // In modalità team, usa i dati del team
+      sourceData = performanceData;
+      console.log('👥 Modalità TEAM - usando dati squadra');
+    }
+    
+    if (!sourceData || !sourceData.length) {
       console.log('❌ Nessun dato performance disponibile');
       return [];
     }
@@ -756,7 +770,7 @@ const AnalyticsAdvanced = () => {
     
     console.log(`✅ Dati finali processati: ${processedData.length} giorni validi`);
     return processedData;
-  }, [performanceData, filters.period, filters.sessionType]);
+  }, [performanceData, filters.period, filters.sessionType, viewMode, selectedPlayer]);
 
   // =========================
   // EVENT HANDLERS
@@ -885,38 +899,44 @@ const AnalyticsAdvanced = () => {
         </Tabs>
         
         {viewMode === "player" && (
-          <Select onValueChange={(value) => {
-            console.log('🔄 Cambio giocatore da', selectedPlayer, 'a', value);
-            setSelectedPlayer(value);
-          }} players={players}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Seleziona giocatore" />
-            </SelectTrigger>
-            <SelectContentWithRoles players={players} />
-          </Select>
+          <div className="filter-box">
+            {/* Icona utente */}
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <select
+              value={selectedPlayer || ''}
+              onChange={(e) => {
+                const newPlayerId = e.target.value;
+                console.log('🔄 Cambio giocatore da', selectedPlayer, 'a', newPlayerId);
+                setSelectedPlayer(newPlayerId);
+                
+                // 🔧 DEBUG: Verifica che il cambio di stato funzioni
+                console.log('🔍 Stato selectedPlayer aggiornato a:', newPlayerId);
+                console.log('🔍 Giocatori disponibili:', players.length);
+                console.log('🔍 Giocatore selezionato:', players.find(p => p.id.toString() === newPlayerId));
+              }}
+              className="filter-select"
+            >
+              <option value="">Seleziona giocatore</option>
+              {players.map(player => (
+                <option key={player.id} value={player.id.toString()}>
+                  {(player.lastName || '').toUpperCase()} {player.firstName || ''}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
       </div>
 
-      {/* FilterBar minimal come DossierDrawer */}
-      <div className="drawer-filters-section">
-        <button 
-          className="filters-toggle-btn"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={16} />
-          Filtri {showFilters ? '−' : '+'}
-        </button>
-        
-        {showFilters && (
-          <div className="drawer-filters-expanded">
-            <FiltersBar 
-              showSort={true}
-              players={players}
-              showPlayers={true}
-              mode="compact"
-            />
-          </div>
-        )}
+      {/* FilterBar unificata */}
+      <div className="filters-container">
+        <FiltersBar 
+          showSort={true}
+          players={players}
+          showPlayers={true}
+          mode="compact"
+        />
       </div>
 
       {/* Tab navigazione */}

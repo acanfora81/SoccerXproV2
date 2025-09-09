@@ -11,6 +11,7 @@
 @import url('./import-wizard.css');
 @import url('./mapping.css');
 @import url('./analytics/index.css');
+@import url('./filters.css');
 
 #root {
   width: 100%;

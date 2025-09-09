@@ -15,10 +15,10 @@ function parseFiltersForDashboard(req) {
   const sessionName = req.query?.sessionName || 'all';
   const roles = (req.query?.roles || '').split(',').filter(Boolean);
   
-  // 🔧 FIX: Mapping sessionType per database
+  // 🔧 FIX: Mapping sessionType per database (con capitalizzazione corretta)
   const sessionTypeFilter = sessionType === 'all' ? null : 
-    (sessionType === 'training' ? 'allenamento' : 
-     sessionType === 'match' ? 'partita' : sessionType);
+    (sessionType === 'training' ? 'Allenamento' : 
+     sessionType === 'match' ? 'Partita' : sessionType);
   
   // 🔧 FIX: Mapping sessionName diretto (è già corretto nel DB)
   const sessionNameFilter = sessionName === 'all' ? null : sessionName;
@@ -366,6 +366,7 @@ async function loadRows(prisma, teamId, startDate, endDate, sessionTypeFilter, s
   console.log('  - sessionNameFilter:', sessionNameFilter);
   console.log('  - playerId:', playerId, 'type:', typeof playerId);
   
+  
   // 🔧 FIX: Carica sessioni esistenti
   const whereClause = {
     player: { teamId },
@@ -436,7 +437,7 @@ async function loadRows(prisma, teamId, startDate, endDate, sessionTypeFilter, s
           avg_heart_rate: playerSessions.reduce((sum, s) => sum + (Number(s.avg_heart_rate) || 0), 0) / playerSessions.length,
           max_heart_rate: Math.max(...playerSessions.map(s => Number(s.max_heart_rate) || 0)),
           // Campi aggiuntivi per compatibilità
-          session_type: playerSessions[0].session_type || 'allenamento',
+          session_type: playerSessions[0].session_type || 'Allenamento',
           session_name: playerSessions[0].session_name || 'Allenamento',
           notes: playerSessions.map(s => s.notes).filter(Boolean).join('; '),
           extras: playerSessions[0].extras || null
@@ -467,7 +468,7 @@ async function loadRows(prisma, teamId, startDate, endDate, sessionTypeFilter, s
         num_dec_over_minus3_ms2: 0,
         avg_heart_rate: 0,
         max_heart_rate: 0,
-        session_type: 'allenamento',
+        session_type: 'Allenamento',
         session_name: 'Allenamento',
         notes: '',
         extras: null
@@ -1109,8 +1110,31 @@ router.get('/stats/player/:id', async (req, res) => {
       endDate: req.query?.endDate,
     });
 
-    // Carica dati performance per il giocatore specifico
-    const rows = await loadRows(prisma, teamId, per.start, per.end, null, null, playerId);
+    // 🔧 FIX: Leggi e processa sessionType e sessionName per il giocatore
+    const sessionType = req.query?.sessionType || 'all';
+    const sessionName = req.query?.sessionName || 'all';
+    const sessionTypeFilter = parseSessionTypeFilterSimple(sessionType);
+    const sessionNameFilter = parseSessionTypeFilter(sessionName);
+    
+    // 🔧 FIX: Estrai il valore dal filtro se è un oggetto
+    const sessionTypeValue = sessionTypeFilter && typeof sessionTypeFilter === 'object' && sessionTypeFilter.in 
+      ? sessionTypeFilter.in[0] 
+      : sessionTypeFilter;
+    const sessionNameValue = sessionNameFilter && typeof sessionNameFilter === 'object' && sessionNameFilter.in 
+      ? sessionNameFilter.in[0] 
+      : sessionNameFilter;
+    
+    // 🔧 FIX: Converti "all" in null per non filtrare
+    const finalSessionTypeValue = sessionTypeValue === 'all' ? null : sessionTypeValue;
+    const finalSessionNameValue = sessionNameValue === 'all' ? null : sessionNameValue;
+
+    console.log('🔍 Player endpoint - filtri applicati:', {
+      sessionType, sessionTypeFilter, finalSessionTypeValue,
+      sessionName, sessionNameFilter, finalSessionNameValue
+    });
+
+    // Carica dati performance per il giocatore specifico con filtri
+    const rows = await loadRows(prisma, teamId, per.start, per.end, finalSessionTypeValue, finalSessionNameValue, playerId);
     
     // Deriva campi mancanti
     const rowsD = rows.map(deriveRow);
