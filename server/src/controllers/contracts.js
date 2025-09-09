@@ -240,7 +240,7 @@ const createContract = async (req, res) => {
     }
 
     // Verifica che il giocatore appartenga al team
-    const player = await prisma.Player.findFirst({
+    const player = await prisma.player.findFirst({
       where: {
         id: parseInt(playerId),
         teamId
@@ -269,7 +269,20 @@ const createContract = async (req, res) => {
           signedDate: signedDate ? new Date(signedDate) : null,
           notes,
           teamId,
-          createdById: userId
+          createdById: userId,
+          updatedAt: new Date(), // Aggiunto campo richiesto
+          // Nuovi campi opzionali
+          contractRole: contractRole || null,
+          paymentFrequency: paymentFrequency || null,
+          protocolNumber: protocolNumber || null,
+          depositDate: depositDate ? new Date(depositDate) : null,
+          agentContact: agentContact || null,
+          loanFromClub: loanFromClub || null,
+          loanToClub: loanToClub || null,
+          buyOption: buyOption || false,
+          obligationToBuy: obligationToBuy || false,
+          buyPrice: buyPrice ? parseFloat(buyPrice) : null,
+          responsibleUserId: responsibleUserId ? parseInt(responsibleUserId) : null
         }
       });
 
@@ -283,7 +296,8 @@ const createContract = async (req, res) => {
             amount: clause.amount ? parseFloat(clause.amount) : null,
             currency: clause.currency || currency,
             conditions: clause.conditions,
-            teamId
+            teamId,
+            updatedAt: new Date() // Aggiunto campo richiesto
           }))
         });
       }

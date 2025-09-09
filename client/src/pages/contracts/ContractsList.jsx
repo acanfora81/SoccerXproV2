@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../../utils/http';
 import PageLoader from '../../components/ui/PageLoader';
+import NewContractModal from '../../components/contracts/NewContractModal';
 import '../../styles/contracts.css';
+import '../../styles/contract-modal.css';
 
 const ContractsList = () => {
   const [contracts, setContracts] = useState([]);
@@ -29,6 +31,7 @@ const ContractsList = () => {
   const [filterType, setFilterType] = useState('all');
   const [showExpiring, setShowExpiring] = useState(false);
   const [stats, setStats] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Carica contratti
   const fetchContracts = useCallback(async () => {
@@ -50,7 +53,6 @@ const ContractsList = () => {
 
       const data = await response.json();
       setContracts(data.data || []);
-      setStats(data.stats || {});
 
     } catch (err) {
       console.error('Errore caricamento contratti:', err);
@@ -60,26 +62,65 @@ const ContractsList = () => {
     }
   }, [searchTerm, filterStatus, filterType, showExpiring]);
 
-  // Carica statistiche
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await apiFetch('/api/contracts/stats');
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.data || {});
-      }
-    } catch (err) {
-      console.error('Errore caricamento statistiche:', err);
-    }
-  }, []);
+  // Calcola statistiche in base ai contratti filtrati
+  const calculateStats = useCallback(() => {
+    // Usa tutti i contratti per le statistiche totali, non quelli filtrati
+    const total = contracts.length;
+    const active = contracts.filter(c => c.status === 'ACTIVE').length;
+    const expiring = contracts.filter(c => {
+      if (c.status !== 'ACTIVE') return false;
+      const endDate = new Date(c.endDate);
+      const now = new Date();
+      const diffTime = endDate - now;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 90 && diffDays > 0;
+    }).length;
+    const totalValue = contracts
+      .filter(c => c.status === 'ACTIVE')
+      .reduce((sum, c) => sum + parseFloat(c.salary || 0), 0);
+
+    setStats({
+      total,
+      active,
+      expiring,
+      totalValue
+    });
+  }, [contracts]);
 
   useEffect(() => {
     fetchContracts();
   }, [fetchContracts]);
 
+  // Calcola statistiche quando cambiano i contratti
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    calculateStats();
+  }, [calculateStats]);
+
+  // Handler per aprire modale nuovo contratto
+  const handleAddContract = () => {
+    console.log('🔵 Apertura modale nuovo contratto');
+    setIsModalOpen(true);
+  };
+
+  // Handler per chiudere modale
+  const handleCloseModal = () => {
+    console.log('🔵 Chiusura modale contratto');
+    setIsModalOpen(false);
+  };
+
+  // Handler per successo creazione contratto
+  const handleContractSuccess = (newContract) => {
+    console.log('🟢 Contratto creato con successo:', newContract);
+    
+    // Aggiungi nuovo contratto alla lista
+    setContracts(prev => [newContract, ...prev]);
+    
+    // Ricarica lista per avere dati completi
+    fetchContracts();
+    
+    // Chiudi modale
+    setIsModalOpen(false);
+  };
 
   // Filtra contratti
   const filteredContracts = contracts.filter(contract => {
@@ -178,7 +219,7 @@ const ContractsList = () => {
           <p>{filteredContracts.length} contratti trovati</p>
         </div>
         <div className="header-right">
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={handleAddContract}>
             <Plus size={20} />
             Nuovo Contratto
           </button>
@@ -292,7 +333,7 @@ const ContractsList = () => {
             }
           </p>
           {contracts.length === 0 && (
-            <button className="btn btn-primary">
+            <button className="btn btn-primary" onClick={handleAddContract}>
               <Plus size={20} />
               Crea Primo Contratto
             </button>
@@ -404,6 +445,13 @@ const ContractsList = () => {
           ))}
         </div>
       )}
+
+      {/* Modale nuovo contratto */}
+      <NewContractModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSuccess={handleContractSuccess}
+      />
     </div>
   );
 };

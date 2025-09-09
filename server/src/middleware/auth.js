@@ -106,6 +106,7 @@ const authenticate = async (req, res, next) => {
       id: user.id,
       email: user.email,
       profile: userProfile,
+      profileId: userProfile.id, // Aggiunto per compatibilità con tenantContext
       role: userProfile.role,
       theme_preference: userProfile.theme_preference || 'light'
     };

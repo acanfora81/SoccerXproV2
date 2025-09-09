@@ -101,26 +101,26 @@ function buildPeriodRange(period = 'week', customStart, customEnd) {
 
 /**
  * Versione semplice: normalizza alcune varianti note e ritorna il valore
- * CANONICO in minuscolo usato nel DB. Se il valore è "all" o falsy, ritorna null
+ * CANONICO con capitalizzazione corretta usato nel DB. Se il valore è "all" o falsy, ritorna null
  * per non applicare alcun filtro.
  */
 function parseSessionTypeFilterSimple(value) {
   if (!value) return null;
-  const v = String(value).trim().toLowerCase();
-  if (v === 'all' || v === 'tutte' || v === 'tutti') return null;
+  const v = String(value).trim();
+  if (v.toLowerCase() === 'all' || v.toLowerCase() === 'tutte' || v.toLowerCase() === 'tutti') return null;
 
-  // Mappa sinonimi -> canonico (minuscolo)
+  // Mappa sinonimi -> canonico (con capitalizzazione corretta dal DB)
   const synonyms = {
-    allenamento: ['allenamento', 'training', 'pratica'],
-    partita: ['gara', 'partita', 'match'],
-    prepartita: ['prepartita', 'pregara', 'rifinitura'],
-    recupero: ['recupero', 'recovery']
+    Allenamento: ['allenamento', 'Allenamento', 'training', 'Training', 'pratica', 'Pratica'],
+    Partita: ['gara', 'Gara', 'partita', 'Partita', 'match', 'Match'],
+    Prepartita: ['prepartita', 'Prepartita', 'pregara', 'Pregara', 'rifinitura', 'Rifinitura'],
+    Recupero: ['recupero', 'Recupero', 'recovery', 'Recovery']
   };
 
   for (const [canonical, list] of Object.entries(synonyms)) {
     if (list.includes(v)) return canonical;
   }
-  // Ritorna comunque il valore in minuscolo per compatibilità
+  // Ritorna il valore originale per compatibilità
   return v;
 }
 

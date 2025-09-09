@@ -62,7 +62,6 @@ const Analytics = () => {
   // Stato per aggiornamenti real-time
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   console.log('🟢 Analytics: componente inizializzato con filtri compatti'); // INFO - rimuovere in produzione
 
@@ -435,25 +434,13 @@ const Analytics = () => {
      if (error) {
      return (
        <div className={`analytics-container density-${filters.density}`}>
-         {/* 🎯 FilterBar compatta per Analytics */}
-         <div className="analytics-filters-section">
-           <button 
-             className="filters-toggle-btn"
-             onClick={() => setShowFilters(!showFilters)}
-           >
-             <Filter size={16} />
-             Filtri {showFilters ? '−' : '+'}
-           </button>
-           
-           {showFilters && (
-             <div className="analytics-filters-expanded">
-               <FiltersBar 
-                 pageId="ANALYTICS_MAIN" 
-                 showSort={true}
-                 mode="expanded"
-               />
-             </div>
-           )}
+         {/* 🎯 FilterBar unificata */}
+         <div className="filters-container">
+           <FiltersBar 
+             pageId="ANALYTICS_MAIN" 
+             showSort={true}
+             mode="expanded"
+           />
          </div>
          <div className="error-state">
            <h3>Errore caricamento dati</h3>
@@ -470,25 +457,13 @@ const Analytics = () => {
   if (currentView === 'overview') {
     return (
       <div className={`analytics-container density-${filters.density}`}>
-        {/* FilterBar minimal come DossierDrawer */}
-        <div className="drawer-filters-section">
-          <button 
-            className="filters-toggle-btn"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={16} />
-            Filtri {showFilters ? '−' : '+'}
-          </button>
-          
-          {showFilters && (
-            <div className="drawer-filters-expanded">
-              <FiltersBar 
-                pageId="ANALYTICS_MAIN" 
-                showSort={true}
-                mode="compact"
-              />
-            </div>
-          )}
+        {/* FilterBar unificata */}
+        <div className="filters-container">
+          <FiltersBar 
+            pageId="ANALYTICS_MAIN" 
+            showSort={true}
+            mode="compact"
+          />
         </div>
         <TeamDashboard />
       </div>
@@ -499,25 +474,13 @@ const Analytics = () => {
   if (currentView === 'player-list') {
     return (
       <div className={`analytics-container density-${filters.density}`}>
-        {/* FilterBar minimal come DossierDrawer */}
-        <div className="drawer-filters-section">
-          <button 
-            className="filters-toggle-btn"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={16} />
-            Filtri {showFilters ? '−' : '+'}
-          </button>
-          
-          {showFilters && (
-            <div className="drawer-filters-expanded">
-              <FiltersBar 
-                pageId="ANALYTICS_MAIN" 
-                showSort={true}
-                mode="compact"
-              />
-            </div>
-          )}
+        {/* FilterBar unificata */}
+        <div className="filters-container">
+          <FiltersBar 
+            pageId="ANALYTICS_MAIN" 
+            showSort={true}
+            mode="compact"
+          />
         </div>
         <PlayerList
           players={players}
@@ -578,26 +541,14 @@ if (currentView === 'dossier' && selectedPlayer) {
     
     return (
       <div className={`analytics-container density-${filters.density}`}>
-        {/* FilterBar minimal come DossierDrawer */}
-        <div className="drawer-filters-section">
-          <button 
-            className="filters-toggle-btn"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={16} />
-            Filtri {showFilters ? '−' : '+'}
-          </button>
-          
-          {showFilters && (
-            <div className="drawer-filters-expanded">
-              <FiltersBar 
-                pageId="ANALYTICS_MAIN" 
-                showNormalize={true}
-                showSort={true}
-                mode="compact"
-              />
-            </div>
-          )}
+        {/* FilterBar unificata */}
+        <div className="filters-container">
+          <FiltersBar 
+            pageId="ANALYTICS_MAIN" 
+            showNormalize={true}
+            showSort={true}
+            mode="compact"
+          />
         </div>
         <ComparePanel
           players={comparePlayers}
@@ -612,26 +563,14 @@ if (currentView === 'dossier' && selectedPlayer) {
   if (currentView === 'reports') {
     return (
       <div className={`analytics-container density-${filters.density}`}>
-        {/* FilterBar minimal come DossierDrawer */}
-        <div className="drawer-filters-section">
-          <button 
-            className="filters-toggle-btn"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={16} />
-            Filtri {showFilters ? '−' : '+'}
-          </button>
-          
-          {showFilters && (
-            <div className="drawer-filters-expanded">
-              <FiltersBar 
-                pageId="ANALYTICS_MAIN" 
-                showNormalize={true}
-                showSort={true}
-                mode="compact"
-              />
-            </div>
-          )}
+        {/* FilterBar unificata */}
+        <div className="filters-container">
+          <FiltersBar 
+            pageId="ANALYTICS_MAIN" 
+            showNormalize={true}
+            showSort={true}
+            mode="compact"
+          />
         </div>
         <Reports
           teamStats={analytics.teamKPIs}

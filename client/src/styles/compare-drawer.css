@@ -107,45 +107,7 @@
   font-size: 0.875rem;
 }
 
-/* Filters Section */
-.drawer-filters-section {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  position: relative;
-}
-
-.filters-toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.filters-toggle-btn:hover {
-  background: var(--bg-hover);
-  border-color: var(--primary-color);
-}
-
-.drawer-filters-expanded {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  min-width: 300px;
-  padding: 1rem;
-}
+/* Filters Section - OBSOLETO, ora usa filters-container */
 
 /* Header Actions */
 .header-actions {

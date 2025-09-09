@@ -79,7 +79,6 @@ const PerformancePlayersList = () => {
   const [playerDashLoading, setPlayerDashLoading] = useState(new Map());
   // In-flight guard per richieste dettagli
   const [playerDashInFlight, setPlayerDashInFlight] = useState(new Map());
-  const [showFilters, setShowFilters] = useState(false);
   
   // Stati per Drawer e Overlay
   const [dossierDrawer, setDossierDrawer] = useState({ open: false, playerId: null });
@@ -220,6 +219,8 @@ const PerformancePlayersList = () => {
       if (filters.period) params.set('period', filters.period);
       if (filters.startDate) params.set('startDate', filters.startDate);
       if (filters.endDate) params.set('endDate', filters.endDate);
+      if (filters.sessionType) params.set('sessionType', filters.sessionType);
+      if (filters.sessionName) params.set('sessionName', filters.sessionName);
 
       const res = await apiFetch(`/api/dashboard/stats/player/${playerId}?${params.toString()}`, {
         headers: { 'Content-Type': 'application/json' }
@@ -235,12 +236,12 @@ const PerformancePlayersList = () => {
       setPlayerDashLoading(prev => new Map(prev).set(playerId, false));
       setPlayerDashInFlight(prev => new Map(prev).set(playerId, false));
     }
-  }, [filters.period, filters.startDate, filters.endDate, playerDashById]);
+  }, [filters.period, filters.startDate, filters.endDate, filters.sessionType, filters.sessionName, playerDashById]);
 
-  // Pulisci cache dettagli quando cambiano i filtri periodo/date
+  // Pulisci cache dettagli quando cambiano i filtri periodo/date/sessionType/sessionName
   useEffect(() => {
     setPlayerDashById(new Map());
-  }, [filters.period, filters.startDate, filters.endDate]);
+  }, [filters.period, filters.startDate, filters.endDate, filters.sessionType, filters.sessionName]);
 
   // Effetto per caricamento iniziale e cambio filtri
   useEffect(() => {
@@ -583,26 +584,13 @@ const PerformancePlayersList = () => {
     return (
     <div className={`players-list-container density-${filters.density}`}>
 
-      {/* FilterBar minimal come DossierDrawer */}
-      <div className="drawer-filters-section">
-        <button 
-          className="filters-toggle-btn"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <Filter size={16} />
-          Filtri {showFilters ? '−' : '+'}
-        </button>
-        
-        {showFilters && (
-          <div className="drawer-filters-expanded">
-            <FiltersBar 
-              pageId="ALL" 
-              mode="compact" 
- 
-              showSort={true} 
-            />
-          </div>
-        )}
+      {/* Filtri unificati - stesso stile dei contratti */}
+      <div className="filters-container">
+        <FiltersBar 
+          mode="players"
+          showSort={true}
+          showNormalize={true}
+        />
       </div>
 
       {/* Contenuto Principale */}

@@ -80,7 +80,6 @@ const CompareOverlay = ({
   const [players, setPlayers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
   const [isExpanded, setIsExpanded] = useState(false); // Nuovo stato per espansione
   const [timeSeriesData, setTimeSeriesData] = useState(null); // Dati temporali per i grafici
@@ -1134,23 +1133,11 @@ const CompareOverlay = ({
           </div>
         </div>
         
-        <div className="drawer-filters-section">
-          <button 
-            className="filters-toggle-btn"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={16} />
-            Filtri {showFilters ? '−' : '+'}
-          </button>
-          
-          {showFilters && (
-            <div className="drawer-filters-expanded">
-              <FiltersBar 
-                showSort={true}
-                mode="compact"
-              />
-            </div>
-          )}
+        <div className="filters-container">
+          <FiltersBar 
+            showSort={true}
+            mode="compact"
+          />
         </div>
         
         <div className="header-actions">

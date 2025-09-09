@@ -44,15 +44,19 @@ export function SelectTrigger({ children, className = "" }) {
       onClick={() => setIsOpen(!isOpen)}
       type="button"
     >
+      {/* Icona utente */}
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
       {children}
       <svg
         className={`select-arrow ${isOpen ? 'open' : ''}`}
-        width="16"
-        height="16"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
       >
@@ -133,8 +137,12 @@ export function SelectContentWithRoles({ players = [], className = "" }) {
           return (
             <div key={role} className="role-section">
               <div className="role-header">{roleLabels[role]}</div>
-              {organizedPlayers[role].map(player => (
-                <SelectItem key={player.id} value={player.id.toString()}>
+              {organizedPlayers[role].map((player, index) => (
+                <SelectItem 
+                  key={player.id} 
+                  value={player.id.toString()}
+                  isLast={index === organizedPlayers[role].length - 1}
+                >
                   {(player.lastName || '').toUpperCase()} {player.firstName || ''}
                 </SelectItem>
               ))}
@@ -147,12 +155,12 @@ export function SelectContentWithRoles({ players = [], className = "" }) {
   );
 }
 
-export function SelectItem({ value, children, className = "" }) {
+export function SelectItem({ value, children, className = "", isLast = false }) {
   const { handleSelect } = useContext(SelectContext);
   
   return (
     <div
-      className={`select-item ${className}`}
+      className={`select-item ${isLast ? 'last-item' : ''} ${className}`}
       onClick={() => handleSelect(value)}
     >
       {children}

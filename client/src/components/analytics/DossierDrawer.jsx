@@ -31,7 +31,6 @@ const DossierDrawer = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('panoramica');
-  const [showFilters, setShowFilters] = useState(false);
 
   console.log('🟢 DossierDrawer: apertura drawer per giocatore', playerId); // INFO - rimuovere in produzione
 
@@ -174,25 +173,12 @@ const DossierDrawer = ({
           </div>
         </div>
         
-        {/* 🔵 FilterBar compatta per drawer */}
-        <div className="drawer-filters-section">
-          <button 
-            className="filters-toggle-btn"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={16} />
-            Filtri {showFilters ? '−' : '+'}
-          </button>
-          
-          {showFilters && (
-            <div className="drawer-filters-expanded">
-              <FiltersBar 
-  
-                showSort={true}
-                mode="compact"
-              />
-            </div>
-          )}
+        {/* 🔵 FilterBar unificata */}
+        <div className="filters-container">
+          <FiltersBar 
+            showSort={true}
+            mode="compact"
+          />
         </div>
         
         <div className="header-actions">

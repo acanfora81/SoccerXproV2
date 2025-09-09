@@ -31,12 +31,12 @@ export const FILTER_OPTIONS = {
     { value: "custom", label: "Personalizzato" }
   ],
   sessionType: [
-    { value: "all", label: "Tutte" },
+    { value: "all", label: "Tutte le sessioni" },
     { value: "training", label: "Allenamento" },
     { value: "match", label: "Partita" }
   ],
   sessionName: [
-    { value: "all", label: "Tutte" },
+    { value: "all", label: "Tutti i dettagli" },
     { value: "Aerobico", label: "Aerobico" },
     { value: "Intermittente", label: "Intermittente" },
     { value: "Campionato/Amichevole", label: "Partita" },
