@@ -19,6 +19,8 @@ import PerformancePlayersListPage from './pages/performance/PlayersList';
 import PerformancePlayersDossier from './pages/performance/PlayersDossier';
 import DossierPage from './pages/performance/DossierPage';
 import ComparePage from './pages/performance/ComparePage';
+import ContractsList from './pages/contracts/ContractsList';
+import ExpiringContracts from './pages/contracts/ExpiringContracts';
 import NotFound from './pages/NotFound';
 
 // 🎨 STILI GLOBALI AGGIORNATI - IMPORTANTE!
@@ -88,9 +90,8 @@ function App() {
               <Route path="/performance/analytics" element={<AnalyticsAdvanced />} />
               <Route path="/performance/import" element={<PerformanceImport />} />
               <Route path="/performance/reports" element={<Reports />} />
-              <Route path="/contracts" element={
-                <div className="page-placeholder"><h2>Gestione Contratti</h2><p>Modulo in sviluppo - Contratti e scadenze</p></div>
-              } />
+              <Route path="/contracts" element={<ContractsList />} />
+              <Route path="/contracts/expiring" element={<ExpiringContracts />} />
               <Route path="/medical" element={
                 <div className="page-placeholder"><h2>Area Medica</h2><p>Modulo in sviluppo - Infortuni e visite mediche</p></div>
               } />

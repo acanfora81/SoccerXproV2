@@ -4,64 +4,67 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Team {
-  id                 String              @id @default(uuid()) @db.Uuid
+  id                 String                @id @default(uuid()) @db.Uuid
   name               String
-  slug               String              @unique
-  plan               String              @default("basic")
-  isActive           Boolean             @default(true)
-  maxPlayers         Int                 @default(25)
-  maxUsers           Int                 @default(5)
+  slug               String                @unique
+  plan               String                @default("basic")
+  isActive           Boolean               @default(true)
+  maxPlayers         Int                   @default(25)
+  maxUsers           Int                   @default(5)
   email              String?
   phone              String?
   address            String?
   vatNumber          String?
   subscriptionId     String?
-  subscriptionStatus String              @default("trial")
+  subscriptionStatus String                @default("trial")
   trialEndsAt        DateTime?
   subscriptionEndsAt DateTime?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  budgets            budgets[]           @relation("TeamBudgets")
-  contractClauses    contract_clauses[]  @relation("TeamContractClauses")
-  contracts          contracts[]         @relation("TeamContracts")
-  expenses           expenses[]          @relation("TeamExpenses")
-  injuries           injuries[]          @relation("TeamInjuries")
-  medicalVisits      medical_visits[]    @relation("TeamMedicalVisits")
-  performances       PerformanceData[]   @relation("TeamPerformances")
-  statistics         player_statistics[] @relation("TeamStatistics")
-  players            Player[]            @relation("TeamPlayers")
-  transfers          transfers[]         @relation("TeamTransfers")
-  users              UserProfile[]       @relation("TeamUsers")
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  budgets            budgets[]             @relation("TeamBudgets")
+  contractAmendments contract_amendments[] @relation("TeamContractAmendments")
+  contractClauses    contract_clauses[]    @relation("TeamContractClauses")
+  contractFiles      contract_files[]      @relation("TeamContractFiles")
+  contracts          contracts[]           @relation("TeamContracts")
+  expenses           expenses[]            @relation("TeamExpenses")
+  injuries           injuries[]            @relation("TeamInjuries")
+  medicalVisits      medical_visits[]      @relation("TeamMedicalVisits")
+  performances       PerformanceData[]     @relation("TeamPerformances")
+  statistics         player_statistics[]   @relation("TeamStatistics")
+  players            Player[]              @relation("TeamPlayers")
+  transfers          transfers[]           @relation("TeamTransfers")
+  users              UserProfile[]         @relation("TeamUsers")
 
   @@map("teams")
 }
 
 model UserProfile {
-  id                     Int               @id @default(autoincrement())
-  auth_user_id           String            @unique
-  email                  String            @unique
-  first_name             String
-  last_name              String
-  role                   UserRole          @default(SECRETARY)
-  theme_preference       String            @default("light")
-  language_preference    String            @default("it")
-  is_active              Boolean           @default(true)
-  last_login             DateTime?
-  created_at             DateTime          @default(now())
-  updated_at             DateTime          @updatedAt
-  teamId                 String?           @map("team_id") @db.Uuid
-  contracts              contracts[]
-  injuries               injuries[]
-  createdPerformanceData PerformanceData[] @relation("PerformanceDataCreator")
-  createdPlayers         Player[]          @relation("PlayerCreator")
-  transfers              transfers[]
-  team                   Team?             @relation("TeamUsers", fields: [teamId], references: [id])
+  id                      Int               @id @default(autoincrement())
+  auth_user_id            String            @unique
+  email                   String            @unique
+  first_name              String
+  last_name               String
+  role                    UserRole          @default(SECRETARY)
+  theme_preference        String            @default("light")
+  language_preference     String            @default("it")
+  is_active               Boolean           @default(true)
+  last_login              DateTime?
+  created_at              DateTime          @default(now())
+  updated_at              DateTime          @updatedAt
+  teamId                  String?           @map("team_id") @db.Uuid
+  uploadedContractFiles   contract_files[]  @relation("ContractFilesUploadedBy")
+  contracts               contracts[]
+  responsibleForContracts contracts[]       @relation("ContractResponsible")
+  injuries                injuries[]
+  createdPerformanceData  PerformanceData[] @relation("PerformanceDataCreator")
+  createdPlayers          Player[]          @relation("PlayerCreator")
+  transfers               transfers[]
+  team                    Team?             @relation("TeamUsers", fields: [teamId], references: [id])
 
   @@map("user_profiles")
 }
@@ -102,7 +105,6 @@ model PerformanceData {
   playerId                           Int
   session_date                       DateTime
   session_type                       String?
-  session_name                       String?
   duration_minutes                   Int?
   total_distance_m                   Float?
   sprint_distance_m                  Float?
@@ -148,6 +150,7 @@ model PerformanceData {
   time_5_10_wkg_min                  Int?
   time_under_5wkg_min                Int?
   training_load                      Float?
+  session_name                       String?
   created_by                         UserProfile? @relation("PerformanceDataCreator", fields: [createdById], references: [id])
   player                             Player       @relation(fields: [playerId], references: [id])
   team                               Team         @relation("TeamPerformances", fields: [teamId], references: [id])
@@ -183,29 +186,73 @@ model contract_clauses {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime
   teamId      String     @map("team_id") @db.Uuid
+  percentage  Decimal?   @db.Decimal(5, 2)
   contracts   contracts  @relation(fields: [contractId], references: [id])
   team        Team       @relation("TeamContractClauses", fields: [teamId], references: [id])
 }
 
 model contracts {
-  id               Int                @id @default(autoincrement())
-  startDate        DateTime
-  endDate          DateTime
-  salary           Decimal            @db.Decimal(10, 2)
-  currency         String             @default("EUR")
-  contractType     ContractType
-  status           ContractStatus     @default(ACTIVE)
-  signedDate       DateTime?
-  notes            String?
-  playerId         Int
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime
-  createdById      Int
-  teamId           String             @map("team_id") @db.Uuid
-  contract_clauses contract_clauses[]
-  user_profiles    UserProfile        @relation(fields: [createdById], references: [id])
-  players          Player             @relation(fields: [playerId], references: [id])
-  team             Team               @relation("TeamContracts", fields: [teamId], references: [id])
+  id                Int                   @id @default(autoincrement())
+  startDate         DateTime
+  endDate           DateTime
+  salary            Decimal               @db.Decimal(10, 2)
+  currency          String                @default("EUR")
+  contractType      ContractType
+  status            ContractStatus        @default(ACTIVE)
+  signedDate        DateTime?
+  notes             String?
+  playerId          Int
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime
+  createdById       Int
+  teamId            String                @map("team_id") @db.Uuid
+  agentContact      String?
+  buyOption         Boolean?              @default(false)
+  buyPrice          Decimal?              @db.Decimal(12, 2)
+  contractRole      ContractRole?
+  depositDate       DateTime?
+  loanFromClub      String?
+  loanToClub        String?
+  obligationToBuy   Boolean?              @default(false)
+  paymentFrequency  PaymentFrequency?
+  protocolNumber    String?
+  responsibleUserId Int?
+  amendments        contract_amendments[] @relation("ContractAmendmentsForContract")
+  contract_clauses  contract_clauses[]
+  files             contract_files[]      @relation("ContractFilesForContract")
+  user_profiles     UserProfile           @relation(fields: [createdById], references: [id])
+  players           Player                @relation(fields: [playerId], references: [id])
+  responsible       UserProfile?          @relation("ContractResponsible", fields: [responsibleUserId], references: [id])
+  team              Team                  @relation("TeamContracts", fields: [teamId], references: [id])
+}
+
+model contract_files {
+  id           Int         @id @default(autoincrement())
+  contractId   Int
+  fileName     String
+  mimeType     String
+  size         Int
+  storagePath  String
+  url          String?
+  uploadedById Int
+  uploadedAt   DateTime    @default(now())
+  teamId       String      @map("team_id") @db.Uuid
+  contract     contracts   @relation("ContractFilesForContract", fields: [contractId], references: [id])
+  team         Team        @relation("TeamContractFiles", fields: [teamId], references: [id])
+  uploadedBy   UserProfile @relation("ContractFilesUploadedBy", fields: [uploadedById], references: [id])
+}
+
+model contract_amendments {
+  id            Int           @id @default(autoincrement())
+  contractId    Int
+  type          AmendmentType
+  signedDate    DateTime?
+  effectiveFrom DateTime?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  teamId        String        @map("team_id") @db.Uuid
+  contract      contracts     @relation("ContractAmendmentsForContract", fields: [contractId], references: [id])
+  team          Team          @relation("TeamContractAmendments", fields: [teamId], references: [id])
 }
 
 model expenses {
@@ -259,7 +306,7 @@ model medical_visits {
   playerId  Int
   injuryId  Int?
   createdAt DateTime  @default(now())
-  updatedAt DateTime
+  updatedAt DateTime  @updatedAt
   teamId    String    @map("team_id") @db.Uuid
   injuries  injuries? @relation(fields: [injuryId], references: [id])
   players   Player    @relation(fields: [playerId], references: [id])
@@ -277,7 +324,7 @@ model player_statistics {
   minutesPlayed Int      @default(0)
   playerId      Int
   createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime @updatedAt
   teamId        String   @map("team_id") @db.Uuid
   players       Player   @relation(fields: [playerId], references: [id])
   team          Team     @relation("TeamStatistics", fields: [teamId], references: [id])
@@ -298,7 +345,7 @@ model transfers {
   notes         String?
   playerId      Int
   createdAt     DateTime       @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime       @updatedAt
   createdById   Int
   teamId        String         @map("team_id") @db.Uuid
   user_profiles UserProfile    @relation(fields: [createdById], references: [id])
@@ -347,6 +394,9 @@ enum ClauseType {
   RELEGATION_CLAUSE
   PROMOTION_BONUS
   INTERNATIONAL_BONUS
+  SELL_ON_PERCENTAGE
+  BUY_OPTION_FEE
+  OBLIGATION_FEE
 }
 
 enum ContractStatus {
@@ -355,6 +405,8 @@ enum ContractStatus {
   EXPIRED
   TERMINATED
   RENEWED
+  SUSPENDED
+  ON_LOAN
 }
 
 enum ContractType {
@@ -362,6 +414,33 @@ enum ContractType {
   LOAN
   TRIAL
   YOUTH
+  PROFESSIONAL
+  AMATEUR
+  APPRENTICESHIP
+  TRAINING_AGREEMENT
+}
+
+enum ContractRole {
+  PROFESSIONAL_PLAYER
+  AMATEUR_PLAYER
+  YOUTH_SERIES
+  APPRENTICESHIP
+  OTHER
+}
+
+enum PaymentFrequency {
+  MONTHLY
+  BIMONTHLY
+  PER_APPEARANCE
+  QUARTERLY
+  ANNUAL
+}
+
+enum AmendmentType {
+  RENEWAL
+  EXTENSION
+  MODIFICATION
+  TERMINATION
 }
 
 enum FootType {
