@@ -146,9 +146,6 @@
 }
 
 /* Quando la sidebar è chiusa, il drawer normale rimane a destra */
-.sidebar.closed ~ .main-content .compare-page-drawer {
-  /* Mantiene il posizionamento normale da destra */
-}
 
 /* Quando la sidebar è chiusa e il drawer è espanso */
 .sidebar.closed ~ .main-content .compare-page-drawer.expanded {

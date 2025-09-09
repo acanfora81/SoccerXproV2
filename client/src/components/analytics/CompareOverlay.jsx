@@ -1,4 +1,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
+// 🚀 OPTIMIZATION: Funzione debounce per ottimizzare le chiamate API
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
+// 🚀 OPTIMIZATION: Cache semplice per i dati di confronto
+const compareCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minuti
+
+const getCacheKey = (playerIds, filters) => {
+  return `${playerIds.join(',')}-${JSON.stringify(filters)}`;
+};
 import { 
   X, 
   ArrowLeft,
@@ -512,15 +533,13 @@ const CompareOverlay = ({
     }
   ];
 
-  // Caricamento dati confronto
-  useEffect(() => {
-    if (!playerIds || playerIds.length === 0) return;
+  // 🚀 OPTIMIZATION: Debouncing per evitare chiamate eccessive
+  const debouncedFetchCompareData = useCallback(
+    debounce(async () => {
+      if (!playerIds || playerIds.length === 0) return;
 
-    const fetchCompareData = async () => {
+      const fetchCompareData = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
         const ids = Array.from(new Set(
           (playerIds || [])
             .map(p => Number(p?.id ?? p))
@@ -532,6 +551,23 @@ const CompareOverlay = ({
           setPlayers([]);
           return;
         }
+
+        // 🚀 OPTIMIZATION: Controlla cache prima di fare la chiamata API
+        const cacheKey = getCacheKey(ids, filters);
+        const cached = compareCache.get(cacheKey);
+        
+        if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+          console.log('✅ Dati dalla cache:', cached.data.players.length, 'giocatori');
+          setPlayers(cached.data.players);
+          if (cached.data.timeSeriesData) {
+            setTimeSeriesData(cached.data.timeSeriesData);
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        setIsLoading(true);
+        setError(null);
 
         const qs = new URLSearchParams();
         qs.set('players', ids.join(','));
@@ -569,9 +605,15 @@ const CompareOverlay = ({
           console.log('🔍 CompareOverlay: chiavi primo giocatore:', Object.keys(data.players[0]));
         }
         
-        // Gestisci la nuova struttura dati
+        // Gestisci la struttura dati
         const playersData = data.players || data || [];
         setPlayers(playersData);
+
+        // 🚀 OPTIMIZATION: Salva in cache solo i dati della tabella
+        compareCache.set(cacheKey, {
+          data: { players: playersData },
+          timestamp: Date.now()
+        });
       } catch (err) {
         console.error('🔴 CompareOverlay: errore nel caricamento confronto:', err);
         setError('Errore nel caricamento: ' + err.message);
@@ -581,8 +623,15 @@ const CompareOverlay = ({
       }
     };
 
-    fetchCompareData();
-  }, [playerIds, filters]);
+      fetchCompareData();
+    }, 300), // 300ms di debounce
+    [playerIds, filters]
+  );
+
+  // Chiama la funzione debounced quando cambiano i parametri
+  useEffect(() => {
+    debouncedFetchCompareData();
+  }, [debouncedFetchCompareData]);
 
   // Gestione ESC per chiudere
   useEffect(() => {
@@ -596,8 +645,10 @@ const CompareOverlay = ({
     return () => document.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
-  // Carica dati temporali per i grafici
+  // 🚀 OPTIMIZATION: Carica dati temporali separatamente per i grafici
   const loadTimeSeriesData = useCallback(async () => {
+    if (!playerIds || playerIds.length === 0) return;
+    
     try {
       console.log('📊 Caricamento dati temporali...');
       const params = new URLSearchParams();
@@ -621,11 +672,9 @@ const CompareOverlay = ({
     }
   }, [playerIds, filters]);
 
-  // Carica dati temporali quando il drawer si espande o i filtri cambiano
+  // Carica dati temporali quando il drawer si espande
   useEffect(() => {
     if (isExpanded) {
-      // Reset dei dati temporali quando i filtri cambiano
-      setTimeSeriesData(null);
       loadTimeSeriesData();
     }
   }, [isExpanded, loadTimeSeriesData]);

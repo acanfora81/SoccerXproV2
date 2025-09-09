@@ -123,6 +123,10 @@ app.use('/api/dashboard', dashboardRoutes);
 const sessionTypesRoutes = require('./routes/session-types');
 app.use('/api/session-types', sessionTypesRoutes);
 
+// 📋 Contracts
+const contractsRoutes = require('./routes/contracts');
+app.use('/api/contracts', contractsRoutes);
+
 // Riepilogo route
 console.log('🔵 [DEBUG] Route caricate:');
 console.log('  - GET /health');
@@ -133,6 +137,7 @@ console.log('  - /api/players/*');
 console.log('  - /api/performance/* (CRUD)');
 console.log('  - /api/dashboard/* (Dashboard)');
 console.log('  - /api/session-types/* (Session Types)');
+console.log('  - /api/contracts/* (Contracts)');
 
 
 const PORT = process.env.PORT || 3001;
