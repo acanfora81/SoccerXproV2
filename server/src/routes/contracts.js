@@ -9,10 +9,15 @@ const tenantContext = require('../middleware/tenantContext');
 const {
   getContracts,
   getContract,
+  getContractAmendments,
   createContract,
   updateContract,
+  createContractAmendment,
+  renewContract,
   deleteContract,
-  getContractStats
+  checkContractOverlaps,
+  getContractStats,
+  getPlayerContractHistory
 } = require('../controllers/contracts');
 
 // Middleware di autenticazione e tenant context per tutte le route
@@ -39,6 +44,24 @@ router.get('/', requirePermission('contracts:read'), getContracts);
 router.get('/:id', requirePermission('contracts:read'), getContract);
 
 /**
+ * 📋 GET /api/contracts/:id/amendments
+ * Ottieni emendamenti di un contratto
+ */
+router.get('/:id/amendments', requirePermission('contracts:read'), getContractAmendments);
+
+/**
+ * 🔍 GET /api/contracts/overlaps/:playerId
+ * Verifica contratti sovrapposti per un giocatore
+ */
+router.get('/overlaps/:playerId', requirePermission('contracts:read'), checkContractOverlaps);
+
+/**
+ * 📚 GET /api/contracts/history/:playerId
+ * Ottieni storia completa dei contratti di un giocatore
+ */
+router.get('/history/:playerId', requirePermission('contracts:read'), getPlayerContractHistory);
+
+/**
  * ➕ POST /api/contracts
  * Crea nuovo contratto
  */
@@ -47,8 +70,21 @@ router.post('/', requirePermission('contracts:write'), createContract);
 /**
  * ✏️ PUT /api/contracts/:id
  * Aggiorna contratto esistente
+ * Body: { ..., isOfficialRenewal: true/false }
  */
 router.put('/:id', requirePermission('contracts:write'), updateContract);
+
+/**
+ * 📝 POST /api/contracts/:id/amendments
+ * Crea emendamento manuale per un contratto
+ */
+router.post('/:id/amendments', requirePermission('contracts:write'), createContractAmendment);
+
+/**
+ * 🔄 POST /api/contracts/:id/renew
+ * Rinnova contratto (crea nuovo contratto e chiude quello vecchio)
+ */
+router.post('/:id/renew', requirePermission('contracts:write'), renewContract);
 
 /**
  * 🗑️ DELETE /api/contracts/:id

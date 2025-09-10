@@ -2,12 +2,13 @@
 // Modale per creazione nuovo contratto - SoccerXpro V2
 
 import { useState, useEffect } from 'react';
-import { X, Save, FileText, User, Calendar, Euro, Building2 } from 'lucide-react';
+import { X, Save, FileText, User, Calendar, Euro, Building2, CheckCircle } from 'lucide-react';
 import { apiFetch } from '../../utils/http';
 import useAuthStore from '../../store/authStore';
+import ConfirmDialog from '../common/ConfirmDialog';
 import '../../styles/contract-modal.css';
 
-const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
+const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }) => {
   const { user, isAuthenticated } = useAuthStore();
   const [formData, setFormData] = useState({
     // Campi obbligatori
@@ -32,15 +33,96 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
     obligationToBuy: false,
     paymentFrequency: '',
     protocolNumber: '',
-    responsibleUserId: ''
+    responsibleUserId: '',
+    
+    // Flag per rinnovo ufficiale
+    isOfficialRenewal: false
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
   const [players, setPlayers] = useState([]);
+  const [successDialog, setSuccessDialog] = useState({ isOpen: false, message: '' });
 
-  console.log('🔵 NewContractModal renderizzato');
+  console.log('🔵 NewContractModal renderizzato', editingContract ? 'in modalità modifica' : 'in modalità creazione');
+
+  // Popola il form quando si sta modificando un contratto
+  useEffect(() => {
+    if (editingContract) {
+      console.log('🔵 Popolamento form per modifica:', editingContract);
+      console.log('🔵 Campi del contratto:', {
+        startDate: editingContract.startDate,
+        endDate: editingContract.endDate,
+        salary: editingContract.salary,
+        currency: editingContract.currency,
+        contractType: editingContract.contractType,
+        playerId: editingContract.playerId,
+        status: editingContract.status,
+        signedDate: editingContract.signedDate,
+        notes: editingContract.notes,
+        agentContact: editingContract.agentContact,
+        buyOption: editingContract.buyOption,
+        buyPrice: editingContract.buyPrice,
+        contractRole: editingContract.contractRole,
+        depositDate: editingContract.depositDate,
+        loanFromClub: editingContract.loanFromClub,
+        loanToClub: editingContract.loanToClub,
+        obligationToBuy: editingContract.obligationToBuy,
+        paymentFrequency: editingContract.paymentFrequency,
+        protocolNumber: editingContract.protocolNumber,
+        responsibleUserId: editingContract.responsibleUserId
+      });
+      setFormData({
+        startDate: editingContract.startDate ? new Date(editingContract.startDate).toISOString().split('T')[0] : '',
+        endDate: editingContract.endDate ? new Date(editingContract.endDate).toISOString().split('T')[0] : '',
+        salary: editingContract.salary ? editingContract.salary.toString() : '',
+        currency: editingContract.currency || 'EUR',
+        contractType: editingContract.contractType || '',
+        playerId: editingContract.playerId ? editingContract.playerId.toString() : '',
+        status: editingContract.status || 'DRAFT',
+        signedDate: editingContract.signedDate ? new Date(editingContract.signedDate).toISOString().split('T')[0] : '',
+        notes: editingContract.notes || '',
+        agentContact: editingContract.agentContact || '',
+        buyOption: editingContract.buyOption === true,
+        buyPrice: editingContract.buyPrice ? editingContract.buyPrice.toString() : '',
+        contractRole: editingContract.contractRole || '',
+        depositDate: editingContract.depositDate ? new Date(editingContract.depositDate).toISOString().split('T')[0] : '',
+        loanFromClub: editingContract.loanFromClub || '',
+        loanToClub: editingContract.loanToClub || '',
+        obligationToBuy: editingContract.obligationToBuy === true,
+        paymentFrequency: editingContract.paymentFrequency || '',
+        protocolNumber: editingContract.protocolNumber || '',
+        responsibleUserId: editingContract.responsibleUserId ? editingContract.responsibleUserId.toString() : '',
+        isOfficialRenewal: false // Sempre false per le modifiche esistenti
+      });
+    } else {
+      // Reset form per nuova creazione
+      setFormData({
+        startDate: '',
+        endDate: '',
+        salary: '',
+        currency: 'EUR',
+        contractType: '',
+        playerId: '',
+        status: 'DRAFT',
+        signedDate: '',
+        notes: '',
+        agentContact: '',
+        buyOption: false,
+        buyPrice: '',
+        contractRole: '',
+        depositDate: '',
+        loanFromClub: '',
+        loanToClub: '',
+        obligationToBuy: false,
+        paymentFrequency: '',
+        protocolNumber: '',
+        responsibleUserId: '',
+        isOfficialRenewal: false
+      });
+    }
+  }, [editingContract]);
 
   // Helper per tradurre i ruoli in italiano
   const getPositionLabel = (position) => {
@@ -148,7 +230,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
     
     if (!isAuthenticated) {
-      setError('Devi essere autenticato per creare un contratto');
+      setError('Devi essere autenticato per creare/modificare un contratto');
       return;
     }
     
@@ -172,13 +254,28 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
       console.log('📤 Invio dati contratto:', contractData);
       console.log('🔐 Stato autenticazione:', { isAuthenticated, user: user?.email, role: user?.role });
 
-      const response = await apiFetch('/api/contracts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(contractData)
-      });
+      let response;
+      if (editingContract) {
+        // Modifica contratto esistente
+        console.log('🔄 Modifica contratto:', editingContract.id);
+        response = await apiFetch(`/api/contracts/${editingContract.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(contractData)
+        });
+      } else {
+        // Crea nuovo contratto
+        console.log('➕ Creazione nuovo contratto');
+        response = await apiFetch('/api/contracts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(contractData)
+        });
+      }
 
       console.log('📥 Risposta ricevuta:', response.status, response.statusText);
 
@@ -189,7 +286,14 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
       }
 
       const savedContract = await response.json();
-      console.log('✅ Contratto creato con successo:', savedContract);
+      console.log('✅ Contratto salvato con successo:', savedContract);
+
+      // Mostra messaggio di successo
+      if (editingContract) {
+        setSuccessDialog({ isOpen: true, message: 'Contratto modificato con successo!' });
+      } else {
+        setSuccessDialog({ isOpen: true, message: 'Contratto creato con successo!' });
+      }
 
       // Reset form
       setFormData({
@@ -257,6 +361,12 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
+  const handleSuccessDialogClose = () => {
+    setSuccessDialog({ isOpen: false, message: '' });
+    onSuccess && onSuccess();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -265,7 +375,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
         <div className="modal-header">
           <h2>
             <FileText size={24} />
-            Nuovo Contratto
+            {editingContract ? 'Modifica Contratto' : 'Nuovo Contratto'}
           </h2>
           <button onClick={handleClose} className="modal-close">
             <X size={24} />
@@ -317,7 +427,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
                   <option value="YOUTH">Giovanile</option>
                   <option value="LOAN">Prestito</option>
                   <option value="PERMANENT">Permanente</option>
-                  <option value="PROFESSIONAL">Professionista</option>
+                  <option value="PROFESSIONAL">Professionale</option>
                   <option value="TRIAL">Prova</option>
                 </select>
                 {validationErrors.contractType && (
@@ -375,6 +485,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
                   <option value="DRAFT">Bozza</option>
                   <option value="ACTIVE">Attivo</option>
                   <option value="SUSPENDED">Sospeso</option>
+                  <option value="EXPIRED">Non Attivo</option>
                 </select>
               </div>
               <div className="form-group">
@@ -625,6 +736,29 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
           </div>
 
+          {/* Sezione Rinnovo Ufficiale - Solo per modifiche */}
+          {editingContract && (
+            <div className="form-section">
+              <h3 className="form-section-title">🔄 Rinnovo Ufficiale</h3>
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="isOfficialRenewal"
+                    checked={formData.isOfficialRenewal}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className="form-checkbox"
+                  />
+                  <span className="checkbox-text">
+                    <strong>Rinnovo ufficiale</strong>
+                    <small>Seleziona questa opzione per creare un emendamento ufficiale che traccia la modifica nella cronologia del contratto</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Errori */}
           {error && (
             <div className="form-error">
@@ -650,18 +784,30 @@ const NewContractModal = ({ isOpen, onClose, onSuccess }) => {
               {loading ? (
                 <>
                   <div className="spinner-small" />
-                  Creazione...
+                  {editingContract ? (formData.isOfficialRenewal ? 'Rinnovo in corso...' : 'Salvataggio...') : 'Creazione...'}
                 </>
               ) : (
                 <>
                   <Save size={20} />
-                  Crea Contratto
+                  {editingContract ? (formData.isOfficialRenewal ? '🔄 Rinnovo Ufficiale' : 'Salva Modifiche') : 'Crea Contratto'}
                 </>
               )}
             </button>
           </div>
         </form>
       </div>
+      
+      {/* Dialog di successo */}
+      <ConfirmDialog
+        isOpen={successDialog.isOpen}
+        onClose={handleSuccessDialogClose}
+        onConfirm={handleSuccessDialogClose}
+        title="Successo!"
+        message={successDialog.message}
+        confirmText="Ok"
+        cancelText=""
+        type="success"
+      />
     </div>
   );
 };

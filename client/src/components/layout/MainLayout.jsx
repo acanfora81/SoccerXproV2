@@ -103,12 +103,6 @@ const ALL_MENU_ITEMS = [
         requiredPermission: 'contracts:read'
       },
       { 
-        id: 'contracts-add', 
-        label: 'Nuovo Contratto', 
-        path: '/contracts/add',
-        requiredPermission: 'contracts:write'
-      },
-      { 
         id: 'contracts-expiring', 
         label: 'In Scadenza', 
         path: '/contracts/expiring',

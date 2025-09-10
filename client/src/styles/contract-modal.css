@@ -1,3 +1,47 @@
+/* Stili per checkbox personalizzati */
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  transition: all 0.2s ease;
+}
+
+.checkbox-label:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color-light);
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin: 0;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.checkbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkbox-text strong {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.checkbox-text small {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 /* Stili specifici per la modale contratti */
 
 /* Stili per i pulsanti "Nuovo Contratto" */
@@ -309,5 +353,334 @@
     flex: 1;
     overflow-y: auto;
     padding: 20px;
+  }
+}
+
+/* Contract History Modal */
+.contract-history-modal {
+  max-width: 1000px;
+  width: 95vw;
+  max-height: 95vh;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.history-summary {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.history-summary h3 {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-muted);
+}
+
+.summary-item svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.summary-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.summary-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.contracts-timeline {
+  margin-top: 32px;
+}
+
+.contracts-timeline h3 {
+  margin: 0 0 24px 0;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 32px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-color);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 32px;
+  padding-left: 32px;
+}
+
+.timeline-item.current {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 0 -20px 32px -20px;
+  border: 1px solid var(--border-color);
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -16px;
+  top: 12px;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.timeline-item.current .timeline-marker {
+  border-color: var(--border-color);
+  background: var(--bg-primary);
+}
+
+.timeline-content {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.contract-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.contract-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.current-badge {
+  background: #10B981; /* Verde per Attuale */
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.contract-dates {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.duration {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.contract-salary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.contract-details {
+  margin-bottom: 16px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.detail-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.detail-value {
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-active, .status-renewed {
+  color: #10B981; /* Verde per Attivo */
+}
+
+.status-expired, .status-terminated {
+  color: #EF4444; /* Rosso per Non Attivo */
+}
+
+.status-draft {
+  color: #3B82F6; /* Blu per Sospeso */
+}
+
+.clauses-section, .amendments-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-muted);
+}
+
+.clauses-section h5, .amendments-section h5 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.clauses-list, .amendments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clause-item, .amendment-item {
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--border-muted);
+}
+
+.clause-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clause-type {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.clause-amount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.amendment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.amendment-type {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.amendment-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.amendment-notes {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Responsive per Contract History */
+@media (max-width: 768px) {
+  .contract-history-modal {
+    width: 98%;
+    margin: 10px;
+    max-height: 98vh;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .contract-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .timeline {
+    padding-left: 24px;
+  }
+
+  .timeline-item {
+    padding-left: 24px;
+    margin-bottom: 24px;
+  }
+
+  .timeline-marker {
+    left: -12px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .timeline-content {
+    padding: 16px;
   }
 }

@@ -130,7 +130,43 @@ body {
   box-shadow: 0 0 0 3px var(--shadow-color);
 }
 
-/* 🔲 BUTTONS - RIMOSSI (già definiti in global.css) */
+/* 🔲 BUTTONS AUTH */
+
+.auth-form .btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.auth-form .btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+  padding: 14px 20px;
+  font-size: 16px;
+}
+
+.auth-form .btn-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.auth-form .btn-secondary {
+  background: transparent;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: 12px 20px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.auth-form .btn-secondary:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent);
+  color: var(--accent);
+}
 
 /* 🔗 LINKS */
 
