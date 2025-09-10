@@ -14,11 +14,15 @@ import {
   XCircle,
   Edit3,
   Trash2,
-  Eye
+  Eye,
+  History
 } from 'lucide-react';
 import { apiFetch } from '../../utils/http';
 import PageLoader from '../../components/ui/PageLoader';
 import NewContractModal from '../../components/contracts/NewContractModal';
+import ContractDetailsModal from '../../components/contracts/ContractDetailsModal';
+import ContractHistoryModal from '../../components/contracts/ContractHistoryModal';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import '../../styles/contracts.css';
 import '../../styles/contract-modal.css';
 
@@ -32,6 +36,13 @@ const ContractsList = () => {
   const [showExpiring, setShowExpiring] = useState(false);
   const [stats, setStats] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [viewingContract, setViewingContract] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [historyPlayer, setHistoryPlayer] = useState(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, contract: null });
 
   // Carica contratti
   const fetchContracts = useCallback(async () => {
@@ -66,18 +77,63 @@ const ContractsList = () => {
   const calculateStats = useCallback(() => {
     // Usa tutti i contratti per le statistiche totali, non quelli filtrati
     const total = contracts.length;
-    const active = contracts.filter(c => c.status === 'ACTIVE').length;
+    const active = contracts.filter(c => ['ACTIVE', 'RENEWED', 'DRAFT'].includes(c.status)).length;
     const expiring = contracts.filter(c => {
-      if (c.status !== 'ACTIVE') return false;
+      // Solo contratti ACTIVE e RENEWED possono essere in scadenza
+      if (!['ACTIVE', 'RENEWED'].includes(c.status)) return false;
       const endDate = new Date(c.endDate);
       const now = new Date();
       const diffTime = endDate - now;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays <= 90 && diffDays > 0;
     }).length;
-    const totalValue = contracts
-      .filter(c => c.status === 'ACTIVE')
+    
+    // Calcola valore totale considerando contratti attivi E rinnovati
+    // Esclude contratti SUSPENDED (Sospeso) dal conteggio
+    // Include contratti DRAFT (Bozza) come potenziali costi
+    const currentDate = new Date();
+    const activeContracts = contracts.filter(c => {
+      // Include contratti ACTIVE, RENEWED e DRAFT (esclude SUSPENDED e EXPIRED)
+      if (!['ACTIVE', 'RENEWED', 'DRAFT'].includes(c.status)) return false;
+      
+      // Verifica che il contratto sia effettivamente valido oggi
+      const startDate = new Date(c.startDate);
+      const endDate = new Date(c.endDate);
+      
+      return startDate <= currentDate && endDate >= currentDate;
+    });
+    
+    // Raggruppa per giocatore e prendi solo il contratto più recente
+    const uniquePlayerContracts = new Map();
+    activeContracts.forEach(contract => {
+      if (!uniquePlayerContracts.has(contract.playerId)) {
+        uniquePlayerContracts.set(contract.playerId, contract);
+      } else {
+        // Se esiste già, confronta le date e prendi il più recente
+        const existing = uniquePlayerContracts.get(contract.playerId);
+        const existingEndDate = new Date(existing.endDate);
+        const currentEndDate = new Date(contract.endDate);
+        
+        if (currentEndDate > existingEndDate) {
+          uniquePlayerContracts.set(contract.playerId, contract);
+        }
+      }
+    });
+    
+    const totalValue = Array.from(uniquePlayerContracts.values())
       .reduce((sum, c) => sum + parseFloat(c.salary || 0), 0);
+
+    console.log('💰 Frontend - Calcolo valore totale:', {
+      totalContracts: contracts.length,
+      activeContracts: activeContracts.length,
+      uniquePlayers: uniquePlayerContracts.size,
+      totalValue: totalValue,
+      contractsUsed: Array.from(uniquePlayerContracts.values()).map(c => ({
+        playerId: c.playerId,
+        playerName: `${c.players?.firstName || ''} ${c.players?.lastName || ''}`,
+        salary: c.salary
+      }))
+    });
 
     setStats({
       total,
@@ -106,6 +162,104 @@ const ContractsList = () => {
   const handleCloseModal = () => {
     console.log('🔵 Chiusura modale contratto');
     setIsModalOpen(false);
+  };
+
+  // Gestione modifica contratto
+  const handleEditContract = (contract) => {
+    console.log('🔵 Apertura modale modifica contratto:', contract.id);
+    setEditingContract(contract);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditModalClose = () => {
+    console.log('🔵 Chiusura modale modifica contratto');
+    setIsEditModalOpen(false);
+    setEditingContract(null);
+  };
+
+  const handleEditModalSuccess = () => {
+    console.log('🔵 Contratto modificato con successo');
+    // Ricarica i contratti dopo la modifica
+    fetchContracts();
+    // Forza il ricalcolo delle statistiche
+    setTimeout(() => {
+      calculateStats();
+    }, 100);
+    // Chiudi modale
+    setIsEditModalOpen(false);
+    setEditingContract(null);
+  };
+
+  // Gestione eliminazione contratto
+  const handleDeleteContract = (contract) => {
+    console.log('🔵 Apertura popup conferma eliminazione:', contract.id);
+    setDeleteConfirm({ isOpen: true, contract });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { contract } = deleteConfirm;
+    
+    try {
+      setLoading(true);
+      console.log('🔵 Eliminazione contratto:', contract.id);
+      
+      const response = await apiFetch(`/api/contracts/${contract.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Errore ${response.status}: ${response.statusText}`);
+      }
+
+      // Ricarica i contratti dopo l'eliminazione
+      await fetchContracts();
+      
+      // Chiudi popup di conferma
+      setDeleteConfirm({ isOpen: false, contract: null });
+      
+      // Mostra messaggio di successo
+      alert('Contratto eliminato con successo!');
+      
+    } catch (err) {
+      console.error('Errore eliminazione contratto:', err);
+      alert(`Errore durante l'eliminazione: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    console.log('🔵 Annullamento eliminazione contratto');
+    setDeleteConfirm({ isOpen: false, contract: null });
+  };
+
+  // Gestione visualizzazione contratto
+  const handleViewContract = (contract) => {
+    console.log('🔵 Apertura modale visualizzazione contratto:', contract.id);
+    setViewingContract(contract);
+    setIsViewModalOpen(true);
+  };
+
+  const handleViewModalClose = () => {
+    console.log('🔵 Chiusura modale visualizzazione contratto');
+    setIsViewModalOpen(false);
+    setViewingContract(null);
+  };
+
+  // Gestione visualizzazione storia contratti
+  const handleViewHistory = (contract) => {
+    console.log('🔵 Apertura modale storia contratti per giocatore:', contract.playerId);
+    setHistoryPlayer({
+      id: contract.playerId,
+      name: `${contract.players.firstName} ${contract.players.lastName}`
+    });
+    setIsHistoryModalOpen(true);
+  };
+
+  const handleHistoryModalClose = () => {
+    console.log('🔵 Chiusura modale storia contratti');
+    setIsHistoryModalOpen(false);
+    setHistoryPlayer(null);
   };
 
   // Handler per successo creazione contratto
@@ -143,13 +297,25 @@ const ContractsList = () => {
     }).format(amount);
   };
 
+  // Helper per tradurre i ruoli in italiano
+  const getPositionLabel = (position) => {
+    switch (position) {
+      case 'GOALKEEPER': return 'Portiere';
+      case 'DEFENDER': return 'Difensore';
+      case 'MIDFIELDER': return 'Centrocampista';
+      case 'FORWARD': return 'Attaccante';
+      default: return position;
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
-      case 'ACTIVE': return 'status-active';
-      case 'DRAFT': return 'status-draft';
-      case 'EXPIRED': return 'status-expired';
-      case 'TERMINATED': return 'status-terminated';
-      case 'RENEWED': return 'status-renewed';
+      case 'ACTIVE': return 'status-green';
+      case 'DRAFT': return 'status-blue';
+      case 'EXPIRED': return 'status-red';
+      case 'TERMINATED': return 'status-red';
+      case 'RENEWED': return 'status-green';
+      case 'SUSPENDED': return 'status-yellow';
       default: return 'status-default';
     }
   };
@@ -158,9 +324,10 @@ const ContractsList = () => {
     switch (status) {
       case 'ACTIVE': return 'Attivo';
       case 'DRAFT': return 'Bozza';
-      case 'EXPIRED': return 'Scaduto';
-      case 'TERMINATED': return 'Rescisso';
-      case 'RENEWED': return 'Rinnovato';
+      case 'EXPIRED': return 'Non Attivo';
+      case 'TERMINATED': return 'Non Attivo';
+      case 'RENEWED': return 'Attivo';
+      case 'SUSPENDED': return 'Sospeso';
       default: return status;
     }
   };
@@ -168,9 +335,14 @@ const ContractsList = () => {
   const getTypeLabel = (type) => {
     switch (type) {
       case 'PERMANENT': return 'Permanente';
+      case 'PROFESSIONAL': return 'Professionale';
       case 'LOAN': return 'Prestito';
       case 'TRIAL': return 'Prova';
       case 'YOUTH': return 'Giovanile';
+      case 'AMATEUR': return 'Dilettante';
+      case 'SEMI_PROFESSIONAL': return 'Semi-Professionale';
+      case 'TRAINING_AGREEMENT': return 'Accordo formativo';
+      case 'APPRENTICESHIP': return 'Apprendistato';
       default: return type;
     }
   };
@@ -343,8 +515,9 @@ const ContractsList = () => {
         <div className="contracts-grid">
           {filteredContracts.map(contract => (
             <div key={contract.id} className="contract-card">
-              {/* Header con info giocatore */}
-              <div className="contract-header">
+              <div className="contract-content">
+                {/* Header con info giocatore */}
+                <div className="contract-header">
                 <div className="player-info">
                   <div className="player-avatar">
                     <div className="avatar-circle">
@@ -355,14 +528,7 @@ const ContractsList = () => {
                     <h3 className="player-name">
                       {contract.players.firstName} {contract.players.lastName}
                     </h3>
-                    <div className="player-meta">
-                      {contract.players.position} 
-                      {contract.players.shirtNumber && ` #${contract.players.shirtNumber}`}
-                    </div>
                   </div>
-                </div>
-                <div className={`status-badge ${getStatusColor(contract.status)}`}>
-                  {getStatusLabel(contract.status)}
                 </div>
               </div>
 
@@ -390,6 +556,18 @@ const ContractsList = () => {
                     <span className="detail-value">{formatDate(contract.signedDate)}</span>
                   </div>
                 )}
+                <div className="detail-row">
+                  <span className="detail-label">Stato Contratto:</span>
+                  <span className={`detail-value status-value ${getStatusColor(contract.status)}`}>
+                    {getStatusLabel(contract.status)}
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Ruolo:</span>
+                  <span className="detail-value">
+                    {getPositionLabel(contract.players.position)}
+                  </span>
+                </div>
               </div>
 
               {/* Alert scadenza */}
@@ -425,18 +603,39 @@ const ContractsList = () => {
                   </div>
                 </div>
               )}
+              </div>
 
               {/* Azioni */}
               <div className="contract-actions">
-                <button className="action-btn view-btn" title="Visualizza contratto">
+                <button 
+                  className="action-btn view-btn" 
+                  title="Visualizza contratto"
+                  onClick={() => handleViewContract(contract)}
+                >
                   <Eye size={16} />
                   Visualizza
                 </button>
-                <button className="action-btn edit-btn" title="Modifica contratto">
+                <button 
+                  className="action-btn history-btn" 
+                  title="Storia contratti giocatore"
+                  onClick={() => handleViewHistory(contract)}
+                >
+                  <History size={16} />
+                  Storia
+                </button>
+                <button 
+                  className="action-btn edit-btn" 
+                  title="Modifica contratto"
+                  onClick={() => handleEditContract(contract)}
+                >
                   <Edit3 size={16} />
                   Modifica
                 </button>
-                <button className="action-btn delete-btn" title="Elimina contratto">
+                <button 
+                  className="action-btn delete-btn" 
+                  title="Elimina contratto"
+                  onClick={() => handleDeleteContract(contract)}
+                >
                   <Trash2 size={16} />
                   Elimina
                 </button>
@@ -451,6 +650,41 @@ const ContractsList = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onSuccess={handleContractSuccess}
+      />
+
+      {/* Modale modifica contratto */}
+      <NewContractModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditModalClose}
+        onSuccess={handleEditModalSuccess}
+        editingContract={editingContract}
+      />
+
+      {/* Modale dettagli contratto */}
+      <ContractDetailsModal
+        isOpen={isViewModalOpen}
+        onClose={handleViewModalClose}
+        contract={viewingContract}
+      />
+
+      {/* Modale storia contratti */}
+      <ContractHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={handleHistoryModalClose}
+        playerId={historyPlayer?.id}
+        playerName={historyPlayer?.name}
+      />
+
+      {/* Popup conferma eliminazione */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Elimina Contratto"
+        message={`Sei sicuro di voler eliminare il contratto di ${deleteConfirm.contract?.players?.firstName} ${deleteConfirm.contract?.players?.lastName}?`}
+        confirmText="Elimina"
+        cancelText="Annulla"
+        type="danger"
       />
     </div>
   );

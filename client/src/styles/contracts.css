@@ -172,7 +172,7 @@
 /* Grid contratti */
 .contracts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
@@ -181,9 +181,13 @@
   background: var(--bg-primary);
   border: 2px solid var(--border-color);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px;
   transition: all 0.2s ease;
   position: relative;
+  min-height: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .contract-card:hover {
@@ -191,18 +195,41 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
+/* Contenuto principale della card */
+.contract-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Header card */
 .contract-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.status-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.player-position {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .player-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+  justify-content: flex-start;
 }
 
 .player-avatar {
@@ -210,32 +237,40 @@
 }
 
 .avatar-circle {
-  width: 3rem;
-  height: 3rem;
-  background: var(--primary-color);
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--accent-primary);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.875rem;
+  text-align: center;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .player-details {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .player-name {
-  margin: 0 0 0.25rem 0;
+  margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--text-primary);
+  line-height: 1.2;
 }
 
 .player-meta {
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 /* Status badge */
@@ -246,6 +281,26 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+}
+
+.status-green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-yellow {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.status-blue {
+  background: #dbeafe;
+  color: #2563eb;
 }
 
 .status-active {
@@ -275,14 +330,14 @@
 
 /* Dettagli contratto */
 .contract-details {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
+  padding: 0.375rem 0;
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -306,30 +361,58 @@
   color: var(--success-color);
 }
 
+.detail-value.status-value {
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
+}
+
+.detail-value.status-value.status-green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.detail-value.status-value.status-yellow {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.detail-value.status-value.status-red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.detail-value.status-value.status-blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
 /* Alert scadenza */
 .expiry-alert {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.5rem 0.75rem;
   background: var(--warning-light);
   color: var(--warning-color);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  margin-bottom: 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--warning-color);
 }
 
 /* Clausole */
 .clauses-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .clauses-header {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .clauses-list {
@@ -370,8 +453,9 @@
 .contract-actions {
   display: flex;
   gap: 0.5rem;
-  padding-top: 1rem;
+  padding-top: 0.5rem;
   border-top: 1px solid var(--border-light);
+  margin-top: auto;
 }
 
 .action-btn {
@@ -379,10 +463,8 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid;
   border-radius: 0.375rem;
-  background: var(--card-background);
-  color: var(--text-primary);
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
@@ -393,24 +475,59 @@
 
 .action-btn:hover {
   transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+/* Pulsante Visualizza - Blu Scuro */
+.view-btn {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: white;
+}
+
+/* Pulsante Storia - Viola */
+.history-btn {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: white;
 }
 
 .view-btn:hover {
-  background: var(--info-light);
-  border-color: var(--info-color);
-  color: var(--info-color);
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: white;
+}
+
+.history-btn:hover {
+  background: #6d28d9;
+  border-color: #6d28d9;
+  color: white;
+}
+
+/* Pulsante Modifica - Giallo */
+.edit-btn {
+  background: #eab308;
+  border-color: #eab308;
+  color: white;
 }
 
 .edit-btn:hover {
-  background: var(--warning-light);
-  border-color: var(--warning-color);
-  color: var(--warning-color);
+  background: #ca8a04;
+  border-color: #ca8a04;
+  color: white;
+}
+
+/* Pulsante Elimina - Rosso */
+.delete-btn {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: white;
 }
 
 .delete-btn:hover {
-  background: var(--error-light);
-  border-color: var(--error-color);
-  color: var(--error-color);
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: white;
 }
 
 /* Empty state */
@@ -456,6 +573,12 @@
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+  .contracts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .contracts-list {
     padding: 15px;
