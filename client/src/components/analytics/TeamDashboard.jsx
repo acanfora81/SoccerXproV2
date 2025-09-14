@@ -37,6 +37,7 @@ import { apiFetch } from '../../utils/http';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '../../modules/filters/index.js';
 import PageLoader from '../ui/PageLoader';
 import Segmented from '../ui/Segmented';
+import { formatItalianNumber, formatItalianCurrency } from '../../utils/italianNumbers';
 import '../../modules/filters/filters.css';
 import '../../components/ui/ui-components.css';
 import '../../styles/team-dashboard.css';
@@ -61,11 +62,8 @@ const TeamDashboard = () => {
   const [data, setData] = useState({});
 
   // Helper per formattazione numeri
-  const fmtInt = (n) => (n ?? 0).toLocaleString('it-IT');
-  const fmtDec = (n, d = 2) => (n ?? 0).toLocaleString('it-IT', { 
-    minimumFractionDigits: d, 
-    maximumFractionDigits: d 
-  });
+  const fmtInt = (n) => formatItalianNumber(n ?? 0);
+  const fmtDec = (n, d = 2) => formatItalianNumber(n ?? 0);
 
   // Helper per trend
   const fmtTrend = (v) => (v === null || v === undefined) ? 'n/a' : `${v.toFixed(1)}%`;

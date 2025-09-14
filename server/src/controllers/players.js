@@ -41,13 +41,14 @@ const getPlayers = async (req, res) => {
           select: { first_name: true, last_name: true }
         },
         contracts: {
-          where: { status: 'ACTIVE' },
           select: {
             id: true,
             startDate: true,
             endDate: true,
-            contractType: true
-          }
+            contractType: true,
+            status: true
+          },
+          orderBy: { startDate: 'desc' }
         },
         injuries: {
           where: { status: { in: ['ACTIVE', 'RECOVERING'] } },
@@ -475,15 +476,81 @@ const deletePlayer = async (req, res) => {
 
     const prisma = getPrismaClient();
 
-    // ✅ delete blindato per team
-    const result = await prisma.player.deleteMany({
+    // ✅ Verifica che il giocatore esista e appartenga al team
+    const player = await prisma.Player.findFirst({
       where: { id, teamId }
     });
 
-    if (result.count === 0) {
+    if (!player) {
       const errorResponse = createErrorResponse(API_ERRORS.RESOURCE_NOT_FOUND, 'Giocatore non trovato');
       return res.status(errorResponse.status).json(errorResponse.body);
     }
+
+    // ✅ Elimina in transazione tutte le relazioni dipendenti
+    await prisma.$transaction(async (tx) => {
+      // Elimina performance data
+      await tx.PerformanceData.deleteMany({
+        where: { playerId: id }
+      });
+
+      // Elimina medical visits
+      await tx.medical_visits.deleteMany({
+        where: { playerId: id }
+      });
+
+      // Elimina player statistics
+      await tx.player_statistics.deleteMany({
+        where: { playerId: id }
+      });
+
+      // Elimina transfers
+      await tx.transfers.deleteMany({
+        where: { playerId: id }
+      });
+
+      // Elimina injuries
+      await tx.injuries.deleteMany({
+        where: { playerId: id }
+      });
+
+      // Elimina contratti e le loro relazioni
+      const contracts = await tx.contracts.findMany({
+        where: { playerId: id },
+        select: { id: true }
+      });
+
+      for (const contract of contracts) {
+        // Elimina emendamenti del contratto
+        await tx.contract_amendments.deleteMany({
+          where: { contractId: contract.id }
+        });
+
+        // Elimina file del contratto
+        await tx.contract_files.deleteMany({
+          where: { contractId: contract.id }
+        });
+
+        // Elimina clausole del contratto
+        await tx.contract_clauses.deleteMany({
+          where: { contractId: contract.id }
+        });
+
+        // Elimina schedule di pagamento del contratto
+        await tx.contract_payment_schedule.deleteMany({
+          where: { contractId: contract.id }
+        });
+
+        // Elimina il contratto
+        await tx.contracts.delete({
+          where: { id: contract.id }
+        });
+      }
+
+      // Elimina il giocatore
+      await tx.Player.delete({
+        where: { id }
+      });
+    });
 
     return res.json({
       message: 'Giocatore eliminato con successo',

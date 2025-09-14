@@ -120,6 +120,18 @@ h6 { font-size: 1rem; }
   color: var(--text-secondary);
 }
 
+.btn-warning {
+  background-color: #F59E0B;
+  border-color: #F59E0B;
+  color: #FFFFFF;
+}
+
+.btn-warning:hover {
+  background-color: #D97706;
+  border-color: #D97706;
+  color: #FFFFFF;
+}
+
 .btn.secondary:hover {
   background-color: var(--bg-tertiary);
   border-color: var(--border-color);

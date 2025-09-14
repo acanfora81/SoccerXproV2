@@ -44,6 +44,371 @@
 
 /* Stili specifici per la modale contratti */
 
+.custom-rate-indicator {
+  color: var(--warning-color);
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+/* Prevenzione scroll indesiderato */
+.contract-modal {
+  scroll-behavior: smooth;
+}
+
+.contract-modal button {
+  cursor: pointer;
+}
+
+.contract-modal button:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Stili per bonus con toggle individuale */
+.bonus-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bonus-toggle-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.bonus-toggle-btn {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 28px;
+}
+
+.bonus-toggle-btn:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color-light);
+}
+
+.bonus-toggle-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.bonus-toggle-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bonus-info {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-highlight);
+  border-radius: 6px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.bonus-info .info-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Layout per bonus con aliquote inline */
+.bonus-row-with-tax {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  align-items: end;
+}
+
+.form-group-tax {
+  min-width: 120px;
+}
+
+.form-group-tax .form-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.form-group-tax .form-input {
+  text-align: center;
+}
+
+/* Stili per il display calcoli bonus individuali */
+.bonus-calculation-display {
+  margin: 8px 0 16px 0;
+  padding: 12px;
+  background: var(--primary-color-light);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.bonus-calculation-display.waiting {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.bonus-calculation-display.waiting .calculation-result {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.calculation-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.calculation-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.calculation-arrow {
+  color: var(--primary-color);
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.calculation-result {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.calculation-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tax-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tax-amount {
+  font-weight: 500;
+}
+
+/* Stili per i calcoli fiscali automatici */
+.form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* Toggle per tipo stipendio */
+.salary-input-section {
+  margin-bottom: 24px;
+}
+
+.salary-toggle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.salary-toggle-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.salary-toggle-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.salary-mode-btn {
+  padding: 8px 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.salary-mode-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.salary-mode-btn.active {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: white;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3);
+}
+
+/* Sezione bonus */
+.bonus-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.bonus-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+/* Calcoli fiscali integrati */
+.tax-calculations-integrated {
+  margin: 20px 0;
+}
+
+.calculations-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.calculations-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.calculations-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.calculation-item-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.calculation-item-compact.total {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  font-weight: 600;
+}
+
+.calculation-item-compact.gross {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  font-weight: 700;
+}
+
+.tax-calculations {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.calculations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.calculation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+}
+
+.calculation-item.total {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  font-weight: 600;
+}
+
+.calculation-item.gross {
+  background: #f0f9ff;
+  border-color: #0ea5e9;
+  font-weight: 700;
+}
+
+.calculation-label {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.calculation-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.calculation-value.net {
+  color: #059669;
+}
+
+.calculation-value.inps {
+  color: #dc2626;
+}
+
+.calculation-value.inail {
+  color: #ea580c;
+}
+
+.calculation-value.ffc {
+  color: #16a34a;
+}
+
+.calculation-value.total {
+  color: #7c3aed;
+}
+
+.calculation-value.gross {
+  color: #0ea5e9;
+}
+
+.tax-info {
+  margin-top: 16px;
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  border-radius: 8px;
+  color: #0c4a6e;
+  font-size: 14px;
+}
+
 /* Stili per i pulsanti "Nuovo Contratto" */
 .btn.btn-primary {
   min-height: 48px;
@@ -201,6 +566,8 @@
   align-items: center;
   justify-content: flex-start;
   margin-top: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .contract-form .checkbox-label {
@@ -210,7 +577,18 @@
   cursor: pointer;
   font-weight: 500;
   color: var(--text-primary);
-  padding: 8px 0;
+  padding: 16px 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  transition: all 0.2s ease;
+  width: 100%;
+  min-height: 60px;
+}
+
+.contract-form .checkbox-label:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color-light);
 }
 
 .contract-form .checkbox-label input[type="checkbox"] {
@@ -682,5 +1060,430 @@
 
   .timeline-content {
     padding: 16px;
+  }
+}
+
+/* Stili per il riepilogo totale */
+.total-summary {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.summary-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.summary-item.total {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.summary-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 16px;
+}
+
+.summary-item.total .summary-label {
+  color: white;
+  font-size: 18px;
+}
+
+.summary-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.summary-value .gross {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.summary-value .net {
+  color: #059669;
+  font-weight: 600;
+}
+
+.summary-value .arrow {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.summary-value .taxes {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.summary-item.total .summary-value {
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Responsive per riepilogo totale */
+@media (max-width: 768px) {
+  .summary-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .summary-value {
+    align-self: flex-end;
+  }
+}
+
+/* ===== STORIA CONTRATTI MODAL ===== */
+.contract-history-modal {
+  max-width: 900px;
+  width: 90vw;
+}
+
+/* Riepilogo migliorato */
+.history-summary .summary-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.history-summary .summary-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--accent-light);
+  border-radius: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.summary-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-summary .summary-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.history-summary .summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+/* Timeline migliorata */
+.contract-main-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.contract-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contract-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.contract-salary-large {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: right;
+}
+
+.contract-dates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.duration {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.current-badge {
+  background: var(--success-color);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Griglia informazioni contratto */
+.contract-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-muted);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-value.status-active {
+  color: var(--success-color);
+}
+
+.info-value.status-expired {
+  color: var(--error-color);
+}
+
+.info-value.status-draft {
+  color: var(--warning-color);
+}
+
+/* Note contratto */
+.contract-notes {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent);
+}
+
+.notes-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.notes-content {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Sezioni clausole e emendamenti */
+.contract-clauses,
+.contract-amendments {
+  margin: 20px 0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.section-header h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.section-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Griglia clausole */
+.clauses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.clause-card {
+  padding: 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.clause-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.clause-type {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.clause-amount {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Lista emendamenti */
+.amendments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.amendment-card {
+  padding: 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.amendment-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.amendment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.amendment-type {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.amendment-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.amendment-notes {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Responsive per storia contratti */
+@media (max-width: 768px) {
+  .contract-history-modal {
+    width: 95vw;
+    max-width: none;
+  }
+  
+  .history-summary .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .contract-main-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .contract-salary-large {
+    text-align: left;
+    font-size: 18px;
+  }
+  
+  .contract-info-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .clauses-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .amendment-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
 }

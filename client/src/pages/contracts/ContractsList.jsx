@@ -8,6 +8,7 @@ import {
   Euro,
   AlertTriangle,
   Users,
+  BarChart3,
   TrendingUp,
   Clock,
   CheckCircle,
@@ -23,6 +24,7 @@ import NewContractModal from '../../components/contracts/NewContractModal';
 import ContractDetailsModal from '../../components/contracts/ContractDetailsModal';
 import ContractHistoryModal from '../../components/contracts/ContractHistoryModal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import { formatItalianCurrency } from '../../utils/italianNumbers';
 import '../../styles/contracts.css';
 import '../../styles/contract-modal.css';
 
@@ -43,6 +45,7 @@ const ContractsList = () => {
   const [historyPlayer, setHistoryPlayer] = useState(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, contract: null });
+  const [feedbackDialog, setFeedbackDialog] = useState({ isOpen: false, message: '', type: 'success' });
 
   // Carica contratti
   const fetchContracts = useCallback(async () => {
@@ -158,6 +161,38 @@ const ContractsList = () => {
     setIsModalOpen(true);
   };
 
+  // Handler per correggere i contratti esistenti
+  const handleFixExistingContracts = async () => {
+    if (!window.confirm('Vuoi correggere i valori dei contratti esistenti? Questa operazione moltiplicherà per 1000 i valori sotto 1000.')) {
+      return;
+    }
+
+    try {
+      console.log('🔧 Avvio correzione contratti esistenti...');
+      
+      const response = await fetch('/api/contracts/fix-existing', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ ${result.message}`);
+        // Ricarica i contratti
+        fetchContracts();
+      } else {
+        alert(`❌ Errore: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('❌ Errore durante la correzione:', error);
+      alert('❌ Errore durante la correzione dei contratti');
+    }
+  };
+
   // Handler per chiudere modale
   const handleCloseModal = () => {
     console.log('🔵 Chiusura modale contratto');
@@ -217,12 +252,12 @@ const ContractsList = () => {
       // Chiudi popup di conferma
       setDeleteConfirm({ isOpen: false, contract: null });
       
-      // Mostra messaggio di successo
-      alert('Contratto eliminato con successo!');
+      // Mostra messaggio di successo standardizzato
+      setFeedbackDialog({ isOpen: true, message: 'Contratto eliminato con successo!', type: 'success' });
       
     } catch (err) {
       console.error('Errore eliminazione contratto:', err);
-      alert(`Errore durante l'eliminazione: ${err.message}`);
+      setFeedbackDialog({ isOpen: true, message: `Errore durante l'eliminazione: ${err.message}` , type: 'danger' });
     } finally {
       setLoading(false);
     }
@@ -262,6 +297,8 @@ const ContractsList = () => {
     setHistoryPlayer(null);
   };
 
+
+
   // Handler per successo creazione contratto
   const handleContractSuccess = (newContract) => {
     console.log('🟢 Contratto creato con successo:', newContract);
@@ -291,10 +328,7 @@ const ContractsList = () => {
   };
 
   const formatCurrency = (amount, currency = 'EUR') => {
-    return new Intl.NumberFormat('it-IT', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
+    return formatItalianCurrency(amount, currency);
   };
 
   // Helper per tradurre i ruoli in italiano
@@ -391,11 +425,18 @@ const ContractsList = () => {
           <p>{filteredContracts.length} contratti trovati</p>
         </div>
         <div className="header-right">
-          <button className="btn btn-primary" onClick={handleAddContract}>
-            <Plus size={20} />
-            Nuovo Contratto
-          </button>
-        </div>
+        <button 
+          className="btn btn-warning" 
+          onClick={handleFixExistingContracts}
+          style={{ marginRight: '10px' }}
+        >
+          🔧 Correggi Contratti
+        </button>
+        <button className="btn btn-primary" onClick={handleAddContract}>
+          <Plus size={20} />
+          Nuovo Contratto
+        </button>
+      </div>
       </div>
 
       {/* Statistiche */}
@@ -534,39 +575,41 @@ const ContractsList = () => {
 
               {/* Informazioni contratto */}
               <div className="contract-details">
-                <div className="detail-row">
-                  <span className="detail-label">Tipo:</span>
-                  <span className="detail-value">{getTypeLabel(contract.contractType)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Stipendio:</span>
-                  <span className="detail-value salary">
-                    {formatCurrency(contract.salary, contract.currency)}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Periodo:</span>
-                  <span className="detail-value">
-                    {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
-                  </span>
-                </div>
-                {contract.signedDate && (
-                  <div className="detail-row">
-                    <span className="detail-label">Firmato:</span>
-                    <span className="detail-value">{formatDate(contract.signedDate)}</span>
+                <div className="kpi-grid">
+                  <div className="kpi-item">
+                    <div className="kpi-label">Tipo</div>
+                    <div className="kpi-value">{getTypeLabel(contract.contractType)}</div>
                   </div>
-                )}
-                <div className="detail-row">
-                  <span className="detail-label">Stato Contratto:</span>
-                  <span className={`detail-value status-value ${getStatusColor(contract.status)}`}>
-                    {getStatusLabel(contract.status)}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Ruolo:</span>
-                  <span className="detail-value">
-                    {getPositionLabel(contract.players.position)}
-                  </span>
+                  <div className="kpi-item">
+                    <div className="kpi-label">Stipendio</div>
+                    <div className="kpi-value salary">
+                      {formatCurrency(contract.salary, contract.currency)}
+                    </div>
+                  </div>
+                  <div className="kpi-item">
+                    <div className="kpi-label">Periodo</div>
+                    <div className="kpi-value">
+                      {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
+                    </div>
+                  </div>
+                  {contract.signedDate && (
+                    <div className="kpi-item">
+                      <div className="kpi-label">Firmato</div>
+                      <div className="kpi-value">{formatDate(contract.signedDate)}</div>
+                    </div>
+                  )}
+                  <div className="kpi-item">
+                    <div className="kpi-label">Stato Contratto</div>
+                    <div className={`kpi-value status-value ${getStatusColor(contract.status)}`}>
+                      {getStatusLabel(contract.status)}
+                    </div>
+                  </div>
+                  <div className="kpi-item">
+                    <div className="kpi-label">Ruolo</div>
+                    <div className="kpi-value">
+                      {getPositionLabel(contract.players.position)}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -612,7 +655,7 @@ const ContractsList = () => {
                   title="Visualizza contratto"
                   onClick={() => handleViewContract(contract)}
                 >
-                  <Eye size={16} />
+                  <Eye size={14} />
                   Visualizza
                 </button>
                 <button 
@@ -620,7 +663,7 @@ const ContractsList = () => {
                   title="Storia contratti giocatore"
                   onClick={() => handleViewHistory(contract)}
                 >
-                  <History size={16} />
+                  <History size={14} />
                   Storia
                 </button>
                 <button 
@@ -628,7 +671,7 @@ const ContractsList = () => {
                   title="Modifica contratto"
                   onClick={() => handleEditContract(contract)}
                 >
-                  <Edit3 size={16} />
+                  <Edit3 size={14} />
                   Modifica
                 </button>
                 <button 
@@ -636,7 +679,7 @@ const ContractsList = () => {
                   title="Elimina contratto"
                   onClick={() => handleDeleteContract(contract)}
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                   Elimina
                 </button>
               </div>
@@ -685,6 +728,18 @@ const ContractsList = () => {
         confirmText="Elimina"
         cancelText="Annulla"
         type="danger"
+      />
+
+      {/* Dialog standardizzato esiti operazioni */}
+      <ConfirmDialog
+        isOpen={feedbackDialog.isOpen}
+        onClose={() => setFeedbackDialog({ isOpen: false, message: '', type: 'success' })}
+        onConfirm={() => setFeedbackDialog({ isOpen: false, message: '', type: 'success' })}
+        title={feedbackDialog.type === 'success' ? 'Operazione completata' : 'Operazione non riuscita'}
+        message={feedbackDialog.message}
+        confirmText="Ok"
+        cancelText={null}
+        type={feedbackDialog.type === 'success' ? 'success' : 'danger'}
       />
     </div>
   );

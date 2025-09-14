@@ -6,6 +6,7 @@ const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const { requirePermission } = require('../utils/permissions');
 const tenantContext = require('../middleware/tenantContext');
+const { prisma } = require('../config/database');
 const {
   getContracts,
   getContract,
@@ -17,7 +18,15 @@ const {
   deleteContract,
   checkContractOverlaps,
   getContractStats,
-  getPlayerContractHistory
+  getPlayerContractHistory,
+  getDashboardKPIs,
+  getDashboardTrends,
+  getDashboardDistributions,
+  getDashboardExpiring,
+  getDashboardTopPlayers,
+  getDashboardExpenses,
+  getDashboardAll,
+  fixExistingContracts
 } = require('../controllers/contracts');
 
 // Middleware di autenticazione e tenant context per tutte le route
@@ -61,6 +70,17 @@ router.get('/overlaps/:playerId', requirePermission('contracts:read'), checkCont
  */
 router.get('/history/:playerId', requirePermission('contracts:read'), getPlayerContractHistory);
 
+// Dashboard contratti
+router.get('/dashboard/kpis', requirePermission('contracts:read'), getDashboardKPIs);
+router.get('/dashboard/trends', requirePermission('contracts:read'), getDashboardTrends);
+router.get('/dashboard/distributions', requirePermission('contracts:read'), getDashboardDistributions);
+router.get('/dashboard/expiring', requirePermission('contracts:read'), getDashboardExpiring);
+router.get('/dashboard/top-players', requirePermission('contracts:read'), getDashboardTopPlayers);
+router.get('/dashboard/expenses', requirePermission('contracts:read'), getDashboardExpenses);
+
+// Dashboard ottimizzata (tutti i dati in una chiamata)
+router.get('/dashboard/all', requirePermission('contracts:read'), getDashboardAll);
+
 /**
  * ➕ POST /api/contracts
  * Crea nuovo contratto
@@ -91,5 +111,11 @@ router.post('/:id/renew', requirePermission('contracts:write'), renewContract);
  * Elimina contratto
  */
 router.delete('/:id', requirePermission('contracts:write'), deleteContract);
+
+/**
+ * 🔧 POST /api/contracts/fix-existing
+ * Corregge i dati esistenti nel database (endpoint temporaneo)
+ */
+router.post('/fix-existing', requirePermission('contracts:write'), fixExistingContracts);
 
 module.exports = router;

@@ -20,7 +20,14 @@ import PerformancePlayersDossier from './pages/performance/PlayersDossier';
 import DossierPage from './pages/performance/DossierPage';
 import ComparePage from './pages/performance/ComparePage';
 import ContractsList from './pages/contracts/ContractsList';
+import ContractsDashboard from './pages/contracts/ContractsDashboard';
 import ExpiringContracts from './pages/contracts/ExpiringContracts';
+import TaxRatesUpload from './pages/TaxRatesUpload';
+import TaxRatesList from './pages/TaxRatesList';
+import BonusTaxRatesUpload from './pages/BonusTaxRatesUpload';
+import BonusTaxRatesList from './pages/BonusTaxRatesList';
+import PlayersUpload from './pages/PlayersUpload';
+import ContractsSummary from './pages/ContractsSummary';
 import NotFound from './pages/NotFound';
 
 // 🎨 STILI GLOBALI AGGIORNATI - IMPORTANTE!
@@ -79,6 +86,7 @@ function App() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/players" element={<PlayersList />} />
+              <Route path="/players/upload" element={<PlayersUpload teamId={user?.teamId} />} />
               <Route path="/players/stats" element={<PlayerStatistics />} />
               <Route path="/performance/team" element={<TeamDashboard />} />
               <Route path="/performance/players" element={<PerformancePlayersListPage />} />
@@ -91,7 +99,13 @@ function App() {
               <Route path="/performance/import" element={<PerformanceImport />} />
               <Route path="/performance/reports" element={<Reports />} />
               <Route path="/contracts" element={<ContractsList />} />
+              <Route path="/contracts/dashboard" element={<ContractsDashboard />} />
               <Route path="/contracts/expiring" element={<ExpiringContracts />} />
+              <Route path="/contracts/summary" element={<ContractsSummary />} />
+              <Route path="/taxrates/upload" element={<TaxRatesUpload teamId={user?.teamId} />} />
+              <Route path="/taxrates/list" element={<TaxRatesList teamId={user?.teamId} />} />
+              <Route path="/bonustaxrates/upload" element={<BonusTaxRatesUpload teamId={user?.teamId} />} />
+              <Route path="/bonustaxrates/list" element={<BonusTaxRatesList teamId={user?.teamId} />} />
               <Route path="/medical" element={
                 <div className="page-placeholder"><h2>Area Medica</h2><p>Modulo in sviluppo - Infortuni e visite mediche</p></div>
               } />

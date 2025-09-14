@@ -152,7 +152,7 @@
 .submenu {
   background: var(--bg-secondary);
   border-left: 2px solid var(--text-primary);
-  margin-left: 20px;
+  margin-left: 10px;
   animation: slideDown 0.2s ease-out;
 }
 
@@ -168,7 +168,7 @@
 }
 
 .submenu-item {
-  padding: 8px 20px 8px 40px;
+  padding: 8px 20px 8px 30px;
   color: var(--text-primary);
   opacity: 80%;
   cursor: pointer;
@@ -176,6 +176,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  white-space: nowrap;
 }
 
 .submenu-item:hover {
@@ -183,26 +184,46 @@
   background: var(--accent-muted);
 }
 
+.submenu-label {
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.2;
+  margin-right: 8px;
+}
+
 /* Sottomenu annidati */
 .nested-submenu {
   background: var(--bg-primary);
   border-left: 2px solid var(--accent);
-  margin-left: 20px;
+  margin-left: 10px;
   animation: slideDown 0.2s ease-out;
 }
 
 .nested-submenu-item {
-  padding: 6px 20px 6px 40px;
+  padding: 6px 20px 6px 50px;
   color: var(--text-primary);
   opacity: 70%;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
   font-size: 13px;
 }
 
 .nested-submenu-item:hover {
   opacity: 100%;
   background: var(--accent-muted);
+}
+
+.nested-submenu-label {
+  flex: 1;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.2;
+  margin-right: 8px;
 }
 
 .nested-submenu-label {

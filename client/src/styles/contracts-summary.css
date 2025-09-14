@@ -1,0 +1,337 @@
+/* Stili per la pagina Riepilogo Contratti */
+
+/* I filtri ora usano gli stili di contracts.css */
+
+/* Stili specifici per il pulsante Excel verde */
+.contracts-filters .filter-box .export-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: white;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.contracts-filters .filter-box .export-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.contracts-filters .filter-box .export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Container tabella */
+.table-container {
+  margin: 24px 0;
+  background: white;
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  padding: 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.table-container:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+/* Tabella principale */
+.contracts-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 1800px; /* Ridotta da 2000px */
+}
+
+.contracts-summary-table thead {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.contracts-summary-table th {
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+.contracts-summary-table th:last-child {
+  border-right: none;
+}
+
+.sub-header {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.sub-header th {
+  padding: 8px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* Righe del corpo */
+.contract-row {
+  border-bottom: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.contract-row:hover {
+  background: #f8fafc;
+}
+
+.contract-row:last-child {
+  border-bottom: none;
+}
+
+.contracts-summary-table td {
+  padding: 8px 6px;
+  text-align: center;
+  border-right: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.contracts-summary-table td:last-child {
+  border-right: none;
+}
+
+/* Celle specifiche */
+.protocol-cell {
+  background: #f1f5f9;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.protocol-number {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+}
+
+.status-cell {
+  padding: 8px 12px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.player-cell {
+  text-align: left;
+  min-width: 120px;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-icon {
+  color: #6b7280;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.player-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.date-cell {
+  min-width: 100px;
+}
+
+.date-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.date-icon {
+  color: #6b7280;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
+.amount-cell {
+  min-width: 100px;
+  font-weight: 600;
+}
+
+.amount-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.amount-icon {
+  color: #6b7280;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
+.amount-value {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+
+/* Colori specifici per i tipi di importo */
+.net-amount .amount-value {
+  color: #059669;
+}
+
+.gross-amount .amount-value {
+  color: #dc2626;
+}
+
+.inps-amount .amount-value {
+  color: #dc2626;
+}
+
+.inail-amount .amount-value {
+  color: #ea580c;
+}
+
+.ffc-amount .amount-value {
+  color: #059669;
+}
+
+.agent-cell {
+  text-align: left;
+  min-width: 100px;
+}
+
+.agent-name {
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Statistiche */
+.summary-stats {
+  margin-top: 20px;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.summary-stats:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 12px;
+  background: white;
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+/* Responsive - i filtri usano gli stili di contracts.css */
+
+@media (max-width: 768px) {
+  .contracts-summary-table {
+    font-size: 10px;
+  }
+  
+  .contracts-summary-table th,
+  .contracts-summary-table td {
+    padding: 6px 4px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .stat-item {
+    padding: 10px;
+  }
+  
+  .stat-value {
+    font-size: 12px;
+  }
+  
+  .amount-value {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .contracts-summary-table {
+    min-width: 1400px;
+  }
+  
+  .stat-value {
+    font-size: 11px;
+  }
+}

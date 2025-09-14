@@ -33,6 +33,8 @@ const PlayerStatistics = () => {
       }
 
       console.log('🟢 Dati giocatori caricati per statistiche:', data.count ?? (data.data?.length ?? 0));
+      console.log('🔵 Dati completi ricevuti dal server:', data);
+      console.log('🔵 Primi 3 giocatori:', (data.data || data.players || []).slice(0, 3));
 
       setPlayers(data.data || data.players || []);
     } catch (err) {
@@ -46,6 +48,15 @@ const PlayerStatistics = () => {
   useEffect(() => {
     fetchPlayers();
   }, [fetchPlayers]);
+
+  // Forza il re-render quando cambia il tab selezionato
+  useEffect(() => {
+    console.log('🔵 Tab selezionato cambiato:', selectedChart);
+    if (selectedChart === 'nationalities') {
+      console.log('🔵 Tab nazionalità selezionato, ricarico dati...');
+      fetchPlayers();
+    }
+  }, [selectedChart, fetchPlayers]);
 
   // Utils
   const safePct = (part, total) => (total > 0 ? ((part / total) * 100).toFixed(1) : '0.0');
@@ -118,11 +129,17 @@ const PlayerStatistics = () => {
     const nationalityCounts = {};
     players.forEach((player) => {
       const nat = player.nationality;
-      nationalityCounts[nat] = (nationalityCounts[nat] || 0) + 1;
+      if (nat && nat.trim() !== '') { // Solo se la nazionalità esiste e non è vuota
+        const cleanNat = nat.trim();
+        nationalityCounts[cleanNat] = (nationalityCounts[cleanNat] || 0) + 1;
+      }
     });
 
+    console.log('🔵 Nazionalità trovate:', nationalityCounts);
+    console.log('🔵 Giocatori senza nazionalità:', players.filter(p => !p.nationality || p.nationality.trim() === '').length);
+    
     const total = players.length;
-    return Object.entries(nationalityCounts)
+    const result = Object.entries(nationalityCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5) // Top 5
       .map(([nationality, count]) => ({
@@ -130,6 +147,10 @@ const PlayerStatistics = () => {
         value: count,
         percentage: safePct(count, total)
       }));
+    
+    console.log('🔵 Statistiche nazionalità per grafico:', result);
+    console.log('🔵 Verifica valori:', result.map(r => ({ name: r.name, value: r.value, type: typeof r.value })));
+    return result;
   };
 
   // Statistiche fisiche per posizione
@@ -217,6 +238,17 @@ const PlayerStatistics = () => {
   const nationalityStats = getNationalityStats();
   const physicalStats = getPhysicalStats();
   const shirtStats = getShirtNumberStats();
+
+  // Debug: log dei dati per verificare il problema
+  console.log('🔵 PlayerStatistics - Dati completi:', {
+    totalPlayers: players.length,
+    playersWithNationality: players.filter(p => p.nationality).length,
+    nationalityStats,
+    samplePlayers: players.slice(0, 3).map(p => ({ 
+      name: `${p.firstName} ${p.lastName}`, 
+      nationality: p.nationality 
+    }))
+  });
 
   // Statistiche generali
   const totalPlayers = players.length;
@@ -346,16 +378,62 @@ const PlayerStatistics = () => {
 
         {selectedChart === 'nationalities' && (
           <div className="chart-container">
-            <h3>Top 5 Nazionalità</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={nationalityStats} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={80} />
-                <Tooltip formatter={(value) => [value, 'Giocatori']} />
-                <Bar dataKey="value" fill="#10B981" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h3 style={{ 
+                margin: '0', 
+                fontSize: '18px', 
+                fontWeight: '600', 
+                color: '#3B82F6',
+                lineHeight: '1.2'
+              }}>
+                Top 5 Nazionalità
+              </h3>
+            </div>
+            {nationalityStats.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={nationalityStats}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis 
+                    type="number"
+                    domain={[0, 'dataMax']}
+                    allowDecimals={false}
+                  />
+                  <Tooltip 
+                    formatter={(value) => [value, 'Giocatori']}
+                    labelFormatter={(label) => `Nazionalità: ${label}`}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill="#10B981"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="no-data-message" style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                height: '300px',
+                color: '#6B7280',
+                textAlign: 'center'
+              }}>
+                <p style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '500' }}>
+                  Nessun dato di nazionalità disponibile
+                </p>
+                <p style={{ margin: '0', fontSize: '14px' }}>
+                  Verifica che i giocatori abbiano la nazionalità impostata
+                </p>
+              </div>
+            )}
           </div>
         )}
 
