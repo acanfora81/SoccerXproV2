@@ -127,6 +127,21 @@ app.use('/api/session-types', sessionTypesRoutes);
 const contractsRoutes = require('./routes/contracts');
 app.use('/api/contracts', contractsRoutes);
 
+// 💰 Tax Rates Upload
+const taxRatesUpload = require('./routes/taxratesUpload');
+app.use('/api/taxrates', taxRatesUpload);
+
+const bonusTaxRatesUpload = require('./routes/bonusTaxRatesUpload');
+app.use('/api/bonustaxrates', bonusTaxRatesUpload);
+
+// 👥 Players Upload
+const playersUpload = require('./routes/playersUpload');
+app.use('/api/players', playersUpload);
+
+// 📊 Contracts Summary
+const contractsSummary = require('./routes/contractsSummary');
+app.use('/api/contracts-summary', contractsSummary);
+
 // Riepilogo route
 console.log('🔵 [DEBUG] Route caricate:');
 console.log('  - GET /health');
@@ -138,6 +153,10 @@ console.log('  - /api/performance/* (CRUD)');
 console.log('  - /api/dashboard/* (Dashboard)');
 console.log('  - /api/session-types/* (Session Types)');
 console.log('  - /api/contracts/* (Contracts)');
+console.log('  - /api/taxrates/* (Tax Rates Upload)');
+console.log('  - /api/bonustaxrates/* (Bonus Tax Rates Upload)');
+console.log('  - /api/contracts-summary/summary (Contracts Summary)');
+console.log('  - /api/contracts-summary/export (Contracts Export)');
 
 
 const PORT = process.env.PORT || 3001;

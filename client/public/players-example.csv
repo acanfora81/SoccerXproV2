@@ -1,0 +1,8 @@
+firstName;lastName;dateOfBirth;nationality;position;shirtNumber;height;weight;preferredFoot;placeOfBirth;taxCode;passportNumber
+Mario;Rossi;1995-03-15;Italiana;MIDFIELDER;10;180;75;RIGHT;Milano;RSSMRA95C15F205X;AB1234567
+Giuseppe;Verdi;1992-07-22;Italiana;DEFENDER;4;185;82;LEFT;Roma;VRDGPP92L22H501Y;CD2345678
+Francesco;Bianchi;1998-11-08;Italiana;FORWARD;9;175;70;RIGHT;Napoli;BNCFNC98S08F839Z;EF3456789
+Alessandro;Neri;1990-05-12;Italiana;GOALKEEPER;1;190;85;RIGHT;Torino;NRILSN90E12L219A;GH4567890
+Marco;Gialli;1996-09-30;Italiana;MIDFIELDER;8;178;72;BOTH;Firenze;GLLMRC96P30D612B;IJ5678901
+
+

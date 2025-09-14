@@ -205,6 +205,7 @@
   font-weight: 700;
   margin: 0 0 2px 0;
   line-height: 1.2;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
 }
 
 .shirt-number-modern {
@@ -212,6 +213,7 @@
   font-size: 12px;
   font-weight: 600;
   opacity: 0.7;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
 }
 
 /* Scoped actions only inside players-list */
@@ -291,6 +293,7 @@
   letter-spacing: 0.5px;
   color: white;
   background: var(--accent-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
 }
 
 .position-goalkeeper { /* Portiere - Arancione */
@@ -315,6 +318,19 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin: 4px 0 8px;
+}
+
+/* Layout responsive per più riquadri */
+@media (min-width: 768px) {
+  .player-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .player-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .stat-item {
@@ -345,8 +361,9 @@
 .stat-value {
   font-size: 10px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--accent-primary);
   line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
 }
 
 .stat-label {
@@ -355,6 +372,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
 }
 
 .stat-label-strong {
@@ -363,6 +381,7 @@
   text-transform: uppercase;
   letter-spacing: 0.6px;
   font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
 }
 
 /* Footer moderno */
@@ -389,6 +408,7 @@
   padding: 4px 8px;
   border-radius: 12px;
   background: var(--bg-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
 }
 
 .status-dot {
@@ -410,6 +430,7 @@
   color: var(--text-muted);
   font-size: 11px;
   opacity: 0.7;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif;
 }
 
 /* Header card */
@@ -723,8 +744,8 @@
   }
   
   .player-stats-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
   
   .player-card-header-modern {
@@ -814,4 +835,6 @@
 .players-list .player-stats-grid .stat-value {
   font-size: 15px !important;
   font-weight: 600;
+  color: var(--accent-primary) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', "Roboto", sans-serif !important;
 }

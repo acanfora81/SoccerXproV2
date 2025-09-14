@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, User, Calendar, Euro, FileText, Building2, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { formatItalianCurrency } from '../../utils/italianNumbers';
 import './ContractDetailsModal.css';
 
 const ContractDetailsModal = ({ isOpen, onClose, contract }) => {
@@ -13,11 +14,8 @@ const ContractDetailsModal = ({ isOpen, onClose, contract }) => {
 
   // Helper per formattare la valuta
   const formatCurrency = (amount, currency = 'EUR') => {
-    if (!amount) return 'Non specificato';
-    return new Intl.NumberFormat('it-IT', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
+    if (amount === null || amount === undefined) return '€0,00';
+    return formatItalianCurrency(amount, currency);
   };
 
   // Helper per tradurre i ruoli
@@ -214,6 +212,30 @@ const ContractDetailsModal = ({ isOpen, onClose, contract }) => {
             </div>
           </div>
 
+          {/* Identificativi e Registrazioni */}
+          {(contract.contractNumber || contract.fifaId || contract.leagueRegistrationId) && (
+            <div className="details-section">
+              <div className="section-header">
+                <FileText size={20} />
+                <h3>Identificativi e Registrazioni</h3>
+              </div>
+              <div className="details-grid">
+                <div className="detail-item">
+                  <span className="detail-label">Numero Contratto:</span>
+                  <span className="detail-value">{contract.contractNumber || 'Non specificato'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">ID FIFA:</span>
+                  <span className="detail-value">{contract.fifaId || 'Non specificato'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">ID Registrazione Lega:</span>
+                  <span className="detail-value">{contract.leagueRegistrationId || 'Non specificato'}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Date e Periodi */}
           <div className="details-section">
             <div className="section-header">
@@ -263,6 +285,30 @@ const ContractDetailsModal = ({ isOpen, onClose, contract }) => {
                 <span className="detail-label">Prezzo di Acquisto:</span>
                 <span className="detail-value">{formatCurrency(contract.buyPrice, contract.currency)}</span>
               </div>
+              <div className="detail-item">
+                <span className="detail-label">Stipendio Netto:</span>
+                <span className="detail-value">{formatCurrency(contract.netSalary, contract.currency)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Diritti Immagine:</span>
+                <span className="detail-value">{formatCurrency(contract.imageRights, contract.currency)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Bonus Fedeltà:</span>
+                <span className="detail-value">{formatCurrency(contract.loyaltyBonus, contract.currency)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Bonus Firma:</span>
+                <span className="detail-value">{formatCurrency(contract.signingBonus, contract.currency)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Bonus Alloggio:</span>
+                <span className="detail-value">{formatCurrency(contract.accommodationBonus, contract.currency)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Indennità Auto:</span>
+                <span className="detail-value">{formatCurrency(contract.carAllowance, contract.currency)}</span>
+              </div>
             </div>
           </div>
 
@@ -289,6 +335,42 @@ const ContractDetailsModal = ({ isOpen, onClose, contract }) => {
                 <div className="detail-item">
                   <span className="detail-label">Obbligo di Acquisto:</span>
                   <span className="detail-value">{contract.obligationToBuy ? 'Presente' : 'Non Presente'}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Parametri Fiscali e Assicurazioni */}
+          {(contract.taxRegime || contract.taxRate || contract.socialContributions || contract.insuranceValue || contract.insuranceProvider || contract.medicalInsurance) && (
+            <div className="details-section">
+              <div className="section-header">
+                <Euro size={20} />
+                <h3>Parametri Fiscali e Assicurazioni</h3>
+              </div>
+              <div className="details-grid">
+                <div className="detail-item">
+                  <span className="detail-label">Regime Fiscale:</span>
+                  <span className="detail-value">{contract.taxRegime || 'Non specificato'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Aliquota Fiscale:</span>
+                  <span className="detail-value">{contract.taxRate ? `${contract.taxRate}%` : 'Non specificato'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Contributi Sociali:</span>
+                  <span className="detail-value">{formatCurrency(contract.socialContributions, contract.currency)}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Valore Assicurazione:</span>
+                  <span className="detail-value">{formatCurrency(contract.insuranceValue, contract.currency)}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Fornitore Assicurazione:</span>
+                  <span className="detail-value">{contract.insuranceProvider || 'Non specificato'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Assicurazione Medica:</span>
+                  <span className="detail-value">{contract.medicalInsurance ? 'Sì' : 'No'}</span>
                 </div>
               </div>
             </div>

@@ -146,6 +146,89 @@ const getContract = async (req, res) => {
         id: parseInt(id),
         teamId
       },
+      select: {
+        id: true,
+        playerId: true,
+        startDate: true,
+        endDate: true,
+        salary: true,
+        currency: true,
+        contractType: true,
+        status: true,
+        signedDate: true,
+        notes: true,
+        teamId: true,
+        createdById: true,
+        createdAt: true,
+        updatedAt: true,
+        // Campi bonus
+        imageRights: true,
+        loyaltyBonus: true,
+        signingBonus: true,
+        accommodationBonus: true,
+        carAllowance: true,
+        netSalary: true,
+        contractNumber: true,
+        fifaId: true,
+        leagueRegistrationId: true,
+        taxRegime: true,
+        taxRate: true,
+        socialContributions: true,
+        insuranceValue: true,
+        insuranceProvider: true,
+        medicalInsurance: true,
+        autoRenewal: true,
+        renewalConditions: true,
+        renewalNoticeMonths: true,
+        jurisdiction: true,
+        arbitrationClause: true,
+        confidentialityClause: true,
+        nonCompeteClause: true,
+        nonCompeteMonths: true,
+        isMinor: true,
+        parentalConsent: true,
+        tutorName: true,
+        tutorContact: true,
+        educationClause: true,
+        languageRequirement: true,
+        trainingObligation: true,
+        performanceTargets: true,
+        kpiTargets: true,
+        workPermitRequired: true,
+        workPermitStatus: true,
+        workPermitExpiry: true,
+        visaRequired: true,
+        visaType: true,
+        relocationPackage: true,
+        familySupport: true,
+        languageLessons: true,
+        mediaObligations: true,
+        socialMediaClause: true,
+        sponsorshipRights: true,
+        medicalExamDate: true,
+        medicalExamResult: true,
+        medicalRestrictions: true,
+        dopingConsent: true,
+        lastReviewDate: true,
+        nextReviewDate: true,
+        complianceStatus: true,
+        complianceNotes: true,
+        priority: true,
+        tags: true,
+        internalNotes: true,
+        // Campi esistenti
+        contractRole: true,
+        paymentFrequency: true,
+        protocolNumber: true,
+        depositDate: true,
+        agentContact: true,
+        loanFromClub: true,
+        loanToClub: true,
+        buyOption: true,
+        obligationToBuy: true,
+        buyPrice: true,
+        responsibleUserId: true
+      },
       include: {
         players: {
           select: {
@@ -228,7 +311,7 @@ const createContract = async (req, res) => {
       signedDate,
       notes,
       clauses = [],
-      // Nuovi campi opzionali
+      // Campi esistenti
       contractRole,
       paymentFrequency,
       protocolNumber,
@@ -239,7 +322,62 @@ const createContract = async (req, res) => {
       buyOption,
       obligationToBuy,
       buyPrice,
-      responsibleUserId
+      responsibleUserId,
+      // Nuovi campi estesi
+      netSalary,
+      contractNumber,
+      fifaId,
+      leagueRegistrationId,
+      imageRights,
+      loyaltyBonus,
+      signingBonus,
+      accommodationBonus,
+      carAllowance,
+      taxRegime,
+      taxRate,
+      socialContributions,
+      insuranceValue,
+      insuranceProvider,
+      medicalInsurance,
+      autoRenewal,
+      renewalConditions,
+      renewalNoticeMonths,
+      jurisdiction,
+      arbitrationClause,
+      confidentialityClause,
+      nonCompeteClause,
+      nonCompeteMonths,
+      isMinor,
+      parentalConsent,
+      tutorName,
+      tutorContact,
+      educationClause,
+      languageRequirement,
+      trainingObligation,
+      performanceTargets,
+      kpiTargets,
+      workPermitRequired,
+      workPermitStatus,
+      workPermitExpiry,
+      visaRequired,
+      visaType,
+      relocationPackage,
+      familySupport,
+      languageLessons,
+      mediaObligations,
+      socialMediaClause,
+      sponsorshipRights,
+      medicalExamDate,
+      medicalExamResult,
+      medicalRestrictions,
+      dopingConsent,
+      lastReviewDate,
+      nextReviewDate,
+      complianceStatus,
+      complianceNotes,
+      priority,
+      tags,
+      internalNotes
     } = req.body;
 
     // Validazione dati richiesti
@@ -273,7 +411,7 @@ const createContract = async (req, res) => {
           playerId: parseInt(playerId),
           startDate: new Date(startDate),
           endDate: new Date(endDate),
-          salary: parseFloat(salary),
+          salary: parseFloat(salary.toString().replace(/\./g, '').replace(',', '.')),
           currency,
           contractType,
           status,
@@ -281,8 +419,8 @@ const createContract = async (req, res) => {
           notes,
           teamId,
           createdById: userId,
-          updatedAt: new Date(), // Aggiunto campo richiesto
-          // Nuovi campi opzionali
+          updatedAt: new Date(),
+          // Campi esistenti
           contractRole: contractRole || null,
           paymentFrequency: paymentFrequency || null,
           protocolNumber: protocolNumber || null,
@@ -293,7 +431,62 @@ const createContract = async (req, res) => {
           buyOption: buyOption || false,
           obligationToBuy: obligationToBuy || false,
           buyPrice: buyPrice ? parseFloat(buyPrice) : null,
-          responsibleUserId: responsibleUserId ? parseInt(responsibleUserId) : null
+          responsibleUserId: responsibleUserId ? parseInt(responsibleUserId) : null,
+          // Nuovi campi estesi
+          netSalary: netSalary !== undefined && netSalary !== null && netSalary !== '' ? parseFloat(netSalary.toString().replace(/\./g, '').replace(',', '.')) : (netSalary === 0 ? 0 : null),
+          contractNumber: contractNumber && typeof contractNumber === 'string' && contractNumber.trim() !== '' ? contractNumber.trim() : null,
+          fifaId: fifaId && typeof fifaId === 'string' && fifaId.trim() !== '' ? fifaId.trim() : null,
+          leagueRegistrationId: leagueRegistrationId && typeof leagueRegistrationId === 'string' && leagueRegistrationId.trim() !== '' ? leagueRegistrationId.trim() : null,
+          imageRights: imageRights !== undefined && imageRights !== null && imageRights !== '' ? parseFloat(imageRights.toString().replace(/\./g, '').replace(',', '.')) : (imageRights === 0 ? 0 : null),
+          loyaltyBonus: loyaltyBonus !== undefined && loyaltyBonus !== null && loyaltyBonus !== '' ? parseFloat(loyaltyBonus.toString().replace(/\./g, '').replace(',', '.')) : (loyaltyBonus === 0 ? 0 : null),
+          signingBonus: signingBonus !== undefined && signingBonus !== null && signingBonus !== '' ? parseFloat(signingBonus.toString().replace(/\./g, '').replace(',', '.')) : (signingBonus === 0 ? 0 : null),
+          accommodationBonus: accommodationBonus !== undefined && accommodationBonus !== null && accommodationBonus !== '' ? parseFloat(accommodationBonus.toString().replace(/\./g, '').replace(',', '.')) : (accommodationBonus === 0 ? 0 : null),
+          carAllowance: carAllowance !== undefined && carAllowance !== null && carAllowance !== '' ? parseFloat(carAllowance.toString().replace(/\./g, '').replace(',', '.')) : (carAllowance === 0 ? 0 : null),
+          taxRegime: taxRegime || null,
+          taxRate: taxRate ? parseFloat(taxRate) : null,
+          socialContributions: socialContributions ? parseFloat(socialContributions) : null,
+          insuranceValue: insuranceValue ? parseFloat(insuranceValue) : null,
+          insuranceProvider: insuranceProvider || null,
+          medicalInsurance: medicalInsurance || false,
+          autoRenewal: autoRenewal || false,
+          renewalConditions: renewalConditions || null,
+          renewalNoticeMonths: renewalNoticeMonths ? parseInt(renewalNoticeMonths) : null,
+          jurisdiction: jurisdiction || null,
+          arbitrationClause: arbitrationClause || false,
+          confidentialityClause: confidentialityClause || false,
+          nonCompeteClause: nonCompeteClause || false,
+          nonCompeteMonths: nonCompeteMonths ? parseInt(nonCompeteMonths) : null,
+          isMinor: isMinor || false,
+          parentalConsent: parentalConsent || false,
+          tutorName: tutorName || null,
+          tutorContact: tutorContact || null,
+          educationClause: educationClause || false,
+          languageRequirement: languageRequirement || null,
+          trainingObligation: trainingObligation || false,
+          performanceTargets: performanceTargets || null,
+          kpiTargets: kpiTargets || null,
+          workPermitRequired: workPermitRequired || false,
+          workPermitStatus: workPermitStatus || null,
+          workPermitExpiry: workPermitExpiry ? new Date(workPermitExpiry) : null,
+          visaRequired: visaRequired || false,
+          visaType: visaType || null,
+          relocationPackage: relocationPackage ? parseFloat(relocationPackage) : null,
+          familySupport: familySupport || false,
+          languageLessons: languageLessons || false,
+          mediaObligations: mediaObligations || null,
+          socialMediaClause: socialMediaClause || null,
+          sponsorshipRights: sponsorshipRights || false,
+          medicalExamDate: medicalExamDate ? new Date(medicalExamDate) : null,
+          medicalExamResult: medicalExamResult || null,
+          medicalRestrictions: medicalRestrictions || null,
+          dopingConsent: dopingConsent || false,
+          lastReviewDate: lastReviewDate ? new Date(lastReviewDate) : null,
+          nextReviewDate: nextReviewDate ? new Date(nextReviewDate) : null,
+          complianceStatus: complianceStatus || 'PENDING',
+          complianceNotes: complianceNotes || null,
+          priority: priority || 'NORMAL',
+          tags: tags || [],
+          internalNotes: internalNotes || null
         }
       });
 
@@ -341,6 +534,14 @@ const createContract = async (req, res) => {
 
   } catch (error) {
     console.error('Errore nella creazione contratto:', error);
+    // Gestione violazione vincolo univoco su (teamId, contractNumber)
+    if (error && error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        error: 'Numero contratto già esistente per il team',
+        details: error.meta?.target || 'contracts_team_contractNumber_key'
+      });
+    }
     res.status(500).json({
       success: false,
       error: 'Errore interno del server',
@@ -392,13 +593,65 @@ const updateContract = async (req, res) => {
     
     // Converte numeri se presenti e validi
     if (contractData.salary && contractData.salary !== '') {
-      contractData.salary = parseFloat(contractData.salary);
+      contractData.salary = parseFloat(contractData.salary.toString().replace(/\./g, '').replace(',', '.'));
     }
     if (contractData.buyPrice && contractData.buyPrice !== '') {
-      contractData.buyPrice = parseFloat(contractData.buyPrice);
+      contractData.buyPrice = parseFloat(contractData.buyPrice.toString().replace(/\./g, '').replace(',', '.'));
     }
     if (contractData.responsibleUserId && contractData.responsibleUserId !== '') {
       contractData.responsibleUserId = parseInt(contractData.responsibleUserId);
+    }
+    
+    // Converte nuovi campi numerici - gestisce anche i valori 0
+    if (contractData.netSalary !== undefined && contractData.netSalary !== null && contractData.netSalary !== '') {
+      contractData.netSalary = parseFloat(contractData.netSalary.toString().replace(/\./g, '').replace(',', '.'));
+    } else if (contractData.netSalary === 0) {
+      contractData.netSalary = 0;
+    }
+    if (contractData.imageRights !== undefined && contractData.imageRights !== null && contractData.imageRights !== '') {
+      contractData.imageRights = parseFloat(contractData.imageRights.toString().replace(/\./g, '').replace(',', '.'));
+    } else if (contractData.imageRights === 0) {
+      contractData.imageRights = 0;
+    }
+    if (contractData.loyaltyBonus !== undefined && contractData.loyaltyBonus !== null && contractData.loyaltyBonus !== '') {
+      contractData.loyaltyBonus = parseFloat(contractData.loyaltyBonus.toString().replace(/\./g, '').replace(',', '.'));
+    } else if (contractData.loyaltyBonus === 0) {
+      contractData.loyaltyBonus = 0;
+    }
+    if (contractData.signingBonus !== undefined && contractData.signingBonus !== null && contractData.signingBonus !== '') {
+      contractData.signingBonus = parseFloat(contractData.signingBonus.toString().replace(/\./g, '').replace(',', '.'));
+    } else if (contractData.signingBonus === 0) {
+      contractData.signingBonus = 0;
+    }
+    if (contractData.accommodationBonus !== undefined && contractData.accommodationBonus !== null && contractData.accommodationBonus !== '') {
+      contractData.accommodationBonus = parseFloat(contractData.accommodationBonus.toString().replace(/\./g, '').replace(',', '.'));
+    } else if (contractData.accommodationBonus === 0) {
+      contractData.accommodationBonus = 0;
+    }
+    if (contractData.carAllowance !== undefined && contractData.carAllowance !== null && contractData.carAllowance !== '') {
+      contractData.carAllowance = parseFloat(contractData.carAllowance.toString().replace(/\./g, '').replace(',', '.'));
+    } else if (contractData.carAllowance === 0) {
+      contractData.carAllowance = 0;
+    }
+    if (contractData.taxRate && contractData.taxRate !== '') {
+      contractData.taxRate = parseFloat(contractData.taxRate);
+    }
+    if (contractData.socialContributions && contractData.socialContributions !== '') {
+      contractData.socialContributions = parseFloat(contractData.socialContributions);
+    }
+    if (contractData.insuranceValue && contractData.insuranceValue !== '') {
+      contractData.insuranceValue = parseFloat(contractData.insuranceValue);
+    }
+    if (contractData.relocationPackage && contractData.relocationPackage !== '') {
+      contractData.relocationPackage = parseFloat(contractData.relocationPackage);
+    }
+    
+    // Converte campi interi
+    if (contractData.renewalNoticeMonths && contractData.renewalNoticeMonths !== '') {
+      contractData.renewalNoticeMonths = parseInt(contractData.renewalNoticeMonths);
+    }
+    if (contractData.nonCompeteMonths && contractData.nonCompeteMonths !== '') {
+      contractData.nonCompeteMonths = parseInt(contractData.nonCompeteMonths);
     }
     
     // Rimuovi playerId dai dati di aggiornamento - non può essere modificato direttamente
@@ -434,10 +687,47 @@ const updateContract = async (req, res) => {
     if (contractData.protocolNumber === '' || contractData.protocolNumber === null) {
       contractData.protocolNumber = null;
     }
+    // Normalizza identificativi: stringhe vuote -> null, trim
+    if (contractData.contractNumber !== undefined) {
+      if (contractData.contractNumber === null) {
+        // leave as null
+      } else {
+        const v = String(contractData.contractNumber).trim();
+        contractData.contractNumber = v === '' ? null : v;
+      }
+    }
+    if (contractData.fifaId !== undefined) {
+      if (contractData.fifaId === null) {
+        // leave as null
+      } else {
+        const v = String(contractData.fifaId).trim();
+        contractData.fifaId = v === '' ? null : v;
+      }
+    }
+    if (contractData.leagueRegistrationId !== undefined) {
+      if (contractData.leagueRegistrationId === null) {
+        // leave as null
+      } else {
+        const v = String(contractData.leagueRegistrationId).trim();
+        contractData.leagueRegistrationId = v === '' ? null : v;
+      }
+    }
     
     // Converte date opzionali se presenti (solo se sono stringhe)
     if (contractData.depositDate && typeof contractData.depositDate === 'string') {
       contractData.depositDate = new Date(contractData.depositDate);
+    }
+    if (contractData.workPermitExpiry && typeof contractData.workPermitExpiry === 'string') {
+      contractData.workPermitExpiry = new Date(contractData.workPermitExpiry);
+    }
+    if (contractData.medicalExamDate && typeof contractData.medicalExamDate === 'string') {
+      contractData.medicalExamDate = new Date(contractData.medicalExamDate);
+    }
+    if (contractData.lastReviewDate && typeof contractData.lastReviewDate === 'string') {
+      contractData.lastReviewDate = new Date(contractData.lastReviewDate);
+    }
+    if (contractData.nextReviewDate && typeof contractData.nextReviewDate === 'string') {
+      contractData.nextReviewDate = new Date(contractData.nextReviewDate);
     }
     
     // Gestisce date che possono essere vuote
@@ -471,6 +761,23 @@ const updateContract = async (req, res) => {
     // Gestisce campi booleani
     if (contractData.buyOption !== undefined) contractData.buyOption = Boolean(contractData.buyOption);
     if (contractData.obligationToBuy !== undefined) contractData.obligationToBuy = Boolean(contractData.obligationToBuy);
+    
+    // Gestisce nuovi campi booleani
+    if (contractData.medicalInsurance !== undefined) contractData.medicalInsurance = Boolean(contractData.medicalInsurance);
+    if (contractData.autoRenewal !== undefined) contractData.autoRenewal = Boolean(contractData.autoRenewal);
+    if (contractData.arbitrationClause !== undefined) contractData.arbitrationClause = Boolean(contractData.arbitrationClause);
+    if (contractData.confidentialityClause !== undefined) contractData.confidentialityClause = Boolean(contractData.confidentialityClause);
+    if (contractData.nonCompeteClause !== undefined) contractData.nonCompeteClause = Boolean(contractData.nonCompeteClause);
+    if (contractData.isMinor !== undefined) contractData.isMinor = Boolean(contractData.isMinor);
+    if (contractData.parentalConsent !== undefined) contractData.parentalConsent = Boolean(contractData.parentalConsent);
+    if (contractData.educationClause !== undefined) contractData.educationClause = Boolean(contractData.educationClause);
+    if (contractData.trainingObligation !== undefined) contractData.trainingObligation = Boolean(contractData.trainingObligation);
+    if (contractData.workPermitRequired !== undefined) contractData.workPermitRequired = Boolean(contractData.workPermitRequired);
+    if (contractData.visaRequired !== undefined) contractData.visaRequired = Boolean(contractData.visaRequired);
+    if (contractData.familySupport !== undefined) contractData.familySupport = Boolean(contractData.familySupport);
+    if (contractData.languageLessons !== undefined) contractData.languageLessons = Boolean(contractData.languageLessons);
+    if (contractData.sponsorshipRights !== undefined) contractData.sponsorshipRights = Boolean(contractData.sponsorshipRights);
+    if (contractData.dopingConsent !== undefined) contractData.dopingConsent = Boolean(contractData.dopingConsent);
     
     // Aggiungi solo il campo updatedAt - gli altri sono foreign keys che non possono essere aggiornate
     contractData.updatedAt = new Date();
@@ -582,6 +889,13 @@ const updateContract = async (req, res) => {
   } catch (error) {
     console.error('❌ Errore nell\'aggiornamento contratto:', error);
     console.error('❌ Stack trace:', error.stack);
+    if (error && error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        error: 'Numero contratto già esistente per il team',
+        details: error.meta?.target || 'contracts_team_contractNumber_key'
+      });
+    }
     res.status(500).json({
       success: false,
       error: 'Errore interno del server',
@@ -733,7 +1047,7 @@ const renewContract = async (req, res) => {
     const newContractData = {
       startDate: new Date(renewalData.startDate),
       endDate: new Date(renewalData.endDate),
-      salary: parseFloat(renewalData.salary),
+      salary: parseFloat(renewalData.salary.toString().replace(/\./g, '').replace(',', '.')),
       currency: renewalData.currency || existingContract.currency,
       contractType: renewalData.contractType || existingContract.contractType,
       status: 'ACTIVE',
@@ -862,10 +1176,25 @@ const deleteContract = async (req, res) => {
       });
     }
 
-    // Elimina in transazione (cascade per le clausole)
+    // Elimina in transazione (cascade per le relazioni)
     await prisma.$transaction(async (tx) => {
+      // Elimina emendamenti (amendments)
+      await tx.contract_amendments.deleteMany({
+        where: { contractId: parseInt(id) }
+      });
+
+      // Elimina file del contratto
+      await tx.contract_files.deleteMany({
+        where: { contractId: parseInt(id) }
+      });
+
       // Elimina clausole
       await tx.contract_clauses.deleteMany({
+        where: { contractId: parseInt(id) }
+      });
+
+      // Elimina schedule di pagamento
+      await tx.contract_payment_schedule.deleteMany({
         where: { contractId: parseInt(id) }
       });
 
@@ -1230,6 +1559,913 @@ const getContractStats = async (req, res) => {
   }
 };
 
+/**
+ * 📊 Ottieni KPI per dashboard contratti
+ */
+const getDashboardKPIs = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'TeamId non configurato per questo utente'
+      });
+    }
+
+    const currentDate = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    // Calcola KPI attuali
+    const [
+      totalValue,
+      activeContracts,
+      expiringContracts,
+      renewalsThisMonth,
+      pendingRenewals
+    ] = await Promise.all([
+      // Valore totale contratti attivi
+      prisma.contracts.aggregate({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          startDate: { lte: currentDate },
+          endDate: { gte: currentDate }
+        },
+        _sum: { salary: true }
+      }),
+      
+      // Contratti attivi
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] }
+        }
+      }),
+      
+      // Contratti in scadenza (90 giorni)
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: {
+            lte: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+            gte: currentDate
+          }
+        }
+      }),
+      
+      // Rinnovi questo mese
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: 'RENEWED',
+          updatedAt: {
+            gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+          }
+        }
+      }),
+      
+      // Contratti in scadenza (30 giorni) - da rinnovare
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: {
+            lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            gte: currentDate
+          }
+        }
+      })
+    ]);
+
+    // Calcola KPI del mese scorso per i trend
+    const [
+      lastMonthTotalValue,
+      lastMonthActiveContracts,
+      lastMonthExpiringContracts,
+      lastMonthRenewals,
+      lastMonthPendingRenewals
+    ] = await Promise.all([
+      prisma.contracts.aggregate({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          startDate: { lte: oneMonthAgo },
+          endDate: { gte: oneMonthAgo }
+        },
+        _sum: { salary: true }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          updatedAt: { lte: oneMonthAgo }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: {
+            lte: new Date(oneMonthAgo.getTime() + 90 * 24 * 60 * 60 * 1000),
+            gte: oneMonthAgo
+          }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: 'RENEWED',
+          updatedAt: {
+            gte: new Date(oneMonthAgo.getFullYear(), oneMonthAgo.getMonth(), 1),
+            lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+          }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: {
+            lte: new Date(oneMonthAgo.getTime() + 30 * 24 * 60 * 60 * 1000),
+            gte: oneMonthAgo
+          }
+        }
+      })
+    ]);
+
+    // Calcola trend percentuali
+    const calculateTrend = (current, previous) => {
+      if (!previous || previous === 0) return 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    const totalValueAmount = parseFloat(totalValue._sum.salary || 0);
+    const lastMonthTotalValueAmount = parseFloat(lastMonthTotalValue._sum.salary || 0);
+    const averageSalary = activeContracts > 0 ? totalValueAmount / activeContracts : 0;
+    const lastMonthAverageSalary = lastMonthActiveContracts > 0 ? lastMonthTotalValueAmount / lastMonthActiveContracts : 0;
+
+    res.json({
+      success: true,
+      data: {
+        totalValue: totalValueAmount,
+        totalValueTrend: calculateTrend(totalValueAmount, lastMonthTotalValueAmount),
+        activeContracts,
+        activeContractsTrend: calculateTrend(activeContracts, lastMonthActiveContracts),
+        expiringContracts,
+        expiringContractsTrend: calculateTrend(expiringContracts, lastMonthExpiringContracts),
+        averageSalary,
+        averageSalaryTrend: calculateTrend(averageSalary, lastMonthAverageSalary),
+        renewalsThisMonth,
+        renewalsThisMonthTrend: calculateTrend(renewalsThisMonth, lastMonthRenewals),
+        pendingRenewals,
+        pendingRenewalsTrend: calculateTrend(pendingRenewals, lastMonthPendingRenewals)
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nel recupero KPI dashboard:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server',
+      details: error.message
+    });
+  }
+};
+
+/**
+ * 📈 Ottieni trend per dashboard contratti
+ */
+const getDashboardTrends = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'TeamId non configurato per questo utente'
+      });
+    }
+
+    // Genera dati per gli ultimi 12 mesi
+    const trends = [];
+    const currentDate = new Date();
+    
+    for (let i = 11; i >= 0; i--) {
+      const monthDate = new Date();
+      monthDate.setMonth(monthDate.getMonth() - i);
+      
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+      
+      // Calcola valore totale e stipendio medio per il mese
+      const monthStats = await prisma.contracts.aggregate({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          startDate: { lte: monthEnd },
+          endDate: { gte: monthStart }
+        },
+        _sum: { salary: true },
+        _avg: { salary: true },
+        _count: { id: true }
+      });
+      
+      trends.push({
+        month: monthDate.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' }),
+        totalValue: parseFloat(monthStats._sum.salary || 0),
+        averageSalary: parseFloat(monthStats._avg.salary || 0),
+        contractCount: monthStats._count.id
+      });
+    }
+
+    res.json({
+      success: true,
+      data: trends
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nel recupero trend dashboard:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server',
+      details: error.message
+    });
+  }
+};
+
+/**
+ * 📊 Ottieni distribuzioni per dashboard contratti
+ */
+const getDashboardDistributions = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'TeamId non configurato per questo utente'
+      });
+    }
+
+    const currentDate = new Date();
+
+    // Distribuzione per ruolo
+    const byRole = await prisma.contracts.groupBy({
+      by: ['contractRole'],
+      where: {
+        teamId,
+        status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+        startDate: { lte: currentDate },
+        endDate: { gte: currentDate }
+      },
+      _sum: { salary: true },
+      _count: { id: true }
+    });
+
+    // Distribuzione per status
+    const byStatus = await prisma.contracts.groupBy({
+      by: ['status'],
+      where: { teamId },
+      _count: { id: true }
+    });
+
+    // Calcola percentuali per status
+    const totalContracts = byStatus.reduce((sum, item) => sum + item._count.id, 0);
+    const byStatusWithPercentage = byStatus.map(item => ({
+      status: item.status,
+      count: item._count.id,
+      percentage: totalContracts > 0 ? Math.round((item._count.id / totalContracts) * 100) : 0
+    }));
+
+    // Calcola percentuali per ruolo
+    const totalRoleContracts = byRole.reduce((sum, item) => sum + item._count.id, 0);
+    const byRoleWithPercentage = byRole.map(item => ({
+      role: item.contractRole || 'Non specificato',
+      totalSalary: parseFloat(item._sum.salary || 0),
+      count: item._count.id,
+      percentage: totalRoleContracts > 0 ? Math.round((item._count.id / totalRoleContracts) * 100) : 0
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        byRole: byRoleWithPercentage,
+        byStatus: byStatusWithPercentage
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nel recupero distribuzioni dashboard:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server',
+      details: error.message
+    });
+  }
+};
+
+/**
+ * ⏰ Ottieni contratti in scadenza per dashboard
+ */
+const getDashboardExpiring = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'TeamId non configurato per questo utente'
+      });
+    }
+
+    const currentDate = new Date();
+
+    const expiringContracts = await prisma.contracts.findMany({
+      where: {
+        teamId,
+        status: { in: ['ACTIVE', 'RENEWED'] },
+        endDate: {
+          gte: currentDate  // Solo contratti non ancora scaduti
+        }
+      },
+      include: {
+        players: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            position: true
+          }
+        }
+      },
+      orderBy: { endDate: 'asc' }
+    });
+
+    const formattedContracts = expiringContracts.map(contract => ({
+      id: contract.id,
+      playerName: `${contract.players.firstName} ${contract.players.lastName}`,
+      role: contract.contractRole || contract.players.position || 'Non specificato',
+      salary: contract.salary,
+      currency: contract.currency,
+      endDate: contract.endDate,
+      status: contract.status
+    }));
+
+    res.json({
+      success: true,
+      data: formattedContracts
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nel recupero contratti in scadenza:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server',
+      details: error.message
+    });
+  }
+};
+
+/**
+ * 🏆 Ottieni top giocatori per stipendio
+ */
+const getDashboardTopPlayers = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'TeamId non configurato per questo utente'
+      });
+    }
+
+    const currentDate = new Date();
+
+    const topPlayers = await prisma.contracts.findMany({
+      where: {
+        teamId,
+        status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+        startDate: { lte: currentDate },
+        endDate: { gte: currentDate }
+      },
+      include: {
+        players: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            position: true
+          }
+        }
+      },
+      orderBy: { salary: 'desc' },
+      take: 10
+    });
+
+    const formattedPlayers = topPlayers.map(contract => ({
+      id: contract.id,
+      playerName: `${contract.players.firstName} ${contract.players.lastName}`,
+      role: contract.contractRole || contract.players.position || 'Non specificato',
+      salary: contract.salary,
+      currency: contract.currency,
+      status: contract.status
+    }));
+
+    res.json({
+      success: true,
+      data: formattedPlayers
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nel recupero top giocatori:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server',
+      details: error.message
+    });
+  }
+};
+
+/**
+ * 📊 Ottieni tutti i dati della dashboard in una singola chiamata (OTTIMIZZATO)
+ */
+const getDashboardAll = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'TeamId non configurato per questo utente'
+      });
+    }
+
+    const currentDate = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    // Esegui tutte le query in parallelo per massima performance
+    const [
+      // KPI
+      totalValue,
+      activeContracts,
+      expiringContracts,
+      renewalsThisMonth,
+      pendingRenewals,
+      lastMonthTotalValue,
+      lastMonthActiveContracts,
+      lastMonthExpiringContracts,
+      lastMonthRenewals,
+      lastMonthPendingRenewals,
+      
+      // Trends (ultimi 12 mesi)
+      trendsData,
+      
+      // Distribuzioni
+      byRole,
+      byStatus,
+      
+      // Contratti in scadenza
+      expiringContractsData,
+      
+      // Top players
+      topPlayersData,
+      
+      // Uscite mensili
+      monthlyExpensesData
+    ] = await Promise.all([
+      // KPI attuali
+      prisma.contracts.aggregate({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          startDate: { lte: currentDate },
+          endDate: { gte: currentDate }
+        },
+        _sum: { salary: true }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: {
+            lte: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+            gte: currentDate
+          }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: 'RENEWED',
+          updatedAt: {
+            gte: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+          }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: {
+            lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            gte: currentDate
+          }
+        }
+      }),
+      
+      // KPI del mese scorso
+      prisma.contracts.aggregate({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          startDate: { lte: oneMonthAgo },
+          endDate: { gte: oneMonthAgo }
+        },
+        _sum: { salary: true }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          updatedAt: { lte: oneMonthAgo }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: {
+            lte: new Date(oneMonthAgo.getTime() + 90 * 24 * 60 * 60 * 1000),
+            gte: oneMonthAgo
+          }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: 'RENEWED',
+          updatedAt: {
+            gte: new Date(oneMonthAgo.getFullYear(), oneMonthAgo.getMonth(), 1),
+            lt: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+          }
+        }
+      }),
+      
+      prisma.contracts.count({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: {
+            lte: new Date(oneMonthAgo.getTime() + 30 * 24 * 60 * 60 * 1000),
+            gte: oneMonthAgo
+          }
+        }
+      }),
+      
+      // Trends (genera dati per 12 mesi)
+      (async () => {
+        const trends = [];
+        for (let i = 11; i >= 0; i--) {
+          const monthDate = new Date();
+          monthDate.setMonth(monthDate.getMonth() - i);
+          
+          const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+          const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+          
+          const monthStats = await prisma.contracts.aggregate({
+            where: {
+              teamId,
+              status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+              startDate: { lte: monthEnd },
+              endDate: { gte: monthStart }
+            },
+            _sum: { salary: true },
+            _avg: { salary: true },
+            _count: { id: true }
+          });
+          
+          trends.push({
+            month: monthDate.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' }),
+            totalValue: parseFloat(monthStats._sum.salary || 0),
+            averageSalary: parseFloat(monthStats._avg.salary || 0),
+            contractCount: monthStats._count.id
+          });
+        }
+        return trends;
+      })(),
+      
+      // Distribuzioni per posizione del giocatore
+      prisma.contracts.findMany({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          startDate: { lte: currentDate },
+          endDate: { gte: currentDate }
+        },
+        select: {
+          salary: true,
+          players: {
+            select: {
+              position: true
+            }
+          }
+        }
+      }),
+      
+      prisma.contracts.groupBy({
+        by: ['status'],
+        where: { teamId },
+        _count: { id: true }
+      }),
+      
+      // Contratti in scadenza
+      prisma.contracts.findMany({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED'] },
+          endDate: { gte: currentDate }
+        },
+        include: {
+          players: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              position: true
+            }
+          }
+        },
+        orderBy: { endDate: 'asc' }
+      }),
+      
+      // Top players
+      prisma.contracts.findMany({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          startDate: { lte: currentDate },
+          endDate: { gte: currentDate }
+        },
+        include: {
+          players: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              position: true
+            }
+          }
+        },
+        orderBy: { salary: 'desc' },
+        take: 10
+      }),
+      
+      // Uscite mensili
+      (async () => {
+        const monthlyExpenses = [];
+        for (let i = 11; i >= 0; i--) {
+          const monthDate = new Date();
+          monthDate.setMonth(currentDate.getMonth() - i);
+          
+          const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+          const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+          
+          const contracts = await prisma.contracts.findMany({
+            where: {
+              teamId,
+              status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+              startDate: { lte: monthEnd },
+              endDate: { gte: monthStart }
+            },
+            select: {
+              salary: true,
+              signingBonus: true,
+              loyaltyBonus: true,
+              imageRights: true,
+              accommodationBonus: true,
+              carAllowance: true
+            }
+          });
+
+          const totalExpenses = contracts.reduce((sum, contract) => {
+            const monthlySalary = Number(contract.salary) / 12;
+            const signingBonus = Number(contract.signingBonus || 0);
+            const loyaltyBonus = Number(contract.loyaltyBonus || 0);
+            const imageRights = Number(contract.imageRights || 0);
+            const accommodationBonus = Number(contract.accommodationBonus || 0);
+            const carAllowance = Number(contract.carAllowance || 0);
+            
+            return sum + monthlySalary + (signingBonus / 12) + (loyaltyBonus / 12) + 
+                   (imageRights / 12) + accommodationBonus + carAllowance;
+          }, 0);
+
+          monthlyExpenses.push({
+            month: monthDate.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' }),
+            totalExpenses: Math.round(totalExpenses)
+          });
+        }
+        return monthlyExpenses;
+      })()
+    ]);
+
+    // Calcola trend percentuali
+    const calculateTrend = (current, previous) => {
+      if (!previous || previous === 0) return 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    const totalValueAmount = parseFloat(totalValue._sum.salary || 0);
+    const lastMonthTotalValueAmount = parseFloat(lastMonthTotalValue._sum.salary || 0);
+    const averageSalary = activeContracts > 0 ? totalValueAmount / activeContracts : 0;
+    const lastMonthAverageSalary = lastMonthActiveContracts > 0 ? lastMonthTotalValueAmount / lastMonthActiveContracts : 0;
+
+    // Calcola percentuali per status
+    const totalContracts = byStatus.reduce((sum, item) => sum + item._count.id, 0);
+    const byStatusWithPercentage = byStatus.map(item => ({
+      status: item.status,
+      count: item._count.id,
+      percentage: totalContracts > 0 ? Math.round((item._count.id / totalContracts) * 100) : 0
+    }));
+
+    // Calcola distribuzione per posizione del giocatore
+    const positionStats = {};
+    byRole.forEach(contract => {
+      const position = contract.players?.position || 'Non specificato';
+      if (!positionStats[position]) {
+        positionStats[position] = {
+          totalSalary: 0,
+          count: 0
+        };
+      }
+      positionStats[position].totalSalary += parseFloat(contract.salary || 0);
+      positionStats[position].count += 1;
+    });
+
+    const totalRoleContracts = Object.values(positionStats).reduce((sum, stat) => sum + stat.count, 0);
+    const byRoleWithPercentage = Object.entries(positionStats).map(([position, stats]) => ({
+      role: position,
+      totalSalary: stats.totalSalary,
+      count: stats.count,
+      percentage: totalRoleContracts > 0 ? Math.round((stats.count / totalRoleContracts) * 100) : 0
+    }));
+
+    // Formatta contratti in scadenza
+    const formattedExpiring = expiringContractsData.map(contract => ({
+      id: contract.id,
+      playerName: `${contract.players.firstName} ${contract.players.lastName}`,
+      role: contract.contractRole || contract.players.position || 'Non specificato',
+      salary: contract.salary,
+      currency: contract.currency,
+      endDate: contract.endDate,
+      status: contract.status
+    }));
+
+    // Formatta top players
+    const formattedTopPlayers = topPlayersData.map(contract => ({
+      id: contract.id,
+      playerName: `${contract.players.firstName} ${contract.players.lastName}`,
+      role: contract.contractRole || contract.players.position || 'Non specificato',
+      salary: contract.salary,
+      currency: contract.currency,
+      status: contract.status
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        kpis: {
+          totalValue: totalValueAmount,
+          totalValueTrend: calculateTrend(totalValueAmount, lastMonthTotalValueAmount),
+          activeContracts,
+          activeContractsTrend: calculateTrend(activeContracts, lastMonthActiveContracts),
+          expiringContracts,
+          expiringContractsTrend: calculateTrend(expiringContracts, lastMonthExpiringContracts),
+          averageSalary,
+          averageSalaryTrend: calculateTrend(averageSalary, lastMonthAverageSalary),
+          renewalsThisMonth,
+          renewalsThisMonthTrend: calculateTrend(renewalsThisMonth, lastMonthRenewals),
+          pendingRenewals,
+          pendingRenewalsTrend: calculateTrend(pendingRenewals, lastMonthPendingRenewals)
+        },
+        trends: trendsData,
+        distributions: {
+          byRole: byRoleWithPercentage,
+          byStatus: byStatusWithPercentage
+        },
+        expiring: formattedExpiring,
+        topPlayers: formattedTopPlayers,
+        monthlyExpenses: monthlyExpensesData
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Errore getDashboardAll:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server'
+    });
+  }
+};
+
+/**
+ * 💰 Ottieni uscite mensili per dashboard
+ */
+const getDashboardExpenses = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    
+    if (!teamId) {
+      return res.status(400).json({
+        success: false,
+        error: 'TeamId non configurato per questo utente'
+      });
+    }
+
+    const currentDate = new Date();
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(currentDate.getMonth() - 12);
+
+    // Genera array di 12 mesi
+    const monthlyExpenses = [];
+    for (let i = 11; i >= 0; i--) {
+      const monthDate = new Date();
+      monthDate.setMonth(currentDate.getMonth() - i);
+      
+      const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+      
+      // Calcola uscite totali per il mese (stipendi + bonus)
+      const contracts = await prisma.contracts.findMany({
+        where: {
+          teamId,
+          status: { in: ['ACTIVE', 'RENEWED', 'DRAFT'] },
+          startDate: { lte: monthEnd },
+          endDate: { gte: monthStart }
+        },
+        select: {
+          salary: true,
+          signingBonus: true,
+          loyaltyBonus: true,
+          imageRights: true,
+          accommodationBonus: true,
+          carAllowance: true
+        }
+      });
+
+      const totalExpenses = contracts.reduce((sum, contract) => {
+        const monthlySalary = Number(contract.salary) / 12;
+        const signingBonus = Number(contract.signingBonus || 0);
+        const loyaltyBonus = Number(contract.loyaltyBonus || 0);
+        const imageRights = Number(contract.imageRights || 0);
+        const accommodationBonus = Number(contract.accommodationBonus || 0);
+        const carAllowance = Number(contract.carAllowance || 0);
+        
+        return sum + monthlySalary + (signingBonus / 12) + (loyaltyBonus / 12) + 
+               (imageRights / 12) + accommodationBonus + carAllowance;
+      }, 0);
+
+      monthlyExpenses.push({
+        month: monthDate.toLocaleDateString('it-IT', { month: 'short', year: 'numeric' }),
+        totalExpenses: Math.round(totalExpenses)
+      });
+    }
+
+    res.json({
+      success: true,
+      data: monthlyExpenses
+    });
+
+  } catch (error) {
+    console.error('❌ Errore getDashboardExpenses:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server'
+    });
+  }
+};
+
 module.exports = {
   getContracts,
   getContract,
@@ -1241,6 +2477,126 @@ module.exports = {
   deleteContract,
   checkContractOverlaps,
   getContractStats,
-  getPlayerContractHistory
+  getPlayerContractHistory,
+  getDashboardKPIs,
+  getDashboardTrends,
+  getDashboardDistributions,
+  getDashboardExpiring,
+  getDashboardTopPlayers,
+  getDashboardExpenses,
+  getDashboardAll
 };
+
+// Endpoint temporaneo per correggere i dati esistenti
+const fixExistingContracts = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    
+    console.log('🔧 Inizio correzione contratti esistenti per team:', teamId);
+    
+    // Recupera tutti i contratti del team
+    const contracts = await prisma.contracts.findMany({
+      where: { teamId },
+      select: {
+        id: true,
+        salary: true,
+        netSalary: true,
+        buyPrice: true,
+        imageRights: true,
+        loyaltyBonus: true,
+        signingBonus: true,
+        accommodationBonus: true,
+        carAllowance: true
+      }
+    });
+    
+    console.log(`📊 Trovati ${contracts.length} contratti da verificare`);
+    
+    let correctedCount = 0;
+    
+    for (const contract of contracts) {
+      const updates = {};
+      let needsUpdate = false;
+      
+      // Controlla se i valori sono troppo piccoli (probabilmente sbagliati)
+      if (contract.salary && contract.salary < 1000) {
+        // Se lo stipendio è sotto 1000, probabilmente è sbagliato
+        // Moltiplichiamo per 1000 per correggere
+        updates.salary = contract.salary * 1000;
+        needsUpdate = true;
+        console.log(`🔧 Contratto ${contract.id}: salary ${contract.salary} -> ${updates.salary}`);
+      }
+      
+      if (contract.netSalary && contract.netSalary < 1000) {
+        updates.netSalary = contract.netSalary * 1000;
+        needsUpdate = true;
+        console.log(`🔧 Contratto ${contract.id}: netSalary ${contract.netSalary} -> ${updates.netSalary}`);
+      }
+      
+      if (contract.buyPrice && contract.buyPrice < 1000) {
+        updates.buyPrice = contract.buyPrice * 1000;
+        needsUpdate = true;
+        console.log(`🔧 Contratto ${contract.id}: buyPrice ${contract.buyPrice} -> ${updates.buyPrice}`);
+      }
+      
+      if (contract.imageRights && contract.imageRights < 1000) {
+        updates.imageRights = contract.imageRights * 1000;
+        needsUpdate = true;
+        console.log(`🔧 Contratto ${contract.id}: imageRights ${contract.imageRights} -> ${updates.imageRights}`);
+      }
+      
+      if (contract.loyaltyBonus && contract.loyaltyBonus < 1000) {
+        updates.loyaltyBonus = contract.loyaltyBonus * 1000;
+        needsUpdate = true;
+        console.log(`🔧 Contratto ${contract.id}: loyaltyBonus ${contract.loyaltyBonus} -> ${updates.loyaltyBonus}`);
+      }
+      
+      if (contract.signingBonus && contract.signingBonus < 1000) {
+        updates.signingBonus = contract.signingBonus * 1000;
+        needsUpdate = true;
+        console.log(`🔧 Contratto ${contract.id}: signingBonus ${contract.signingBonus} -> ${updates.signingBonus}`);
+      }
+      
+      if (contract.accommodationBonus && contract.accommodationBonus < 1000) {
+        updates.accommodationBonus = contract.accommodationBonus * 1000;
+        needsUpdate = true;
+        console.log(`🔧 Contratto ${contract.id}: accommodationBonus ${contract.accommodationBonus} -> ${updates.accommodationBonus}`);
+      }
+      
+      if (contract.carAllowance && contract.carAllowance < 1000) {
+        updates.carAllowance = contract.carAllowance * 1000;
+        needsUpdate = true;
+        console.log(`🔧 Contratto ${contract.id}: carAllowance ${contract.carAllowance} -> ${updates.carAllowance}`);
+      }
+      
+      if (needsUpdate) {
+        await prisma.contracts.update({
+          where: { id: contract.id },
+          data: updates
+        });
+        correctedCount++;
+      }
+    }
+    
+    console.log(`✅ Correzione completata: ${correctedCount} contratti aggiornati`);
+    
+    res.json({
+      success: true,
+      message: `Correzione completata: ${correctedCount} contratti aggiornati su ${contracts.length} totali`,
+      corrected: correctedCount,
+      total: contracts.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Errore durante la correzione dei contratti:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Errore durante la correzione dei contratti',
+      error: error.message
+    });
+  }
+};
+
+// Aggiungi la funzione al module.exports
+module.exports.fixExistingContracts = fixExistingContracts;
 

@@ -4,41 +4,47 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
 }
 
+
+
 model Team {
-  id                 String                @id @default(uuid()) @db.Uuid
-  name               String
-  slug               String                @unique
-  plan               String                @default("basic")
-  isActive           Boolean               @default(true)
-  maxPlayers         Int                   @default(25)
-  maxUsers           Int                   @default(5)
-  email              String?
-  phone              String?
-  address            String?
-  vatNumber          String?
-  subscriptionId     String?
-  subscriptionStatus String                @default("trial")
-  trialEndsAt        DateTime?
-  subscriptionEndsAt DateTime?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-  budgets            budgets[]             @relation("TeamBudgets")
-  contractAmendments contract_amendments[] @relation("TeamContractAmendments")
-  contractClauses    contract_clauses[]    @relation("TeamContractClauses")
-  contractFiles      contract_files[]      @relation("TeamContractFiles")
-  contracts          contracts[]           @relation("TeamContracts")
-  expenses           expenses[]            @relation("TeamExpenses")
-  injuries           injuries[]            @relation("TeamInjuries")
-  medicalVisits      medical_visits[]      @relation("TeamMedicalVisits")
-  performances       PerformanceData[]     @relation("TeamPerformances")
-  statistics         player_statistics[]   @relation("TeamStatistics")
-  players            Player[]              @relation("TeamPlayers")
-  transfers          transfers[]           @relation("TeamTransfers")
-  users              UserProfile[]         @relation("TeamUsers")
+  id                      String                      @id @default(uuid()) @db.Uuid
+  name                    String
+  slug                    String                      @unique
+  plan                    String                      @default("basic")
+  isActive                Boolean                     @default(true)
+  maxPlayers              Int                         @default(25)
+  maxUsers                Int                         @default(5)
+  email                   String?
+  phone                   String?
+  address                 String?
+  vatNumber               String?
+  subscriptionId          String?
+  subscriptionStatus      String                      @default("trial")
+  trialEndsAt             DateTime?
+  subscriptionEndsAt      DateTime?
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+  budgets                 budgets[]                   @relation("TeamBudgets")
+  contractAmendments      contract_amendments[]       @relation("TeamContractAmendments")
+  contractClauses         contract_clauses[]          @relation("TeamContractClauses")
+  contractFiles           contract_files[]            @relation("TeamContractFiles")
+  contracts               contracts[]                 @relation("TeamContracts")
+  expenses                expenses[]                  @relation("TeamExpenses")
+  injuries                injuries[]                  @relation("TeamInjuries")
+  medicalVisits           medical_visits[]            @relation("TeamMedicalVisits")
+  performances            PerformanceData[]           @relation("TeamPerformances")
+  statistics              player_statistics[]         @relation("TeamStatistics")
+  players                 Player[]                    @relation("TeamPlayers")
+  transfers               transfers[]                 @relation("TeamTransfers")
+  users                   UserProfile[]               @relation("TeamUsers")
+  contractPaymentSchedule contract_payment_schedule[] @relation("TeamPaymentSchedule")
+  taxRates                TaxRate[]                   @relation("TeamTaxRates")
+  bonusTaxRates           BonusTaxRate[]              @relation("TeamBonusTaxRates")
 
   @@map("teams")
 }
@@ -184,7 +190,7 @@ model contract_clauses {
   conditions  String?
   contractId  Int
   createdAt   DateTime   @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime   @updatedAt
   teamId      String     @map("team_id") @db.Uuid
   percentage  Decimal?   @db.Decimal(5, 2)
   contracts   contracts  @relation(fields: [contractId], references: [id])
@@ -192,38 +198,137 @@ model contract_clauses {
 }
 
 model contracts {
-  id                Int                   @id @default(autoincrement())
-  startDate         DateTime
-  endDate           DateTime
-  salary            Decimal               @db.Decimal(10, 2)
-  currency          String                @default("EUR")
-  contractType      ContractType
-  status            ContractStatus        @default(ACTIVE)
-  signedDate        DateTime?
-  notes             String?
+  id           Int            @id @default(autoincrement())
+  startDate    DateTime
+  endDate      DateTime
+  salary       Decimal        @db.Decimal(12, 2)
+  netSalary    Decimal?       @db.Decimal(12, 2)
+  currency     String         @default("EUR")
+  contractType ContractType
+  status       ContractStatus @default(ACTIVE)
+  signedDate   DateTime?
+  notes        String?
+
+  // Relazioni chiave
   playerId          Int
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   createdById       Int
-  teamId            String                @map("team_id") @db.Uuid
-  agentContact      String?
-  buyOption         Boolean?              @default(false)
-  buyPrice          Decimal?              @db.Decimal(12, 2)
-  contractRole      ContractRole?
-  depositDate       DateTime?
-  loanFromClub      String?
-  loanToClub        String?
-  obligationToBuy   Boolean?              @default(false)
-  paymentFrequency  PaymentFrequency?
-  protocolNumber    String?
+  teamId            String   @map("team_id") @db.Uuid
   responsibleUserId Int?
-  amendments        contract_amendments[] @relation("ContractAmendmentsForContract")
-  contract_clauses  contract_clauses[]
-  files             contract_files[]      @relation("ContractFilesForContract")
-  user_profiles     UserProfile           @relation(fields: [createdById], references: [id])
-  players           Player                @relation(fields: [playerId], references: [id])
-  responsible       UserProfile?          @relation("ContractResponsible", fields: [responsibleUserId], references: [id])
-  team              Team                  @relation("TeamContracts", fields: [teamId], references: [id])
+
+  // Identificativi / registrazioni
+  contractNumber       String?
+  fifaId               String?
+  leagueRegistrationId String?
+  protocolNumber       String?
+
+  // Dettagli economici avanzati
+  imageRights        Decimal? @db.Decimal(10, 2)
+  loyaltyBonus       Decimal? @db.Decimal(10, 2)
+  signingBonus       Decimal? @db.Decimal(10, 2)
+  accommodationBonus Decimal? @db.Decimal(8, 2)
+  carAllowance       Decimal? @db.Decimal(8, 2)
+
+  // Parametri fiscali
+  taxRegime           TaxRegime?
+  taxRate             Decimal?   @db.Decimal(5, 2)
+  socialContributions Decimal?   @db.Decimal(10, 2)
+
+  // Assicurazioni
+  insuranceValue    Decimal? @db.Decimal(12, 2)
+  insuranceProvider String?
+  medicalInsurance  Boolean? @default(false)
+
+  // Prestiti
+  loanFromClub    String?
+  loanToClub      String?
+  buyOption       Boolean? @default(false)
+  buyPrice        Decimal? @db.Decimal(12, 2)
+  obligationToBuy Boolean? @default(false)
+
+  // Rinnovi
+  autoRenewal         Boolean? @default(false)
+  renewalConditions   String?
+  renewalNoticeMonths Int?
+
+  // Aspetti legali
+  jurisdiction          String?
+  arbitrationClause     Boolean? @default(false)
+  confidentialityClause Boolean? @default(false)
+  nonCompeteClause      Boolean? @default(false)
+  nonCompeteMonths      Int?
+
+  // Minori
+  isMinor         Boolean? @default(false)
+  parentalConsent Boolean? @default(false)
+  tutorName       String?
+  tutorContact    String?
+
+  // Formazione / sviluppo
+  educationClause     Boolean? @default(false)
+  languageRequirement String?
+  trainingObligation  Boolean? @default(false)
+
+  // Performance & obiettivi
+  performanceTargets Json?
+  kpiTargets         Json?
+
+  // Internazionale
+  workPermitRequired Boolean?          @default(false)
+  workPermitStatus   WorkPermitStatus?
+  workPermitExpiry   DateTime?
+  visaRequired       Boolean?          @default(false)
+  visaType           String?
+
+  // Logistica
+  relocationPackage Decimal? @db.Decimal(10, 2)
+  familySupport     Boolean? @default(false)
+  languageLessons   Boolean? @default(false)
+
+  // Comunicazione / marketing
+  mediaObligations  String?
+  socialMediaClause String?
+  sponsorshipRights Boolean? @default(false)
+
+  // Aspetti medici
+  medicalExamDate     DateTime?
+  medicalExamResult   MedicalExamResult?
+  medicalRestrictions String?
+  dopingConsent       Boolean?           @default(false)
+
+  // Compliance
+  lastReviewDate   DateTime?
+  nextReviewDate   DateTime?
+  complianceStatus ComplianceStatus? @default(PENDING)
+  complianceNotes  String?
+
+  // Metadati
+  priority      ContractPriority? @default(NORMAL)
+  tags          String[]
+  internalNotes String?
+
+  // Campi esistenti
+  agentContact     String?
+  contractRole     ContractRole?
+  paymentFrequency PaymentFrequency?
+  depositDate      DateTime?
+
+  // Relazioni
+  amendments       contract_amendments[]       @relation("ContractAmendmentsForContract")
+  contract_clauses contract_clauses[]
+  files            contract_files[]            @relation("ContractFilesForContract")
+  paymentSchedule  contract_payment_schedule[]
+  user_profiles    UserProfile                 @relation(fields: [createdById], references: [id])
+  players          Player                      @relation(fields: [playerId], references: [id])
+  responsible      UserProfile?                @relation("ContractResponsible", fields: [responsibleUserId], references: [id])
+  team             Team                        @relation("TeamContracts", fields: [teamId], references: [id])
+
+  @@unique([teamId, contractNumber])
+  @@index([teamId, playerId, status])
+  @@index([teamId, startDate])
+  @@index([teamId, endDate])
+  @@index([teamId, complianceStatus])
 }
 
 model contract_files {
@@ -517,4 +622,125 @@ enum VisitType {
   FITNESS_TEST
   SPECIALIST_CONSULTATION
   EMERGENCY
+}
+
+// ===== Nuovi enum per contratti estesi =====
+enum TaxRegime {
+  STANDARD
+  BECKHAM_LAW
+  IMPATRIATE
+  NON_RESIDENT
+  SPECIAL_REGIME
+}
+
+enum WorkPermitStatus {
+  NOT_REQUIRED
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  RENEWAL_PENDING
+}
+
+enum MedicalExamResult {
+  PENDING
+  PASSED
+  FAILED
+  CONDITIONAL
+  RETEST_REQUIRED
+}
+
+enum ComplianceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVIEW
+  EXPIRED
+}
+
+enum ContractPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+model contract_payment_schedule {
+  id                Int                 @id @default(autoincrement())
+  contractId        Int
+  installmentNumber Int
+  dueDate           DateTime
+  amount            Decimal             @db.Decimal(10, 2)
+  currency          String              @default("EUR")
+  description       String?
+  paymentType       PaymentScheduleType
+  status            PaymentStatus       @default(PENDING)
+  paidDate          DateTime?
+  paidAmount        Decimal?            @db.Decimal(10, 2)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  teamId            String              @map("team_id") @db.Uuid
+
+  contract contracts @relation(fields: [contractId], references: [id])
+  team     Team      @relation("TeamPaymentSchedule", fields: [teamId], references: [id])
+
+  @@index([teamId, contractId, status])
+}
+
+model TaxRate {
+  id        Int          @id @default(autoincrement())
+  year      Int
+  type      ContractType
+  inps      Decimal      @db.Decimal(5, 2)
+  inail     Decimal?     @db.Decimal(5, 2)
+  ffc       Decimal      @db.Decimal(5, 2)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  teamId    String       @map("team_id") @db.Uuid
+  team      Team         @relation("TeamTaxRates", fields: [teamId], references: [id])
+
+  @@unique([year, type, teamId])
+  @@map("tax_rates")
+}
+
+enum BonusType {
+  IMAGE_RIGHTS
+  LOYALTY_BONUS
+  SIGNING_BONUS
+  ACCOMMODATION_BONUS
+  CAR_ALLOWANCE
+  TRANSFER_ALLOWANCE
+}
+
+model BonusTaxRate {
+  id        Int       @id @default(autoincrement())
+  year      Int
+  type      BonusType
+  taxRate   Decimal   @db.Decimal(5, 2)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  teamId    String    @map("team_id") @db.Uuid
+  team      Team      @relation("TeamBonusTaxRates", fields: [teamId], references: [id])
+
+  @@unique([year, type, teamId])
+  @@map("bonus_tax_rates")
+}
+
+enum PaymentScheduleType {
+  SALARY
+  BONUS
+  SIGNING_BONUS
+  LOYALTY_BONUS
+  IMAGE_RIGHTS
+  TRANSFER_FEE
+  AGENT_COMMISSION
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  PARTIAL
+  CANCELLED
 }

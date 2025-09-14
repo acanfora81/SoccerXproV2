@@ -19,6 +19,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { apiFetch } from '../../utils/http';
 import { useFilters, buildPerformanceQuery } from '../../modules/filters/index.js';
 import { FiltersBar } from '../../modules/filters/index.js';
+import { formatItalianNumber } from '../../utils/italianNumbers';
 
 const DossierDrawer = ({ 
   playerId, 
@@ -37,8 +38,8 @@ const DossierDrawer = ({
   // Helper per formattazione sicura
   const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
   const safePct = (v) => Number.isFinite(v) ? clamp(Math.round(v), -999, 999) : null;
-  const safeDec = (v, d=2) => Number.isFinite(v) ? Number(v).toLocaleString('it-IT', { minimumFractionDigits:d, maximumFractionDigits:d }) : 'N/A';
-  const safeInt = (v) => Number.isFinite(v) ? Math.round(v).toLocaleString('it-IT') : 'N/A';
+  const safeDec = (v, d=2) => Number.isFinite(v) ? formatItalianNumber(Number(v)) : 'N/A';
+  const safeInt = (v) => Number.isFinite(v) ? formatItalianNumber(Math.round(v)) : 'N/A';
 
   // Helper per trend
   const getTrendIcon = (trend) => {

@@ -2,12 +2,15 @@
 // Componente lista giocatori per Athlos
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Plus, Search, Filter, Edit3, Trash2 } from 'lucide-react';
+import { Users, Plus, Search, Filter, Edit3, Trash2, Upload } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import PageLoader from '../ui/PageLoader';
 import PlayerFormModal from './PlayerFormModal';
+import ConfirmDialog from '../common/ConfirmDialog';
 import '../../styles/players.css';
 
 const PlayersList = () => {
+  const navigate = useNavigate();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,6 +20,12 @@ const PlayersList = () => {
   // Stati per il modale
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
+  
+  // Stati per conferma eliminazione
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, player: null });
+  
+  // Stato per dialog di feedback
+  const [feedbackDialog, setFeedbackDialog] = useState({ isOpen: false, message: '', type: 'success' });
 
   console.log('🔵 PlayersList renderizzato'); // INFO DEV - rimuovere in produzione
 
@@ -67,6 +76,52 @@ const PlayersList = () => {
     setIsModalOpen(true);
   };
 
+  // Handler per navigare alla pagina di upload
+  const handleUploadPlayers = () => {
+    console.log('🔵 Navigazione alla pagina upload giocatori');
+    navigate('/players/upload');
+  };
+
+  // Handler per correggere i caratteri accentati
+  const handleFixEncoding = async () => {
+    try {
+      console.log('🔵 Correzione caratteri accentati...');
+      
+      const response = await fetch('/api/players/fix-encoding', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Errore ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('🟢 Caratteri corretti:', result.message);
+      
+      // Mostra messaggio di successo
+      setFeedbackDialog({ 
+        isOpen: true, 
+        message: result.message, 
+        type: 'success' 
+      });
+      
+      // Ricarica la lista giocatori
+      fetchPlayers();
+      
+    } catch (error) {
+      console.error('🔴 Errore correzione caratteri:', error.message);
+      setFeedbackDialog({ 
+        isOpen: true, 
+        message: `Errore durante la correzione: ${error.message}`, 
+        type: 'danger' 
+      });
+    }
+  };
+
   // Handler per aprire modale modifica giocatore
   const handleEditPlayer = (player) => {
     console.log('🔵 Apertura modale modifica giocatore:', player.firstName, player.lastName); // INFO DEV - rimuovere in produzione
@@ -99,6 +154,56 @@ const PlayersList = () => {
     
     // Ricarica lista per avere dati completi
     fetchPlayers();
+  };
+
+  // Handler per aprire popup conferma eliminazione
+  const handleDeletePlayer = (player) => {
+    console.log('🔵 Apertura popup conferma eliminazione:', player.firstName, player.lastName);
+    setDeleteConfirm({ isOpen: true, player });
+  };
+
+  // Handler per confermare eliminazione
+  const handleConfirmDelete = async () => {
+    const { player } = deleteConfirm;
+    
+    try {
+      console.log('🔵 Eliminazione giocatore:', player.firstName, player.lastName);
+      
+      const response = await fetch(`/api/players/${player.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Errore ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('🟢 Giocatore eliminato con successo:', result.message);
+      
+      // Rimuovi giocatore dalla lista locale
+      setPlayers(prev => prev.filter(p => p.id !== player.id));
+      
+      // Chiudi popup di conferma
+      setDeleteConfirm({ isOpen: false, player: null });
+      
+      // Mostra messaggio di successo standardizzato
+      setFeedbackDialog({ isOpen: true, message: 'Giocatore eliminato con successo!', type: 'success' });
+      
+    } catch (error) {
+      console.error('🔴 Errore eliminazione giocatore:', error.message);
+      setFeedbackDialog({ isOpen: true, message: `Errore durante l'eliminazione: ${error.message}`, type: 'danger' });
+    }
+  };
+
+  // Handler per annullare eliminazione
+  const handleCancelDelete = () => {
+    console.log('🔵 Annullamento eliminazione giocatore');
+    setDeleteConfirm({ isOpen: false, player: null });
   };
 
   // Filtra giocatori in base a ricerca e posizione
@@ -144,6 +249,48 @@ const PlayersList = () => {
       'FORWARD': 'Attaccante'
     };
     return positions[position] || position;
+  };
+
+  // Traduzione tipi di contratto
+  const getContractTypeLabel = (contractType) => {
+    const contractTypes = {
+      'PERMANENT': 'Permanente',
+      'LOAN': 'Prestito',
+      'TRIAL': 'Prova',
+      'YOUTH': 'Giovanile',
+      'PROFESSIONAL': 'Professionista',
+      'AMATEUR': 'Dilettante',
+      'APPRENTICESHIP': 'Apprendistato',
+      'TRAINING_AGREEMENT': 'Formazione'
+    };
+    return contractTypes[contractType] || contractType;
+  };
+
+  // Funzione per ottenere il tipo di contratto più appropriato
+  const getPlayerContractType = (player) => {
+    if (!player.contracts || player.contracts.length === 0) {
+      return 'Senza contratto';
+    }
+
+    // Prima cerca contratti attivi
+    const activeContracts = player.contracts.filter(contract => 
+      contract.status === 'ACTIVE' || contract.status === 'RENEWED'
+    );
+    
+    if (activeContracts.length > 0) {
+      // Prendi il contratto attivo più recente
+      const latestActive = activeContracts.sort((a, b) => 
+        new Date(b.startDate) - new Date(a.startDate)
+      )[0];
+      return getContractTypeLabel(latestActive.contractType);
+    }
+
+    // Se non ci sono contratti attivi, prendi il più recente
+    const latestContract = player.contracts.sort((a, b) => 
+      new Date(b.startDate) - new Date(a.startDate)
+    )[0];
+    
+    return getContractTypeLabel(latestContract.contractType);
   };
 
   // Calcola età
@@ -194,6 +341,35 @@ const PlayersList = () => {
           <p>{sortedPlayers.length} giocatori trovati</p>
         </div>
         <div className="header-right">
+                <button
+                  onClick={handleUploadPlayers}
+                  className="btn btn-secondary"
+                  style={{ marginRight: '12px' }}
+                >
+                  <Upload size={20} />
+                  Importa da File
+                </button>
+                <button
+                  onClick={handleFixEncoding}
+                  className="btn btn-primary"
+                  style={{ 
+                    marginRight: '12px',
+                    backgroundColor: '#FCD34D !important',
+                    borderColor: '#FCD34D !important',
+                    color: '#FFFFFF !important'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.setProperty('background-color', '#F59E0B', 'important');
+                    e.target.style.setProperty('border-color', '#F59E0B', 'important');
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.setProperty('background-color', '#FCD34D', 'important');
+                    e.target.style.setProperty('border-color', '#FCD34D', 'important');
+                  }}
+                  title="Corregge i caratteri accentati corrotti (es. Nicolò)"
+                >
+                  Correggi Caratteri
+                </button>
           <button 
             onClick={handleAddPlayer}
             className="btn btn-primary"
@@ -284,6 +460,18 @@ const PlayersList = () => {
               <div className="player-stats-grid">
                 <div className="stat-item">
                   <div className="stat-content">
+                    <span className="stat-label-strong">Ruolo</span>
+                    <span className="stat-value">{getPositionLabel(player.position)}</span>
+                  </div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-content">
+                    <span className="stat-label-strong">Contratto</span>
+                    <span className="stat-value">{getPlayerContractType(player)}</span>
+                  </div>
+                </div>
+                <div className="stat-item">
+                  <div className="stat-content">
                     <span className="stat-label-strong">Età</span>
                     <span className="stat-value">{calculateAge(player.dateOfBirth)} anni</span>
                   </div>
@@ -336,6 +524,7 @@ const PlayersList = () => {
                    Modifica
                  </button>
                  <button 
+                   onClick={() => handleDeletePlayer(player)}
                    className="action-btn delete-btn-modern"
                    title="Elimina giocatore"
                  >
@@ -354,6 +543,30 @@ const PlayersList = () => {
         onClose={handleCloseModal}
         player={editingPlayer}
         onSuccess={handleSuccess}
+      />
+
+      {/* Popup conferma eliminazione */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Elimina Giocatore"
+        message={`Sei sicuro di voler eliminare ${deleteConfirm.player?.firstName} ${deleteConfirm.player?.lastName}?`}
+        confirmText="Elimina"
+        cancelText="Annulla"
+        type="danger"
+      />
+
+      {/* Dialog standardizzato esiti operazioni */}
+      <ConfirmDialog
+        isOpen={feedbackDialog.isOpen}
+        onClose={() => setFeedbackDialog({ isOpen: false, message: '', type: 'success' })}
+        onConfirm={() => setFeedbackDialog({ isOpen: false, message: '', type: 'success' })}
+        title={feedbackDialog.type === 'success' ? 'Operazione completata' : 'Operazione non riuscita'}
+        message={feedbackDialog.message}
+        confirmText="Ok"
+        cancelText={null}
+        type={feedbackDialog.type === 'success' ? 'success' : 'danger'}
       />
     </div>
   );

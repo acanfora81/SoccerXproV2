@@ -41,12 +41,18 @@ const ALL_MENU_ITEMS = [
     path: '/players',
     requiredPermission: 'players:read',
     submenu: [
-      { id: 'players', label: 'Gestione Giocatori', path: '/players', requiredPermission: 'players:read' },
       { 
         id: 'players-stats', 
         label: 'Statistiche', 
         path: '/players/stats',
         requiredPermission: 'players:read'
+      },
+      { id: 'players', label: 'Gestione Giocatori', path: '/players', requiredPermission: 'players:read' },
+      { 
+        id: 'players-upload', 
+        label: 'Importa da File', 
+        path: '/players/upload',
+        requiredPermission: 'players:write'
       }
     ]
   },
@@ -96,17 +102,67 @@ const ALL_MENU_ITEMS = [
     path: '/contracts',
     requiredPermission: 'contracts:read',
     submenu: [
-      { 
-        id: 'contracts-list', 
-        label: 'Lista Contratti', 
+      {
+        id: 'contracts-dashboard',
+        label: 'Dashboard',
+        path: '/contracts/dashboard',
+        requiredPermission: 'contracts:read'
+      },
+      {
+        id: 'contracts-list',
+        label: 'Lista Contratti',
         path: '/contracts',
         requiredPermission: 'contracts:read'
       },
-      { 
-        id: 'contracts-expiring', 
-        label: 'In Scadenza', 
+      {
+        id: 'contracts-expiring',
+        label: 'In Scadenza',
         path: '/contracts/expiring',
         requiredPermission: 'contracts:read'
+      },
+      {
+        id: 'contracts-summary',
+        label: 'Riepilogo Contratti',
+        path: '/contracts/summary',
+        requiredPermission: 'contracts:read'
+      },
+      {
+        id: 'aliquote',
+        label: 'Visualizza Aliquote',
+        requiredPermission: 'contracts:read',
+        submenu: [
+          {
+            id: 'taxrates-list',
+            label: 'Aliquote Stipendi',
+            path: '/taxrates/list',
+            requiredPermission: 'contracts:read'
+          },
+          {
+            id: 'bonustaxrates-list',
+            label: 'Aliquote Bonus',
+            path: '/bonustaxrates/list',
+            requiredPermission: 'contracts:read'
+          }
+        ]
+      },
+      {
+        id: 'caricamento-aliquote',
+        label: 'Carica Aliquote',
+        requiredPermission: 'contracts:write',
+        submenu: [
+          {
+            id: 'taxrates-upload',
+            label: 'Aliquote Stipendi',
+            path: '/taxrates/upload',
+            requiredPermission: 'contracts:write'
+          },
+          {
+            id: 'bonustaxrates-upload',
+            label: 'Aliquote Bonus',
+            path: '/bonustaxrates/upload',
+            requiredPermission: 'contracts:write'
+          }
+        ]
       }
     ]
   },

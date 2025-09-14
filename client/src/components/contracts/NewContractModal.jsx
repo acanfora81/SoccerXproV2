@@ -1,15 +1,41 @@
 // client/src/components/contracts/NewContractModal.jsx
 // Modale per creazione nuovo contratto - SoccerXpro V2
 
-import { useState, useEffect } from 'react';
-import { X, Save, FileText, User, Calendar, Euro, Building2, CheckCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, Save, FileText, User, Calendar, Euro, Building2, CheckCircle, Calculator, Percent, AlertTriangle, RefreshCw } from 'lucide-react';
 import { apiFetch } from '../../utils/http';
 import useAuthStore from '../../store/authStore';
 import ConfirmDialog from '../common/ConfirmDialog';
+import { useUnifiedFiscalCalculation } from '../../hooks/useUnifiedFiscalCalculation';
+import { parseItalianNumber, parseItalianNumberToFloat, formatItalianNumber, formatItalianCurrency } from '../../utils/italianNumbers';
+import BonusField from './BonusField';
+import BonusCalculationDisplay from './BonusCalculationDisplay';
 import '../../styles/contract-modal.css';
 
 const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }) => {
   const { user, isAuthenticated } = useAuthStore();
+
+  // Funzione per formattare i numeri in formato italiano con separatori delle migliaia
+  const formatNumber = (value) => {
+    if (!value || value === '') return '';
+    
+    // Se è già una stringa formattata, la restituisco
+    if (typeof value === 'string' && value.includes(',')) {
+      return value;
+    }
+    
+    const num = parseFloat(value);
+    if (isNaN(num)) return '';
+    
+    // Formatta con separatori delle migliaia e virgola decimale
+    return num.toLocaleString('it-IT', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  // Funzione per convertire da formato italiano a numero
+  
   const [formData, setFormData] = useState({
     // Campi obbligatori
     startDate: '',
@@ -20,7 +46,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     playerId: '',
     status: 'DRAFT',
     
-    // Campi opzionali
+    // Campi opzionali esistenti
     signedDate: '',
     notes: '',
     agentContact: '',
@@ -35,6 +61,71 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     protocolNumber: '',
     responsibleUserId: '',
     
+    // Nuovi campi estesi
+    netSalary: '',
+    contractNumber: '',
+    fifaId: '',
+    leagueRegistrationId: '',
+    imageRights: '',
+    loyaltyBonus: '',
+    signingBonus: '',
+    accommodationBonus: '',
+    carAllowance: '',
+    transferAllowance: '',
+    taxRegime: '',
+    taxRate: '',
+    socialContributions: '',
+    
+    // Aliquote bonus personalizzate (sovrascrivono quelle caricate)
+    customImageRightsTax: '',
+    customLoyaltyBonusTax: '',
+    customSigningBonusTax: '',
+    customAccommodationBonusTax: '',
+    customCarAllowanceTax: '',
+    customTransferAllowanceTax: '',
+    insuranceValue: '',
+    insuranceProvider: '',
+    medicalInsurance: false,
+    autoRenewal: false,
+    renewalConditions: '',
+    renewalNoticeMonths: '',
+    jurisdiction: '',
+    arbitrationClause: false,
+    confidentialityClause: false,
+    nonCompeteClause: false,
+    nonCompeteMonths: '',
+    isMinor: false,
+    parentalConsent: false,
+    tutorName: '',
+    tutorContact: '',
+    educationClause: false,
+    languageRequirement: '',
+    trainingObligation: false,
+    performanceTargets: '',
+    kpiTargets: '',
+    workPermitRequired: false,
+    workPermitStatus: '',
+    workPermitExpiry: '',
+    visaRequired: false,
+    visaType: '',
+    relocationPackage: '',
+    familySupport: false,
+    languageLessons: false,
+    mediaObligations: '',
+    socialMediaClause: '',
+    sponsorshipRights: false,
+    medicalExamDate: '',
+    medicalExamResult: '',
+    medicalRestrictions: '',
+    dopingConsent: false,
+    lastReviewDate: '',
+    nextReviewDate: '',
+    complianceStatus: 'PENDING',
+    complianceNotes: '',
+    priority: 'NORMAL',
+    tags: [],
+    internalNotes: '',
+    
     // Flag per rinnovo ufficiale
     isOfficialRenewal: false
   });
@@ -44,8 +135,205 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
   const [validationErrors, setValidationErrors] = useState({});
   const [players, setPlayers] = useState([]);
   const [successDialog, setSuccessDialog] = useState({ isOpen: false, message: '' });
+  
+  // Stato per calcoli fiscali unificati
+  const [calculationMode, setCalculationMode] = useState('net'); // 'net' o 'gross'
+  
+  // Stato per modalità di calcolo individuale per ogni bonus
+  const [bonusModes, setBonusModes] = useState({
+    imageRights: 'gross',
+    loyaltyBonus: 'gross', 
+    signingBonus: 'gross',
+    accommodationBonus: 'gross',
+    carAllowance: 'gross',
+    transferAllowance: 'gross'
+  });
+  
+  const [unifiedCalculations, setUnifiedCalculations] = useState(null);
 
-  console.log('🔵 NewContractModal renderizzato', editingContract ? 'in modalità modifica' : 'in modalità creazione');
+  // Hook unificato per tutti i calcoli fiscali
+  const hookParams = {
+    teamId: user?.teamId,
+    contractYear: formData.startDate ? new Date(formData.startDate).getFullYear() : null,
+    contractType: formData.contractType
+  };
+  
+  const {
+    taxRates,
+    bonusTaxRates,
+    loading: taxLoading,
+    error: taxError,
+    calculateUnified
+  } = useUnifiedFiscalCalculation(
+    hookParams.teamId,
+    hookParams.contractYear,
+    hookParams.contractType
+  );
+
+  // Debug dello stato delle aliquote bonus (ridotto per performance)
+  // console.log('🔵 Stato aliquote nel componente:', { bonusTaxRates, taxLoading });
+
+  // Funzione per eseguire i calcoli fiscali - MEMOIZZATA
+  // Funzione unificata per eseguire tutti i calcoli fiscali
+  const performUnifiedCalculation = useCallback(() => {
+    // console.log('🔵 performUnifiedCalculation chiamata'); // Ridotto per performance
+    
+    // Procedi anche se abbiamo solo le aliquote stipendio
+    if (!taxRates) {
+      console.log('🔴 Nessuna aliquota stipendio disponibile');
+      setUnifiedCalculations(null);
+      return;
+    }
+
+    // Prepara i dati per il calcolo unificato (incluse aliquote personalizzate)
+    const calculationData = {
+      salary: parseItalianNumberToFloat(formData.salary),
+      netSalary: parseItalianNumberToFloat(formData.netSalary),
+      calculationMode,
+      bonusModes, // Modalità individuali per ogni bonus
+      imageRights: parseItalianNumberToFloat(formData.imageRights),
+      loyaltyBonus: parseItalianNumberToFloat(formData.loyaltyBonus),
+      signingBonus: parseItalianNumberToFloat(formData.signingBonus),
+      accommodationBonus: parseItalianNumberToFloat(formData.accommodationBonus),
+      carAllowance: parseItalianNumberToFloat(formData.carAllowance),
+      transferAllowance: parseItalianNumberToFloat(formData.transferAllowance),
+      // Aliquote personalizzate (convertite in numero)
+      customImageRightsTax: formData.customImageRightsTax ? parseItalianNumberToFloat(formData.customImageRightsTax) : undefined,
+      customLoyaltyBonusTax: formData.customLoyaltyBonusTax ? parseItalianNumberToFloat(formData.customLoyaltyBonusTax) : undefined,
+      customSigningBonusTax: formData.customSigningBonusTax ? parseItalianNumberToFloat(formData.customSigningBonusTax) : undefined,
+      customAccommodationBonusTax: formData.customAccommodationBonusTax ? parseItalianNumberToFloat(formData.customAccommodationBonusTax) : undefined,
+      customCarAllowanceTax: formData.customCarAllowanceTax ? parseItalianNumberToFloat(formData.customCarAllowanceTax) : undefined,
+      customTransferAllowanceTax: formData.customTransferAllowanceTax ? parseItalianNumberToFloat(formData.customTransferAllowanceTax) : undefined
+    };
+
+    // Esegue il calcolo unificato
+    // console.log('🔵 Chiamando calculateUnified con dati'); // Ridotto per performance
+    const calculations = calculateUnified(calculationData);
+    // console.log('🔵 Risultato calcoli'); // Ridotto per performance
+    setUnifiedCalculations(calculations);
+
+    // NON aggiornare automaticamente i campi qui per evitare loop infiniti
+    // L'aggiornamento automatico avviene solo quando si cambia modalità di calcolo
+  }, [taxRates, bonusTaxRates, calculationMode, formData, bonusModes, calculateUnified]);
+
+  // Funzione per gestire l'input dei numeri (solo pulizia, no formattazione) - MEMOIZZATA
+  const handleNumberInput = useCallback((e, fieldName) => {
+    const { value } = e.target;
+    
+    // Rimuovi tutti i caratteri non numerici tranne virgola
+    let cleanValue = value.replace(/[^\d,]/g, '');
+    
+    // Gestisci la virgola decimale (solo una)
+    const commaIndex = cleanValue.indexOf(',');
+    let beforeComma = '';
+    let afterComma = '';
+    
+    if (commaIndex !== -1) {
+      // Mantieni solo la prima virgola e massimo 2 cifre dopo
+      beforeComma = cleanValue.substring(0, commaIndex);
+      afterComma = cleanValue.substring(commaIndex + 1).replace(/,/g, '');
+      afterComma = afterComma.substring(0, 2); // Massimo 2 cifre decimali
+    } else {
+      beforeComma = cleanValue;
+      afterComma = '';
+    }
+    
+    // NON formattare durante la digitazione, solo pulire
+    let finalValue = '';
+    if (beforeComma.length > 0) {
+      finalValue = beforeComma;
+      if (afterComma.length > 0) {
+        finalValue += ',' + afterComma;
+      }
+    }
+    
+    // Aggiorna il formData con il valore pulito (senza formattazione)
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: finalValue
+    }));
+    
+    // NON triggerare calcoli durante la digitazione - solo al blur
+    // I calcoli verranno eseguiti solo quando l'utente esce dal campo (onBlur)
+  }, [performUnifiedCalculation]);
+
+  // Funzione per formattare quando l'utente esce dal campo (onBlur) - MEMOIZZATA
+  const handleNumberBlur = useCallback((e, fieldName) => {
+    const { value } = e.target;
+    
+    console.log('🔵 handleNumberBlur:', { value, fieldName });
+    
+    if (!value || value === '') return;
+    
+    // Converti in numero per formattare
+    const numericValue = parseItalianNumberToFloat(value);
+    
+    console.log('🔵 handleNumberBlur: Original value:', value, 'Numeric value:', numericValue);
+    
+    if (!isNaN(numericValue)) {
+      // Formatta con separatori delle migliaia
+      const formattedValue = formatItalianNumber(numericValue);
+      
+      // console.log('🔵 formattedValue on blur:', formattedValue); // Ridotto per performance
+      
+      // Aggiorna il formData con il valore formattato
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: formattedValue
+      }));
+      
+      // Calcolo IMMEDIATO quando l'utente esce dal campo
+      performUnifiedCalculation();
+    }
+  }, [performUnifiedCalculation]);
+
+  // Gestione input - MEMOIZZATA per evitare perdita focus
+  const handleChange = useCallback((e) => {
+    const { name, value, type, checked } = e.target;
+    
+    // Per i campi numerici, usa la gestione speciale
+    if (name === 'netSalary' || name === 'salary' || name === 'imageRights' || 
+        name === 'loyaltyBonus' || name === 'signingBonus' || name === 'accommodationBonus' || 
+        name === 'carAllowance' || name === 'transferAllowance' || name === 'taxRate' ||
+        name === 'customImageRightsTax' || name === 'customLoyaltyBonusTax' || 
+        name === 'customSigningBonusTax' || name === 'customAccommodationBonusTax' || 
+        name === 'customCarAllowanceTax' || name === 'customTransferAllowanceTax') {
+      handleNumberInput(e, name);
+      return;
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+
+    // Rimuovi errore di validazione quando l'utente inizia a digitare
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
+    }
+
+    // Calcolo automatico SOLO per contractType e startDate (campi critici)
+    if (name === 'contractType' || name === 'startDate') {
+      // Calcolo immediato per questi campi critici
+      performUnifiedCalculation();
+    }
+
+    // I calcoli per i campi numerici sono gestiti solo da handleNumberBlur
+  }, [validationErrors, performUnifiedCalculation, handleNumberInput]);
+
+  // NON ricalcolare automaticamente quando cambiano le modalità bonus
+  // I calcoli verranno eseguiti solo quando l'utente esce dai campi o cambia contractType/date
+
+  // Funzione helper per ottenere il calcolo di un singolo bonus
+  const getBonusCalculation = (bonusField) => {
+    if (!unifiedCalculations?.bonuses?.details) return null;
+    return unifiedCalculations.bonuses.details[bonusField];
+  };
+
+
 
   // Popola il form quando si sta modificando un contratto
   useEffect(() => {
@@ -76,7 +364,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
       setFormData({
         startDate: editingContract.startDate ? new Date(editingContract.startDate).toISOString().split('T')[0] : '',
         endDate: editingContract.endDate ? new Date(editingContract.endDate).toISOString().split('T')[0] : '',
-        salary: editingContract.salary ? editingContract.salary.toString() : '',
+        salary: editingContract.salary ? formatItalianNumber(editingContract.salary) : '',
         currency: editingContract.currency || 'EUR',
         contractType: editingContract.contractType || '',
         playerId: editingContract.playerId ? editingContract.playerId.toString() : '',
@@ -85,7 +373,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         notes: editingContract.notes || '',
         agentContact: editingContract.agentContact || '',
         buyOption: editingContract.buyOption === true,
-        buyPrice: editingContract.buyPrice ? editingContract.buyPrice.toString() : '',
+        buyPrice: editingContract.buyPrice ? formatItalianNumber(editingContract.buyPrice) : '',
         contractRole: editingContract.contractRole || '',
         depositDate: editingContract.depositDate ? new Date(editingContract.depositDate).toISOString().split('T')[0] : '',
         loanFromClub: editingContract.loanFromClub || '',
@@ -94,7 +382,14 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         paymentFrequency: editingContract.paymentFrequency || '',
         protocolNumber: editingContract.protocolNumber || '',
         responsibleUserId: editingContract.responsibleUserId ? editingContract.responsibleUserId.toString() : '',
-        isOfficialRenewal: false // Sempre false per le modifiche esistenti
+        isOfficialRenewal: false, // Sempre false per le modifiche esistenti
+        // Bonus fields
+        netSalary: editingContract.netSalary ? formatItalianNumber(editingContract.netSalary) : '',
+        imageRights: editingContract.imageRights ? formatItalianNumber(editingContract.imageRights) : '',
+        loyaltyBonus: editingContract.loyaltyBonus ? formatItalianNumber(editingContract.loyaltyBonus) : '',
+        signingBonus: editingContract.signingBonus ? formatItalianNumber(editingContract.signingBonus) : '',
+        accommodationBonus: editingContract.accommodationBonus ? formatItalianNumber(editingContract.accommodationBonus) : '',
+        carAllowance: editingContract.carAllowance ? formatItalianNumber(editingContract.carAllowance) : ''
       });
     } else {
       // Reset form per nuova creazione
@@ -119,7 +414,14 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         paymentFrequency: '',
         protocolNumber: '',
         responsibleUserId: '',
-        isOfficialRenewal: false
+        isOfficialRenewal: false,
+        // Bonus fields
+        netSalary: '',
+        imageRights: '',
+        loyaltyBonus: '',
+        signingBonus: '',
+        accommodationBonus: '',
+        carAllowance: ''
       });
     }
   }, [editingContract]);
@@ -179,22 +481,71 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
   };
 
 
-  // Gestione input
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
 
-    // Rimuovi errore di validazione quando l'utente inizia a digitare
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: null
-      }));
+
+  // Toggle tra modalità calcolo netto/lordo
+  const toggleCalculationMode = () => {
+    const newMode = calculationMode === 'net' ? 'gross' : 'net';
+    setCalculationMode(newMode);
+
+    // Se abbiamo calcoli esistenti, aggiorna il campo appropriato
+    if (unifiedCalculations?.salary) {
+      if (newMode === 'net') {
+        // Passando da lordo a netto, aggiorna il campo netSalary
+        setFormData(prev => ({
+          ...prev,
+          netSalary: formatNumber(unifiedCalculations.salary.netSalary)
+        }));
+      } else {
+        // Passando da netto a lordo, aggiorna il campo salary
+        setFormData(prev => ({
+          ...prev,
+          salary: formatNumber(unifiedCalculations.salary.grossSalary)
+        }));
+      }
     }
   };
+
+  // Toggle modalità calcolo per un singolo bonus - MEMOIZZATA
+  const toggleBonusMode = useCallback((bonusField) => {
+    const currentMode = bonusModes[bonusField];
+    const newMode = currentMode === 'gross' ? 'net' : 'gross';
+    
+    setBonusModes(prev => ({
+      ...prev,
+      [bonusField]: newMode
+    }));
+
+    // Aggiorna automaticamente il campo del bonus se abbiamo calcoli esistenti
+    if (unifiedCalculations?.bonuses?.details?.[bonusField]) {
+      const calc = unifiedCalculations.bonuses.details[bonusField];
+      
+      // Se stiamo passando da lordo a netto, mostra il netto calcolato
+      // Se stiamo passando da netto a lordo, mostra il lordo calcolato
+      let newValue;
+      if (newMode === 'net') {
+        newValue = calc.netAmount;
+      } else {
+        newValue = calc.grossAmount;
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        [bonusField]: formatNumber(newValue)
+      }));
+    }
+  }, [bonusModes, unifiedCalculations]);
+
+  // Componente BonusField ora è importato da file separato per evitare ricreazione
+
+  // Componente BonusCalculationDisplay ora è importato da file separato per evitare ricreazione
+
+  // Ricalcola quando cambiano le aliquote fiscali - SOLO se abbiamo dati
+  useEffect(() => {
+    if (taxRates && bonusTaxRates && (formData.salary || formData.imageRights || formData.loyaltyBonus || formData.signingBonus || formData.accommodationBonus || formData.carAllowance || formData.transferAllowance)) {
+      performUnifiedCalculation();
+    }
+  }, [calculationMode, taxRates, bonusTaxRates, performUnifiedCalculation]);
 
   // Validazione form
   const validateForm = () => {
@@ -246,9 +597,16 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
       // Prepara dati per l'invio
       const contractData = {
         ...formData,
-        salary: parseFloat(formData.salary),
-        buyPrice: formData.buyPrice ? parseFloat(formData.buyPrice) : null,
-        responsibleUserId: formData.responsibleUserId || null
+        salary: parseItalianNumberToFloat(formData.salary),
+        buyPrice: formData.buyPrice ? parseItalianNumberToFloat(formData.buyPrice) : null,
+        responsibleUserId: formData.responsibleUserId || null,
+        // Bonus - invia sempre, anche se 0
+        imageRights: formData.imageRights ? parseItalianNumberToFloat(formData.imageRights) : 0,
+        loyaltyBonus: formData.loyaltyBonus ? parseItalianNumberToFloat(formData.loyaltyBonus) : 0,
+        signingBonus: formData.signingBonus ? parseItalianNumberToFloat(formData.signingBonus) : 0,
+        accommodationBonus: formData.accommodationBonus ? parseItalianNumberToFloat(formData.accommodationBonus) : 0,
+        carAllowance: formData.carAllowance ? parseItalianNumberToFloat(formData.carAllowance) : 0,
+        netSalary: formData.netSalary ? parseItalianNumberToFloat(formData.netSalary) : 0
       };
 
       console.log('📤 Invio dati contratto:', contractData);
@@ -503,46 +861,168 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
             </div>
           </div>
 
-          {/* Dati economici */}
+          {/* Dati Economici Unificati */}
           <div className="form-section">
-            <h3 className="form-section-title">Dati Economici</h3>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="salary" className="form-label">Stipendio *</label>
-                <input
-                  type="number"
-                  id="salary"
-                  name="salary"
-                  value={formData.salary}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  className={`form-input ${validationErrors.salary ? 'error' : ''}`}
-                />
-                {validationErrors.salary && (
-                  <span className="field-error">{validationErrors.salary}</span>
-                )}
+            <div className="form-section-header">
+              <Euro size={20} />
+              <h3 className="form-section-title">Dati Economici</h3>
+            </div>
+            
+            {/* Stipendio Base con Toggle */}
+            <div className="salary-input-section">
+              <div className="salary-toggle">
+                <label className="salary-toggle-label">Tipo Stipendio:</label>
+                <div className="salary-toggle-buttons">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCalculationMode('net');
+                    }}
+                    className={`salary-mode-btn ${calculationMode === 'net' ? 'active' : ''}`}
+                    disabled={loading}
+                  >
+                    Stipendio Netto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCalculationMode('gross');
+                    }}
+                    className={`salary-mode-btn ${calculationMode === 'gross' ? 'active' : ''}`}
+                    disabled={loading}
+                  >
+                    Stipendio Lordo
+                  </button>
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="currency" className="form-label">Valuta</label>
-                <select
-                  id="currency"
-                  name="currency"
-                  value={formData.currency}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className="form-select"
-                >
-                  <option value="EUR">EUR (€)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor={calculationMode === 'net' ? 'netSalary' : 'salary'} className="form-label">
+                    {calculationMode === 'net' ? 'Stipendio Netto' : 'Stipendio Lordo'} *
+                  </label>
+                              <input
+                                type="text"
+                                id={calculationMode === 'net' ? 'netSalary' : 'salary'}
+                                name={calculationMode === 'net' ? 'netSalary' : 'salary'}
+                                value={calculationMode === 'net' ? formData.netSalary : formData.salary}
+                                onChange={handleChange}
+                                onBlur={(e) => handleNumberBlur(e, calculationMode === 'net' ? 'netSalary' : 'salary')}
+                                required
+                                disabled={loading}
+                                placeholder="0,00"
+                                className={`form-input ${validationErrors.salary ? 'error' : ''}`}
+                              />
+                  {validationErrors.salary && (
+                    <span className="field-error">{validationErrors.salary}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="currency" className="form-label">Valuta</label>
+                  <select
+                    id="currency"
+                    name="currency"
+                    value={formData.currency}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className="form-select"
+                  >
+                    <option value="EUR">EUR (€)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="GBP">GBP (£)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
+            {/* Calcoli Fiscali Automatici */}
+            <div className="tax-calculations-integrated">
+              {taxError && (
+                <div className="alert alert-warning">
+                  <AlertTriangle size={16} />
+                  {taxError}
+                </div>
+              )}
+
+              {!taxRates && !taxLoading && (formData.netSalary || formData.salary) && (
+                <div className="tax-info">
+                  <div className="info-card">
+                    <Percent size={16} />
+                    <span>Nessuna aliquota fiscale trovata per {formData.startDate ? new Date(formData.startDate).getFullYear() : 'questo anno'} e tipo contratto "{formData.contractType}". Carica le aliquote dalla sezione "Carica Aliquote".</span>
+                  </div>
+                </div>
+              )}
+
+              {taxRates && unifiedCalculations?.salary && (
+                <div className="calculations-summary">
+                  <h4 className="calculations-title">Calcoli Automatici</h4>
+                  <div className="calculations-grid-compact">
+                      <div className="calculation-item-compact">
+                        <span className="calculation-label">INPS:</span>
+                        <span className="calculation-value inps">
+                          €{unifiedCalculations.salary.inps.toLocaleString('it-IT', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
+                      </div>
+                      <div className="calculation-item-compact">
+                        <span className="calculation-label">INAIL:</span>
+                        <span className="calculation-value inail">
+                          €{unifiedCalculations.salary.inail.toLocaleString('it-IT', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
+                      </div>
+                      <div className="calculation-item-compact">
+                        <span className="calculation-label">FFC:</span>
+                        <span className="calculation-value ffc">
+                          €{unifiedCalculations.salary.ffc.toLocaleString('it-IT', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
+                      </div>
+                      <div className="calculation-item-compact total">
+                        <span className="calculation-label">Totale Contributi:</span>
+                        <span className="calculation-value total">
+                          €{unifiedCalculations.salary.totalContributions.toLocaleString('it-IT', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
+                      </div>
+                      <div className="calculation-item-compact gross">
+                        <span className="calculation-label">
+                          {calculationMode === 'net' ? 'Stipendio Lordo:' : 'Stipendio Netto:'}
+                        </span>
+                        <span className="calculation-value gross">
+                          €{(calculationMode === 'net' ? unifiedCalculations.salary.grossSalary : unifiedCalculations.salary.netSalary).toLocaleString('it-IT', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          })}
+                        </span>
+                      </div>
+                  </div>
+                </div>
+              )}
+
+              {taxRates && !unifiedCalculations?.salary && (formData.netSalary || formData.salary) && (
+                <div className="tax-info">
+                  <div className="info-card">
+                    <Percent size={16} />
+                    <span>Inserisci un valore per {calculationMode === 'net' ? 'lo stipendio netto' : 'lo stipendio lordo'} per vedere i calcoli automatici</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Frequenza e Ruolo */}
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="paymentFrequency" className="form-label">Frequenza Pagamento</label>
@@ -581,6 +1061,186 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                 </select>
               </div>
             </div>
+
+            {/* Bonus e Indennità */}
+            <div className="bonus-section">
+              <h4 className="bonus-title">Bonus e Indennità</h4>
+              
+              {/* Calcoli Tassazione Bonus */}
+              {taxError && (
+                <div className="alert alert-warning">
+                  <AlertTriangle size={16} />
+                  <div>
+                    <span>{taxError}</span>
+                    <button 
+                      onClick={() => window.location.href = '/bonustaxrates/upload'}
+                      className="btn btn-sm btn-outline ml-2"
+                    >
+                      Carica Aliquote
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!bonusTaxRates && !taxLoading && (parseItalianNumberToFloat(formData.imageRights) > 0 || parseItalianNumberToFloat(formData.loyaltyBonus) > 0 || parseItalianNumberToFloat(formData.signingBonus) > 0 || parseItalianNumberToFloat(formData.accommodationBonus) > 0 || parseItalianNumberToFloat(formData.carAllowance) > 0 || parseItalianNumberToFloat(formData.transferAllowance) > 0) && (
+                <div className="tax-info">
+                  <div className="info-card warning">
+                    <AlertTriangle size={16} />
+                    <div>
+                      <strong>Aliquote bonus non disponibili</strong>
+                      <p>Nessuna aliquota bonus trovata per {formData.startDate ? new Date(formData.startDate).getFullYear() : 'questo anno'}.</p>
+                      <p>Carica le aliquote bonus dalla sezione <strong>"Carica Aliquote Bonus"</strong> per vedere i calcoli automatici.</p>
+                      <button 
+                        onClick={() => window.location.href = '/bonustaxrates/upload'}
+                        className="btn btn-sm btn-primary mt-2"
+                      >
+                        Carica Aliquote Bonus
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {taxLoading && (
+                <div className="tax-info">
+                  <div className="info-card">
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span>Caricamento aliquote bonus...</span>
+                  </div>
+                </div>
+              )}
+
+
+              {/* Sezione Importi Bonus */}
+              <h5 className="form-section-subtitle">Importi Bonus e Indennità</h5>
+              
+              {/* Info calcolo bonus individuali */}
+              <div className="bonus-info">
+                <p className="info-text">
+                  <strong>Calcolo Individuale:</strong> Ogni bonus può essere impostato come Lordo o Netto indipendentemente. 
+                  Usa i pulsanti L/N accanto a ogni campo per scegliere la modalità.
+                </p>
+                </div>
+              <BonusField 
+                bonusField="imageRights" 
+                label="Diritti Immagine" 
+                taxPlaceholder="es. 23,00"
+                bonusMode={bonusModes.imageRights}
+                fieldValue={formData.imageRights || ''}
+                customTaxValue={formData.customImageRightsTax || ''}
+                loading={loading}
+                onToggleMode={toggleBonusMode}
+                onChange={handleChange}
+                onBlur={handleNumberBlur}
+              />
+              <BonusCalculationDisplay 
+                bonusField="imageRights" 
+                label="Diritti Immagine"
+                fieldValue={formData.imageRights || ''}
+                calc={getBonusCalculation('imageRights')}
+                bonusMode={bonusModes.imageRights}
+              />
+              
+              <BonusField 
+                bonusField="loyaltyBonus" 
+                label="Bonus Fedeltà" 
+                taxPlaceholder="es. 38,00"
+                bonusMode={bonusModes.loyaltyBonus}
+                fieldValue={formData.loyaltyBonus || ''}
+                customTaxValue={formData.customLoyaltyBonusTax || ''}
+                loading={loading}
+                onToggleMode={toggleBonusMode}
+                onChange={handleChange}
+                onBlur={handleNumberBlur}
+              />
+              <BonusCalculationDisplay 
+                bonusField="loyaltyBonus" 
+                label="Bonus Fedeltà"
+                fieldValue={formData.loyaltyBonus || ''}
+                calc={getBonusCalculation('loyaltyBonus')}
+                bonusMode={bonusModes.loyaltyBonus}
+              />
+              
+              <BonusField 
+                bonusField="signingBonus" 
+                label="Bonus Firma" 
+                taxPlaceholder="es. 38,00"
+                bonusMode={bonusModes.signingBonus}
+                fieldValue={formData.signingBonus || ''}
+                customTaxValue={formData.customSigningBonusTax || ''}
+                loading={loading}
+                onToggleMode={toggleBonusMode}
+                onChange={handleChange}
+                onBlur={handleNumberBlur}
+              />
+              <BonusCalculationDisplay 
+                bonusField="signingBonus" 
+                label="Bonus Firma"
+                fieldValue={formData.signingBonus || ''}
+                calc={getBonusCalculation('signingBonus')}
+                bonusMode={bonusModes.signingBonus}
+              />
+              
+              <BonusField 
+                bonusField="accommodationBonus" 
+                label="Bonus Alloggio" 
+                taxPlaceholder="es. 38,00"
+                bonusMode={bonusModes.accommodationBonus}
+                fieldValue={formData.accommodationBonus || ''}
+                customTaxValue={formData.customAccommodationBonusTax || ''}
+                loading={loading}
+                onToggleMode={toggleBonusMode}
+                onChange={handleChange}
+                onBlur={handleNumberBlur}
+              />
+              <BonusCalculationDisplay 
+                bonusField="accommodationBonus" 
+                label="Bonus Alloggio"
+                fieldValue={formData.accommodationBonus || ''}
+                calc={getBonusCalculation('accommodationBonus')}
+                bonusMode={bonusModes.accommodationBonus}
+              />
+              
+              <BonusField 
+                bonusField="carAllowance" 
+                label="Indennità Auto" 
+                taxPlaceholder="es. 38,00"
+                bonusMode={bonusModes.carAllowance}
+                fieldValue={formData.carAllowance || ''}
+                customTaxValue={formData.customCarAllowanceTax || ''}
+                loading={loading}
+                onToggleMode={toggleBonusMode}
+                onChange={handleChange}
+                onBlur={handleNumberBlur}
+              />
+              <BonusCalculationDisplay 
+                bonusField="carAllowance" 
+                label="Indennità Auto"
+                fieldValue={formData.carAllowance || ''}
+                calc={getBonusCalculation('carAllowance')}
+                bonusMode={bonusModes.carAllowance}
+              />
+              
+              <BonusField 
+                bonusField="transferAllowance" 
+                label="Indennità di Trasferta" 
+                taxPlaceholder="es. 38,00"
+                bonusMode={bonusModes.transferAllowance}
+                fieldValue={formData.transferAllowance || ''}
+                customTaxValue={formData.customTransferAllowanceTax || ''}
+                loading={loading}
+                onToggleMode={toggleBonusMode}
+                onChange={handleChange}
+                onBlur={handleNumberBlur}
+              />
+              <BonusCalculationDisplay 
+                bonusField="transferAllowance" 
+                label="Indennità di Trasferta"
+                fieldValue={formData.transferAllowance || ''}
+                calc={getBonusCalculation('transferAllowance')}
+                bonusMode={bonusModes.transferAllowance}
+              />
+            </div>
           </div>
 
           {/* Clausole e opzioni */}
@@ -588,9 +1248,10 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
             <h3 className="form-section-title">Clausole e Opzioni</h3>
             <div className="form-row">
               <div className="form-group checkbox-group">
-                <label className="checkbox-label">
+                <label htmlFor="buyOption" className="checkbox-label">
                   <input
                     type="checkbox"
+                    id="buyOption"
                     name="buyOption"
                     checked={formData.buyOption}
                     onChange={handleChange}
@@ -600,9 +1261,10 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                 </label>
               </div>
               <div className="form-group checkbox-group">
-                <label className="checkbox-label">
+                <label htmlFor="obligationToBuy" className="checkbox-label">
                   <input
                     type="checkbox"
+                    id="obligationToBuy"
                     name="obligationToBuy"
                     checked={formData.obligationToBuy}
                     onChange={handleChange}
@@ -665,6 +1327,55 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
             </div>
           </div>
 
+          {/* Identificativi e Registrazioni */}
+          <div className="form-section">
+            <h3 className="form-section-title">Identificativi e Registrazioni</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="contractNumber" className="form-label">Numero Contratto</label>
+                <input
+                  type="text"
+                  id="contractNumber"
+                  name="contractNumber"
+                  value={formData.contractNumber}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="Es. CON-2024-001"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="fifaId" className="form-label">ID FIFA</label>
+                <input
+                  type="text"
+                  id="fifaId"
+                  name="fifaId"
+                  value={formData.fifaId}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="ID FIFA del giocatore"
+                  className="form-input"
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="leagueRegistrationId" className="form-label">ID Registrazione Lega</label>
+                <input
+                  type="text"
+                  id="leagueRegistrationId"
+                  name="leagueRegistrationId"
+                  value={formData.leagueRegistrationId}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="ID registrazione lega"
+                  className="form-input"
+                />
+              </div>
+            </div>
+          </div>
+
+
           {/* Prestito */}
           <div className="form-section">
             <h3 className="form-section-title">Informazioni Prestito</h3>
@@ -694,6 +1405,104 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                   placeholder="Nome del club"
                   className="form-input"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Parametri Fiscali e Assicurazioni */}
+          <div className="form-section">
+            <h3 className="form-section-title">Parametri Fiscali e Assicurazioni</h3>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="taxRegime" className="form-label">Regime Fiscale</label>
+                <select
+                  id="taxRegime"
+                  name="taxRegime"
+                  value={formData.taxRegime}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className="form-select"
+                >
+                  <option value="">Seleziona regime</option>
+                  <option value="STANDARD">Standard</option>
+                  <option value="BECKHAM_LAW">Beckham Law</option>
+                  <option value="IMPATRIATE">Impatriate</option>
+                  <option value="NON_RESIDENT">Non Resident</option>
+                  <option value="SPECIAL_REGIME">Regime Speciale</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="taxRate" className="form-label">Aliquota Fiscale (%)</label>
+                            <input
+                              type="text"
+                              id="taxRate"
+                              name="taxRate"
+                              value={formData.taxRate}
+                              onChange={handleChange}
+                              onBlur={(e) => handleNumberBlur(e, 'taxRate')}
+                              disabled={loading}
+                              placeholder="0,00"
+                              className="form-input"
+                            />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="socialContributions" className="form-label">Contributi Sociali</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  id="socialContributions"
+                  name="socialContributions"
+                  value={formData.socialContributions}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="0.00"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="insuranceValue" className="form-label">Valore Assicurazione</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  id="insuranceValue"
+                  name="insuranceValue"
+                  value={formData.insuranceValue}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="0.00"
+                  className="form-input"
+                />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="insuranceProvider" className="form-label">Fornitore Assicurazione</label>
+                <input
+                  type="text"
+                  id="insuranceProvider"
+                  name="insuranceProvider"
+                  value={formData.insuranceProvider}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="Nome compagnia assicurativa"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="medicalInsurance" className="form-label">
+                  <input
+                    type="checkbox"
+                    id="medicalInsurance"
+                    name="medicalInsurance"
+                    checked={formData.medicalInsurance}
+                    onChange={handleChange}
+                    disabled={loading}
+                    className="form-checkbox"
+                  />
+                  Assicurazione Medica
+                </label>
               </div>
             </div>
           </div>
@@ -741,9 +1550,10 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
             <div className="form-section">
               <h3 className="form-section-title">🔄 Rinnovo Ufficiale</h3>
               <div className="form-group">
-                <label className="checkbox-label">
+                <label htmlFor="isOfficialRenewal" className="checkbox-label">
                   <input
                     type="checkbox"
+                    id="isOfficialRenewal"
                     name="isOfficialRenewal"
                     checked={formData.isOfficialRenewal}
                     onChange={handleChange}
@@ -755,6 +1565,66 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                     <small>Seleziona questa opzione per creare un emendamento ufficiale che traccia la modifica nella cronologia del contratto</small>
                   </span>
                 </label>
+              </div>
+            </div>
+          )}
+
+          {/* Riepilogo Totale */}
+          {unifiedCalculations && (
+            <div className="form-section">
+              <h4 className="form-section-title">📊 Riepilogo Totale Contratto</h4>
+              <div className="total-summary">
+                <div className="summary-grid">
+                  {/* Stipendio Base */}
+                  {unifiedCalculations.salary && (
+                    <div className="summary-item">
+                      <div className="summary-label">Stipendio Base:</div>
+                      <div className="summary-value">
+                        {calculationMode === 'gross' ? (
+                          <>
+                            <span className="gross">€{formatItalianNumber(parseItalianNumberToFloat(formData.salary))}</span>
+                            <span className="arrow">→</span>
+                            <span className="net">€{unifiedCalculations.salary.netSalary.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="net">€{formatItalianNumber(parseItalianNumberToFloat(formData.netSalary))}</span>
+                            <span className="arrow">→</span>
+                            <span className="gross">€{unifiedCalculations.salary.grossSalary.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bonus Totali */}
+                  {unifiedCalculations.bonuses && unifiedCalculations.bonuses.totalGross > 0 && (
+                    <div className="summary-item">
+                      <div className="summary-label">Bonus Totali:</div>
+                      <div className="summary-value">
+                        <span className="gross">€{unifiedCalculations.bonuses.totalGross.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="arrow">→</span>
+                        <span className="net">€{unifiedCalculations.bonuses.totalNet.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tasse Totali */}
+                  <div className="summary-item">
+                    <div className="summary-label">Tasse Totali:</div>
+                    <div className="summary-value taxes">
+                      €{unifiedCalculations.total.taxes.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+
+                  {/* TOTALE CONTRATTO */}
+                  <div className="summary-item total">
+                    <div className="summary-label">🎯 TOTALE CONTRATTO:</div>
+                    <div className="summary-value total">
+                      €{unifiedCalculations.total.net.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

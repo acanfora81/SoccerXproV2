@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Euro, FileText, Clock, TrendingUp, User, CheckCircle, XCircle } from 'lucide-react';
 import { apiFetch } from '../../utils/http';
+import { formatItalianCurrency } from '../../utils/italianNumbers';
 import '../../styles/contract-modal.css';
 
 const ContractHistoryModal = ({ isOpen, onClose, playerId, playerName }) => {
@@ -44,10 +45,7 @@ const ContractHistoryModal = ({ isOpen, onClose, playerId, playerName }) => {
   };
 
   const formatCurrency = (amount, currency = 'EUR') => {
-    return new Intl.NumberFormat('it-IT', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
+    return formatItalianCurrency(amount, currency);
   };
 
   const getStatusIcon = (status) => {
@@ -135,31 +133,39 @@ const ContractHistoryModal = ({ isOpen, onClose, playerId, playerName }) => {
                 <h3>Riepilogo</h3>
                 <div className="summary-grid">
                   <div className="summary-item">
-                    <FileText size={20} />
-                    <div>
-                      <span className="summary-value">{history.summary.totalContracts}</span>
-                      <span className="summary-label">Contratti Totali</span>
+                    <div className="summary-icon">
+                      <FileText size={20} />
+                    </div>
+                    <div className="summary-content">
+                      <div className="summary-value">{history.summary.totalContracts}</div>
+                      <div className="summary-label">CONTRATTI TOTALI</div>
                     </div>
                   </div>
                   <div className="summary-item">
-                    <CheckCircle size={20} />
-                    <div>
-                      <span className="summary-value">{history.summary.activeContracts}</span>
-                      <span className="summary-label">Attivi</span>
+                    <div className="summary-icon">
+                      <CheckCircle size={20} />
+                    </div>
+                    <div className="summary-content">
+                      <div className="summary-value">{history.summary.activeContracts}</div>
+                      <div className="summary-label">ATTIVI</div>
                     </div>
                   </div>
                   <div className="summary-item">
-                    <Euro size={20} />
-                    <div>
-                      <span className="summary-value">{formatCurrency(history.summary.totalValue)}</span>
-                      <span className="summary-label">Valore Totale</span>
+                    <div className="summary-icon">
+                      <Euro size={20} />
+                    </div>
+                    <div className="summary-content">
+                      <div className="summary-value">{formatCurrency(history.summary.totalValue)}</div>
+                      <div className="summary-label">VALORE TOTALE</div>
                     </div>
                   </div>
                   <div className="summary-item">
-                    <TrendingUp size={20} />
-                    <div>
-                      <span className="summary-value">{formatCurrency(history.summary.averageSalary)}</span>
-                      <span className="summary-label">Stipendio Medio</span>
+                    <div className="summary-icon">
+                      <TrendingUp size={20} />
+                    </div>
+                    <div className="summary-content">
+                      <div className="summary-value">{formatCurrency(history.summary.averageSalary)}</div>
+                      <div className="summary-label">STIPENDIO MEDIO</div>
                     </div>
                   </div>
                 </div>
@@ -176,57 +182,70 @@ const ContractHistoryModal = ({ isOpen, onClose, playerId, playerName }) => {
                       </div>
                       <div className="timeline-content">
                         <div className="contract-header">
-                          <div className="contract-info">
-                            <h4 className="contract-title">
-                              {getTypeLabel(contract.contractType)}
+                          <div className="contract-main-info">
+                            <div className="contract-title-row">
+                              <h4 className="contract-title">
+                                {getTypeLabel(contract.contractType)}
+                              </h4>
                               {contract.isCurrent && <span className="current-badge">Attuale</span>}
-                            </h4>
-                            <div className="contract-dates">
-                              <Calendar size={14} />
-                              <span>{formatDate(contract.startDate)} - {formatDate(contract.endDate)}</span>
-                              <span className="duration">({contract.durationDays} giorni)</span>
+                            </div>
+                            <div className="contract-salary-large">
+                              {formatCurrency(contract.salary, contract.currency)}
                             </div>
                           </div>
-                          <div className="contract-salary">
-                            <Euro size={16} />
-                            <span>{formatCurrency(contract.salary, contract.currency)}</span>
+                          <div className="contract-dates">
+                            <Calendar size={14} />
+                            <span>{formatDate(contract.startDate)} - {formatDate(contract.endDate)}</span>
+                            <span className="duration">({contract.durationDays} giorni)</span>
                           </div>
                         </div>
 
-                        <div className="contract-details">
-                          <div className="detail-row">
-                            <span className="detail-label">Stato:</span>
-                            <span className={`detail-value status-${contract.status.toLowerCase()}`}>
+                        <div className="contract-info-grid">
+                          <div className="info-item">
+                            <div className="info-label">Stato Contratto</div>
+                            <div className={`info-value status-${contract.status.toLowerCase()}`}>
                               {getStatusIcon(contract.status)}
                               {getStatusLabel(contract.status)}
-                            </span>
+                            </div>
                           </div>
                           {contract.signedDate && (
-                            <div className="detail-row">
-                              <span className="detail-label">Firmato:</span>
-                              <span className="detail-value">{formatDate(contract.signedDate)}</span>
+                            <div className="info-item">
+                              <div className="info-label">Data Firma</div>
+                              <div className="info-value">{formatDate(contract.signedDate)}</div>
                             </div>
                           )}
-                          {contract.notes && (
-                            <div className="detail-row">
-                              <span className="detail-label">Note:</span>
-                              <span className="detail-value">{contract.notes}</span>
-                            </div>
-                          )}
+                          <div className="info-item">
+                            <div className="info-label">Durata</div>
+                            <div className="info-value">{contract.durationDays} giorni</div>
+                          </div>
+                          <div className="info-item">
+                            <div className="info-label">Valuta</div>
+                            <div className="info-value">{contract.currency || 'EUR'}</div>
+                          </div>
                         </div>
+
+                        {contract.notes && (
+                          <div className="contract-notes">
+                            <div className="notes-label">Note</div>
+                            <div className="notes-content">{contract.notes}</div>
+                          </div>
+                        )}
 
                         {/* Clausole */}
                         {contract.clauses && contract.clauses.length > 0 && (
-                          <div className="clauses-section">
-                            <h5>Clausole ({contract.clauses.length})</h5>
-                            <div className="clauses-list">
+                          <div className="contract-clauses">
+                            <div className="section-header">
+                              <h5>Clausole Contrattuali</h5>
+                              <span className="section-count">({contract.clauses.length})</span>
+                            </div>
+                            <div className="clauses-grid">
                               {contract.clauses.map(clause => (
-                                <div key={clause.id} className="clause-item">
-                                  <span className="clause-type">{clause.clauseType}</span>
+                                <div key={clause.id} className="clause-card">
+                                  <div className="clause-type">{clause.clauseType}</div>
                                   {clause.amount && (
-                                    <span className="clause-amount">
+                                    <div className="clause-amount">
                                       {formatCurrency(clause.amount, clause.currency)}
-                                    </span>
+                                    </div>
                                   )}
                                 </div>
                               ))}
@@ -236,17 +255,20 @@ const ContractHistoryModal = ({ isOpen, onClose, playerId, playerName }) => {
 
                         {/* Emendamenti */}
                         {contract.amendments && contract.amendments.length > 0 && (
-                          <div className="amendments-section">
-                            <h5>Emendamenti ({contract.amendments.length})</h5>
+                          <div className="contract-amendments">
+                            <div className="section-header">
+                              <h5>Emendamenti</h5>
+                              <span className="section-count">({contract.amendments.length})</span>
+                            </div>
                             <div className="amendments-list">
                               {contract.amendments.map(amendment => (
-                                <div key={amendment.id} className="amendment-item">
+                                <div key={amendment.id} className="amendment-card">
                                   <div className="amendment-header">
-                                    <span className="amendment-type">{amendment.type}</span>
-                                    <span className="amendment-date">{formatDate(amendment.signedDate)}</span>
+                                    <div className="amendment-type">{amendment.type}</div>
+                                    <div className="amendment-date">{formatDate(amendment.signedDate)}</div>
                                   </div>
                                   {amendment.notes && (
-                                    <p className="amendment-notes">{amendment.notes}</p>
+                                    <div className="amendment-notes">{amendment.notes}</div>
                                   )}
                                 </div>
                               ))}
