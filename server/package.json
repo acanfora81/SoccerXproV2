@@ -35,11 +35,13 @@
   "author": "Alessandro Canfora",
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "^6.14.0",
+    "@prisma/client": "^6.16.2",
     "@supabase/supabase-js": "^2.55.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "express-rate-limit": "^8.0.1",
     "generic-pool": "^3.9.0",
@@ -53,9 +55,11 @@
     "zod": "^4.1.5"
   },
   "devDependencies": {
+    "jest": "^30.1.3",
     "nodemo": "^1.0.0",
     "nodemon": "^3.1.10",
-    "prisma": "^6.14.0"
+    "prisma": "^6.16.2",
+    "supertest": "^7.1.4"
   },
   "engines": {
     "node": ">=18.0.0",
