@@ -22,12 +22,13 @@ import ComparePage from './pages/performance/ComparePage';
 import ContractsList from './pages/contracts/ContractsList';
 import ContractsDashboard from './pages/contracts/ContractsDashboard';
 import ExpiringContracts from './pages/contracts/ExpiringContracts';
-import TaxRatesUpload from './pages/TaxRatesUpload';
-import TaxRatesList from './pages/TaxRatesList';
-import BonusTaxRatesUpload from './pages/BonusTaxRatesUpload';
-import BonusTaxRatesList from './pages/BonusTaxRatesList';
-import PlayersUpload from './pages/PlayersUpload';
+import TaxRatesUpload from './pages/tax/TaxRatesUpload';
+import TaxRatesList from './pages/tax/TaxRatesList';
+import BonusTaxRatesUpload from './pages/tax/BonusTaxRatesUpload';
+import BonusTaxRatesList from './pages/tax/BonusTaxRatesList';
+import PlayersUpload from './pages/players/PlayersUpload';
 import ContractsSummary from './pages/ContractsSummary';
+import TaxCalculator from './pages/tax/TaxCalculator';
 import NotFound from './pages/NotFound';
 
 // 🎨 STILI GLOBALI AGGIORNATI - IMPORTANTE!
@@ -106,6 +107,7 @@ function App() {
               <Route path="/taxrates/list" element={<TaxRatesList teamId={user?.teamId} />} />
               <Route path="/bonustaxrates/upload" element={<BonusTaxRatesUpload teamId={user?.teamId} />} />
               <Route path="/bonustaxrates/list" element={<BonusTaxRatesList teamId={user?.teamId} />} />
+              <Route path="/tax/calculator" element={<TaxCalculator />} />
               <Route path="/medical" element={
                 <div className="page-placeholder"><h2>Area Medica</h2><p>Modulo in sviluppo - Infortuni e visite mediche</p></div>
               } />

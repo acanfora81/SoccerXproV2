@@ -18,6 +18,7 @@
 @import './styles/analytics/charts.css' layer(pages);
 @import './styles/analytics/navigation.css' layer(pages);
 @import './styles/performance-pages.css' layer(pages);
+@import './styles/tax-calculator.css' layer(pages);
 @import './styles/team-dashboard.css' layer(pages);
 @import './styles/performance-players-list.css' layer(pages);
 @import './components/ui/segmented.css' layer(components);

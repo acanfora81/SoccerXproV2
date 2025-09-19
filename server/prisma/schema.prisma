@@ -4,12 +4,10 @@ generator client {
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  directUrl  = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
-
-
 
 model Team {
   id                      String                      @id @default(uuid()) @db.Uuid
@@ -29,10 +27,14 @@ model Team {
   subscriptionEndsAt      DateTime?
   createdAt               DateTime                    @default(now())
   updatedAt               DateTime                    @updatedAt
+  city                    String?
+  region                  String?
+  bonusTaxRates           BonusTaxRate[]              @relation("TeamBonusTaxRates")
   budgets                 budgets[]                   @relation("TeamBudgets")
   contractAmendments      contract_amendments[]       @relation("TeamContractAmendments")
   contractClauses         contract_clauses[]          @relation("TeamContractClauses")
   contractFiles           contract_files[]            @relation("TeamContractFiles")
+  contractPaymentSchedule contract_payment_schedule[] @relation("TeamPaymentSchedule")
   contracts               contracts[]                 @relation("TeamContracts")
   expenses                expenses[]                  @relation("TeamExpenses")
   injuries                injuries[]                  @relation("TeamInjuries")
@@ -40,11 +42,9 @@ model Team {
   performances            PerformanceData[]           @relation("TeamPerformances")
   statistics              player_statistics[]         @relation("TeamStatistics")
   players                 Player[]                    @relation("TeamPlayers")
+  taxRates                TaxRate[]                   @relation("TeamTaxRates")
   transfers               transfers[]                 @relation("TeamTransfers")
   users                   UserProfile[]               @relation("TeamUsers")
-  contractPaymentSchedule contract_payment_schedule[] @relation("TeamPaymentSchedule")
-  taxRates                TaxRate[]                   @relation("TeamTaxRates")
-  bonusTaxRates           BonusTaxRate[]              @relation("TeamBonusTaxRates")
 
   @@map("teams")
 }
@@ -198,137 +198,100 @@ model contract_clauses {
 }
 
 model contracts {
-  id           Int            @id @default(autoincrement())
-  startDate    DateTime
-  endDate      DateTime
-  salary       Decimal        @db.Decimal(12, 2)
-  netSalary    Decimal?       @db.Decimal(12, 2)
-  currency     String         @default("EUR")
-  contractType ContractType
-  status       ContractStatus @default(ACTIVE)
-  signedDate   DateTime?
-  notes        String?
-
-  // Relazioni chiave
-  playerId          Int
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  createdById       Int
-  teamId            String   @map("team_id") @db.Uuid
-  responsibleUserId Int?
-
-  // Identificativi / registrazioni
-  contractNumber       String?
-  fifaId               String?
-  leagueRegistrationId String?
-  protocolNumber       String?
-
-  // Dettagli economici avanzati
-  imageRights        Decimal? @db.Decimal(10, 2)
-  loyaltyBonus       Decimal? @db.Decimal(10, 2)
-  signingBonus       Decimal? @db.Decimal(10, 2)
-  accommodationBonus Decimal? @db.Decimal(8, 2)
-  carAllowance       Decimal? @db.Decimal(8, 2)
-
-  // Parametri fiscali
-  taxRegime           TaxRegime?
-  taxRate             Decimal?   @db.Decimal(5, 2)
-  socialContributions Decimal?   @db.Decimal(10, 2)
-
-  // Assicurazioni
-  insuranceValue    Decimal? @db.Decimal(12, 2)
-  insuranceProvider String?
-  medicalInsurance  Boolean? @default(false)
-
-  // Prestiti
-  loanFromClub    String?
-  loanToClub      String?
-  buyOption       Boolean? @default(false)
-  buyPrice        Decimal? @db.Decimal(12, 2)
-  obligationToBuy Boolean? @default(false)
-
-  // Rinnovi
-  autoRenewal         Boolean? @default(false)
-  renewalConditions   String?
-  renewalNoticeMonths Int?
-
-  // Aspetti legali
+  id                    Int                         @id @default(autoincrement())
+  startDate             DateTime
+  endDate               DateTime
+  salary                Decimal                     @db.Decimal(12, 2)
+  currency              String                      @default("EUR")
+  contractType          ContractType
+  status                ContractStatus              @default(ACTIVE)
+  signedDate            DateTime?
+  notes                 String?
+  playerId              Int
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  createdById           Int
+  teamId                String                      @map("team_id") @db.Uuid
+  agentContact          String?
+  buyOption             Boolean?                    @default(false)
+  buyPrice              Decimal?                    @db.Decimal(12, 2)
+  contractRole          ContractRole?
+  depositDate           DateTime?
+  loanFromClub          String?
+  loanToClub            String?
+  obligationToBuy       Boolean?                    @default(false)
+  paymentFrequency      PaymentFrequency?
+  protocolNumber        String?
+  responsibleUserId     Int?
+  netSalary             Decimal?                    @db.Decimal(12, 2)
+  contractNumber        String?
+  fifaId                String?
+  leagueRegistrationId  String?
+  imageRights           Decimal?                    @db.Decimal(10, 2)
+  loyaltyBonus          Decimal?                    @db.Decimal(10, 2)
+  signingBonus          Decimal?                    @db.Decimal(10, 2)
+  accommodationBonus    Decimal?                    @db.Decimal(8, 2)
+  carAllowance          Decimal?                    @db.Decimal(8, 2)
+  taxRegime             String?
+  taxRate               Decimal?                    @db.Decimal(5, 2)
+  socialContributions   Decimal?                    @db.Decimal(10, 2)
+  insuranceValue        Decimal?                    @db.Decimal(12, 2)
+  insuranceProvider     String?
+  renewalConditions     String?
+  renewalNoticeMonths   Int?
   jurisdiction          String?
-  arbitrationClause     Boolean? @default(false)
-  confidentialityClause Boolean? @default(false)
-  nonCompeteClause      Boolean? @default(false)
   nonCompeteMonths      Int?
+  tutorName             String?
+  tutorContact          String?
+  languageRequirement   String?
+  performanceTargets    Json?
+  kpiTargets            Json?
+  workPermitStatus      String?
+  workPermitExpiry      DateTime?                   @db.Timestamp(6)
+  visaType              String?
+  relocationPackage     Decimal?                    @db.Decimal(10, 2)
+  mediaObligations      String?
+  socialMediaClause     String?
+  medicalExamDate       DateTime?                   @db.Timestamp(6)
+  medicalExamResult     String?
+  medicalRestrictions   String?
+  lastReviewDate        DateTime?                   @db.Timestamp(6)
+  nextReviewDate        DateTime?                   @db.Timestamp(6)
+  complianceNotes       String?
+  tags                  String[]
+  internalNotes         String?
+  complianceStatus      ComplianceStatus?           @default(PENDING)
+  priority              ContractPriority?           @default(NORMAL)
+  medicalInsurance      Boolean?
+  autoRenewal           Boolean?
+  arbitrationClause     Boolean?
+  confidentialityClause Boolean?
+  nonCompeteClause      Boolean?
+  isMinor               Boolean?
+  parentalConsent       Boolean?
+  educationClause       Boolean?
+  trainingObligation    Boolean?
+  workPermitRequired    Boolean?
+  visaRequired          Boolean?
+  familySupport         Boolean?
+  languageLessons       Boolean?
+  sponsorshipRights     Boolean?
+  dopingConsent         Boolean?
+  transferAllowance     Decimal?                    @db.Decimal(8, 2)
+  amendments            contract_amendments[]       @relation("ContractAmendmentsForContract")
+  contract_clauses      contract_clauses[]
+  files                 contract_files[]            @relation("ContractFilesForContract")
+  paymentSchedule       contract_payment_schedule[]
+  user_profiles         UserProfile                 @relation(fields: [createdById], references: [id])
+  players               Player                      @relation(fields: [playerId], references: [id])
+  responsible           UserProfile?                @relation("ContractResponsible", fields: [responsibleUserId], references: [id])
+  team                  Team                        @relation("TeamContracts", fields: [teamId], references: [id], onUpdate: NoAction, map: "contracts_team_fkey")
 
-  // Minori
-  isMinor         Boolean? @default(false)
-  parentalConsent Boolean? @default(false)
-  tutorName       String?
-  tutorContact    String?
-
-  // Formazione / sviluppo
-  educationClause     Boolean? @default(false)
-  languageRequirement String?
-  trainingObligation  Boolean? @default(false)
-
-  // Performance & obiettivi
-  performanceTargets Json?
-  kpiTargets         Json?
-
-  // Internazionale
-  workPermitRequired Boolean?          @default(false)
-  workPermitStatus   WorkPermitStatus?
-  workPermitExpiry   DateTime?
-  visaRequired       Boolean?          @default(false)
-  visaType           String?
-
-  // Logistica
-  relocationPackage Decimal? @db.Decimal(10, 2)
-  familySupport     Boolean? @default(false)
-  languageLessons   Boolean? @default(false)
-
-  // Comunicazione / marketing
-  mediaObligations  String?
-  socialMediaClause String?
-  sponsorshipRights Boolean? @default(false)
-
-  // Aspetti medici
-  medicalExamDate     DateTime?
-  medicalExamResult   MedicalExamResult?
-  medicalRestrictions String?
-  dopingConsent       Boolean?           @default(false)
-
-  // Compliance
-  lastReviewDate   DateTime?
-  nextReviewDate   DateTime?
-  complianceStatus ComplianceStatus? @default(PENDING)
-  complianceNotes  String?
-
-  // Metadati
-  priority      ContractPriority? @default(NORMAL)
-  tags          String[]
-  internalNotes String?
-
-  // Campi esistenti
-  agentContact     String?
-  contractRole     ContractRole?
-  paymentFrequency PaymentFrequency?
-  depositDate      DateTime?
-
-  // Relazioni
-  amendments       contract_amendments[]       @relation("ContractAmendmentsForContract")
-  contract_clauses contract_clauses[]
-  files            contract_files[]            @relation("ContractFilesForContract")
-  paymentSchedule  contract_payment_schedule[]
-  user_profiles    UserProfile                 @relation(fields: [createdById], references: [id])
-  players          Player                      @relation(fields: [playerId], references: [id])
-  responsible      UserProfile?                @relation("ContractResponsible", fields: [responsibleUserId], references: [id])
-  team             Team                        @relation("TeamContracts", fields: [teamId], references: [id])
-
-  @@unique([teamId, contractNumber])
-  @@index([teamId, playerId, status])
-  @@index([teamId, startDate])
-  @@index([teamId, endDate])
-  @@index([teamId, complianceStatus])
+  @@unique([teamId, contractNumber], map: "contracts_team_contractNumber_key")
+  @@index([teamId, complianceStatus], map: "contracts_team_compliance_idx")
+  @@index([teamId, endDate], map: "contracts_team_end_idx")
+  @@index([teamId, playerId, status], map: "contracts_team_player_status_idx")
+  @@index([teamId, startDate], map: "contracts_team_start_idx")
 }
 
 model contract_files {
@@ -457,6 +420,169 @@ model transfers {
   players       Player         @relation(fields: [playerId], references: [id])
   team          Team           @relation("TeamTransfers", fields: [teamId], references: [id])
 }
+
+model contract_payment_schedule {
+  id                Int                 @id @default(autoincrement())
+  contractId        Int
+  installmentNumber Int
+  dueDate           DateTime            @db.Timestamp(6)
+  amount            Decimal             @db.Decimal(10, 2)
+  currency          String              @default("EUR")
+  description       String?
+  paymentType       PaymentScheduleType
+  status            PaymentStatus       @default(PENDING)
+  paidDate          DateTime?           @db.Timestamp(6)
+  paidAmount        Decimal?            @db.Decimal(10, 2)
+  createdAt         DateTime            @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime            @default(now()) @updatedAt @db.Timestamp(6)
+  teamId            String              @map("team_id") @db.Uuid
+  contract          contracts           @relation(fields: [contractId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  team              Team                @relation("TeamPaymentSchedule", fields: [teamId], references: [id], onUpdate: NoAction, map: "contract_payment_schedule_team_fkey")
+
+  @@index([teamId, contractId, status], map: "cps_team_contract_status_idx")
+}
+
+model TaxRate {
+  id        Int          @id @default(autoincrement())
+  year      Int
+  type      ContractType
+  inps      Decimal      @db.Decimal(5, 2)
+  inail     Decimal?     @db.Decimal(5, 2)
+  ffc       Decimal      @db.Decimal(5, 2)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  teamId    String       @map("team_id") @db.Uuid
+  team      Team         @relation("TeamTaxRates", fields: [teamId], references: [id])
+
+  @@unique([year, type, teamId])
+  @@map("tax_rates")
+}
+
+model BonusTaxRate {
+  id        Int       @id @default(autoincrement())
+  year      Int
+  type      BonusType
+  taxRate   Decimal   @db.Decimal(5, 2)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  teamId    String    @map("team_id") @db.Uuid
+  team      Team      @relation("TeamBonusTaxRates", fields: [teamId], references: [id])
+
+  @@unique([year, type, teamId])
+  @@map("bonus_tax_rates")
+}
+
+model tax_config {
+  id                         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year                       Int      @unique(map: "uq_tax_config_year")
+  contributionrate           Float
+  solidarityrate             Float
+  detrazionifixed            Float    @default(0)
+  detrazionipercentonirpef   Float    @default(0)
+  ulterioredetrazionefixed   Float    @default(0)
+  ulterioredetrazionepercent Float    @default(0)
+  bonusl207fixed             Float    @default(0)
+  createdat                  DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model tax_irpef_bracket {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year      Int
+  min       Float
+  max       Float?
+  rate      Float
+  createdat DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model tax_municipal_additional {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year         Int
+  region       String
+  municipality String
+  rate         Float
+  createdat    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([year, region, municipality], map: "uq_tax_municipal_additional")
+}
+
+model tax_municipal_additional_bracket {
+  id                            String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rule_id                       String                        @db.Uuid
+  min                           Float
+  max                           Float?
+  rate                          Float
+  createdat                     DateTime                      @default(now()) @db.Timestamptz(6)
+  tax_municipal_additional_rule tax_municipal_additional_rule @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([rule_id, min], map: "idx_municipal_bracket_rule")
+}
+
+model tax_municipal_additional_rule {
+  id                               String                             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year                             Int
+  region                           String
+  municipality                     String
+  base                             TaxBase                            @default(IMPONIBILE_FISCALE)
+  exemption_threshold              Float?
+  is_progressive                   Boolean                            @default(false)
+  flat_rate                        Float?
+  flags                            Json?
+  notes                            String?
+  is_default                       Boolean                            @default(true)
+  createdat                        DateTime                           @default(now()) @db.Timestamptz(6)
+  tax_municipal_additional_bracket tax_municipal_additional_bracket[]
+
+  @@unique([year, region, municipality, is_default], map: "uq_municipal_rule")
+  @@index([year, region, municipality], map: "idx_municipal_rule_lookup")
+}
+
+model tax_regional_additional {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year      Int
+  region    String
+  rate      Float
+  createdat DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([year, region], map: "uq_tax_regional_additional")
+}
+
+model tax_regional_additional_bracket {
+  id                             String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scheme_id                      String                         @db.Uuid
+  min                            Float
+  max                            Float?
+  rate                           Float
+  createdat                      DateTime                       @default(now()) @db.Timestamptz(6)
+  tax_regional_additional_scheme tax_regional_additional_scheme @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([scheme_id, min], map: "idx_regional_bracket_scheme")
+}
+
+model tax_regional_additional_scheme {
+  id                              String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year                            Int
+  region                          String
+  base                            TaxBase                           @default(IMPONIBILE_FISCALE)
+  exemption_threshold             Float?
+  is_progressive                  Boolean                           @default(true)
+  flat_rate                       Float?
+  flags                           Json?
+  notes                           String?
+  is_default                      Boolean                           @default(true)
+  createdat                       DateTime                          @default(now()) @db.Timestamptz(6)
+  tax_regional_additional_bracket tax_regional_additional_bracket[]
+
+  @@unique([year, region, is_default], map: "uq_regional_scheme")
+  @@index([year, region], map: "idx_regional_scheme_lookup")
+}
+
+
+
+
+
+
+
+
 
 enum BodyPart {
   HEAD
@@ -624,7 +750,6 @@ enum VisitType {
   EMERGENCY
 }
 
-// ===== Nuovi enum per contratti estesi =====
 enum TaxRegime {
   STANDARD
   BECKHAM_LAW
@@ -665,44 +790,6 @@ enum ContractPriority {
   CRITICAL
 }
 
-model contract_payment_schedule {
-  id                Int                 @id @default(autoincrement())
-  contractId        Int
-  installmentNumber Int
-  dueDate           DateTime
-  amount            Decimal             @db.Decimal(10, 2)
-  currency          String              @default("EUR")
-  description       String?
-  paymentType       PaymentScheduleType
-  status            PaymentStatus       @default(PENDING)
-  paidDate          DateTime?
-  paidAmount        Decimal?            @db.Decimal(10, 2)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  teamId            String              @map("team_id") @db.Uuid
-
-  contract contracts @relation(fields: [contractId], references: [id])
-  team     Team      @relation("TeamPaymentSchedule", fields: [teamId], references: [id])
-
-  @@index([teamId, contractId, status])
-}
-
-model TaxRate {
-  id        Int          @id @default(autoincrement())
-  year      Int
-  type      ContractType
-  inps      Decimal      @db.Decimal(5, 2)
-  inail     Decimal?     @db.Decimal(5, 2)
-  ffc       Decimal      @db.Decimal(5, 2)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  teamId    String       @map("team_id") @db.Uuid
-  team      Team         @relation("TeamTaxRates", fields: [teamId], references: [id])
-
-  @@unique([year, type, teamId])
-  @@map("tax_rates")
-}
-
 enum BonusType {
   IMAGE_RIGHTS
   LOYALTY_BONUS
@@ -710,20 +797,6 @@ enum BonusType {
   ACCOMMODATION_BONUS
   CAR_ALLOWANCE
   TRANSFER_ALLOWANCE
-}
-
-model BonusTaxRate {
-  id        Int       @id @default(autoincrement())
-  year      Int
-  type      BonusType
-  taxRate   Decimal   @db.Decimal(5, 2)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  teamId    String    @map("team_id") @db.Uuid
-  team      Team      @relation("TeamBonusTaxRates", fields: [teamId], references: [id])
-
-  @@unique([year, type, teamId])
-  @@map("bonus_tax_rates")
 }
 
 enum PaymentScheduleType {
@@ -744,3 +817,10 @@ enum PaymentStatus {
   PARTIAL
   CANCELLED
 }
+
+enum TaxBase {
+  IMPONIBILE_FISCALE
+  LORDO
+  NETTO
+}
+
