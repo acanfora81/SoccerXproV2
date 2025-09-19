@@ -565,10 +565,151 @@ const deletePlayer = async (req, res) => {
 };
 
 
+/**
+ * 📊 Esporta giocatori in Excel
+ * GET /api/players/export-excel
+ */
+const exportPlayersToExcel = async (req, res) => {
+  try {
+    console.log('🔵 [DEBUG] Richiesta esportazione Excel giocatori');
+
+    // ✅ 1) Contesto multi-tenant
+    const teamId = req?.context?.teamId;
+    if (!teamId) {
+      const errorResponse = createErrorResponse(
+        API_ERRORS.FORBIDDEN,
+        'Contesto team non disponibile'
+      );
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    // ✅ 2) Prisma client
+    const prisma = getPrismaClient();
+
+    // Helper per tradurre posizioni
+    const translatePosition = (position) => {
+      const translations = {
+        'GOALKEEPER': 'Portiere',
+        'DEFENDER': 'Difensore', 
+        'MIDFIELDER': 'Centrocampista',
+        'FORWARD': 'Attaccante'
+      };
+      return translations[position] || position;
+    };
+
+    // ✅ 3) Ottieni tutti i giocatori con tutti i dati
+    const players = await prisma.player.findMany({
+      where: { teamId },
+      orderBy: [
+        { position: 'asc' },
+        { lastName: 'asc' },
+        { firstName: 'asc' }
+      ],
+      include: {
+        contracts: {
+          select: {
+            startDate: true,
+            endDate: true,
+            contractType: true,
+            status: true,
+            salary: true
+          }
+        },
+        createdBy: {
+          select: { first_name: true, last_name: true }
+        }
+      }
+    });
+
+    // ✅ 4) Genera file Excel
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Giocatori');
+
+    // ✅ 5) Header del foglio
+    const headers = [
+      'ID', 'Nome', 'Cognome', 'Numero Maglia', 'Posizione', 'Data Nascita',
+      'Luogo Nascita', 'Nazionalità', 'Altezza (cm)', 'Peso (kg)', 'Piede',
+      'Telefono', 'Email', 'Indirizzo', 'Codice Fiscale', 'Note', 'Attivo',
+      'Data Creazione', 'Creato da', 'Contratto Attivo', 'Tipo Contratto',
+      'Data Inizio Contratto', 'Data Fine Contratto', 'Stipendio'
+    ];
+
+    worksheet.addRow(headers);
+
+    // ✅ 6) Stile header
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: '6d28d9' }
+    };
+    headerRow.font = { bold: true, color: { argb: 'FFFFFF' } };
+
+    // ✅ 7) Aggiungi dati giocatori
+    players.forEach(player => {
+      const activeContract = player.contracts?.find(c => c.status === 'ACTIVE');
+      
+      worksheet.addRow([
+        player.id,
+        player.firstName || '',
+        player.lastName || '',
+        player.shirtNumber || '',
+        translatePosition(player.position) || '',
+        player.birthDate ? new Date(player.birthDate).toLocaleDateString('it-IT') : '',
+        player.birthPlace || '',
+        player.nationality || '',
+        player.height || '',
+        player.weight || '',
+        player.foot || '',
+        player.phoneNumber || '',
+        player.email || '',
+        player.address || '',
+        player.fiscalCode || '',
+        player.notes || '',
+        player.isActive ? 'Sì' : 'No',
+        player.createdAt ? new Date(player.createdAt).toLocaleDateString('it-IT') : '',
+        player.createdBy ? `${player.createdBy.first_name} ${player.createdBy.last_name}` : '',
+        activeContract ? 'Sì' : 'No',
+        activeContract?.contractType || '',
+        activeContract?.startDate ? new Date(activeContract.startDate).toLocaleDateString('it-IT') : '',
+        activeContract?.endDate ? new Date(activeContract.endDate).toLocaleDateString('it-IT') : '',
+        activeContract?.salary || ''
+      ]);
+    });
+
+    // ✅ 8) Auto-width delle colonne
+    worksheet.columns.forEach(column => {
+      column.width = 15;
+    });
+
+    // ✅ 9) Imposta header e invia file
+    const fileName = `giocatori_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    // ✅ 10) Scrivi il buffer Excel e invia
+    await workbook.xlsx.write(res);
+    res.end();
+
+    console.log('🟢 [SUCCESS] Esportazione Excel completata:', fileName);
+
+  } catch (error) {
+    console.error('🔴 [ERROR] Errore esportazione Excel:', error);
+    res.status(500).json({
+      error: 'Errore durante l\'esportazione Excel',
+      details: error.message
+    });
+  }
+};
+
 module.exports = {
   getPlayers,
   getPlayerById,
   createPlayer,
   updatePlayer,
-  deletePlayer
+  deletePlayer,
+  exportPlayersToExcel
 };

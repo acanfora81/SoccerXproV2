@@ -464,19 +464,78 @@
 
 /* Dark theme adjustments */
 
+/* Override precedenti rimossi - ora gestiti sopra */
+
+/* Dark mode per sidebar - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .sidebar {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .sidebar-header {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .sidebar-nav {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .sidebar-footer {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .theme-toggle-container {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .theme-toggle-container .theme-toggle {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Dark mode per main header - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .main-header {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .content-area {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .main-layout {
+  background: #000000 !important;
+}
+
+/* Dark mode per sottomenu sidebar - SFONDO NERO COMPLETO */
 :root[data-theme="dark"] .submenu {
-  background: var(--accent-muted);
-  border-left-color: var(--text-primary);
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
 }
 
-:root[data-theme="dark"] .nav-item:hover {
-  background: var(--accent-muted);
-}
-
-:root[data-theme="dark"] .nav-item.active {
-  background: var(--accent-muted);
+:root[data-theme="dark"] .submenu-item {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
 }
 
 :root[data-theme="dark"] .submenu-item:hover {
-  background: var(--accent-muted);
+  background: #1a1a1a !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .nested-submenu {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .nested-submenu-item {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .nested-submenu-item:hover {
+  background: #1a1a1a !important;
+  color: var(--text-primary) !important;
 }

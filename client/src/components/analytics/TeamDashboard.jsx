@@ -337,7 +337,7 @@ const TeamDashboard = () => {
 
   // Loading state ottimizzato
   if (isLoading && !dashboardData) {
-    return <PageLoader message="Caricamento dashboard…" minHeight={360} />;
+    return <PageLoader message="Caricamento Dashboard…" minHeight={360} />;
   }
 
   // Error state

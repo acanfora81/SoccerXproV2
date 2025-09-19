@@ -17,9 +17,7 @@
   /* Eredita da .card: background, border, border-radius, padding, box-shadow, transition */
 }
 
-.chart-card:hover {
-  /* Mantiene comportamento specifico */
-}
+/* .chart-card:hover rimosso - comportamento ereditato da .card */
 
 .chart-card.loading {
   min-height: 300px;
@@ -172,7 +170,7 @@
 }
 
 .chart-tooltip {
-  background: white;
+  background: var(--bg-primary);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -280,4 +278,44 @@
 
 .chart-compact .chart-content {
   min-height: 200px;
+}
+
+/* Dark mode overrides per Analytics Charts */
+:root[data-theme="dark"] .chart-tooltip {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode per grafici Recharts */
+:root[data-theme="dark"] .recharts-wrapper {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .recharts-surface {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .recharts-cartesian-grid-horizontal line,
+:root[data-theme="dark"] .recharts-cartesian-grid-vertical line {
+  stroke: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .recharts-text {
+  fill: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .recharts-cartesian-axis-tick-value {
+  fill: var(--text-secondary) !important;
+}
+
+/* Dark mode per legende charts */
+:root[data-theme="dark"] .chart-legend {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .legend-item {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
 }

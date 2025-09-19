@@ -397,7 +397,7 @@ const ContractsList = () => {
   };
 
   if (loading) {
-    return <PageLoader message="Caricamento contratti..." minHeight={360} />;
+    return <PageLoader message="Caricamento Contratti..." minHeight={360} />;
   }
 
   if (error) {

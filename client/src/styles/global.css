@@ -586,3 +586,17 @@ h6 { font-size: 1rem; }
   border-color: var(--accent-strong) !important;
   color: var(--text-on-accent) !important;
 }
+
+/* Dark mode per page header - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .page-header {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .page-title {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] body {
+  background: #000000 !important;
+}

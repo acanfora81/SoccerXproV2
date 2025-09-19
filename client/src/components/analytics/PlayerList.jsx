@@ -422,7 +422,7 @@ const PlayerList = ({
   
   // Loading state mentre carichiamo i dati completi
   if (loadingPlayerData) {
-    return <PageLoader message="Caricamento giocatori…" minHeight={360} />;
+    return <PageLoader message="Caricamento Giocatori…" minHeight={360} />;
   }
   
   return (

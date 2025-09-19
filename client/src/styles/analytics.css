@@ -2012,6 +2012,40 @@
   background: radial-gradient(circle, rgb(139 92 246 / 10%) 0%, transparent 70%);
 }
 
+/* Dark mode per analytics header - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .analytics-header {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Dark mode per readiness board - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .readiness-board {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .readiness-card {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .acwr-dashboard {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .acwr-details {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .acwr-detail-item {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .metric-card {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
 :root[data-theme="dark"] .kpi-card:hover {
   box-shadow: 0 12px 30px rgb(139 92 246 / 20%);
   border-color: var(--accent);
@@ -2072,9 +2106,9 @@
 /* Dark theme per quick-filter-btn hover */
 
 :root[data-theme="dark"] .quick-filter-btn:hover:not(.active) {
-  background: white;
+  background: #1a1a1a;
   color: var(--text-primary);
-  border-color: white;
+  border-color: var(--accent);
 }
 
 /* ================= UTILITY CLASSES ================= */
@@ -2175,7 +2209,7 @@
 }
 
 .chart-section {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
   overflow: hidden;
@@ -2184,7 +2218,7 @@
 .chart-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color);
-  background: white;
+  background: var(--bg-primary);
   color: var(--accent);
 }
 
@@ -2206,7 +2240,7 @@
 /* Tabella Statistiche Comparative - STILE SEMPLIFICATO */
 
 .stats-table-container {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
   overflow: hidden;
@@ -2229,7 +2263,7 @@
 }
 
 .compare-stats-table th {
-  background: white;
+  background: var(--bg-primary);
   color: var(--accent);
   font-weight: 600;
   text-transform: uppercase;
@@ -2243,7 +2277,7 @@
 
 .compare-stats-table th:first-child {
   text-align: left;
-  background: white;
+  background: var(--bg-primary);
   color: var(--accent);
 }
 
@@ -2316,7 +2350,7 @@
   gap: 12px;
   margin: 16px 0;
   padding: 16px;
-  background: white;
+  background: var(--bg-primary);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
 }
@@ -2375,7 +2409,7 @@
 .quick-filter-btn {
   padding: 8px 16px;
   border: 1px solid var(--border-color);
-  background: white;
+  background: var(--bg-primary);
   color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
@@ -2384,9 +2418,122 @@
 }
 
 .quick-filter-btn:hover {
-  background: white; /* Bianco per Dark theme */
-  color: var(--text-primary); /* Testo scuro per contrasto */
-  border-color: white;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+/* Dark mode overrides per Analytics - NERO PURO */
+:root[data-theme="dark"] .chart-section {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .section-header {
+  background: #000000 !important;
+  color: var(--accent) !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .stats-table-container {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .compare-stats-table th {
+  background: #000000 !important;
+  color: var(--accent) !important;
+}
+
+:root[data-theme="dark"] .compare-stats-table th:first-child {
+  background: #000000 !important;
+  color: var(--accent) !important;
+}
+
+:root[data-theme="dark"] .legend-item {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .quick-filter-btn {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .quick-filter-btn:hover:not(.active) {
+  background: #1a1a1a !important;
+  color: var(--text-primary) !important;
+  border-color: var(--accent) !important;
+}
+
+:root[data-theme="dark"] .quick-filter-btn:hover {
+  background: #1a1a1a !important;
+  color: var(--text-primary) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Dark mode per chart content e container */
+:root[data-theme="dark"] .chart-content {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .chart-container {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode per grafici Recharts */
+:root[data-theme="dark"] .recharts-wrapper {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .recharts-surface {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .recharts-cartesian-grid-horizontal line,
+:root[data-theme="dark"] .recharts-cartesian-grid-vertical line {
+  stroke: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .recharts-text {
+  fill: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .recharts-cartesian-axis-tick-value {
+  fill: var(--text-secondary) !important;
+}
+
+/* Dark mode per section content e charts grid */
+:root[data-theme="dark"] .section-content {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .charts-grid {
+  background: #000000 !important;
+}
+
+/* Dark mode per legende players */
+:root[data-theme="dark"] .players-legend {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .legend-player {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .legend-name {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .legend-position {
+  color: var(--text-secondary) !important;
 }
 
 .quick-filter-btn.active {

@@ -157,4 +157,3 @@ Il filtro sessionType ora funziona in **TUTTE** le pagine della sezione Performa
 - ✅ ComparePage
 - ✅ TeamDashboard
 - ✅ PerformancePlayersList
-

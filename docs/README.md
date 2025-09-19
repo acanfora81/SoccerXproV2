@@ -33,7 +33,9 @@ Documentazione delle metriche, dashboard e logiche di calcolo performance.
 
 ### 📦 **Esempi e Riorganizzazioni**
 - [Riorganizzazione CSV di esempio](../CSV_REORGANIZATION.md)
-- [Soluzione filtro SessionType Dashboard](../SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md)
+- [Soluzione filtro SessionType Dashboard](./SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md)
+- [Rimozione Sistema Fiscale Parametrico](./REMOVAL_TAX_SCENARIOS.md)
+- [Riorganizzazione Struttura Server](./SERVER_REORGANIZATION.md)
 
 ## 📝 Convenzioni
 

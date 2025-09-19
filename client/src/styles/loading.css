@@ -4,6 +4,10 @@
 @keyframes sxspin{to{transform:rotate(360deg)}}
 #sx-topbar{position:fixed;top:0;left:0;height:3px;width:0;background:#3b82f6;z-index:9999;transition:width .2s ease}
 
+/* Dark theme: loader e topbar in viola */
+:root[data-theme="dark"] .sx-loader{color:#6d28d9}
+:root[data-theme="dark"] #sx-topbar{background:#6d28d9}
+
 
 
 

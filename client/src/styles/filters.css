@@ -199,6 +199,19 @@
   border-color: var(--border-light, #e5e7eb);
 }
 
+/* TeamDashboard: dropdown giocatore più compatto solo in questa pagina */
+.team-dashboard .filter-box select.filter-select {
+  max-height: 220px;
+}
+.team-dashboard .filter-box select.filter-select option {
+  padding: 6px 10px;
+}
+[data-theme="dark"] .team-dashboard .filter-box select.filter-select {
+  background: #0b0b0f;
+  color: #e5e7eb;
+  border-color: #4c1d95;
+}
+
 /* Supporto per dark mode */
 [data-theme="dark"] .search-box,
 [data-theme="dark"] .filter-box,

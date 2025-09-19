@@ -554,13 +554,15 @@
     padding: 16px;
   }
   
-           .metric-value {
-      font-size: 60px !important;
-    }
-    
-    .metric-unit {
-      font-size: 24px !important;
-    }
+  .metric-value {
+    font-size: 60px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .metric-unit {
+    font-size: 24px !important;
+  }
   
   .highlight-card {
     flex-direction: column;
@@ -568,17 +570,43 @@
     text-align: center;
   }
   
-     .readiness-metrics-grid {
-     grid-template-columns: repeat(2, 1fr);
-   }
+  .readiness-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-section h2 {
+    font-size: 20px;
+  }
 }
 
- @media (max-width: 480px) {
-   .readiness-metrics-grid {
-     grid-template-columns: 1fr;
-   }
-   
-   .dashboard-section h2 {
-     font-size: 20px;
-   }
- }
+/* Dark mode per team dashboard header - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .dashboard-header {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Dark mode per readiness section - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .team-readiness {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .readiness-metric {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .range-item {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .range-item.optimal {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: var(--success) !important;
+}
+
+:root[data-theme="dark"] .metric-card {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}

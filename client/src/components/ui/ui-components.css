@@ -40,6 +40,22 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Dark theme overrides for TeamDashboard tabs (Squadra/Giocatore) */
+[data-theme="dark"] .tabs-list {
+  background: #0b0b0f; /* nero sfondo */
+}
+[data-theme="dark"] .tabs-trigger {
+  color: #e5e7eb; /* scritta bianca tenue */
+}
+[data-theme="dark"] .tabs-trigger:hover {
+  background: #11121a; /* leggero hover scuro */
+  color: #ffffff;
+}
+[data-theme="dark"] .tabs-trigger.selected {
+  background: #6d28d9; /* viola */
+  color: #ffffff;      /* scritta bianca */
+}
+
 /* Select Component */
 .select {
   position: relative;
