@@ -138,6 +138,17 @@ const PerformancePlayersList = () => {
     }
   };
 
+  // Helper per convertire ruolo abbreviato in nome completo
+  const getRoleFullName = (role) => {
+    switch (role) {
+      case 'POR': return 'Portiere';
+      case 'DIF': return 'Difensore';
+      case 'CEN': return 'Centrocampista';
+      case 'ATT': return 'Attaccante';
+      default: return role;
+    }
+  };
+
   // Caricamento dati
   const fetchPlayers = useCallback(async () => {
     if (!user?.teamId) return;
@@ -402,9 +413,10 @@ const PerformancePlayersList = () => {
           </div>
           <div className="player-details">
             <div className="player-name">{player.name}</div>
-            <div className="player-role">
-              {player.role} #{player.number}
-            </div>
+            <div className="player-role">{getRoleFullName(player.role)}</div>
+            {player.number && (
+              <div className="player-number">#{player.number}</div>
+            )}
           </div>
         </div>
         {/* Tabs visibili (compatte) per maggiore chiarezza */}
@@ -563,7 +575,7 @@ const PerformancePlayersList = () => {
 
   // Loading state
   if (isLoading && players.length === 0) {
-    return <PageLoader message="Caricamento performance…" minHeight={360} />;
+    return <PageLoader message="Caricamento Performance…" minHeight={360} />;
   }
 
   // Error state

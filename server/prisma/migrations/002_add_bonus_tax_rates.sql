@@ -28,9 +28,3 @@ ALTER TABLE "soccerxpro"."contracts" ADD COLUMN IF NOT EXISTS "transferAllowance
 
 -- Messaggio di conferma
 SELECT 'Tabelle bonus tax rates create con successo nello schema soccerxpro!' as message;
-
-
-
-
-
-

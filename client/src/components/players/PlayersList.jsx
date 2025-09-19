@@ -2,7 +2,7 @@
 // Componente lista giocatori per Athlos
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Plus, Search, Filter, Edit3, Trash2, Upload } from 'lucide-react';
+import { Users, Plus, Search, Filter, Edit3, Trash2, Upload, Download, Wrench } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageLoader from '../ui/PageLoader';
 import PlayerFormModal from './PlayerFormModal';
@@ -206,6 +206,50 @@ const PlayersList = () => {
     setDeleteConfirm({ isOpen: false, player: null });
   };
 
+  // Handler per esportazione in Excel
+  const handleExportExcel = async () => {
+    try {
+      console.log('🔵 Inizio esportazione Excel...');
+      setFeedbackDialog({ isOpen: true, message: 'Preparazione file Excel in corso...', type: 'info' });
+
+      const response = await fetch('/api/players/export-excel', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Errore ${response.status}: ${response.statusText}`);
+      }
+
+      // Ottieni il blob del file Excel
+      const blob = await response.blob();
+      
+      // Crea un URL temporaneo per il download
+      const url = window.URL.createObjectURL(blob);
+      
+      // Crea un link temporaneo e avvia il download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `giocatori_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log('🟢 Esportazione Excel completata');
+      setFeedbackDialog({ isOpen: true, message: 'File Excel scaricato con successo!', type: 'success' });
+
+    } catch (error) {
+      console.error('🔴 Errore esportazione Excel:', error.message);
+      setFeedbackDialog({ isOpen: true, message: `Errore durante l'esportazione: ${error.message}`, type: 'danger' });
+    }
+  };
+
   // Filtra giocatori in base a ricerca e posizione
   const filteredPlayers = players.filter(player => {
     const matchesSearch = searchTerm === '' || 
@@ -313,7 +357,7 @@ const PlayersList = () => {
   };
 
   if (loading) {
-    return <PageLoader message="Caricamento giocatori…" minHeight={360} />;
+    return <PageLoader message="Caricamento Giocatori…" minHeight={360} />;
   }
 
   if (error) {
@@ -341,35 +385,6 @@ const PlayersList = () => {
           <p>{sortedPlayers.length} giocatori trovati</p>
         </div>
         <div className="header-right">
-                <button
-                  onClick={handleUploadPlayers}
-                  className="btn btn-secondary"
-                  style={{ marginRight: '12px' }}
-                >
-                  <Upload size={20} />
-                  Importa da File
-                </button>
-                <button
-                  onClick={handleFixEncoding}
-                  className="btn btn-primary"
-                  style={{ 
-                    marginRight: '12px',
-                    backgroundColor: '#FCD34D !important',
-                    borderColor: '#FCD34D !important',
-                    color: '#FFFFFF !important'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.setProperty('background-color', '#F59E0B', 'important');
-                    e.target.style.setProperty('border-color', '#F59E0B', 'important');
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.setProperty('background-color', '#FCD34D', 'important');
-                    e.target.style.setProperty('border-color', '#FCD34D', 'important');
-                  }}
-                  title="Corregge i caratteri accentati corrotti (es. Nicolò)"
-                >
-                  Correggi Caratteri
-                </button>
           <button 
             onClick={handleAddPlayer}
             className="btn btn-primary"
@@ -382,30 +397,57 @@ const PlayersList = () => {
 
       {/* Filtri */}
       <div className="players-filters">
-        <div className="search-box">
-          <Search size={20} />
-          <input
-            type="text"
-            placeholder="Cerca giocatori..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+        <div className="filters-left">
+          <div className="search-box">
+            <Search size={20} />
+            <input
+              type="text"
+              placeholder="Cerca giocatori..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          
+          <div className="filter-box">
+            <Filter size={20} />
+            <select
+              value={filterPosition}
+              onChange={(e) => setFilterPosition(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">Tutte le posizioni</option>
+              <option value="GOALKEEPER">Portiere</option>
+              <option value="DEFENDER">Difensore</option>
+              <option value="MIDFIELDER">Centrocampista</option>
+              <option value="FORWARD">Attaccante</option>
+            </select>
+          </div>
         </div>
         
-        <div className="filter-box">
-          <Filter size={20} />
-          <select
-            value={filterPosition}
-            onChange={(e) => setFilterPosition(e.target.value)}
-            className="filter-select"
+        <div className="filters-right">
+          <button
+            onClick={handleFixEncoding}
+            className="btn btn-fix-encoding"
+            title="Corregge i caratteri accentati corrotti (es. Nicolò)"
           >
-            <option value="all">Tutte le posizioni</option>
-            <option value="GOALKEEPER">Portiere</option>
-            <option value="DEFENDER">Difensore</option>
-            <option value="MIDFIELDER">Centrocampista</option>
-            <option value="FORWARD">Attaccante</option>
-          </select>
+            <Wrench size={20} />
+            Correggi Caratteri
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="btn btn-excel"
+          >
+            <Download size={20} />
+            Esporta in Excel
+          </button>
+          <button
+            onClick={handleUploadPlayers}
+            className="btn btn-import"
+          >
+            <Upload size={20} />
+            Importa da File
+          </button>
         </div>
       </div>
 

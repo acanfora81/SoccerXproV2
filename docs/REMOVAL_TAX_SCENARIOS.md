@@ -76,3 +76,5 @@ Se necessario, il rollback richiede:
 
 **Data rimozione**: 2025-01-27  
 **Motivo**: Semplificazione del sistema fiscale
+
+

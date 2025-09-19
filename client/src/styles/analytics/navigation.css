@@ -188,7 +188,7 @@
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
-  background: white;
+  background: var(--bg-primary);
   border-bottom: 1px solid var(--gray-200);
   font-size: 14px;
   color: var(--gray-600);
@@ -329,7 +329,7 @@
 }
 
 .kpi-card {
-  background: white;
+  background: var(--bg-primary);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
@@ -359,7 +359,7 @@
 /* Vista Tabellare */
 
 .table-container {
-  background: white;
+  background: var(--bg-primary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -394,3 +394,35 @@
 /* =========================
    THEME DARK - ora gestito tramite [data-theme="dark"] in themes.css
    ========================= */
+
+/* Dark mode overrides per Analytics Navigation */
+:root[data-theme="dark"] .analytics-breadcrumb {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .kpi-card {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .table-container {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .analytics-content {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .section-content {
+  background: #000000 !important;
+}
+
+/* Dark mode per analytics header - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .analytics-header {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}

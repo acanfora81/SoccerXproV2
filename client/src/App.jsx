@@ -69,7 +69,7 @@ function App() {
 
   // Loading state
   if (isLoading) {
-    return <PageLoader message="Caricamento dati amministrativi..." minHeight={360} />;
+    return <PageLoader message="Caricamento Dati Amministrativi..." minHeight={360} />;
   }
 
   return (

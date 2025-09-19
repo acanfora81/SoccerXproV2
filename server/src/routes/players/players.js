@@ -9,7 +9,8 @@ const {
   getPlayerById,
   createPlayer,
   updatePlayer,
-  deletePlayer
+  deletePlayer,
+  exportPlayersToExcel
 } = require('../../controllers/players');
 
 const router = express.Router();
@@ -34,6 +35,21 @@ const ensureNumericId = (paramName = 'id') => (req, res, next) => {
  * Lista giocatori
  */
 router.get('/', getPlayers);
+
+/**
+ * 📊 GET /api/players/export-excel
+ * Esporta giocatori in Excel
+ */
+router.get('/export-excel', (req, res, next) => {
+  const allowedRoles = ['ADMIN', 'DIRECTOR_SPORT', 'SECRETARY'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({
+      error: 'Accesso negato: autorizzazioni insufficienti',
+      code: 'INSUFFICIENT_PERMISSIONS'
+    });
+  }
+  next();
+}, exportPlayersToExcel);
 
 /**
  * 👤 GET /api/players/:id

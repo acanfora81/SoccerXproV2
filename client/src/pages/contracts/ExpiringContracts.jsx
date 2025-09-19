@@ -122,7 +122,7 @@ const ExpiringContracts = () => {
   });
 
   if (loading) {
-    return <PageLoader message="Caricamento contratti in scadenza..." minHeight={360} />;
+    return <PageLoader message="Caricamento Contratti in Scadenza..." minHeight={360} />;
   }
 
   if (error) {

@@ -87,7 +87,7 @@ const ContractsDashboard = () => {
   };
 
   if (loading) {
-    return <PageLoader message="Caricamento dashboard contratti..." minHeight={360} />;
+    return <PageLoader message="Caricamento Dashboard Contratti..." minHeight={360} />;
   }
 
   if (error) {

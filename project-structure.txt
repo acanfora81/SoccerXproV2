@@ -1,7 +1,18 @@
-# Struttura progetto aggiornata: 02/09/2025, 19:59:19
+# Struttura progetto aggiornata: 19/09/2025, 14:32:12
 
 ├── client
 │   ├── public
+│   │   ├── examples
+│   │   │   ├── players
+│   │   │   │   ├── players-example-italian.csv
+│   │   │   │   └── players-example.csv
+│   │   │   ├── tax
+│   │   │   │   ├── bonus-taxrates-example-italian.csv
+│   │   │   │   └── calcolatore.csv
+│   │   │   └── tax-regions
+│   │   │       ├── Serie-B-PRO-Abruzzo-Bolzano-Calabria-Emilia_Romagna-Lombardia-Marche-Puglia-Trento-Umbria.csv
+│   │   │       ├── Serie-B-PRO-Basilicata-Friuli_Venezia_Giulia-Sardegna-Sicilia-Valle_Aosta-Veneto.csv
+│   │   │       └── Serie-B-PRO-Campania-Lazio-Liguria-Molise-Piemonte-Toscana.csv
 │   │   └── vite.svg
 │   ├── src
 │   │   ├── assets
@@ -27,7 +38,6 @@
 │   │   │   │   ├── CompareOverlay.jsx
 │   │   │   │   ├── ComparePanel.jsx
 │   │   │   │   ├── DossierDrawer.jsx
-│   │   │   │   ├── FiltersBar.jsx
 │   │   │   │   ├── PerformancePlayersList.jsx
 │   │   │   │   ├── PlayerDossier.jsx
 │   │   │   │   ├── PlayerList.jsx
@@ -37,7 +47,24 @@
 │   │   │   ├── auth
 │   │   │   │   └── LoginForm.jsx
 │   │   │   ├── common
+│   │   │   │   ├── ConfirmDialog.css
+│   │   │   │   ├── ConfirmDialog.jsx
 │   │   │   │   └── ExportModal.jsx
+│   │   │   ├── contracts
+│   │   │   │   ├── dashboard
+│   │   │   │   │   ├── ContractCharts.jsx
+│   │   │   │   │   ├── ContractKPICards.jsx
+│   │   │   │   │   ├── ContractTables.jsx
+│   │   │   │   │   ├── ContractTimeline.jsx
+│   │   │   │   │   ├── CountTooltip.jsx
+│   │   │   │   │   ├── CustomTooltip.jsx
+│   │   │   │   │   └── ValueTooltip.jsx
+│   │   │   │   ├── BonusCalculationDisplay.jsx
+│   │   │   │   ├── BonusField.jsx
+│   │   │   │   ├── ContractDetailsModal.css
+│   │   │   │   ├── ContractDetailsModal.jsx
+│   │   │   │   ├── ContractHistoryModal.jsx
+│   │   │   │   └── NewContractModal.jsx
 │   │   │   ├── dashboard
 │   │   │   │   └── Dashboard.jsx
 │   │   │   ├── layout
@@ -58,28 +85,42 @@
 │   │   │       ├── RouteProgress.jsx
 │   │   │       ├── segmented.css
 │   │   │       ├── Segmented.jsx
-│   │   │       └── ThemeToggle.jsx
+│   │   │       ├── Select.css
+│   │   │       ├── Select.jsx
+│   │   │       ├── tabs.jsx
+│   │   │       ├── ThemeToggle.jsx
+│   │   │       └── ui-components.css
 │   │   ├── hooks
 │   │   │   ├── useExport.js
-│   │   │   └── useSessionTypes.js
+│   │   │   ├── useSessionTypes.js
+│   │   │   └── useUnifiedFiscalCalculation.js
 │   │   ├── modules
 │   │   │   └── filters
 │   │   │       ├── filters.css
-│   │   │       ├── filters.css.backup
 │   │   │       ├── FiltersBar.jsx
-│   │   │       ├── FiltersBar.jsx.backup
 │   │   │       ├── filtersConfig.js
-│   │   │       ├── filtersConfig.js.backup
 │   │   │       ├── FiltersProvider.jsx
 │   │   │       ├── filtersUtils.js
-│   │   │       ├── filtersUtils.js.backup
 │   │   │       └── index.js
 │   │   ├── pages
+│   │   │   ├── contracts
+│   │   │   │   ├── ContractsDashboard.jsx
+│   │   │   │   ├── ContractsList.jsx
+│   │   │   │   └── ExpiringContracts.jsx
 │   │   │   ├── performance
 │   │   │   │   ├── ComparePage.jsx
 │   │   │   │   ├── DossierPage.jsx
 │   │   │   │   ├── PlayersDossier.jsx
 │   │   │   │   └── PlayersList.jsx
+│   │   │   ├── players
+│   │   │   │   └── PlayersUpload.jsx
+│   │   │   ├── tax
+│   │   │   │   ├── BonusTaxRatesList.jsx
+│   │   │   │   ├── BonusTaxRatesUpload.jsx
+│   │   │   │   ├── TaxCalculator.jsx
+│   │   │   │   ├── TaxRatesList.jsx
+│   │   │   │   └── TaxRatesUpload.jsx
+│   │   │   ├── ContractsSummary.jsx
 │   │   │   └── NotFound.jsx
 │   │   ├── store
 │   │   │   └── authStore.js
@@ -88,13 +129,17 @@
 │   │   │   │   ├── charts.css
 │   │   │   │   ├── index.css
 │   │   │   │   └── navigation.css
-│   │   │   ├── sections
 │   │   │   ├── analytics.css
 │   │   │   ├── animations.css
 │   │   │   ├── compare-drawer.css
 │   │   │   ├── components.css
+│   │   │   ├── contract-modal.css
+│   │   │   ├── contracts-dashboard.css
+│   │   │   ├── contracts-summary.css
+│   │   │   ├── contracts.css
 │   │   │   ├── dashboard.css
 │   │   │   ├── export-modal.css
+│   │   │   ├── filters.css
 │   │   │   ├── forms.css
 │   │   │   ├── global.css
 │   │   │   ├── import-wizard.css
@@ -103,77 +148,53 @@
 │   │   │   ├── loading.css
 │   │   │   ├── logo.css
 │   │   │   ├── mapping.css
+│   │   │   ├── performance-analytics.css
 │   │   │   ├── performance-pages.css
 │   │   │   ├── performance-players-list.css
 │   │   │   ├── players.css
 │   │   │   ├── statistics.css
+│   │   │   ├── tax-calculator.css
 │   │   │   ├── team-dashboard.css
 │   │   │   ├── themes.css
 │   │   │   ├── upload.css
 │   │   │   ├── utilities.css
 │   │   │   └── variables.css
 │   │   ├── utils
-│   │   │   └── http.js
+│   │   │   ├── http.js
+│   │   │   └── italianNumbers.js
 │   │   ├── App.jsx
 │   │   ├── index.css
-│   │   └── main.jsx
-│   ├── CHANGELOG-ANALYTICS-ADVANCED.md
-│   ├── CHANGELOG-FIX-CALCOLI-CRITICI.md
+│   │   ├── main.jsx
+│   │   └── STRUCTURE_REORGANIZATION.md
 │   ├── eslint.config.js
 │   ├── index.html
 │   ├── package-lock.json
 │   ├── package.json
-│   ├── rollback-filtri.ps1
-│   ├── SOLUZIONE-DUAL-API-IMPLEMENTATA.md
-│   ├── SOLUZIONE-IMMEDIATA-APPLICATA.md
-│   ├── SOLUZIONE-UNIFORMAZIONE-COMPLETATA.md
-│   ├── test-aggregazione-grafici.js
-│   ├── test-coerenza-teamdashboard.js
-│   ├── test-correzione-grafici.js
-│   ├── test-date-robuste.js
-│   ├── test-datepicker.js
-│   ├── test-debug-date-error.js
-│   ├── test-filtri-completo.js
-│   ├── test-filtri-dropdown.js
-│   ├── test-filtri-finale.js
-│   ├── test-filtri-font-datepicker.js
-│   ├── test-fix-aggregazione-grafici.js
-│   ├── test-fix-analytics-advanced.js
-│   ├── test-fix-calcoli-critici.js
-│   ├── test-fix-date-error.js
-│   ├── test-giocatori-teamdashboard.js
-│   ├── test-grafica-filtri.js
-│   ├── test-grafici-distanze.js
-│   ├── test-soluzione-dual-api.js
-│   ├── test-soluzione-immediata.js
 │   └── vite.config.js
 ├── docs
 │   ├── api
 │   │   └── gpsDeriver.md
 │   ├── architecture
 │   │   └── STRUTTURA_PROGETTO.md
-│   ├── metrics
 │   ├── setup
 │   │   ├── project-structure-2025-08-30.md
 │   │   └── Recap_Progetto.md
-│   └── README.md
-├── e2e
-│   ├── fixtures
-│   ├── support
-│   │   └── page-objects
-│   └── tests
-│       ├── administration
-│       ├── auth
-│       ├── contracts
-│       ├── integration
-│       ├── market
-│       ├── medical
-│       └── players
-├── infrastructure
+│   ├── README.md
+│   ├── REMOVAL_TAX_SCENARIOS.md
+│   ├── SERVER_REORGANIZATION.md
+│   └── SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md
 ├── scripts
 │   ├── seed-first-team.cjs
 │   └── seed-first-team.js
 ├── server
+│   ├── examples
+│   │   └── tax
+│   │       ├── bonus-taxrates-example-italian.csv
+│   │       ├── bonus-taxrates-example.csv
+│   │       ├── bonus-taxrates-test.csv
+│   │       ├── taxrates-example-2025.csv
+│   │       ├── taxrates-example-italian.csv
+│   │       └── taxrates-example.csv
 │   ├── prisma
 │   │   ├── generated
 │   │   │   └── client
@@ -197,30 +218,28 @@
 │   │   │       ├── index.d.ts
 │   │   │       ├── index.js
 │   │   │       ├── package.json
+│   │   │       ├── query_engine_bg.js
+│   │   │       ├── query_engine_bg.wasm
 │   │   │       ├── query_engine-windows.dll.node
-│   │   │       ├── query_engine-windows.dll.node.tmp14832
-│   │   │       ├── query_engine-windows.dll.node.tmp31896
+│   │   │       ├── query_engine-windows.dll.node.tmp20404
+│   │   │       ├── query_engine-windows.dll.node.tmp6632
 │   │   │       ├── schema.prisma
+│   │   │       ├── wasm-edge-light-loader.mjs
+│   │   │       ├── wasm-worker-loader.mjs
 │   │   │       ├── wasm.d.ts
 │   │   │       └── wasm.js
 │   │   ├── migrations
-│   │   │   ├── 20250822092341_clean_start
-│   │   │   │   └── migration.sql
-│   │   │   ├── 20250823103148_add_preparatore_atletico_role
-│   │   │   │   └── migration.sql
-│   │   │   ├── 20250823105610_add_performance_data_table
-│   │   │   │   └── migration.sql
-│   │   │   ├── 20250823160818_add_teams_table
-│   │   │   │   └── migration.sql
-│   │   │   ├── 20250823161405_add_user_team_relation
-│   │   │   │   └── migration.sql
-│   │   │   ├── 20250823163259_add_player_team_relation
-│   │   │   │   └── migration.sql
-│   │   │   ├── 20250824094852_make_userprofile_teamid_required
-│   │   │   │   └── migration.sql
-│   │   │   └── migration_lock.toml
-│   │   ├── seeds
+│   │   │   ├── 001_init_soccerxpro.sql
+│   │   │   ├── 002_add_bonus_tax_rates.sql
+│   │   │   └── 002_drop_tax_scenarios_tables.sql
 │   │   └── schema.prisma
+│   ├── scripts
+│   │   └── drop-tax-scenarios-tables.js
+│   ├── scripts-utils
+│   │   ├── assign-players-to-team.js
+│   │   ├── debug-supabase.js
+│   │   ├── patch-assign-admin.js
+│   │   └── seed-vis-pesaro.js
 │   ├── src
 │   │   ├── config
 │   │   │   ├── database.js
@@ -229,24 +248,37 @@
 │   │   │   └── errors.js
 │   │   ├── controllers
 │   │   │   ├── auth.js
+│   │   │   ├── contracts.js
 │   │   │   ├── performance.js
 │   │   │   └── players.js
-│   │   ├── events
+│   │   ├── lib
+│   │   │   └── tax
+│   │   │       └── engine-dynamic.js
 │   │   ├── middleware
 │   │   │   ├── auth.js
 │   │   │   └── tenantContext.js
-│   │   ├── models
 │   │   ├── routes
+│   │   │   ├── auth
+│   │   │   │   ├── auth.js
+│   │   │   │   └── test-auth.js
+│   │   │   ├── contracts
+│   │   │   │   ├── contracts.js
+│   │   │   │   └── contractsSummary.js
+│   │   │   ├── dashboard
+│   │   │   │   └── index.js
 │   │   │   ├── performance
-│   │   │   │   └── compare.js
-│   │   │   ├── auth.js
+│   │   │   │   ├── compare.js
+│   │   │   │   └── performance.js
+│   │   │   ├── players
+│   │   │   │   ├── players.js
+│   │   │   │   └── playersUpload.js
+│   │   │   ├── session-types
+│   │   │   │   └── index.js
+│   │   │   ├── tax
+│   │   │   │   ├── bonusTaxRatesUpload.js
+│   │   │   │   └── taxratesUpload.js
 │   │   │   ├── dashboard.js
-│   │   │   ├── dashboard.js.backup
-│   │   │   ├── performance.js
-│   │   │   ├── players.js
-│   │   │   ├── session-types.js
-│   │   │   └── test-auth.js
-│   │   ├── services
+│   │   │   └── session-types.js
 │   │   ├── utils
 │   │   │   ├── columnMapper.js
 │   │   │   ├── dateParser.js
@@ -262,99 +294,45 @@
 │   │   │   └── mappingSchema.js
 │   │   └── app.js
 │   ├── tests
-│   │   ├── fixtures
-│   │   ├── integration
-│   │   ├── unit
-│   │   └── logout-security-test.js
 │   ├── uploads
-│   ├── assign-players-to-team.js
-│   ├── debug-supabase.js
 │   ├── jest.config.js
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── patch-assign-admin.js
-│   ├── seed-vis-pesaro.js
-│   └── test-env.js
-├── src
-│   ├── components
-│   │   ├── administration
-│   │   │   ├── components
-│   │   │   └── modals
-│   │   ├── auth
-│   │   ├── common
-│   │   │   ├── charts
-│   │   │   ├── feedback
-│   │   │   ├── forms
-│   │   │   ├── modals
-│   │   │   └── ui
-│   │   ├── contracts
-│   │   │   ├── components
-│   │   │   └── modals
-│   │   ├── layout
-│   │   ├── market
-│   │   │   ├── components
-│   │   │   └── modals
-│   │   ├── medical
-│   │   │   ├── components
-│   │   │   └── modals
-│   │   └── players
-│   │       ├── components
-│   │       └── modals
-│   ├── config
-│   ├── constants
-│   ├── hooks
-│   │   ├── api
-│   │   ├── forms
-│   │   ├── ui
-│   │   └── utils
-│   ├── i18n
-│   │   ├── hooks
-│   │   ├── locales
-│   │   └── utils
-│   ├── pages
-│   ├── router
-│   ├── services
-│   │   ├── api
-│   │   ├── utils
-│   │   └── validation
-│   ├── store
-│   │   ├── administration
-│   │   ├── auth
-│   │   ├── contracts
-│   │   ├── market
-│   │   ├── medical
-│   │   ├── players
-│   │   └── ui
-│   ├── stories
-│   │   ├── administration
-│   │   ├── common
-│   │   ├── contracts
-│   │   ├── market
-│   │   ├── medical
-│   │   ├── players
-│   │   └── themes
-│   ├── styles
-│   │   ├── common
+│   └── package.json
+├── tests
+│   ├── backend
+│   │   ├── logout-security-test.js
+│   │   ├── test-consistency-players-vs-team.js
+│   │   ├── test-dashboard-authenticated.js
+│   │   ├── test-dashboard-connectivity.js
+│   │   ├── test-dashboard-player-api.js
+│   │   ├── test-dashboard-team-api.js
+│   │   └── test-player-consistency.js
+│   ├── frontend
 │   │   ├── components
-│   │   └── themes
-│   ├── tests
-│   │   ├── __mocks__
-│   │   ├── components
-│   │   ├── hooks
-│   │   ├── services
-│   │   ├── store
-│   │   └── utils
-│   ├── types
-│   └── utils
-│       ├── constants
-│       ├── data
-│       └── helpers
+│   │   │   ├── test-filters.js
+│   │   │   └── test-team-dashboard.js
+│   │   ├── integration
+│   │   │   └── test-dashboard-integration.js
+│   │   └── run-frontend-tests.js
+│   ├── integration
+│   │   └── test-dashboard-complete.js
+│   ├── legacy
+│   │   ├── check-dossier-run.js
+│   │   ├── check-dossier.js
+│   │   ├── compare-player-vista-vs-dossier.js
+│   │   ├── test-dynamic-tax.js
+│   │   ├── test-env.js
+│   │   └── test-taxrates.js
+│   ├── README.md
+│   └── run-all-tests.js
+├── CSV_REORGANIZATION.md
 ├── env.template
+├── et --hard 92ab240
 ├── mock-players-performance.json
 ├── package-lock.json
 ├── package.json
 ├── project-structure.txt
 ├── README.md
-├── SOLUZIONE-FILTRI-DINAMICI.md
-├── SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md
+├── test-api.js
+├── test-date-range.js
+├── tili dei filtri e correzione selezione giocatori
 └── tree.js

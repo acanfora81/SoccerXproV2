@@ -498,7 +498,7 @@ const Analytics = () => {
 // 👤 PLAYER DOSSIER MODE
 if (currentView === 'dossier' && selectedPlayer) {
   if (loadingPlayerData) {
-    return <PageLoader message="Caricamento dossier giocatore…" minHeight={360} />;
+    return <PageLoader message="Caricamento Dossier Giocatore…" minHeight={360} />;
   }
 
   const playerFilteredSessions = analytics.filteredSessions.filter(s => s.playerId === selectedPlayer.id);

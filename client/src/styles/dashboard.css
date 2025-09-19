@@ -470,3 +470,8 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+/* Dark mode per dashboard header - SFONDO NERO COMPLETO */
+:root[data-theme="dark"] .dashboard-header {
+  background: #000000 !important;
+}

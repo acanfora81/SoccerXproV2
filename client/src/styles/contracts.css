@@ -801,6 +801,48 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
+/* Dark mode overrides per Timeline Scadenze - NERO PURO */
+:root[data-theme="dark"] .contracts-list {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .contracts-header {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .contracts-stats {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .stat-card {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .contract-card {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .expiring-contracts {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .urgency-section {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .contracts-grid {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .empty-state {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+}
+
 [data-theme="dark"] .urgency-section.high {
   background: rgba(245, 158, 11, 0.1);
 }

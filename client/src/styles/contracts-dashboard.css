@@ -235,8 +235,8 @@
 
 /* Custom Tooltip */
 .custom-tooltip {
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid #e5e7eb;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -247,13 +247,13 @@
 .tooltip-header {
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .tooltip-label {
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -278,14 +278,14 @@
 
 .tooltip-name {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   flex: 1;
 }
 
 .tooltip-value {
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .charts-tabs {
@@ -331,11 +331,11 @@
 }
 
 .chart-wrapper {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border-color);
 }
 
 .distribution-charts {
@@ -345,7 +345,7 @@
 }
 
 .chart-panel {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 8px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -421,7 +421,7 @@
 }
 
 .table-container {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -595,7 +595,7 @@
   width: 32px;
   height: 32px;
   border: 1px solid var(--border-color);
-  background: white;
+  background: var(--bg-primary);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -651,7 +651,7 @@
   width: 40px;
   height: 40px;
   border: 1px solid var(--border-color);
-  background: white;
+  background: var(--bg-primary);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -703,7 +703,7 @@
 }
 
 .dashboard-timeline .contract-item {
-  background: white;
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 16px;
@@ -780,7 +780,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 16px;
@@ -904,4 +904,292 @@
   .contract-status {
     align-items: flex-start;
   }
+}
+
+/* ===== DARK MODE OVERRIDES ===== */
+:root[data-theme="dark"] .chart-wrapper {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .chart-panel {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .table-container {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .btn-icon {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .nav-btn {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .dashboard-timeline .contract-item {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .stat-card {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Override più specifici per assicurare sfondo nero intorno ai grafici */
+:root[data-theme="dark"] .dashboard-container {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .dashboard-section {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .section-title {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .distribution-charts {
+  background: #000000 !important;
+}
+
+/* Dark mode per grafici Recharts nel dashboard contratti */
+:root[data-theme="dark"] .recharts-wrapper {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .recharts-surface {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .recharts-cartesian-grid-horizontal line,
+:root[data-theme="dark"] .recharts-cartesian-grid-vertical line {
+  stroke: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .recharts-text {
+  fill: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .recharts-cartesian-axis-tick-value {
+  fill: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #000000 !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .chart-tooltip {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode per tab e tabelle */
+:root[data-theme="dark"] .charts-tabs {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .chart-tab {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .chart-tab.active {
+  background: var(--accent) !important;
+  color: white !important;
+}
+
+:root[data-theme="dark"] .tables-container {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .tables-tabs {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .table-tab {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .table-tab.active {
+  background: var(--accent) !important;
+  color: white !important;
+}
+
+:root[data-theme="dark"] .table-header {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .dashboard-table th {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .dashboard-table td {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .dashboard-table tr:hover {
+  background: #1a1a1a !important;
+}
+
+/* Dark mode per tutti i contenitori grafici */
+:root[data-theme="dark"] .charts-container {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .chart-section {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .chart-section h3 {
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode per custom tooltip */
+:root[data-theme="dark"] .custom-tooltip {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .tooltip-header {
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .tooltip-label {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .tooltip-name {
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .tooltip-value {
+  color: var(--text-primary) !important;
+}
+
+/* Dark mode per timeline */
+:root[data-theme="dark"] .timeline-container {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .timeline-header {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .timeline-title h3 {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .timeline-details h4 {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .timeline-stats {
+  background: #000000 !important;
+  border-color: var(--border-color) !important;
+}
+
+:root[data-theme="dark"] .empty-state {
+  background: #000000 !important;
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .empty-state p {
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .timeline-navigation {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .current-month {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .contract-date {
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .contract-info {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .player-name {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .contract-details {
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .contract-status {
+  background: #000000 !important;
+}
+
+:root[data-theme="dark"] .status-info {
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .days-remaining {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+}
+
+:root[data-theme="dark"] .days-remaining.critical {
+  background: var(--error-color-light) !important;
+  color: var(--error-color) !important;
+}
+
+:root[data-theme="dark"] .days-remaining.warning {
+  background: var(--warning-color-light) !important;
+  color: var(--warning-color) !important;
+}
+
+:root[data-theme="dark"] .days-remaining.normal {
+  background: var(--success-color-light) !important;
+  color: var(--success-color) !important;
+}
+
+:root[data-theme="dark"] .days-remaining.expired {
+  background: var(--text-secondary-light) !important;
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] .status-active {
+  color: var(--success-color) !important;
+}
+
+:root[data-theme="dark"] .status-renewed {
+  color: var(--info-color) !important;
+}
+
+:root[data-theme="dark"] .status-expired {
+  color: var(--error-color) !important;
+}
+
+:root[data-theme="dark"] .status-default {
+  color: var(--text-secondary) !important;
 }
