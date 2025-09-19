@@ -11,7 +11,7 @@
 
 /* dimensioni */
 .seg-sm .seg-btn{ padding:6px 12px; font-size: .85rem; }
-.seg-md .seg-btn{ padding:8px 16px; font-size: .9rem; }
+.seg-md .seg-btn{ padding:12px 20px; font-size: 1rem; min-height: 48px; }
 
 /* Pulsanti - Stile identico alla Dashboard Squadra */
 .seg-btn {

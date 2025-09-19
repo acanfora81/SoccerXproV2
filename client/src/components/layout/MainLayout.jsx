@@ -22,7 +22,8 @@ import {
   Target,
   BarChart3,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Calculator
 } from 'lucide-react';
 
 // Mappa completa di tutti i menu possibili con permessi richiesti
@@ -161,6 +162,20 @@ const ALL_MENU_ITEMS = [
             label: 'Aliquote Bonus',
             path: '/bonustaxrates/upload',
             requiredPermission: 'contracts:write'
+          }
+        ]
+      },
+      {
+        id: 'sistema-fiscale',
+        label: 'Sistema Fiscale Parametrico',
+        icon: Calculator,
+        requiredPermission: 'contracts:write',
+        submenu: [
+          {
+            id: 'tax-calculator',
+            label: 'Calcolatore Fiscale',
+            path: '/tax/calculator',
+            requiredPermission: 'contracts:read'
           }
         ]
       }
@@ -407,6 +422,7 @@ const MainLayout = ({ children, onLogout }) => {
     // Fallback per route speciali
     if (pathname.startsWith('/performance/dossier/')) return 'Dossier Giocatore';
     if (pathname === '/performance/compare') return 'Confronto Giocatori';
+    if (pathname === '/tax/calculator') return 'Calcolatore Fiscale';
     
     return 'Athlos';
   };

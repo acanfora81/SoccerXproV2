@@ -31,6 +31,10 @@ Documentazione delle API, moduli e servizi del backend.
 ### 📊 **Metrics**
 Documentazione delle metriche, dashboard e logiche di calcolo performance.
 
+### 📦 **Esempi e Riorganizzazioni**
+- [Riorganizzazione CSV di esempio](../CSV_REORGANIZATION.md)
+- [Soluzione filtro SessionType Dashboard](../SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md)
+
 ## 📝 Convenzioni
 
 - **File Markdown**: Tutti i file sono in formato `.md`

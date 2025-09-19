@@ -2,7 +2,8 @@
 // Componente statistiche giocatori per Athlos (cookie HttpOnly ready)
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Calendar, Ruler, Target, Activity } from 'lucide-react';
+import { Users, Calendar, Ruler, Target } from 'lucide-react';
+import PageLoader from '../ui/PageLoader';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import '../../styles/statistics.css';
 
@@ -210,14 +211,7 @@ const PlayerStatistics = () => {
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
   if (loading) {
-    return (
-      <div className="statistics-container">
-        <div className="loading-state">
-          <Activity size={32} />
-          <p>Caricamento statistiche...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Caricamento statistiche…" minHeight={360} />;
   }
 
   if (error) {

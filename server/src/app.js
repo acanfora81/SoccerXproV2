@@ -100,19 +100,19 @@ app.get('/test-db', async (req, res) => {
 });
 
 // 🧪 Test auth
-const testAuthRoutes = require('./routes/test-auth');
+const testAuthRoutes = require('./routes/auth/test-auth');
 app.use('/api/test-auth', testAuthRoutes);
 
 // 🔐 Auth
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/auth/auth');
 app.use('/api/auth', authRoutes);
 
 // 👥 Players
-const playersRoutes = require('./routes/players');
+const playersRoutes = require('./routes/players/players');
 app.use('/api/players', playersRoutes);
 
 // 📊 Performance CRUD
-const performanceRoutes = require('./routes/performance');
+const performanceRoutes = require('./routes/performance/performance');
 app.use('/api/performance', performanceRoutes);
 
 // 📈 Dashboard
@@ -124,23 +124,24 @@ const sessionTypesRoutes = require('./routes/session-types');
 app.use('/api/session-types', sessionTypesRoutes);
 
 // 📋 Contracts
-const contractsRoutes = require('./routes/contracts');
+const contractsRoutes = require('./routes/contracts/contracts');
 app.use('/api/contracts', contractsRoutes);
 
 // 💰 Tax Rates Upload
-const taxRatesUpload = require('./routes/taxratesUpload');
+const taxRatesUpload = require('./routes/tax/taxratesUpload');
 app.use('/api/taxrates', taxRatesUpload);
 
-const bonusTaxRatesUpload = require('./routes/bonusTaxRatesUpload');
+const bonusTaxRatesUpload = require('./routes/tax/bonusTaxRatesUpload');
 app.use('/api/bonustaxrates', bonusTaxRatesUpload);
 
 // 👥 Players Upload
-const playersUpload = require('./routes/playersUpload');
+const playersUpload = require('./routes/players/playersUpload');
 app.use('/api/players', playersUpload);
 
 // 📊 Contracts Summary
-const contractsSummary = require('./routes/contractsSummary');
+const contractsSummary = require('./routes/contracts/contractsSummary');
 app.use('/api/contracts-summary', contractsSummary);
+
 
 // Riepilogo route
 console.log('🔵 [DEBUG] Route caricate:');
@@ -157,6 +158,7 @@ console.log('  - /api/taxrates/* (Tax Rates Upload)');
 console.log('  - /api/bonustaxrates/* (Bonus Tax Rates Upload)');
 console.log('  - /api/contracts-summary/summary (Contracts Summary)');
 console.log('  - /api/contracts-summary/export (Contracts Export)');
+console.log('');
 
 
 const PORT = process.env.PORT || 3001;
