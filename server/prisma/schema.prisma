@@ -4,9 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")   // Usa sempre il pooler
+  directUrl  = env("DATABASE_URL")   // Forza Prisma a non usare mai 5432
 }
 
 model Team {
@@ -586,6 +586,30 @@ model tax_regional_additional_scheme {
   @@index([year, region], map: "idx_regional_scheme_lookup")
 }
 
+// Extra deduction rules (ulteriore detrazione) per anno a scaglioni
+model tax_extra_deduction_rule {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year      Int
+  min       Float
+  max       Float?
+  amount    Float    // importo fisso da applicare nello scaglione
+  createdat DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([year, min], map: "idx_extra_deduction_year_min")
+}
+
+model tax_bonus_l207_rule {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year      Int
+  min       Float
+  max       Float?
+  amount    Float    // importo bonus L207 da applicare nello scaglione
+  createdat DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([year, min], map: "uq_bonus_l207_year_min")
+  @@index([year, min], map: "idx_bonus_l207_year_min")
+}
+
 model Subscription {
   id            String              @id @default(uuid()) @db.Uuid
   teamId        String              @unique @map("team_id") @db.Uuid
@@ -870,28 +894,130 @@ enum SubscriptionStatus {
 }
 
 // ===================== MEDICAL/GDPR CORE (v1) =====================
-enum MedicalCaseType { INJURY ILLNESS SURGERY SCREENING PREVENTIVE OTHER }
-enum InjuryMechanism { CONTACT NON_CONTACT OVERUSE RECURRENCE OTHER }
-enum InjurySeverity { MINIMAL MILD MODERATE SEVERE CAREER_ENDING UNKNOWN }
-enum RehabStage { ACUTE_PHASE PROTECTED_MOBILITY PROGRESSIVE_LOADING SPORT_SPECIFIC RETURN_TO_PLAY MAINTENANCE }
+enum MedicalCaseType {
+  INJURY
+  ILLNESS
+  SURGERY
+  SCREENING
+  PREVENTIVE
+  OTHER
+}
+enum InjuryMechanism {
+  CONTACT
+  NON_CONTACT
+  OVERUSE
+  RECURRENCE
+  OTHER
+}
+// Se in futuro servirà la scala più granulare, usare MedicalInjurySeverity al posto di InjurySeverity
+enum MedicalInjurySeverity {
+  MINIMAL
+  MILD
+  MODERATE
+  SEVERE
+  CAREER_ENDING
+  UNKNOWN
+}
+enum RehabStage {
+  ACUTE_PHASE
+  PROTECTED_MOBILITY
+  PROGRESSIVE_LOADING
+  SPORT_SPECIFIC
+  RETURN_TO_PLAY
+  MAINTENANCE
+}
 enum ExamType {
-  MRI XRAY ULTRASOUND CT PET BONE_SCAN BLOOD_TEST URINE_TEST GENETIC_TEST
-  ECG ECHO STRESS_TEST SPIROMETRY ORTHO_VISIT CARDIO_VISIT NEURO_VISIT
-  PHYSIO_EVAL DENTAL VISION OTHER
+  MRI
+  XRAY
+  ULTRASOUND
+  CT
+  PET
+  BONE_SCAN
+  BLOOD_TEST
+  URINE_TEST
+  GENETIC_TEST
+  ECG
+  ECHO
+  STRESS_TEST
+  SPIROMETRY
+  ORTHO_VISIT
+  CARDIO_VISIT
+  NEURO_VISIT
+  PHYSIO_EVAL
+  DENTAL
+  VISION
+  OTHER
 }
 enum TreatmentType {
-  PHYSIO MEDICATION INJECTION SURGERY REST MANUAL_THERAPY ELECTROTHERAPY
-  CRYOTHERAPY HYPERBARIC LASER PRP STEM_CELL TAPING BRACING CUSTOM_ORTHOTICS OTHER
+  PHYSIO
+  MEDICATION
+  INJECTION
+  SURGERY
+  REST
+  MANUAL_THERAPY
+  ELECTROTHERAPY
+  CRYOTHERAPY
+  HYPERBARIC
+  LASER
+  PRP
+  STEM_CELL
+  TAPING
+  BRACING
+  CUSTOM_ORTHOTICS
+  OTHER
 }
-enum VisibilityLevel { MEDICAL_ONLY COACHING_STAFF PLAYER_ACCESS TEAM_WIDE }
-enum DataClassification { PUBLIC SENSITIVE HIGHLY_SENSITIVE SPECIAL_CATEGORY }
-enum ConsentStatus { NOT_REQUESTED PENDING GRANTED REFUSED WITHDRAWN EXPIRED }
-enum LawfulBasis { CONSENT CONTRACT LEGAL_OBLIGATION VITAL_INTERESTS LEGITIMATE_INTEREST MEDICAL_PURPOSE }
+enum VisibilityLevel {
+  MEDICAL_ONLY
+  COACHING_STAFF
+  PLAYER_ACCESS
+  TEAM_WIDE
+}
+enum DataClassification {
+  PUBLIC
+  SENSITIVE
+  HIGHLY_SENSITIVE
+  SPECIAL_CATEGORY
+}
+enum ConsentStatus {
+  NOT_REQUESTED
+  PENDING
+  GRANTED
+  REFUSED
+  WITHDRAWN
+  EXPIRED
+}
+enum LawfulBasis {
+  CONSENT
+  CONTRACT
+  LEGAL_OBLIGATION
+  VITAL_INTERESTS
+  LEGITIMATE_INTEREST
+  MEDICAL_PURPOSE
+}
 enum AuditAction {
-  CREATE READ UPDATE DELETE ENCRYPT DECRYPT ANONYMIZE EXPORT
-  CONSENT_GRANT CONSENT_WITHDRAW ACCESS_REQUEST ERASURE_REQUEST EMERGENCY_ACCESS PRINT SHARE
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  ENCRYPT
+  DECRYPT
+  ANONYMIZE
+  EXPORT
+  CONSENT_GRANT
+  CONSENT_WITHDRAW
+  ACCESS_REQUEST
+  ERASURE_REQUEST
+  EMERGENCY_ACCESS
+  PRINT
+  SHARE
 }
-enum DataRetentionReason { ACTIVE_CONTRACT LEGAL_REQUIREMENT INSURANCE_CLAIM LITIGATION_HOLD HISTORICAL_STATISTICS }
+enum DataRetentionReason {
+  ACTIVE_CONTRACT
+  LEGAL_REQUIREMENT
+  INSURANCE_CLAIM
+  LITIGATION_HOLD
+  HISTORICAL_STATISTICS
+}
 
 model GDPRConfiguration {
   id                     String   @id @default(uuid())
@@ -1130,6 +1256,7 @@ model MedicalAccessLog {
   wasSuccessful    Boolean
   errorMessage     String?
   accessedAt       DateTime    @default(now())
+  case             MedicalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
   @@index([teamId, userId, accessedAt])
   @@index([teamId, resourceType, resourceId])
   @@index([teamId, playerId, accessedAt])

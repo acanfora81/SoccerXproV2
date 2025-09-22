@@ -28,6 +28,10 @@ import BonusTaxRatesUpload from './pages/tax/BonusTaxRatesUpload';
 import BonusTaxRatesList from './pages/tax/BonusTaxRatesList';
 import RegionalAdditionalsUpload from './pages/tax/RegionalAdditionalsUpload';
 import MunicipalAdditionalsUpload from './pages/tax/MunicipalAdditionalsUpload';
+import TaxConfigPage from './pages/tax/TaxConfigPage';
+import ChoosePlan from './pages/onboarding/ChoosePlan';
+import PaymentSim from './pages/onboarding/PaymentSim';
+import SetupTeam from './pages/onboarding/SetupTeam';
 import PlayersUpload from './pages/players/PlayersUpload';
 import ContractsSummary from './pages/ContractsSummary';
 import TaxCalculator from './pages/tax/TaxCalculator';
@@ -94,6 +98,10 @@ function App() {
         } />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/checkout/:plan" element={<CheckoutPage />} />
+        {/* Onboarding pubblico */}
+        <Route path="/onboarding/choose-plan" element={<ChoosePlan />} />
+        <Route path="/onboarding/payment" element={<PaymentSim />} />
+        <Route path="/onboarding/setup-team" element={<SetupTeam />} />
         
         {/* Route private (richiedono autenticazione) */}
         <Route path="/dashboard/*" element={
@@ -130,6 +138,7 @@ function App() {
               <Route path="/bonustaxrates/list" element={<BonusTaxRatesList teamId={user?.teamId} />} />
               <Route path="/regional-additionals/upload" element={<RegionalAdditionalsUpload />} />
               <Route path="/municipal-additionals/upload" element={<MunicipalAdditionalsUpload />} />
+              <Route path="/tax-config" element={<TaxConfigPage />} />
               <Route path="/tax/calculator" element={<TaxCalculator />} />
               <Route path="/tax/irpef-brackets" element={<IrpefBracketsPage />} />
               <Route path="/tax/irpef-upload" element={<IrpefUploadPage />} />

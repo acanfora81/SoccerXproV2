@@ -499,45 +499,33 @@ const PlayersList = () => {
               </div>
 
               {/* Informazioni principali */}
-              <div className="player-stats-grid">
-                <div className="stat-item">
-                  <div className="stat-content">
-                    <span className="stat-label-strong">Ruolo</span>
-                    <span className="stat-value">{getPositionLabel(player.position)}</span>
-                  </div>
+              <div className="kpi-grid">
+                <div className="kpi-item">
+                  <div className="kpi-label">Ruolo</div>
+                  <div className="kpi-value">{getPositionLabel(player.position)}</div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-content">
-                    <span className="stat-label-strong">Contratto</span>
-                    <span className="stat-value">{getPlayerContractType(player)}</span>
-                  </div>
+                <div className="kpi-item">
+                  <div className="kpi-label">Contratto</div>
+                  <div className="kpi-value">{getPlayerContractType(player)}</div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-content">
-                    <span className="stat-label-strong">Età</span>
-                    <span className="stat-value">{calculateAge(player.dateOfBirth)} anni</span>
-                  </div>
+                <div className="kpi-item">
+                  <div className="kpi-label">Età</div>
+                  <div className="kpi-value">{calculateAge(player.dateOfBirth)} anni</div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-content">
-                    <span className="stat-label-strong">Nazionalità</span>
-                    <span className="stat-value">{player.nationality}</span>
-                  </div>
+                <div className="kpi-item">
+                  <div className="kpi-label">Nazionalità</div>
+                  <div className="kpi-value">{player.nationality}</div>
                 </div>
                 {player.height && (
-                  <div className="stat-item">
-                    <div className="stat-content">
-                      <span className="stat-label-strong">Altezza</span>
-                      <span className="stat-value">{player.height} cm</span>
-                    </div>
+                  <div className="kpi-item">
+                    <div className="kpi-label">Altezza</div>
+                    <div className="kpi-value">{player.height} cm</div>
                   </div>
                 )}
                 {player.weight && (
-                  <div className="stat-item">
-                    <div className="stat-content">
-                      <span className="stat-label-strong">Peso</span>
-                      <span className="stat-value">{player.weight} kg</span>
-                    </div>
+                  <div className="kpi-item">
+                    <div className="kpi-label">Peso</div>
+                    <div className="kpi-value">{player.weight} kg</div>
                   </div>
                 )}
               </div>

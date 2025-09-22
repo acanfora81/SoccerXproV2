@@ -4,6 +4,7 @@ import useAuthStore from '../../store/authStore';
 import { Plus, Trash2, Edit3, XCircle, Clock, CheckCircle, Save } from 'lucide-react';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import './RegionalAdditionalsPage.css';
+import '../../styles/tax-rates-list.css';
 
 const RegionalAdditionalsPage = () => {
   const { user } = useAuthStore();
@@ -94,12 +95,20 @@ const RegionalAdditionalsPage = () => {
         // Validazione scaglioni
         for (let i = 0; i < formData.brackets.length; i++) {
           const bracket = formData.brackets[i];
-          if (!bracket.min || !bracket.rate) {
+          if (bracket.min === '' || bracket.min === null || bracket.rate === '' || bracket.rate === null) {
             setError(`Scaglione ${i + 1}: compilare tutti i campi obbligatori`);
             setLoading(false);
             return;
           }
-          if (i > 0 && parseFloat(bracket.min) <= parseFloat(formData.brackets[i-1].min)) {
+          const currMin = parseFloat(String(bracket.min).toString().replace(',', '.'));
+          const prevMin = i > 0 ? parseFloat(String(formData.brackets[i-1].min).toString().replace(',', '.')) : -Infinity;
+          const currRate = parseFloat(String(bracket.rate).toString().replace(',', '.'));
+          if (isNaN(currMin) || isNaN(currRate) || currRate < 0) {
+            setError(`Scaglione ${i + 1}: inserire valori validi; l'aliquota non può essere negativa`);
+            setLoading(false);
+            return;
+          }
+          if (i > 0 && currMin <= prevMin) {
             setError(`Scaglione ${i + 1}: il valore minimo deve essere maggiore del precedente`);
             setLoading(false);
             return;
@@ -107,15 +116,33 @@ const RegionalAdditionalsPage = () => {
         }
       } else {
         // Validazione tasso fisso
-        if (!formData.flatRate) {
-          setError('Inserire il tasso fisso');
+        if (formData.flatRate === '' || formData.flatRate === null || formData.flatRate === undefined) {
+          setError('Inserire il tasso fisso (può essere 0)');
           setLoading(false);
           return;
         }
       }
 
-      console.log('🔵 Invio dati addizionale regionale:', formData);
-      const response = await axios.post('/api/taxrates/regional-additionals', formData);
+      // Normalizzazione numeri in formato IT (virgola -> punto)
+      const toFloat = (v) => v === '' || v === null || v === undefined ? null : parseFloat(String(v).replace(',', '.'));
+      const normalizedPayload = formData.isProgressive
+        ? {
+            ...formData,
+            flatRate: null,
+            brackets: formData.brackets.map(b => ({
+              min: toFloat(b.min) ?? 0,
+              max: b.max === '' ? null : toFloat(b.max),
+              rate: toFloat(b.rate) ?? 0
+            }))
+          }
+        : {
+            ...formData,
+            flatRate: toFloat(formData.flatRate) ?? 0,
+            brackets: []
+          };
+
+      console.log('🔵 Invio dati addizionale regionale (normalizzato):', normalizedPayload);
+      const response = await axios.post('/api/taxrates/regional-additionals', normalizedPayload);
       console.log('🔵 Risposta API:', response.data);
       
       if (response.data.success) {
@@ -182,11 +209,30 @@ const RegionalAdditionalsPage = () => {
 
   // Modifica addizionale
   const handleEdit = (additional) => {
-    // TODO: Implementare caricamento dati per modifica
-    // Per ora reset form
-    resetForm();
     setEditingId(additional.id);
     setShowAddForm(true);
+
+    if (additional.is_progressive) {
+      setFormData({
+        year: additional.year,
+        region: additional.region,
+        isProgressive: true,
+        flatRate: '',
+        brackets: (additional.tax_regional_additional_bracket || []).map(b => ({
+          min: String(b.min).replace('.', ','),
+          max: b.max === null || b.max === undefined ? '' : String(b.max).replace('.', ','),
+          rate: String(b.rate).replace('.', ',')
+        }))
+      });
+    } else {
+      setFormData({
+        year: additional.year,
+        region: additional.region,
+        isProgressive: false,
+        flatRate: String(additional.flat_rate ?? additional.rate ?? '').replace('.', ','),
+        brackets: [{ min: 0, max: '', rate: '' }]
+      });
+    }
   };
 
   // Annulla modifica
@@ -375,7 +421,8 @@ const RegionalAdditionalsPage = () => {
                   
                   {formData.brackets.length > 1 && (
                     <button 
-                      onClick={() => removeBracket(index)}
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); removeBracket(index); }}
                       className="btn btn-danger btn-small"
                     >
                       <Trash2 size={14} />
@@ -384,7 +431,7 @@ const RegionalAdditionalsPage = () => {
                 </div>
               ))}
               
-              <button onClick={addBracket} className="btn btn-secondary">
+              <button type="button" onClick={(e) => { e.preventDefault(); addBracket(); }} className="btn btn-secondary">
                 <Plus size={14} />
                 Aggiungi Scaglione
               </button>
@@ -466,16 +513,16 @@ const RegionalAdditionalsPage = () => {
                         <span>{additional.flat_rate}%</span>
                       )}
                     </td>
-                    <td>
+                    <td className="actions-cell" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <button 
-                        className="btn btn-secondary btn-small"
+                        className="action-btn edit-icon-only"
                         onClick={() => handleEdit(additional)}
                         title="Modifica"
                       >
                         <Edit3 size={14} />
                       </button>
                       <button 
-                        className="btn btn-danger btn-small"
+                        className="action-btn delete-icon-only"
                         onClick={() => handleDelete(additional)}
                         title="Elimina"
                       >

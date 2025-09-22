@@ -98,13 +98,14 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       });
     }
 
-    // Prima riga = headers
-    const headers = lines[0].split(';').map(h => h.trim().replace(/"/g, ''));
+    // Prima riga = headers (supporta ; e ,)
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h => h.trim().replace(/"/g, ''));
     console.log('🔵 TaxRates Upload: Headers rilevati:', headers);
 
     // Processa le righe di dati
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(';').map(v => v.trim().replace(/"/g, ''));
+      const values = lines[i].split(sep).map(v => v.trim().replace(/"/g, ''));
       if (values.length === headers.length) {
         const row = {};
         headers.forEach((header, index) => {
@@ -120,18 +121,34 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       console.log('🔵 TaxRates Upload: Processando', results.length, 'righe');
 
       for (const row of results) {
-        // Validazione dati
-        if (!row.year || !row.type || !row.inps || !row.ffc) {
-          console.log('🔴 TaxRates Upload: Riga incompleta:', row);
+        // Normalizza chiavi italiane/inglesi
+        const get = (kArr) => {
+          for (const k of kArr) {
+            if (row[k] !== undefined) return row[k];
+          }
+          return undefined;
+        };
+        const yearStr = get(['year','anno','Year','Anno']);
+        const typeStr = get(['type','tipo','Type','Tipo']);
+        if (!yearStr || !typeStr) {
+          console.log('🔴 TaxRates Upload: Riga senza year/type:', row);
           continue;
         }
-
-        const year = parseInt(row.year);
-        const type = row.type.trim().toUpperCase();
-        // Gestisci sia virgole che punti come separatori decimali
-        const inps = parseFloat(row.inps.replace(',', '.'));
-        const inail = row.inail && row.inail.trim() ? parseFloat(row.inail.replace(',', '.')) : null;
-        const ffc = parseFloat(row.ffc.replace(',', '.'));
+        const year = parseInt(String(yearStr));
+        const type = String(typeStr).trim().toUpperCase();
+        const num = (v) => v !== undefined && v !== null && String(v).trim() !== '' ? parseFloat(String(v).replace('%','').replace(',','.')) : null;
+        // legacy
+        const inps = num(get(['inps','aliquota_inps']));
+        const inail = num(get(['inail','aliquota_inail']));
+        const ffc = num(get(['ffc','aliquota_ffc']));
+        // split
+        const inpsWorker = num(get(['inps_lavoratore','inpsWorker','inps_worker']));
+        const inpsEmployer = num(get(['inps_datore','inpsEmployer','inps_employer']));
+        const ffcWorker = num(get(['ffc_lavoratore','ffcWorker','ffc_worker']));
+        const ffcEmployer = num(get(['ffc_datore','ffcEmployer','ffc_employer']));
+        const inailEmployer = num(get(['inail_datore','inailEmployer','inail_employer']));
+        const solidarityWorker = num(get(['solidarieta_lavoratore','solidarityWorker','solidarity_worker']));
+        const solidarityEmployer = num(get(['solidarieta_datore','solidarityEmployer','solidarity_employer']));
 
         // Valida che il tipo sia un valore ENUM valido
         const validTypes = ['PERMANENT', 'LOAN', 'TRIAL', 'YOUTH', 'PROFESSIONAL', 'AMATEUR', 'APPRENTICESHIP', 'TRAINING_AGREEMENT'];
@@ -140,14 +157,28 @@ router.post("/upload", upload.single("file"), async (req, res) => {
           continue;
         }
 
-        console.log('🔵 TaxRates Upload: Upserting:', { year, type, inps, inail, ffc, teamId });
+        console.log('🔵 TaxRates Upload: Upserting:', { year, type, inps, inail, ffc, inpsWorker, inpsEmployer, ffcWorker, ffcEmployer, inailEmployer, solidarityWorker, solidarityEmployer, teamId });
 
         await prisma.taxRate.upsert({
           where: {
             year_type_teamId: { year, type, teamId },
           },
-          update: { inps, inail, ffc, updatedAt: new Date() },
-          create: { year, type, inps, inail, ffc, teamId },
+          update: { 
+            inps, inail, ffc,
+            inpsWorker, inpsEmployer,
+            ffcWorker, ffcEmployer,
+            inailEmployer,
+            solidarityWorker, solidarityEmployer,
+            updatedAt: new Date() 
+          },
+          create: { year, type, teamId,
+            inps, inail, ffc,
+            inpsWorker: inpsWorker ?? inps,
+            inpsEmployer,
+            ffcWorker: ffcWorker ?? ffc,
+            ffcEmployer,
+            inailEmployer,
+            solidarityWorker, solidarityEmployer },
         });
 
         processedCount++;
@@ -249,20 +280,48 @@ router.delete("/:id", async (req, res) => {
 // POST /api/taxrates - creazione/upsert manuale aliquote stipendi
 router.post('/', async (req, res) => {
   try {
-    const { teamId, year, type, inps, inail, ffc } = req.body;
+    const { teamId, year, type, inps, inail, ffc,
+      // campi "split" opzionali
+      inpsWorker, inpsEmployer, ffcWorker, ffcEmployer, inailEmployer,
+      solidarityWorker, solidarityEmployer } = req.body;
     if (!teamId || !year || !type) {
       return res.status(400).json({ success: false, message: 'Parametri mancanti' });
     }
     const yearInt = parseInt(year);
     const normalizedType = String(type).trim().toUpperCase();
-    const inpsF = inps !== undefined && inps !== null ? parseFloat(String(inps).replace(',', '.')) : null;
-    const inailF = inail !== undefined && inail !== null ? parseFloat(String(inail).replace(',', '.')) : null;
-    const ffcF = ffc !== undefined && ffc !== null ? parseFloat(String(ffc).replace(',', '.')) : null;
+    const parseNum = (v) => v !== undefined && v !== null && v !== '' ? parseFloat(String(v).replace(',', '.')) : null;
+    const inpsF = parseNum(inps);
+    const inailF = parseNum(inail);
+    const ffcF = parseNum(ffc);
+    const inpsWorkerF = parseNum(inpsWorker);
+    const inpsEmployerF = parseNum(inpsEmployer);
+    const ffcWorkerF = parseNum(ffcWorker);
+    const ffcEmployerF = parseNum(ffcEmployer);
+    const inailEmployerF = parseNum(inailEmployer);
+    const solidarityWorkerF = parseNum(solidarityWorker);
+    const solidarityEmployerF = parseNum(solidarityEmployer);
 
     const saved = await prisma.taxRate.upsert({
       where: { year_type_teamId: { year: yearInt, type: normalizedType, teamId } },
-      update: { inps: inpsF, inail: inailF, ffc: ffcF, updatedAt: new Date() },
-      create: { year: yearInt, type: normalizedType, inps: inpsF, inail: inailF, ffc: ffcF, teamId }
+      update: { 
+        inps: inpsF, inail: inailF, ffc: ffcF,
+        inpsWorker: inpsWorkerF, inpsEmployer: inpsEmployerF,
+        ffcWorker: ffcWorkerF, ffcEmployer: ffcEmployerF,
+        inailEmployer: inailEmployerF,
+        solidarityWorker: solidarityWorkerF, solidarityEmployer: solidarityEmployerF,
+        updatedAt: new Date() 
+      },
+      create: { 
+        year: yearInt, type: normalizedType, teamId,
+        inps: inpsF, inail: inailF, ffc: ffcF,
+        inpsWorker: inpsWorkerF ?? inpsF, 
+        inpsEmployer: inpsEmployerF,
+        ffcWorker: ffcWorkerF ?? ffcF, 
+        ffcEmployer: ffcEmployerF,
+        inailEmployer: inailEmployerF,
+        solidarityWorker: solidarityWorkerF,
+        solidarityEmployer: solidarityEmployerF
+      }
     });
 
     res.json({ success: true, data: saved, message: 'Aliquota salvata' });
@@ -799,10 +858,14 @@ router.get('/municipal-additionals', async (req, res) => {
 
 // POST /api/taxrates/municipal-additionals - Inserisce nuova addizionale comunale
 router.post('/municipal-additionals', async (req, res) => {
+  console.log('🟡 Municipal Additionals POST: ENDPOINT CHIAMATO');
+  console.log('🟡 Municipal Additionals POST: req.body =', req.body);
+  
   try {
     const { year, region, municipality, isProgressive, flatRate, brackets } = req.body;
     
     if (!year || !region || !municipality) {
+      console.log('❌ Municipal Additionals POST: Campi obbligatori mancanti', { year, region, municipality });
       return res.status(400).json({ 
         success: false, 
         error: 'year, region e municipality obbligatori' 
@@ -905,7 +968,8 @@ router.post('/municipal-additionals', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('❌ Errore inserimento addizionale comunale:', error);
+    console.error('❌ Municipal Additionals POST: Errore inserimento addizionale comunale:', error);
+    console.error('❌ Municipal Additionals POST: Stack trace:', error.stack);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -1077,6 +1141,809 @@ router.delete('/municipal-additionals/:id', async (req, res) => {
   } catch (error) {
     console.error('❌ Errore eliminazione addizionale comunale:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ========================================
+// TAX CONFIG MANAGEMENT
+// ========================================
+
+// GET /api/taxrates/tax-config - Recupera configurazioni fiscali
+router.get('/tax-config', async (req, res) => {
+  try {
+    const { year } = req.query;
+    let whereClause = {};
+    if (year) {
+      whereClause.year = parseInt(year);
+    }
+    
+    const configs = await prisma.tax_config.findMany({
+      where: whereClause,
+      orderBy: { year: 'desc' }
+    });
+    
+    console.log('🔵 Tax Config GET: Trovate', configs.length, 'configurazioni');
+    res.json({ success: true, data: configs });
+  } catch (error) {
+    console.error('❌ Errore recupero tax config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/taxrates/tax-config - Crea/aggiorna configurazione fiscale
+router.post('/tax-config', async (req, res) => {
+  try {
+    const { 
+      year, 
+      contributionrate, 
+      solidarityrate, 
+      detrazionifixed, 
+      detrazionipercentonirpef, 
+      ulterioredetrazionefixed, 
+      ulterioredetrazionepercent, 
+      bonusl207fixed 
+    } = req.body;
+    
+    if (!year) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'year obbligatorio' 
+      });
+    }
+    
+    console.log('🔵 Tax Config POST: Inserimento configurazione per anno', year);
+    
+    const config = await prisma.tax_config.upsert({
+      where: { year: parseInt(year) },
+      update: { 
+        contributionrate: parseFloat(contributionrate || 0),
+        solidarityrate: parseFloat(solidarityrate || 0),
+        detrazionifixed: parseFloat(detrazionifixed || 0),
+        detrazionipercentonirpef: parseFloat(detrazionipercentonirpef || 0),
+        ulterioredetrazionefixed: parseFloat(ulterioredetrazionefixed || 0),
+        ulterioredetrazionepercent: parseFloat(ulterioredetrazionepercent || 0),
+        bonusl207fixed: parseFloat(bonusl207fixed || 0),
+        createdat: new Date()
+      },
+      create: {
+        year: parseInt(year),
+        contributionrate: parseFloat(contributionrate || 0),
+        solidarityrate: parseFloat(solidarityrate || 0),
+        detrazionifixed: parseFloat(detrazionifixed || 0),
+        detrazionipercentonirpef: parseFloat(detrazionipercentonirpef || 0),
+        ulterioredetrazionefixed: parseFloat(ulterioredetrazionefixed || 0),
+        ulterioredetrazionepercent: parseFloat(ulterioredetrazionepercent || 0),
+        bonusl207fixed: parseFloat(bonusl207fixed || 0)
+      }
+    });
+    
+    console.log('🟢 Tax Config POST: Configurazione salvata:', config.id);
+    res.json({ 
+      success: true, 
+      message: `Configurazione fiscale salvata per l'anno ${year}`,
+      data: config
+    });
+  } catch (error) {
+    console.error('❌ Errore inserimento tax config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// PUT /api/taxrates/tax-config/:id - Modifica configurazione fiscale
+router.put('/tax-config/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      contributionrate, 
+      solidarityrate, 
+      detrazionifixed, 
+      detrazionipercentonirpef, 
+      ulterioredetrazionefixed, 
+      ulterioredetrazionepercent, 
+      bonusl207fixed 
+    } = req.body;
+    
+    console.log('🔵 Tax Config PUT: Modifica configurazione ID:', id);
+    
+    const config = await prisma.tax_config.update({
+      where: { id },
+      data: { 
+        contributionrate: parseFloat(contributionrate || 0),
+        solidarityrate: parseFloat(solidarityrate || 0),
+        detrazionifixed: parseFloat(detrazionifixed || 0),
+        detrazionipercentonirpef: parseFloat(detrazionipercentonirpef || 0),
+        ulterioredetrazionefixed: parseFloat(ulterioredetrazionefixed || 0),
+        ulterioredetrazionepercent: parseFloat(ulterioredetrazionepercent || 0),
+        bonusl207fixed: parseFloat(bonusl207fixed || 0),
+        createdat: new Date()
+      }
+    });
+    
+    console.log('🟢 Tax Config PUT: Configurazione aggiornata:', config.id);
+    res.json({ 
+      success: true, 
+      message: 'Configurazione fiscale aggiornata con successo',
+      data: config
+    });
+  } catch (error) {
+    console.error('❌ Errore modifica tax config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/taxrates/tax-config/:id - Elimina configurazione fiscale
+router.delete('/tax-config/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🔵 Tax Config DELETE: Eliminazione configurazione ID:', id);
+    
+    const deleted = await prisma.tax_config.delete({
+      where: { id }
+    });
+    
+    console.log('🟢 Tax Config DELETE: Configurazione eliminata:', id);
+    res.json({ 
+      success: true, 
+      message: 'Configurazione fiscale eliminata con successo',
+      data: deleted
+    });
+  } catch (error) {
+    console.error('❌ Errore eliminazione tax config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/taxrates/tax-config/upload - Upload CSV configurazioni fiscali
+router.post('/tax-config/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Nessun file caricato' 
+      });
+    }
+
+    console.log('🔵 Tax Config Upload: File ricevuto:', req.file.originalname);
+
+    const results = [];
+    let processedCount = 0;
+
+    // Leggi e processa il CSV
+    const csvContent = fs.readFileSync(req.file.path, 'utf8');
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'File CSV vuoto o formato non valido' 
+      });
+    }
+
+    // Prima riga = headers (supporta ; e ,)
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h => h.trim().replace(/"/g, ''));
+    console.log('🔵 Tax Config Upload: Headers rilevati:', headers);
+
+    // Processa le righe di dati
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(sep).map(v => v.trim().replace(/"/g, ''));
+      if (values.length === headers.length) {
+        const row = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index];
+        });
+        console.log('🔵 Tax Config Upload: Riga CSV:', row);
+        results.push(row);
+      }
+    }
+
+    // Processa i risultati
+    try {
+      console.log('🔵 Tax Config Upload: Processando', results.length, 'righe');
+
+      for (const row of results) {
+        // Normalizza chiavi italiane/inglesi
+        const get = (kArr) => {
+          for (const k of kArr) {
+            if (row[k] !== undefined) return row[k];
+          }
+          return undefined;
+        };
+        
+        const yearStr = get(['year', 'anno', 'Year', 'Anno']);
+        if (!yearStr) {
+          console.log('🔴 Tax Config Upload: Riga senza anno:', row);
+          continue;
+        }
+        
+        const year = parseInt(String(yearStr));
+        const num = (v) => v !== undefined && v !== null && String(v).trim() !== '' ? parseFloat(String(v).replace('%', '').replace(',', '.')) : 0;
+        
+        const contributionrate = num(get(['contributionrate', 'contributi_percentuale', 'contributi_%']));
+        const solidarityrate = num(get(['solidarityrate', 'solidarieta_percentuale', 'solidarieta_%']));
+        const detrazionifixed = num(get(['detrazionifixed', 'detrazioni_fisse', 'detrazioni_fixed']));
+        const detrazionipercentonirpef = num(get(['detrazionipercentonirpef', 'detrazioni_percentuale_irpef', 'detrazioni_%_irpef']));
+        const ulterioredetrazionefixed = num(get(['ulterioredetrazionefixed', 'ulteriore_detrazione_fissa', 'ulteriore_detrazione_fixed']));
+        const ulterioredetrazionepercent = num(get(['ulterioredetrazionepercent', 'ulteriore_detrazione_percentuale', 'ulteriore_detrazione_%']));
+        const bonusl207fixed = num(get(['bonusl207fixed', 'bonus_l207_fisso', 'bonus_l207_fixed']));
+
+        console.log('🔵 Tax Config Upload: Upserting:', { year, contributionrate, solidarityrate, detrazionifixed, detrazionipercentonirpef, ulterioredetrazionefixed, ulterioredetrazionepercent, bonusl207fixed });
+
+        await prisma.tax_config.upsert({
+          where: { year },
+          update: { 
+            contributionrate, solidarityrate, detrazionifixed, detrazionipercentonirpef,
+            ulterioredetrazionefixed, ulterioredetrazionepercent, bonusl207fixed,
+            createdat: new Date() 
+          },
+          create: { 
+            year, contributionrate, solidarityrate, detrazionifixed, detrazionipercentonirpef,
+            ulterioredetrazionefixed, ulterioredetrazionepercent, bonusl207fixed
+          }
+        });
+
+        processedCount++;
+      }
+
+      // Cleanup file temporaneo
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+
+      console.log('🟢 Tax Config Upload: Completato, processate', processedCount, 'configurazioni');
+      res.json({ 
+        success: true, 
+        message: `Configurazioni fiscali caricate con successo! Processate ${processedCount} configurazioni.` 
+      });
+
+    } catch (dbError) {
+      console.error('🔴 Tax Config Upload: Errore database:', dbError);
+      
+      // Cleanup file temporaneo
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+
+      res.status(500).json({ 
+        success: false, 
+        message: "Errore nel salvataggio delle configurazioni: " + dbError.message 
+      });
+    }
+
+  } catch (error) {
+    console.error('🔴 Tax Config Upload: Errore generale:', error);
+    
+    // Cleanup file temporaneo se esiste
+    if (req.file && req.file.path) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: "Errore interno del server: " + error.message 
+    });
+  }
+});
+
+// ========================================
+// EXTRA DEDUCTION RULES MANAGEMENT
+// ========================================
+
+// GET /api/taxrates/extra-deduction-rules - Recupera regole ulteriore detrazione
+router.get('/extra-deduction-rules', async (req, res) => {
+  try {
+    const { year } = req.query;
+    let whereClause = {};
+    if (year) {
+      whereClause.year = parseInt(year);
+    }
+    
+    const rules = await prisma.tax_extra_deduction_rule.findMany({
+      where: whereClause,
+      orderBy: [{ year: 'desc' }, { min: 'asc' }]
+    });
+    
+    console.log('🔵 Extra Deduction Rules GET: Trovate', rules.length, 'regole');
+    res.json({ success: true, data: rules });
+  } catch (error) {
+    console.error('❌ Errore recupero extra deduction rules:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/taxrates/extra-deduction-rules - Crea regola ulteriore detrazione
+router.post('/extra-deduction-rules', async (req, res) => {
+  try {
+    const { year, min, max, amount } = req.body;
+    
+    if (!year || min === undefined || amount === undefined) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'year, min e amount sono obbligatori' 
+      });
+    }
+    
+    console.log('🔵 Extra Deduction Rules POST: Inserimento regola per anno', year);
+    
+    const yearInt = parseInt(year);
+    const minFloat = parseFloat(String(min).replace(',', '.'));
+    const maxFloat = max !== undefined && max !== null && String(max).trim() !== '' 
+      ? parseFloat(String(max).replace(',', '.')) 
+      : null;
+    const amountFloat = parseFloat(String(amount).replace(',', '.'));
+    
+    if (isNaN(yearInt) || isNaN(minFloat) || isNaN(amountFloat)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Valori numerici non validi' 
+      });
+    }
+    
+    const rule = await prisma.tax_extra_deduction_rule.create({
+      data: {
+        year: yearInt,
+        min: minFloat,
+        max: maxFloat,
+        amount: amountFloat
+      }
+    });
+    
+    console.log('🟢 Extra Deduction Rules POST: Regola salvata:', rule.id);
+    res.json({ 
+      success: true, 
+      message: `Regola ulteriore detrazione salvata per l'anno ${year}`,
+      data: rule
+    });
+  } catch (error) {
+    console.error('❌ Errore inserimento extra deduction rule:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// PUT /api/taxrates/extra-deduction-rules/:id - Modifica regola ulteriore detrazione
+router.put('/extra-deduction-rules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { year, min, max, amount } = req.body;
+    
+    console.log('🔵 Extra Deduction Rules PUT: Modifica regola ID:', id);
+    
+    const yearInt = year ? parseInt(year) : undefined;
+    const minFloat = min !== undefined ? parseFloat(String(min).replace(',', '.')) : undefined;
+    const maxFloat = max !== undefined && max !== null && String(max).trim() !== '' 
+      ? parseFloat(String(max).replace(',', '.')) 
+      : null;
+    const amountFloat = amount !== undefined ? parseFloat(String(amount).replace(',', '.')) : undefined;
+    
+    const updateData = {};
+    if (yearInt !== undefined) updateData.year = yearInt;
+    if (minFloat !== undefined) updateData.min = minFloat;
+    if (maxFloat !== undefined) updateData.max = maxFloat;
+    if (amountFloat !== undefined) updateData.amount = amountFloat;
+    
+    const rule = await prisma.tax_extra_deduction_rule.update({
+      where: { id },
+      data: updateData
+    });
+    
+    console.log('🟢 Extra Deduction Rules PUT: Regola aggiornata:', rule.id);
+    res.json({ 
+      success: true, 
+      message: 'Regola ulteriore detrazione aggiornata con successo',
+      data: rule
+    });
+  } catch (error) {
+    console.error('❌ Errore modifica extra deduction rule:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/taxrates/extra-deduction-rules/:id - Elimina regola ulteriore detrazione
+router.delete('/extra-deduction-rules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🔵 Extra Deduction Rules DELETE: Eliminazione regola ID:', id);
+    
+    const deleted = await prisma.tax_extra_deduction_rule.delete({
+      where: { id }
+    });
+    
+    console.log('🟢 Extra Deduction Rules DELETE: Regola eliminata:', id);
+    res.json({ 
+      success: true, 
+      message: 'Regola ulteriore detrazione eliminata con successo',
+      data: deleted
+    });
+  } catch (error) {
+    console.error('❌ Errore eliminazione extra deduction rule:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/taxrates/extra-deduction-rules/upload - Upload CSV regole ulteriore detrazione
+router.post('/extra-deduction-rules/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Nessun file caricato' 
+      });
+    }
+
+    console.log('🔵 Extra Deduction Rules Upload: File ricevuto:', req.file.originalname);
+
+    const results = [];
+    let processedCount = 0;
+
+    // Leggi e processa il CSV
+    const csvContent = fs.readFileSync(req.file.path, 'utf8');
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'File CSV vuoto o formato non valido' 
+      });
+    }
+
+    // Prima riga = headers (supporta ; e ,)
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h => h.trim().replace(/"/g, ''));
+    console.log('🔵 Extra Deduction Rules Upload: Headers rilevati:', headers);
+
+    // Processa le righe di dati
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(sep).map(v => v.trim().replace(/"/g, ''));
+      if (values.length === headers.length) {
+        const row = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index];
+        });
+        console.log('🔵 Extra Deduction Rules Upload: Riga CSV:', row);
+        results.push(row);
+      }
+    }
+
+    // Processa i risultati
+    try {
+      console.log('🔵 Extra Deduction Rules Upload: Processando', results.length, 'righe');
+
+      for (const row of results) {
+        // Normalizza chiavi italiane/inglesi
+        const get = (kArr) => {
+          for (const k of kArr) {
+            if (row[k] !== undefined) return row[k];
+          }
+          return undefined;
+        };
+        
+        const yearStr = get(['year', 'anno', 'Year', 'Anno']);
+        if (!yearStr) {
+          console.log('🔴 Extra Deduction Rules Upload: Riga senza anno:', row);
+          continue;
+        }
+        
+        const year = parseInt(String(yearStr));
+        const num = (v) => v !== undefined && v !== null && String(v).trim() !== '' ? parseFloat(String(v).replace(',', '.')) : null;
+        
+        const min = num(get(['min', 'minimo', 'Min', 'Minimo']));
+        const max = num(get(['max', 'massimo', 'Max', 'Massimo']));
+        const amount = num(get(['amount', 'importo', 'Amount', 'Importo']));
+
+        if (isNaN(year) || min === null || isNaN(min) || amount === null || isNaN(amount)) {
+          console.log('🔴 Extra Deduction Rules Upload: Riga con valori non validi:', row);
+          continue;
+        }
+
+        console.log('🔵 Extra Deduction Rules Upload: Creando regola:', { year, min, max, amount });
+
+        await prisma.tax_extra_deduction_rule.create({
+          data: { year, min, max, amount }
+        });
+
+        processedCount++;
+      }
+
+      // Cleanup file temporaneo
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+
+      console.log('🟢 Extra Deduction Rules Upload: Completato, processate', processedCount, 'regole');
+      res.json({ 
+        success: true, 
+        message: `Regole ulteriore detrazione caricate con successo! Processate ${processedCount} regole.` 
+      });
+
+    } catch (dbError) {
+      console.error('🔴 Extra Deduction Rules Upload: Errore database:', dbError);
+      
+      // Cleanup file temporaneo
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+
+      res.status(500).json({ 
+        success: false, 
+        message: "Errore nel salvataggio delle regole: " + dbError.message 
+      });
+    }
+
+  } catch (error) {
+    console.error('🔴 Extra Deduction Rules Upload: Errore generale:', error);
+    
+    // Cleanup file temporaneo se esiste
+    if (req.file && req.file.path) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: "Errore interno del server: " + error.message 
+    });
+  }
+});
+
+// ========================================
+// BONUS L207 RULES - CRUD e Upload
+// ========================================
+
+// GET /api/taxrates/bonus-l207-rules - Recupera regole bonus L207
+router.get('/bonus-l207-rules', async (req, res) => {
+  try {
+    const { year } = req.query;
+    
+    console.log('🔵 Bonus L207 Rules GET: Recupero regole per anno', year);
+    
+    const where = year ? { year: parseInt(year) } : {};
+    const rules = await prisma.tax_bonus_l207_rule.findMany({
+      where,
+      orderBy: [{ year: 'desc' }, { min: 'asc' }]
+    });
+    
+    console.log('🟢 Bonus L207 Rules GET: Trovate', rules.length, 'regole');
+    
+    res.json({ 
+      success: true, 
+      data: rules 
+    });
+  } catch (error) {
+    console.error('❌ Errore recupero regole bonus L207:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/taxrates/bonus-l207-rules - Crea regola bonus L207
+router.post('/bonus-l207-rules', async (req, res) => {
+  try {
+    const { year, min, max, amount } = req.body;
+    
+    console.log('🔵 Bonus L207 Rules POST: Creazione regola:', { year, min, max, amount });
+    
+    if (!year || min === undefined || amount === undefined) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Anno, minimo e importo sono obbligatori' 
+      });
+    }
+    
+    const rule = await prisma.tax_bonus_l207_rule.create({
+      data: {
+        year: parseInt(year),
+        min: parseFloat(min),
+        max: max ? parseFloat(max) : null,
+        amount: parseFloat(amount)
+      }
+    });
+    
+    console.log('🟢 Bonus L207 Rules POST: Regola creata con ID', rule.id);
+    
+    res.json({ 
+      success: true, 
+      data: rule,
+      message: 'Regola bonus L207 creata con successo'
+    });
+  } catch (error) {
+    console.error('❌ Errore creazione regola bonus L207:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// PUT /api/taxrates/bonus-l207-rules/:id - Modifica regola bonus L207
+router.put('/bonus-l207-rules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { year, min, max, amount } = req.body;
+    
+    console.log('🔵 Bonus L207 Rules PUT: Modifica regola ID', id);
+    
+    const rule = await prisma.tax_bonus_l207_rule.update({
+      where: { id },
+      data: {
+        year: year ? parseInt(year) : undefined,
+        min: min !== undefined ? parseFloat(min) : undefined,
+        max: max !== undefined ? (max ? parseFloat(max) : null) : undefined,
+        amount: amount !== undefined ? parseFloat(amount) : undefined
+      }
+    });
+    
+    console.log('🟢 Bonus L207 Rules PUT: Regola aggiornata');
+    
+    res.json({ 
+      success: true, 
+      data: rule,
+      message: 'Regola bonus L207 aggiornata con successo'
+    });
+  } catch (error) {
+    console.error('❌ Errore aggiornamento regola bonus L207:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/taxrates/bonus-l207-rules/:id - Elimina regola bonus L207
+router.delete('/bonus-l207-rules/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('🔵 Bonus L207 Rules DELETE: Eliminazione regola ID', id);
+    
+    await prisma.tax_bonus_l207_rule.delete({
+      where: { id }
+    });
+    
+    console.log('🟢 Bonus L207 Rules DELETE: Regola eliminata');
+    
+    res.json({ 
+      success: true, 
+      message: 'Regola bonus L207 eliminata con successo'
+    });
+  } catch (error) {
+    console.error('❌ Errore eliminazione regola bonus L207:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/taxrates/bonus-l207-rules/upload - Upload CSV regole bonus L207
+router.post('/bonus-l207-rules/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Nessun file caricato' 
+      });
+    }
+
+    console.log('🔵 Bonus L207 Rules Upload: File ricevuto:', req.file.originalname);
+
+    const results = [];
+    let processedCount = 0;
+
+    // Leggi e processa il CSV
+    const csvContent = fs.readFileSync(req.file.path, 'utf8');
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'File CSV vuoto o formato non valido' 
+      });
+    }
+
+    // Prima riga = headers (supporta ; e ,)
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h => h.trim().replace(/"/g, ''));
+    console.log('🔵 Bonus L207 Rules Upload: Headers rilevati:', headers);
+
+    // Mappa headers italiani
+    const headerMap = {
+      'anno': 'year',
+      'year': 'year',
+      'minimo': 'min',
+      'min': 'min',
+      'massimo': 'max',
+      'max': 'max',
+      'importo': 'amount',
+      'amount': 'amount'
+    };
+
+    // Processa ogni riga
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const values = line.split(sep).map(v => v.trim().replace(/"/g, ''));
+      const row = {};
+      
+      headers.forEach((header, index) => {
+        const mappedKey = headerMap[header.toLowerCase()];
+        if (mappedKey && values[index] !== undefined) {
+          row[mappedKey] = values[index];
+        }
+      });
+
+      if (row.year && row.min !== undefined && row.amount !== undefined) {
+        results.push({
+          year: parseInt(row.year),
+          min: parseFloat(String(row.min).replace(',', '.')),
+          max: row.max ? parseFloat(String(row.max).replace(',', '.')) : null,
+          amount: parseFloat(String(row.amount).replace(',', '.'))
+        });
+      }
+    }
+
+    console.log('🔵 Bonus L207 Rules Upload: Righe processate:', results.length);
+
+    if (results.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Nessuna riga valida trovata nel CSV' 
+      });
+    }
+
+    try {
+      // Inserisci le regole nel database
+      for (const rule of results) {
+        await prisma.tax_bonus_l207_rule.upsert({
+          where: {
+            year_min: {
+              year: rule.year,
+              min: rule.min
+            }
+          },
+          update: {
+            max: rule.max,
+            amount: rule.amount
+          },
+          create: rule
+        });
+        processedCount++;
+      }
+
+      // Cleanup file temporaneo
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+
+      console.log('🟢 Bonus L207 Rules Upload: Completato, processate', processedCount, 'regole');
+      res.json({ 
+        success: true, 
+        message: `Regole bonus L207 caricate con successo! Processate ${processedCount} regole.` 
+      });
+
+    } catch (dbError) {
+      console.error('🔴 Bonus L207 Rules Upload: Errore database:', dbError);
+      
+      // Cleanup file temporaneo
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+
+      res.status(500).json({ 
+        success: false, 
+        message: "Errore nel salvataggio delle regole: " + dbError.message 
+      });
+    }
+
+  } catch (error) {
+    console.error('🔴 Bonus L207 Rules Upload: Errore generale:', error);
+    
+    // Cleanup file temporaneo se esiste
+    if (req.file && req.file.path) {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.log('🔴 Errore cleanup file:', err);
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: "Errore interno del server: " + error.message 
+    });
   }
 });
 

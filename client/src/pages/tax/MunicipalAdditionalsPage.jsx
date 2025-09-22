@@ -4,6 +4,7 @@ import useAuthStore from '../../store/authStore';
 import { Plus, Trash2, Edit3, XCircle, Clock, CheckCircle, Save } from 'lucide-react';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import './MunicipalAdditionalsPage.css';
+import '../../styles/tax-rates-list.css';
 
 const MunicipalAdditionalsPage = () => {
   const { user } = useAuthStore();
@@ -83,40 +84,67 @@ const MunicipalAdditionalsPage = () => {
     }));
   };
 
+  // Helper per normalizzare e parsare numeri (virgola -> punto)
+  const normalizeAndParseNumber = (value) => {
+    if (typeof value !== 'string') return value;
+    const normalized = value.replace(',', '.');
+    return parseFloat(normalized);
+  };
+
   // Salva addizionale
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     
+    console.log('🔵 Municipal Submit - FormData:', formData);
+    
     try {
-      // Validazione
-      if (formData.isProgressive) {
+      const dataToSend = { ...formData };
+      
+      if (!dataToSend.isProgressive) {
+        // Validazione tasso fisso
+        if (dataToSend.flatRate === '' || dataToSend.flatRate === null || dataToSend.flatRate === undefined) {
+          setError('Inserire il tasso fisso (può essere 0)');
+          setLoading(false);
+          return;
+        }
+        
+        dataToSend.flatRate = normalizeAndParseNumber(dataToSend.flatRate);
+        if (isNaN(dataToSend.flatRate) || dataToSend.flatRate < 0) {
+          setError('Il tasso fisso deve essere un numero valido e non negativo');
+          setLoading(false);
+          return;
+        }
+      } else {
         // Validazione scaglioni
-        for (let i = 0; i < formData.brackets.length; i++) {
-          const bracket = formData.brackets[i];
-          if (!bracket.min || !bracket.rate) {
-            setError(`Scaglione ${i + 1}: compilare tutti i campi obbligatori`);
+        dataToSend.brackets = dataToSend.brackets.map(b => ({
+          min: normalizeAndParseNumber(b.min),
+          max: b.max ? normalizeAndParseNumber(b.max) : null,
+          rate: normalizeAndParseNumber(b.rate)
+        }));
+        
+        // Additional validation for brackets
+        for (let i = 0; i < dataToSend.brackets.length; i++) {
+          const bracket = dataToSend.brackets[i];
+          if (isNaN(bracket.min) || isNaN(bracket.rate) || bracket.rate < 0) {
+            setError(`Scaglione ${i + 1}: inserire valori validi; l'aliquota non può essere negativa`);
             setLoading(false);
             return;
           }
-          if (i > 0 && parseFloat(bracket.min) <= parseFloat(formData.brackets[i-1].min)) {
+          if (i > 0 && bracket.min <= dataToSend.brackets[i-1].min) {
             setError(`Scaglione ${i + 1}: il valore minimo deve essere maggiore del precedente`);
             setLoading(false);
             return;
           }
         }
-      } else {
-        // Validazione tasso fisso
-        if (!formData.flatRate) {
-          setError('Inserire il tasso fisso');
-          setLoading(false);
-          return;
-        }
       }
 
-      console.log('🔵 Invio dati addizionale comunale:', formData);
-      const response = await axios.post('/api/taxrates/municipal-additionals', formData);
+      console.log('🔵 Invio dati addizionale comunale (normalizzato):', dataToSend);
+      console.log('🔵 Invio POST a:', '/api/taxrates/municipal-additionals');
+      
+      const response = await axios.post('/api/taxrates/municipal-additionals', dataToSend);
+      console.log('🟢 Risposta ricevuta:', response);
       console.log('🔵 Risposta API:', response.data);
       
       if (response.data.success) {
@@ -129,8 +157,20 @@ const MunicipalAdditionalsPage = () => {
         setError(response.data.error || 'Errore nel salvataggio');
       }
     } catch (err) {
-      console.error('Errore salvataggio addizionale comunale:', err);
-      setError(err.response?.data?.error || 'Errore nel salvataggio dell\'addizionale comunale');
+      console.error('❌ Errore salvataggio addizionale comunale:', err);
+      console.error('❌ Error response:', err.response);
+      console.error('❌ Error request:', err.request);
+      console.error('❌ Error message:', err.message);
+      
+      if (err.code === 'NETWORK_ERROR' || err.code === 'ERR_NETWORK') {
+        setError('Errore di connessione al server. Verifica che il server sia attivo.');
+      } else if (err.response) {
+        setError(err.response?.data?.error || `Errore server: ${err.response.status}`);
+      } else if (err.request) {
+        setError('Nessuna risposta dal server. Verifica la connessione.');
+      } else {
+        setError('Errore nel salvataggio dell\'addizionale comunale');
+      }
     } finally {
       setLoading(false);
     }
@@ -184,11 +224,33 @@ const MunicipalAdditionalsPage = () => {
 
   // Modifica addizionale
   const handleEdit = (additional) => {
-    // TODO: Implementare caricamento dati per modifica
-    // Per ora reset form
-    resetForm();
+    // Prefill form with selected additional
     setEditingId(additional.id);
     setShowAddForm(true);
+
+    if (additional.is_progressive) {
+      setFormData({
+        year: additional.year,
+        region: additional.region,
+        municipality: additional.municipality,
+        isProgressive: true,
+        flatRate: '',
+        brackets: (additional.tax_municipal_additional_bracket || []).map(b => ({
+          min: String(b.min).replace('.', ','),
+          max: b.max === null || b.max === undefined ? '' : String(b.max).replace('.', ','),
+          rate: String(b.rate).replace('.', ',')
+        }))
+      });
+    } else {
+      setFormData({
+        year: additional.year,
+        region: additional.region,
+        municipality: additional.municipality,
+        isProgressive: false,
+        flatRate: String(additional.flat_rate ?? additional.rate ?? '').replace('.', ','),
+        brackets: [{ min: 0, max: '', rate: '' }]
+      });
+    }
   };
 
   // Annulla modifica
@@ -421,7 +483,8 @@ const MunicipalAdditionalsPage = () => {
                   
                   {formData.brackets.length > 1 && (
                     <button 
-                      onClick={() => removeBracket(index)}
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); removeBracket(index); }}
                       className="btn btn-danger btn-small"
                     >
                       <Trash2 size={14} />
@@ -430,7 +493,7 @@ const MunicipalAdditionalsPage = () => {
                 </div>
               ))}
               
-              <button onClick={addBracket} className="btn btn-secondary">
+              <button type="button" onClick={(e) => { e.preventDefault(); addBracket(); }} className="btn btn-secondary">
                 <Plus size={14} />
                 Aggiungi Scaglione
               </button>
@@ -514,16 +577,16 @@ const MunicipalAdditionalsPage = () => {
                         <span>{additional.flat_rate}%</span>
                       )}
                     </td>
-                    <td>
+                    <td className="actions-cell" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <button 
-                        className="btn btn-secondary btn-small"
+                        className="action-btn edit-icon-only"
                         onClick={() => handleEdit(additional)}
                         title="Modifica"
                       >
                         <Edit3 size={14} />
                       </button>
                       <button 
-                        className="btn btn-danger btn-small"
+                        className="action-btn delete-icon-only"
                         onClick={() => handleDelete(additional)}
                         title="Elimina"
                       >

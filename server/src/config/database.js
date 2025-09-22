@@ -10,7 +10,10 @@ if (!prisma) {
   console.log('🔵 [DEBUG] Creazione nuovo Prisma Client...'); // INFO DEV - rimuovere in produzione
   
   // Modifica URL per disabilitare prepared statements (fix errore PostgreSQL)
-  const originalUrl = process.env.DATABASE_URL;
+  const originalUrl = process.env.DATABASE_URL || process.env.DIRECT_URL || '';
+  if (!originalUrl) {
+    throw new Error('DATABASE_URL o DIRECT_URL non configurata. Verifica server/.env');
+  }
   const modifiedUrl = originalUrl + (
     originalUrl.includes('?') ? '&' : '?'
   ) + 'prepared_statements=false';

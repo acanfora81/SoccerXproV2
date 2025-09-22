@@ -226,7 +226,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
             <div className="breakdown-item">
               <span className="breakdown-label">+ Contributi Datore:</span>
               <span className="breakdown-value">
-                €{calculation.employerContributions?.toLocaleString('it-IT', {
+                €{calculation.totaleContributiEmployer?.toLocaleString('it-IT', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 }) || '0,00'}
@@ -261,8 +261,8 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
           <div className="stat-item">
             <span className="stat-label">Incidenza Contributi Totali:</span>
             <span className="stat-value">
-              {calculation.grossSalary && calculation.employerContributions ? 
-                `${(((calculation.totalContributionsWorker || 0) + calculation.employerContributions) / calculation.grossSalary * 100).toFixed(1)}%` : 
+              {calculation.grossSalary && calculation.totaleContributiEmployer ? 
+                `${(((calculation.totaleContributiWorker || 0) + calculation.totaleContributiEmployer) / calculation.grossSalary * 100).toFixed(1)}%` : 
                 'N/A'
               }
             </span>
@@ -295,7 +295,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
               <div className="total-summary-item">
                 <span className="total-label">Contributi Datore:</span>
                 <span className="total-value employer">
-                  €{totalCalculation.total.employerContributions?.toLocaleString('it-IT', {
+                  €{totalCalculation.total.totaleContributiEmployer?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                   }) || '0,00'}

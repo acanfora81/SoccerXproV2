@@ -31,29 +31,57 @@ async function calcolaIrpef(taxableIncome, year) {
       }
     }
 
-    // Recupera detrazioni dal database
+    // Recupera detrazioni dal database (se assenti, usa default sicuri)
     const taxConfig = await prisma.tax_config.findUnique({
       where: { year: validYear }
     });
 
-    if (!taxConfig) {
-      throw new Error(`Configurazione fiscale non trovata per l'anno ${validYear}`);
-    }
-
-    // Calcola detrazioni usando la formula piecewise dal database
+    // Calcola detrazioni usando formula piecewise con fallback
     let detrazioni = 0;
     const R = taxableIncome;
     
-    // Formula detrazioni 2025 (AIC/MEF)
+    // Formula detrazioni 2025 (AIC/MEF) con fallback se taxConfig mancante
     if (R <= 15000) {
-      detrazioni = taxConfig.detrazionifixed || 1880;
+      detrazioni = (taxConfig?.detrazionifixed ?? 1880);
     } else if (R <= 28000) {
       detrazioni = 1910 + (1190 * (28000 - R) / 13000);
     } else if (R <= 50000) {
       detrazioni = 1910 * ((50000 - R) / 22000);
     }
 
-    return round2(Math.max(irpefLorda - detrazioni, 0));
+    // ========================================
+    // ULTERIORE DETRAZIONE A SCAGLIONI
+    // ========================================
+    let ulterioreDetrazione = 0;
+    try {
+      // Recupera regole ulteriore detrazione dal database
+      const extraRules = await prisma.tax_extra_deduction_rule.findMany({
+        where: { year: validYear },
+        orderBy: { min: 'asc' }
+      });
+
+      // Applica la regola corrispondente allo scaglione dell'imponibile
+      for (const rule of extraRules) {
+        const ruleMax = rule.max ?? Infinity;
+        if (R >= rule.min && R < ruleMax) {
+          ulterioreDetrazione = rule.amount;
+          console.log(`🔵 Ulteriore detrazione applicata: €${ulterioreDetrazione} per scaglione ${rule.min}-${rule.max || 'illimitato'}`);
+          break;
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Errore recupero ulteriore detrazione per anno ${validYear}:`, error.message);
+      // Fallback: usa valore da tax_config se presente
+      if (taxConfig?.ulterioredetrazionefixed) {
+        ulterioreDetrazione = taxConfig.ulterioredetrazionefixed;
+        console.log(`🔵 Ulteriore detrazione fallback da tax_config: €${ulterioreDetrazione}`);
+      }
+    }
+
+    const totalDetrazioni = detrazioni + ulterioreDetrazione;
+    console.log(`🔵 Detrazioni totali: base €${detrazioni} + ulteriore €${ulterioreDetrazione} = €${totalDetrazioni}`);
+
+    return round2(Math.max(irpefLorda - totalDetrazioni, 0));
   } catch (error) {
     console.error('❌ Errore calcolo IRPEF:', error);
     throw new Error(`Errore calcolo IRPEF: ${error.message}`);
@@ -137,6 +165,8 @@ async function calcolaAddizionali(taxableIncome, year, region, municipality) {
  */
 async function calcolaStipendioCompleto(grossSalary, taxRates, year, region = null, municipality = null, contractType = null) {
   try {
+    const validYear = year || 2025;
+    
     // Validazione parametri obbligatori
     if (!taxRates) {
       throw new Error('Aliquote fiscali mancanti');
@@ -151,10 +181,39 @@ async function calcolaStipendioCompleto(grossSalary, taxRates, year, region = nu
     const taxableIncome = grossSalary - totaleContributiWorker;
     
     // Calcoli fiscali - 100% dal database
-    const irpef = await calcolaIrpef(taxableIncome, year);
-    const addizionali = await calcolaAddizionali(taxableIncome, year, region, municipality);
+    const irpef = await calcolaIrpef(taxableIncome, validYear);
+    const addizionali = await calcolaAddizionali(taxableIncome, validYear, region, municipality);
+    
+    // ========================================
+    // BONUS L207 A SCAGLIONI
+    // ========================================
+    let bonusL207 = 0;
+    try {
+      // Recupera regole bonus L207 dal database
+      const bonusRules = await prisma.tax_bonus_l207_rule.findMany({
+        where: { year: validYear },
+        orderBy: { min: 'asc' }
+      });
 
-    const netSalary = grossSalary - totaleContributiWorker - irpef - addizionali;
+      // Applica la regola corrispondente allo scaglione dell'imponibile
+      for (const rule of bonusRules) {
+        const ruleMax = rule.max ?? Infinity;
+        if (taxableIncome >= rule.min && taxableIncome < ruleMax) {
+          bonusL207 = rule.amount;
+          console.log(`🔵 Bonus L207 applicato: €${bonusL207} per scaglione ${rule.min}-${rule.max || 'illimitato'}`);
+          break;
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Errore recupero bonus L207 per anno ${validYear}:`, error.message);
+      // Fallback: usa valore da tax_config se presente
+      if (taxConfig?.bonusl207fixed) {
+        bonusL207 = taxConfig.bonusl207fixed;
+        console.log(`🔵 Bonus L207 fallback da tax_config: €${bonusL207}`);
+      }
+    }
+
+    const netSalary = grossSalary - totaleContributiWorker - irpef - addizionali + bonusL207;
 
     // Calcolo contributi employer - 100% dal database
     const inpsEmployer = grossSalary * (parseFloat(taxRates.inpsEmployer) / 100);
@@ -178,6 +237,7 @@ async function calcolaStipendioCompleto(grossSalary, taxRates, year, region = nu
       taxableIncome: round2(taxableIncome),
       irpef: round2(irpef),
       addizionali: round2(addizionali),
+      bonusL207: round2(bonusL207),
       inpsEmployer: round2(inpsEmployer),
       inailEmployer: round2(inailEmployer),
       ffcEmployer: round2(ffcEmployer),
@@ -212,7 +272,7 @@ async function calcolaLordoDaNetto(netSalary, taxRates, year, region = null, mun
     // Tolleranza: 1 euro
     const tolerance = 1.0;
     
-    // Ridotto a 12 iterazioni (era 20)
+    // 12 iterazioni (compromesso ottimale tra precisione e velocità)
     for (let i = 0; i < 12; i++) {
       const mid = (lo + hi) / 2;
       const result = await calcolaStipendioCompleto(mid, taxRates, validYear, region, municipality, contractType);

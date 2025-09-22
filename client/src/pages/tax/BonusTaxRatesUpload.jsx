@@ -14,8 +14,11 @@ import {
   Percent
 } from "lucide-react";
 import axios from "axios";
+import useAuthStore from "../../store/authStore";
 
-export default function BonusTaxRatesUpload({ teamId }) {
+export default function BonusTaxRatesUpload({ teamId: teamIdProp }) {
+  const { user } = useAuthStore();
+  const teamId = teamIdProp || user?.teamId;
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +28,10 @@ export default function BonusTaxRatesUpload({ teamId }) {
   const handleUpload = async () => {
     if (!file) {
       setError("⚠️ Seleziona prima un file CSV o Excel");
+      return;
+    }
+    if (!teamId) {
+      setError("⚠️ Nessun team selezionato");
       return;
     }
 
