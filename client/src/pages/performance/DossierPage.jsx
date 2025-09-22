@@ -140,7 +140,7 @@ export default function DossierPage() {
       <div className={`dossier-page density-${filters.density}`}>
         <div className="page-header">
           <h3>Errore</h3>
-          <button className="btn-secondary" onClick={() => navigate('/performance/players')}>
+          <button className="btn-secondary" onClick={() => navigate('/dashboard/performance/players')}>
             ← Torna alla Lista
           </button>
         </div>
@@ -182,7 +182,7 @@ export default function DossierPage() {
         </div>
         
         <div className="header-actions">
-          <button className="btn-secondary" onClick={() => navigate('/performance/players')}>
+          <button className="btn-secondary" onClick={() => navigate('/dashboard/performance/players')}>
             ← Torna alla Lista
           </button>
         </div>

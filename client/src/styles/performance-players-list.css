@@ -673,6 +673,11 @@
 :root[data-theme="dark"] .role-section { background: #0b0b0f; border-color: #1f2937; }
 :root[data-theme="dark"] .players-list-container .player-tab-btn.active { background: #6d28d9 !important; color: #ffffff !important; border-color: #6d28d9 !important; }
 
+/* Dark mode per icone Users nelle card giocatori - VIOLA */
+:root[data-theme="dark"] .player-card svg {
+  color: #8b5cf6 !important;
+}
+
 /* Forza layout a 3 colonne per tutte le varianti */
 .players-list-container .players-grid,
 .players-list-container .players-grid.density-compact,

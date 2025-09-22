@@ -50,10 +50,7 @@
   margin-left: 4px;
 }
 
-/* Prevenzione scroll indesiderato */
-.contract-modal {
-  scroll-behavior: smooth;
-}
+/* Prevenzione scroll indesiderato rimossa - ora nella definizione principale */
 
 .contract-modal button {
   cursor: pointer;
@@ -282,14 +279,34 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 16px;
+  padding: 20px;
 }
 
 .calculations-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.calculation-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.section-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 12px;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .calculations-grid-compact {
@@ -436,16 +453,26 @@
 /* Stili specifici per la modale contratti */
 
 .contract-modal {
-  max-width: 900px;
-  width: 90vw;
+  width: 85vw;
+  max-width: 1200px;
   max-height: 90vh;
   overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
 .contract-modal .modal-content {
   padding: 0;
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: none !important;
+  width: 100% !important;
+}
+
+/* Forza la modale contratti a usare una larghezza ragionevole */
+.contract-modal,
+.contract-modal .modal-content {
+  width: 85vw !important;
+  max-width: 1200px !important;
 }
 
 .contract-modal .modal-header {
@@ -477,16 +504,18 @@
 }
 
 .contract-form {
-  padding: 32px;
+  padding: 24px 32px;
   background: var(--bg-primary);
 }
 
 .contract-form .form-section {
   margin-bottom: 40px;
-  padding: 24px;
+  padding: 20px 24px;
   background: var(--bg-secondary);
   border-radius: 12px;
   border: 1px solid var(--border-color);
+  width: 100%;
+  max-width: none;
 }
 
 .contract-form .form-section-title {
@@ -524,14 +553,15 @@
 .contract-form .form-input,
 .contract-form .form-select,
 .contract-form .form-textarea {
-  padding: 12px 16px;
+  padding: 14px 18px;
   border: 2px solid var(--border-color);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: all 0.2s ease;
-  min-height: 44px;
+  min-height: 48px;
+  width: 100%;
 }
 
 .contract-form .form-input:focus,
@@ -673,9 +703,19 @@
 }
 
 /* Responsive */
+/* Tablet: mantiene proporzioni ragionevoli */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .contract-modal {
+    width: 90vw;
+    max-width: 1000px;
+  }
+}
+
+/* Mobile: occupa tutto lo spazio disponibile */
 @media (max-width: 768px) {
   .contract-modal {
-    width: 95vw;
+    width: 100vw;
+    max-width: none;
     max-height: 95vh;
   }
   
@@ -736,7 +776,7 @@
 
 /* Contract History Modal */
 .contract-history-modal {
-  max-width: 1000px;
+  max-width: 1200px;
   width: 95vw;
   max-height: 95vh;
 }
@@ -1161,8 +1201,8 @@
 
 /* ===== STORIA CONTRATTI MODAL ===== */
 .contract-history-modal {
-  max-width: 900px;
-  width: 90vw;
+  max-width: 1200px;
+  width: 95vw;
 }
 
 /* Riepilogo migliorato */
@@ -1486,4 +1526,54 @@
     align-items: flex-start;
     gap: 4px;
   }
+}
+
+/* Stili per i nuovi campi di calcolo */
+.calculation-value.company-cost {
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.calculation-item-compact.company-cost {
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.calculation-value.taxable {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.calculation-value.irpef {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.calculation-value.addizionali {
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.calculation-value.inps-employer {
+  color: #059669;
+  font-weight: 600;
+}
+
+.calculation-value.inail-employer {
+  color: #0891b2;
+  font-weight: 600;
+}
+
+.calculation-value.solidarity-employer {
+  color: #7c2d12;
+  font-weight: 600;
+}
+
+.calculation-value.solidarity {
+  color: #7c2d12;
+  font-weight: 600;
 }

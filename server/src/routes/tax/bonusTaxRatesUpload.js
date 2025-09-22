@@ -156,6 +156,34 @@ router.get("/", async (req, res) => {
   }
 });
 
+// POST /api/bonustaxrates  → creazione manuale / upsert
+router.post("/", async (req, res) => {
+  try {
+    const { teamId, year, type, taxRate } = req.body;
+    if (!teamId || !year || !type || (taxRate === undefined || taxRate === null)) {
+      return res.status(400).json({ success: false, message: "Parametri mancanti" });
+    }
+
+    const yearInt = parseInt(year);
+    const normalizedType = String(type).trim().toUpperCase();
+    const rate = parseFloat(String(taxRate).replace(',', '.'));
+    if (isNaN(yearInt) || isNaN(rate)) {
+      return res.status(400).json({ success: false, message: "Anno o aliquota non validi" });
+    }
+
+    const saved = await prisma.bonusTaxRate.upsert({
+      where: { year_type_teamId: { year: yearInt, type: normalizedType, teamId } },
+      update: { taxRate: rate, updatedAt: new Date() },
+      create: { year: yearInt, type: normalizedType, taxRate: rate, teamId }
+    });
+
+    res.json({ success: true, data: saved, message: "Aliquota bonus salvata" });
+  } catch (error) {
+    console.error('🔴 Bonus Tax Rates POST: Errore:', error);
+    res.status(500).json({ success: false, message: "Errore nel salvataggio dell'aliquota bonus: " + error.message });
+  }
+});
+
 // DELETE /api/bonustaxrates/:id
 router.delete("/:id", async (req, res) => {
   try {

@@ -1,7 +1,7 @@
 {
   "name": "athlos-server",
   "version": "1.0.0",
-  "description": "Backend API for Athlos football management system with secure logout",
+  "description": "Backend API for Soccer X Pro Suite football management system with secure logout",
   "main": "src/app.js",
   "directories": {
     "test": "tests"

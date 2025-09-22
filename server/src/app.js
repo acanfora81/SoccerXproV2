@@ -14,7 +14,7 @@ const redisClient = require('./config/redis');
 const TokenBlacklist = require('./utils/tokenBlacklist');
 const { getPrismaClient } = require('./config/database');
 
-console.log('🟢 [INFO] Starting Athlos Server con logout sicuro...');
+console.log('🟢 [INFO] Starting Soccer X Pro Suite Server con logout sicuro...');
 
 // Get shared Prisma Client
 const prisma = getPrismaClient();
@@ -74,7 +74,7 @@ const initializeSecurity = async () => {
 app.get('/health', async (req, res) => {
   const healthData = {
     status: 'OK',
-    message: 'Athlos Server is running',
+    message: 'Soccer X Pro Suite Server is running',
     timestamp: new Date().toISOString(),
     security: {
       initialized: securityInitialized,
@@ -106,6 +106,14 @@ app.use('/api/test-auth', testAuthRoutes);
 // 🔐 Auth
 const authRoutes = require('./routes/auth/auth');
 app.use('/api/auth', authRoutes);
+
+// 🚀 Onboarding (pubblico - non richiede autenticazione)
+const onboardingRoutes = require('./routes/onboarding');
+app.use('/api/onboarding', onboardingRoutes);
+
+// 👥 Users Management (solo ADMIN)
+const usersRoutes = require('./routes/users');
+app.use('/api/users', usersRoutes);
 
 // 👥 Players
 const playersRoutes = require('./routes/players/players');
@@ -142,6 +150,10 @@ app.use('/api/players', playersUpload);
 const contractsSummary = require('./routes/contracts/contractsSummary');
 app.use('/api/contracts-summary', contractsSummary);
 
+// 💰 Tax Calculations
+const taxesRoutes = require('./routes/taxes');
+app.use('/api/taxes', taxesRoutes);
+
 
 // Riepilogo route
 console.log('🔵 [DEBUG] Route caricate:');
@@ -158,6 +170,7 @@ console.log('  - /api/taxrates/* (Tax Rates Upload)');
 console.log('  - /api/bonustaxrates/* (Bonus Tax Rates Upload)');
 console.log('  - /api/contracts-summary/summary (Contracts Summary)');
 console.log('  - /api/contracts-summary/export (Contracts Export)');
+console.log('  - /api/taxes/* (Tax Calculations)');
 console.log('');
 
 

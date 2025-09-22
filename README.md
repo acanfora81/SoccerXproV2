@@ -1,4 +1,4 @@
-# ⚽ Athlos
+# ⚽ Soccer X Pro Suite
 
 > Sistema di gestione completo per società calcistiche professionali
 

@@ -9,7 +9,9 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
   const [taxRates, setTaxRates] = useState(null);
   const [bonusTaxRates, setBonusTaxRates] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState(null);
+
 
   // Recupera tutte le aliquote fiscali
   const fetchAllTaxRates = useCallback(async () => {
@@ -27,7 +29,10 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
       setError(null);
       
       // Recupera aliquote stipendio
+      console.log('🔵 Chiamando API taxrates con URL:', `/api/taxrates?teamId=${teamId}`);
       const taxResponse = await axios.get(`/api/taxrates?teamId=${teamId}`);
+      console.log('🔵 RISPOSTA API TAXRATES:', taxResponse.data);
+      
       if (taxResponse.data.success) {
         console.log('🔵 TUTTE LE ALIQUOTE DISPONIBILI:', taxResponse.data.data);
         
@@ -81,6 +86,8 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
         }
         
         setTaxRates(rate || null);
+      } else {
+        console.log('🔴 API TAXRATES: success = false', taxResponse.data);
       }
 
       // Recupera aliquote bonus
@@ -113,6 +120,12 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
       }
     } catch (err) {
       console.error('🔴 Unified Fiscal Calculation: Errore recupero aliquote:', err);
+      console.error('🔴 Dettagli errore:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
       setError('Errore nel recupero delle aliquote fiscali');
       setTaxRates(null);
       setBonusTaxRates(null);
@@ -121,118 +134,62 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
     }
   }, [teamId, contractYear, contractType]);
 
-  // Calcola stipendio dal netto
-  const calculateSalaryFromNet = useCallback((netSalary) => {
-    if (!taxRates || !netSalary || netSalary <= 0) {
-      return {
-        netSalary: 0,
-        inps: 0,
-        inail: 0,
-        ffc: 0,
-        totalContributions: 0,
-        grossSalary: 0
-      };
+
+  // Calcola stipendio dal netto usando l'API backend
+  const calculateSalaryFromNet = useCallback(async (netSalary) => {
+    if (!netSalary || netSalary <= 0) {
+      return { netSalary: 0, grossSalary: 0, companyCost: 0 };
     }
-
-    // Le aliquote vengono dal database con nomi: inps, inail, ffc (non inpsRate, inailRate, ffcRate)
-    const inpsRate = parseFloat(taxRates.inps) || 0;
-    const inailRate = parseFloat(taxRates.inail) || 0;
-    const ffcRate = parseFloat(taxRates.ffc) || 0;
-    
-    console.log('🔵 CONVERSIONE ALIQUOTE DAL NETTO:', {
-      inpsRaw: taxRates.inps,
-      inailRaw: taxRates.inail,
-      ffcRaw: taxRates.ffc,
-      inpsRate,
-      inailRate,
-      ffcRate
-    });
-
-    const inps = netSalary * (inpsRate / 100);
-    const inail = netSalary * (inailRate / 100);
-    const ffc = netSalary * (ffcRate / 100);
-    const totalContributions = inps + inail + ffc;
-    const grossSalary = netSalary + totalContributions;
-
-    console.log('🔵 CALCOLO DAL NETTO:', {
-      netSalary,
-      inpsRate,
-      inailRate,
-      ffcRate,
-      inps,
-      inail,
-      ffc,
-      totalContributions,
-      grossSalary
-    });
-
-    return {
-      netSalary,
-      inps,
-      inail,
-      ffc,
-      totalContributions,
-      grossSalary
-    };
-  }, [taxRates]);
-
-  // Calcola stipendio dal lordo
-  const calculateSalaryFromGross = useCallback((grossSalary) => {
-    if (!taxRates || !grossSalary || grossSalary <= 0) {
-      return {
-        netSalary: 0,
-        inps: 0,
-        inail: 0,
-        ffc: 0,
-        totalContributions: 0,
-        grossSalary: 0
-      };
+    try {
+      setCalculating(true);
+      const response = await axios.post('/api/taxes/gross-from-net', {
+        netSalary,
+        taxRates: taxRates,
+        year: contractYear || 2025,
+        region: 'Marche',
+        municipality: 'Pesaro',
+        contractType: contractType
+      });
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.error);
+      }
+    } catch (error) {
+      console.error('❌ Errore calcolo stipendio da netto:', error);
+      return { netSalary: 0, grossSalary: 0, companyCost: 0 };
+    } finally {
+      setCalculating(false);
     }
+  }, [taxRates, contractYear, contractType]);
 
-    // Le aliquote vengono dal database con nomi: inps, inail, ffc (non inpsRate, inailRate, ffcRate)
-    const inpsRate = parseFloat(taxRates.inps) || 0;
-    const inailRate = parseFloat(taxRates.inail) || 0;
-    const ffcRate = parseFloat(taxRates.ffc) || 0;
-    
-    console.log('🔵 CONVERSIONE ALIQUOTE DAL LORDO:', {
-      inpsRaw: taxRates.inps,
-      inailRaw: taxRates.inail,
-      ffcRaw: taxRates.ffc,
-      inpsRate,
-      inailRate,
-      ffcRate
-    });
-
-    // I contributi si calcolano sul LORDO, non sul netto
-    const inps = grossSalary * (inpsRate / 100);
-    const inail = grossSalary * (inailRate / 100);
-    const ffc = grossSalary * (ffcRate / 100);
-    const totalContributions = inps + inail + ffc;
-    
-    // Il netto è il lordo MENO i contributi
-    const netSalary = grossSalary - totalContributions;
-
-    console.log('🔵 CALCOLO DAL LORDO:', {
-      grossSalary,
-      inpsRate,
-      inailRate,
-      ffcRate,
-      inps,
-      inail,
-      ffc,
-      totalContributions,
-      netSalary
-    });
-
-    return {
-      netSalary,
-      inps,
-      inail,
-      ffc,
-      totalContributions,
-      grossSalary
-    };
-  }, [taxRates]);
+  // Calcola stipendio dal lordo usando l'API backend
+  const calculateSalaryFromGross = useCallback(async (grossSalary) => {
+    if (!grossSalary || grossSalary <= 0) {
+      return { netSalary: 0, grossSalary: 0, companyCost: 0 };
+    }
+    try {
+      setCalculating(true);
+      const response = await axios.post('/api/taxes/net-from-gross', {
+        grossSalary,
+        taxRates: taxRates,
+        year: contractYear || 2025,
+        region: 'Marche',
+        municipality: 'Pesaro',
+        contractType: contractType
+      });
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.error);
+      }
+    } catch (error) {
+      console.error('❌ Errore calcolo stipendio da lordo:', error);
+      return { netSalary: 0, grossSalary: 0, companyCost: 0 };
+    } finally {
+      setCalculating(false);
+    }
+  }, [taxRates, contractYear, contractType]);
 
   // Calcola tasse per un bonus specifico (supporta aliquote personalizzate)
   const calculateBonusTax = useCallback((bonusType, grossAmount, customTaxRate = null) => {
@@ -411,7 +368,7 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
   }, [bonusTaxRates, calculateBonusTax, calculateBonusFromNet]);
 
   // Calcolo unificato per tutto
-  const calculateUnified = useCallback((data) => {
+  const calculateUnified = useCallback(async (data) => {
     const { salary, netSalary, calculationMode, bonusModes = {}, ...bonusData } = data;
 
     // Estrai le aliquote personalizzate dai dati bonus
@@ -431,12 +388,12 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
       ...cleanBonusData 
     } = bonusData;
 
-    // Calcola stipendio
+    // Calcola stipendio (ora async)
     let salaryCalculation = null;
     if (calculationMode === 'net' && netSalary > 0) {
-      salaryCalculation = calculateSalaryFromNet(netSalary);
+      salaryCalculation = await calculateSalaryFromNet(netSalary);
     } else if (calculationMode === 'gross' && salary > 0) {
-      salaryCalculation = calculateSalaryFromGross(salary);
+      salaryCalculation = await calculateSalaryFromGross(salary);
     }
 
     // Calcola bonus con aliquote personalizzate e modalità individuali
@@ -454,7 +411,9 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
       total: {
         gross: (salaryCalculation?.grossSalary || 0) + bonusCalculation.totalGross,
         net: (salaryCalculation?.netSalary || 0) + bonusCalculation.totalNet,
-        taxes: (salaryCalculation?.totalContributions || 0) + bonusCalculation.totalTax
+        taxes: (salaryCalculation?.totalContributionsWorker || 0) + bonusCalculation.totalTax,
+        employerContributions: salaryCalculation?.employerContributions || 0,
+        companyCost: (salaryCalculation?.companyCost || 0) + bonusCalculation.totalGross // costo lordo + bonus
       }
     };
   }, [calculateSalaryFromNet, calculateSalaryFromGross, calculateAllBonuses]);
@@ -466,7 +425,11 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
       console.log('🟢 Tutti i parametri presenti, chiamando fetchAllTaxRates');
       fetchAllTaxRates();
     } else {
-      console.log('🔴 Parametri mancanti, non recupero aliquote');
+      console.log('🔴 Parametri mancanti, non recupero aliquote:', { 
+        teamId: !!teamId, 
+        contractYear: !!contractYear, 
+        contractType: !!contractType 
+      });
     }
   }, [teamId, contractYear, contractType, fetchAllTaxRates]);
 
@@ -475,6 +438,7 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
     taxRates,
     bonusTaxRates,
     loading,
+    calculating,
     error,
     
     // Funzioni di calcolo

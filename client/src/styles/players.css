@@ -632,11 +632,17 @@
   background: var(--bg-primary);
   border: 2px solid var(--border-color);
   border-radius: 12px;
-  width: 90%;
-  max-width: 800px;
+  width: 85vw;
+  max-width: 1200px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 40px var(--shadow-color);
+}
+
+/* Forza la modale giocatori a usare dimensioni ragionevoli (override del CSS globale) */
+.modal-overlay .modal-content {
+  width: 85vw !important;
+  max-width: 1200px !important;
 }
 
 .modal-header {
@@ -793,10 +799,19 @@
 }
 
 /* Responsive modal */
-@media (width <= 768px) {
-
+/* Tablet: mantiene proporzioni ragionevoli */
+@media (max-width: 1024px) and (min-width: 769px) {
   .modal-content {
-    width: 95%;
+    width: 90vw;
+    max-width: 1000px;
+  }
+}
+
+/* Mobile: dimensioni ottimizzate */
+@media (width <= 768px) {
+  .modal-content {
+    width: 95vw;
+    max-width: none;
     max-height: 95vh;
   }
   
@@ -985,6 +1000,11 @@
 /* Dark mode per players header - SFONDO NERO COMPLETO */
 :root[data-theme="dark"] .players-header {
   background: #000000 !important;
+}
+
+/* Dark mode per icone Users nelle card statistiche giocatori - VIOLA */
+:root[data-theme="dark"] .stat-item svg {
+  color: #8b5cf6 !important;
 }
 
 /* smaller values inside stats */

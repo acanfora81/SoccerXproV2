@@ -1,0 +1,424 @@
+/* ===== LOGIN & REGISTER PAGE FUTURISTIC STYLE ===== */
+/* Stile identico alla landing page */
+
+/* Global */
+.login-page,
+.register-page {
+  background: linear-gradient(135deg, #0a0a0f 0%, #111827 40%, #1e1b4b 100%);
+  color: #f3f4f6;
+  font-family: 'Orbitron', 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Container */
+.login-container,
+.register-container {
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
+}
+
+/* Card */
+.login-card,
+.register-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.4);
+  border-radius: 16px;
+  padding: 30px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before,
+.register-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #06b6d4, #8b5cf6, #06b6d4);
+  background-size: 300% 300%;
+  animation: gradient-flow 6s ease infinite;
+}
+
+/* Header */
+.login-header,
+.register-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-logo-container,
+.register-logo-container {
+  margin-bottom: 15px;
+}
+
+.login-title-section,
+.register-title-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.login-arrow,
+.register-arrow {
+  font-size: 20px;
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+.login-title,
+.register-title {
+  background: linear-gradient(90deg, #06b6d4, #8b5cf6, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 300% 300%;
+  animation: gradient-flow 6s ease infinite;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+}
+
+.login-subtitle,
+.register-subtitle {
+  color: #ffffff;
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* Form */
+.login-form,
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.login-page .form-input {
+  padding: 12px 14px;
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.login-page .form-input:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.login-page .form-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Dropdown specifico per registrazione - SCOPED SOLO ALLA PAGINA LOGIN */
+.login-page .form-select {
+  padding: 18px 14px;
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  min-height: 48px;
+  line-height: 1.8;
+}
+
+.login-page .form-select:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.login-page .form-select option {
+  background: #1e1b4b !important;
+  color: #ffffff !important;
+  padding: 20px 14px !important;
+  font-size: 14px !important;
+  border: none !important;
+  margin: 0 !important;
+  height: auto !important;
+  line-height: 1.8 !important;
+  min-height: 40px !important;
+}
+
+/* Forza override per tutti i browser - SCOPED SOLO ALLA PAGINA LOGIN */
+.login-page .form-select option:checked {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+.login-page .form-select option:hover {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* Override per il contenitore del dropdown - SCOPED SOLO ALLA PAGINA LOGIN */
+.login-page .form-select {
+  background-image: none !important;
+}
+
+/* Forza il background del dropdown list - SCOPED SOLO ALLA PAGINA LOGIN */
+.login-page select.form-select {
+  background-color: #1e1b4b !important;
+}
+
+/* Override per WebKit browsers - SCOPED SOLO ALLA PAGINA LOGIN */
+.login-page .form-select::-webkit-list-button {
+  display: none !important;
+}
+
+.login-page .form-select::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+/* Icone per i campi */
+.form-icon {
+  color: #3b82f6;
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+/* Override forzato per browser nativi - SCOPED SOLO ALLA PAGINA LOGIN */
+.login-page input[type="text"],
+.login-page input[type="email"],
+.login-page input[type="password"],
+.login-page select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+  border: 2px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+.login-page input[type="text"]:focus,
+.login-page input[type="email"]:focus,
+.login-page input[type="password"]:focus,
+.login-page select:focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border-color: #06b6d4 !important;
+}
+
+.login-page input[type="text"]::placeholder,
+.login-page input[type="email"]::placeholder,
+.login-page input[type="password"]::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Override completo per select e option - SCOPED SOLO ALLA PAGINA LOGIN */
+.login-page select,
+.login-page select option {
+  background: #1e1b4b !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 20px 14px !important;
+  font-size: 14px !important;
+  line-height: 1.8 !important;
+  min-height: 40px !important;
+}
+
+.login-page select option:hover,
+.login-page select option:focus,
+.login-page select option:active {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+/* Forza override per tutti i browser - SCOPED SOLO ALLA PAGINA LOGIN */
+.login-page select::-webkit-list-button,
+.login-page select::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+
+.login-page select::-ms-expand {
+  display: none !important;
+}
+
+/* Buttons */
+.login-form .btn,
+.register-form .btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 14px 20px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.login-form .btn-primary,
+.register-form .btn-primary {
+  background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.6), 0 0 24px rgba(6, 182, 212, 0.4);
+}
+
+.login-form .btn-primary:hover,
+.register-form .btn-primary:hover {
+  background: linear-gradient(135deg, #0ea5e9, #9333ea);
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px rgba(6, 182, 212, 0.7), 0 0 32px rgba(139, 92, 246, 0.5);
+}
+
+.login-form .btn-secondary,
+.register-form .btn-secondary {
+  background: transparent;
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+}
+
+.login-form .btn-secondary:hover,
+.register-form .btn-secondary:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Link */
+.login-link,
+.register-link {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.login-toggle-btn,
+.register-toggle-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.login-toggle-btn:hover,
+.register-toggle-btn:hover {
+  color: #06b6d4;
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+}
+
+/* Messages */
+.login-form .error-message,
+.register-form .error-message {
+  color: #ef4444;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.login-form .success-message,
+.register-form .success-message {
+  color: #10b981;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+/* Animations */
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Hover effects */
+.login-card:hover,
+.register-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: #06b6d4;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.7), 0 0 40px rgba(139, 92, 246, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .login-page,
+  .register-page {
+    padding: 15px;
+  }
+  
+  .login-card,
+  .register-card {
+    padding: 25px 20px;
+  }
+  
+  .login-title,
+  .register-title {
+    font-size: 24px;
+  }
+  
+  .login-arrow,
+  .register-arrow {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card,
+  .register-card {
+    padding: 20px 15px;
+  }
+  
+  .login-title,
+  .register-title {
+    font-size: 22px;
+  }
+  
+  .login-form .btn,
+  .register-form .btn {
+    padding: 12px 18px;
+    font-size: 14px;
+  }
+}

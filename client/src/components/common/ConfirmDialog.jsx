@@ -10,7 +10,8 @@ const ConfirmDialog = ({
   message, 
   confirmText = "Conferma", 
   cancelText = "Annulla",
-  type = "warning" // warning, danger, info, success
+  type = "warning", // warning, danger, info, success
+  children
 }) => {
   if (!isOpen) return null;
 
@@ -60,7 +61,11 @@ const ConfirmDialog = ({
         </div>
         
         <div className="confirm-body">
-          <p className="confirm-message">{message}</p>
+          {children ? (
+            children
+          ) : (
+            <p className="confirm-message">{message}</p>
+          )}
         </div>
         
         <div className="confirm-actions">

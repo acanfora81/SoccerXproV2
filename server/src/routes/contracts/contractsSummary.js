@@ -41,7 +41,7 @@ router.get('/summary', async (req, res) => {
     console.log('🔵 Contracts Summary: Trovati', contracts.length, 'contratti');
 
     // Processa ogni contratto per calcolare i dati del riepilogo
-    const summaryData = contracts.map(contract => {
+    const summaryData = await Promise.all(contracts.map(async (contract) => {
       const playerName = contract.players 
         ? `${contract.players.firstName} ${contract.players.lastName}`
         : 'Giocatore non trovato';
@@ -50,27 +50,93 @@ router.get('/summary', async (req, res) => {
       const grossSalary = parseFloat(contract.salary) || 0;
       const netSalary = contract.netSalary ? parseFloat(contract.netSalary) : 0;
       
-      // Recupera le aliquote fiscali per il contratto
-      let inpsRate = 0;
-      let inailRate = 0;
-      let ffcRate = 6.25; // FFC è sempre 6.25%
+      // 🎯 NUOVO CALCOLO CORRETTO: Recupera aliquote dal database
+      const taxRatesFromDB = await prisma.taxRate.findFirst({
+        where: {
+          teamId: contract.teamId,
+          year: new Date().getFullYear(), // Anno corrente
+          type: contract.contractType
+        }
+      });
 
-      // Determina le aliquote in base al tipo di contratto
-      if (contract.contractType === 'PROFESSIONAL') {
-        inpsRate = 29.58;
-        inailRate = 7.9;
-      } else if (contract.contractType === 'APPRENTICESHIP') {
-        inpsRate = 11.61;
-        inailRate = 0;
-      }
+      // Fallback su aliquote di default se non trovate nel DB
+      const defaultRates = {
+        inpsWorker: contract.contractType === 'PROFESSIONAL' ? 9.19 : 5.84,
+        inpsEmployer: contract.contractType === 'PROFESSIONAL' ? 30.0 : 15.0,
+        inailEmployer: contract.contractType === 'PROFESSIONAL' ? 1.5 : 0.8,
+        ffcWorker: 6.25,
+        ffcEmployer: 0,
+        solidarityWorker: 0,
+        solidarityEmployer: 0.5
+      };
 
-      // Calcola i contributi
-      const inpsContributions = (grossSalary * inpsRate) / 100;
-      const inailContributions = (grossSalary * inailRate) / 100;
-      const ffcContributions = (grossSalary * ffcRate) / 100;
+      // Usa le nuove colonne se disponibili, altrimenti fallback
+      const taxRates = taxRatesFromDB ? {
+        inpsWorker: parseFloat(taxRatesFromDB.inpsWorker) || defaultRates.inpsWorker,
+        inpsEmployer: parseFloat(taxRatesFromDB.inpsEmployer) || defaultRates.inpsEmployer,
+        inailEmployer: parseFloat(taxRatesFromDB.inailEmployer) || defaultRates.inailEmployer,
+        ffcWorker: parseFloat(taxRatesFromDB.ffcWorker) || defaultRates.ffcWorker,
+        ffcEmployer: parseFloat(taxRatesFromDB.ffcEmployer) || defaultRates.ffcEmployer,
+        solidarityWorker: parseFloat(taxRatesFromDB.solidarityWorker) || defaultRates.solidarityWorker,
+        solidarityEmployer: parseFloat(taxRatesFromDB.solidarityEmployer) || defaultRates.solidarityEmployer
+      } : defaultRates;
+
+      // 🧮 CALCOLO COMPLETO CON IRPEF E ADDIZIONALI
+      const { calcolaStipendioCompleto } = require('../../utils/taxCalculator');
       
-      // Se netSalary è null, calcolalo dal lordo
-      const calculatedNetSalary = netSalary || (grossSalary - inpsContributions - inailContributions - ffcContributions);
+      let calculatedNetSalary;
+      let companyCost;
+      let irpef = 0;
+      let addizionali = 0;
+      let taxableIncome = 0;
+
+      try {
+        const calculation = await calcolaStipendioCompleto(
+          grossSalary,
+          taxRates,
+          new Date().getFullYear(),
+          'DEFAULT', // TODO: aggiungere regione dal team
+          'DEFAULT'  // TODO: aggiungere comune dal team
+        );
+
+        calculatedNetSalary = netSalary || calculation.netSalary;
+        companyCost = calculation.companyCost;
+        irpef = calculation.irpef;
+        addizionali = calculation.addizionali;
+        taxableIncome = calculation.taxableIncome;
+
+        // Per compatibilità con il frontend esistente
+        var inpsContributions = calculation.inpsWorker;
+        var inailContributions = 0; // INAIL non è a carico lavoratore
+        var ffcContributions = calculation.ffcWorker;
+        var employerInps = calculation.inpsEmployer;
+        var employerInail = calculation.inailEmployer;
+        var solidarity = calculation.solidarityEmployer;
+        var totalEmployerContributions = calculation.totaleContributiEmployer;
+
+      } catch (error) {
+        console.error('🔴 Errore calcolo stipendio:', error);
+        
+        // Fallback al calcolo semplificato precedente
+        const inpsWorkerRate = parseFloat(taxRates.inpsWorker) || 0;
+        const ffcWorkerRate = parseFloat(taxRates.ffcWorker) || 0;
+        
+        inpsContributions = (grossSalary * inpsWorkerRate) / 100;
+        inailContributions = 0;
+        ffcContributions = (grossSalary * ffcWorkerRate) / 100;
+        
+        calculatedNetSalary = netSalary || (grossSalary - inpsContributions - ffcContributions);
+        
+        const employerInpsRate = parseFloat(taxRates.inpsEmployer) || 0;
+        const employerInailRate = parseFloat(taxRates.inailEmployer) || 0;
+        const solidarityRate = parseFloat(taxRates.solidarityEmployer) || 0;
+        
+        employerInps = (grossSalary * employerInpsRate) / 100;
+        employerInail = (grossSalary * employerInailRate) / 100;
+        solidarity = (grossSalary * solidarityRate) / 100;
+        totalEmployerContributions = employerInps + employerInail + solidarity;
+        companyCost = grossSalary + totalEmployerContributions;
+      }
 
       // Calcola i bonus e indennità
       const imageRights = parseFloat(contract.imageRights) || 0;
@@ -102,6 +168,16 @@ router.get('/summary', async (req, res) => {
         inpsContributions: inpsContributions,
         inailContributions: inailContributions,
         ffcContributions: ffcContributions,
+        // 🏢 COSTI SOCIETÀ
+        companyCost: companyCost,
+        employerInps: employerInps,
+        employerInail: employerInail,
+        solidarity: solidarity,
+        totalEmployerContributions: totalEmployerContributions,
+        // 🧮 NUOVI CAMPI CALCOLO CORRETTO
+        taxableIncome: taxableIncome,
+        irpef: irpef,
+        addizionali: addizionali,
         contractPremiums: loyaltyBonus + signingBonus, // Premi del contratto
         exitIncentive: 0, // Da implementare se necessario
         allowances: carAllowance, // Indennità varie (solo car allowance per ora)
@@ -112,7 +188,7 @@ router.get('/summary', async (req, res) => {
         createdAt: contract.createdAt,
         updatedAt: contract.updatedAt
       };
-    });
+    }));
 
     console.log('🔵 Contracts Summary: Dati processati:', summaryData.length, 'record');
 

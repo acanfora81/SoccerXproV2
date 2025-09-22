@@ -1,5 +1,5 @@
 // client/src/components/layout/MainLayout.jsx
-// Layout principale con sidebar RBAC-aware per Athlos
+// Layout principale con sidebar RBAC-aware per Soccer X Pro Suite
 
 import ThemeToggle from '../ui/ThemeToggle';
 import Logo from '../ui/Logo';
@@ -39,20 +39,20 @@ const ALL_MENU_ITEMS = [
     id: 'players',
     label: 'Giocatori',
     icon: Users,
-    path: '/players',
+    path: '/dashboard/players',
     requiredPermission: 'players:read',
     submenu: [
       { 
         id: 'players-stats', 
         label: 'Statistiche', 
-        path: '/players/stats',
+        path: '/dashboard/players/stats',
         requiredPermission: 'players:read'
       },
-      { id: 'players', label: 'Gestione Giocatori', path: '/players', requiredPermission: 'players:read' },
+      { id: 'players', label: 'Gestione Giocatori', path: '/dashboard/players', requiredPermission: 'players:read' },
       { 
         id: 'players-upload', 
         label: 'Importa da File', 
-        path: '/players/upload',
+        path: '/dashboard/players/upload',
         requiredPermission: 'players:write'
       }
     ]
@@ -61,37 +61,37 @@ const ALL_MENU_ITEMS = [
     id: 'performance',
     label: 'Performance',
     icon: BarChart3,
-    path: '/performance',
+    path: '/dashboard/performance',
     requiredPermission: 'performance:read',
     submenu: [
       {
         id: 'performance-dashboard',
         label: 'Dashboard Squadra',
-        path: '/performance/team',
+        path: '/dashboard/performance/team',
         requiredPermission: 'performance:analytics'
       },
              {
          id: 'performance-players',
          label: 'Vista Giocatori',
-         path: '/performance/players',
+         path: '/dashboard/performance/players',
          requiredPermission: 'performance:analytics'
        },
       {
         id: 'performance-analytics-advanced',
         label: 'Analytics Avanzate',
-        path: '/performance/analytics',
+        path: '/dashboard/performance/analytics',
         requiredPermission: 'performance:analytics'
       },
       {
         id: 'performance-import', 
         label: 'Import Dati',
-        path: '/performance/import',
+        path: '/dashboard/performance/import',
         requiredPermission: 'performance:import'
       },
       {
         id: 'performance-reports',
         label: 'Reports',
-        path: '/performance/reports', 
+        path: '/dashboard/performance/reports', 
         requiredPermission: 'performance:export'
       }
     ]
@@ -100,31 +100,31 @@ const ALL_MENU_ITEMS = [
     id: 'contracts',
     label: 'Contratti',
     icon: FileText,
-    path: '/contracts',
+    path: '/dashboard/contracts',
     requiredPermission: 'contracts:read',
     submenu: [
       {
         id: 'contracts-dashboard',
         label: 'Dashboard',
-        path: '/contracts/dashboard',
+        path: '/dashboard/contracts/dashboard',
         requiredPermission: 'contracts:read'
       },
       {
         id: 'contracts-list',
         label: 'Lista Contratti',
-        path: '/contracts',
+        path: '/dashboard/contracts',
         requiredPermission: 'contracts:read'
       },
       {
         id: 'contracts-expiring',
         label: 'In Scadenza',
-        path: '/contracts/expiring',
+        path: '/dashboard/contracts/expiring',
         requiredPermission: 'contracts:read'
       },
       {
         id: 'contracts-summary',
         label: 'Riepilogo Contratti',
-        path: '/contracts/summary',
+        path: '/dashboard/contracts/summary',
         requiredPermission: 'contracts:read'
       },
       {
@@ -135,36 +135,36 @@ const ALL_MENU_ITEMS = [
           {
             id: 'taxrates-list',
             label: 'Aliquote Stipendi',
-            path: '/taxrates/list',
+            path: '/dashboard/taxrates/list',
             requiredPermission: 'contracts:read'
           },
           {
             id: 'bonustaxrates-list',
             label: 'Aliquote Bonus',
-            path: '/bonustaxrates/list',
+            path: '/dashboard/bonustaxrates/list',
+            requiredPermission: 'contracts:read'
+          },
+          {
+            id: 'irpef-brackets',
+            label: 'Scaglioni IRPEF',
+            path: '/dashboard/tax/irpef-brackets',
+            requiredPermission: 'contracts:read'
+          },
+          {
+            id: 'regional-additionals',
+            label: 'Addizionali Regionali',
+            path: '/dashboard/tax/regional-additionals',
+            requiredPermission: 'contracts:read'
+          },
+          {
+            id: 'municipal-additionals',
+            label: 'Addizionali Comunali',
+            path: '/dashboard/tax/municipal-additionals',
             requiredPermission: 'contracts:read'
           }
         ]
       },
-      {
-        id: 'caricamento-aliquote',
-        label: 'Carica Aliquote',
-        requiredPermission: 'contracts:write',
-        submenu: [
-          {
-            id: 'taxrates-upload',
-            label: 'Aliquote Stipendi',
-            path: '/taxrates/upload',
-            requiredPermission: 'contracts:write'
-          },
-          {
-            id: 'bonustaxrates-upload',
-            label: 'Aliquote Bonus',
-            path: '/bonustaxrates/upload',
-            requiredPermission: 'contracts:write'
-          }
-        ]
-      },
+      
       {
         id: 'sistema-fiscale',
         label: 'Sistema Fiscale Parametrico',
@@ -174,36 +174,37 @@ const ALL_MENU_ITEMS = [
           {
             id: 'tax-calculator',
             label: 'Calcolatore Fiscale',
-            path: '/tax/calculator',
+            path: '/dashboard/tax/calculator',
             requiredPermission: 'contracts:read'
           }
         ]
       }
     ]
   },
+  
   {
     id: 'medical',
     label: 'Area Medica',
     icon: Stethoscope,
-    path: '/medical',
+    path: '/dashboard/medical',
     requiredPermission: 'medical:read',
     submenu: [
       { 
         id: 'medical-injuries', 
         label: 'Infortuni', 
-        path: '/medical/injuries',
+        path: '/dashboard/medical/injuries',
         requiredPermission: 'medical:read'
       },
       { 
         id: 'medical-visits', 
         label: 'Visite Mediche', 
-        path: '/medical/visits',
+        path: '/dashboard/medical/visits',
         requiredPermission: 'medical:write'
       },
       { 
         id: 'medical-reports', 
         label: 'Rapporti', 
-        path: '/medical/reports',
+        path: '/dashboard/medical/reports',
         requiredPermission: 'medical:confidential'
       }
     ]
@@ -212,25 +213,25 @@ const ALL_MENU_ITEMS = [
     id: 'market',
     label: 'Mercato',
     icon: TrendingUp,
-    path: '/market',
+    path: '/dashboard/market',
     requiredPermission: 'market:read',
     submenu: [
       { 
         id: 'market-transfers', 
         label: 'Trasferimenti', 
-        path: '/market/transfers',
+        path: '/dashboard/market/transfers',
         requiredPermission: 'market:read'
       },
       { 
         id: 'market-scouting', 
         label: 'Scouting', 
-        path: '/market/scouting',
+        path: '/dashboard/market/scouting',
         requiredPermission: 'scout:reports'
       },
       { 
         id: 'market-targets', 
         label: 'Obiettivi', 
-        path: '/market/targets',
+        path: '/dashboard/market/targets',
         requiredPermission: 'market:write'
       }
     ]
@@ -239,26 +240,48 @@ const ALL_MENU_ITEMS = [
     id: 'administration',
     label: 'Amministrazione',
     icon: Shield,
-    path: '/administration',
+    path: '/dashboard/administration',
     requiredPermission: 'admin:read',
     submenu: [
       { 
         id: 'admin-budget', 
         label: 'Budget', 
-        path: '/administration/budget',
+        path: '/dashboard/administration/budget',
         requiredPermission: 'admin:budget'
       },
       { 
         id: 'admin-expenses', 
         label: 'Spese', 
-        path: '/administration/expenses',
+        path: '/dashboard/administration/expenses',
         requiredPermission: 'admin:write'
       },
       { 
         id: 'admin-users', 
         label: 'Utenti', 
-        path: '/administration/users',
+        path: '/dashboard/administration/users',
         requiredPermission: 'user:management'
+      }
+    ]
+  }
+  ,
+  {
+    id: 'utilities',
+    label: 'Utilità di Sistema',
+    icon: Settings,
+    path: '/dashboard/utilities',
+    requiredPermission: 'contracts:write',
+    submenu: [
+      {
+        id: 'setup-aliquote',
+        label: 'Setup Aliquote',
+        requiredPermission: 'contracts:write',
+        submenu: [
+          { id: 'taxrates-upload', label: 'Aliquote Stipendi', path: '/dashboard/taxrates/upload', requiredPermission: 'contracts:write' },
+          { id: 'bonustaxrates-upload', label: 'Aliquote Bonus', path: '/dashboard/bonustaxrates/upload', requiredPermission: 'contracts:write' },
+          { id: 'irpef-upload', label: 'Scaglioni IRPEF', path: '/dashboard/tax/irpef-upload', requiredPermission: 'contracts:write' },
+          { id: 'regional-additionals-upload', label: 'Addizionali Regionali', path: '/dashboard/regional-additionals/upload', requiredPermission: 'contracts:write' },
+          { id: 'municipal-additionals-upload', label: 'Addizionali Comunali', path: '/dashboard/municipal-additionals/upload', requiredPermission: 'contracts:write' }
+        ]
       }
     ]
   }
@@ -420,11 +443,11 @@ const MainLayout = ({ children, onLogout }) => {
     }
     
     // Fallback per route speciali
-    if (pathname.startsWith('/performance/dossier/')) return 'Dossier Giocatore';
-    if (pathname === '/performance/compare') return 'Confronto Giocatori';
-    if (pathname === '/tax/calculator') return 'Calcolatore Fiscale';
+    if (pathname.startsWith('/dashboard/performance/dossier/')) return 'Dossier Giocatore';
+    if (pathname === '/dashboard/performance/compare') return 'Confronto Giocatori';
+    if (pathname === '/dashboard/tax/calculator') return 'Calcolatore Fiscale';
     
-    return 'Athlos';
+    return 'Soccer X Pro Suite';
   };
 
   return (
@@ -432,10 +455,7 @@ const MainLayout = ({ children, onLogout }) => {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
-          <Logo size="medium" showText={true} className="sidebar-logo" />
-          <button className="sidebar-toggle" onClick={toggleSidebar}>
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          <Logo size="large" showText={false} className="sidebar-logo" />
         </div>
 
         <nav className="sidebar-nav">
@@ -536,6 +556,13 @@ const MainLayout = ({ children, onLogout }) => {
           }}
         >
           <ThemeToggle />
+        </div>
+
+        {/* Pulsante di toggle sidebar */}
+        <div className="sidebar-toggle-container">
+          <button className="sidebar-toggle" onClick={toggleSidebar}>
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
 
         <div className="sidebar-footer">

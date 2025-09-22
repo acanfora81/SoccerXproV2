@@ -1,5 +1,5 @@
 // client/src/components/dashboard/Dashboard.jsx
-// Dashboard principale per Athlos
+// Dashboard principale per Soccer X Pro Suite
 
 import { Users, FileText, Activity, AlertTriangle, TrendingUp, Calendar } from 'lucide-react';
 

@@ -1,0 +1,483 @@
+/* client/src/components/contracts/SalaryCalculationDisplay.css */
+
+.salary-calculation-display {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.no-calculation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  color: #64748b;
+  text-align: center;
+}
+
+.no-calculation p {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+}
+
+/* Header */
+.calculation-header {
+  margin-bottom: 24px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 16px;
+}
+
+.calculation-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  color: #1e293b;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.input-output-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.input-label, .output-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.input-value, .output-value {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.input-value.net, .output-value.net {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.input-value.gross, .output-value.gross {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.arrow {
+  font-size: 18px;
+  color: #6366f1;
+  font-weight: bold;
+}
+
+/* Sections Layout */
+.calculation-sections {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.section-divider {
+  width: 2px;
+  background: linear-gradient(to bottom, #e2e8f0, #cbd5e1, #e2e8f0);
+  border-radius: 1px;
+  min-height: 200px;
+}
+
+/* Individual Sections */
+.calculation-section {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.player-section {
+  border-left: 4px solid #10b981;
+}
+
+.company-section {
+  border-left: 4px solid #f59e0b;
+}
+
+.section-header {
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.player-header .section-title {
+  color: #059669;
+}
+
+.company-header .section-title {
+  color: #d97706;
+}
+
+/* Calculation Groups */
+.calculation-group {
+  margin-bottom: 20px;
+}
+
+.calculation-group:last-child {
+  margin-bottom: 0;
+}
+
+.group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Calculation Grid */
+.calculation-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.calculation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.calculation-item.total {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.calculation-item.result-highlight {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 2px solid #0284c7;
+  font-weight: 700;
+  margin-top: 8px;
+  padding: 12px;
+}
+
+.calculation-item.result-highlight .calculation-label {
+  font-weight: 700;
+  color: #0c4a6e;
+}
+
+.calculation-item.result-highlight .calculation-value {
+  font-size: 16px;
+  color: #0369a1;
+}
+
+.calculation-label {
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.calculation-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Value Colors */
+.calculation-value.inps { color: #0ea5e9; }
+.calculation-value.ffc { color: #8b5cf6; }
+.calculation-value.solidarity { color: #06b6d4; }
+.calculation-value.taxable { color: #6366f1; }
+.calculation-value.irpef { color: #dc2626; }
+.calculation-value.addizionali { color: #ea580c; }
+.calculation-value.inps-employer { color: #0284c7; }
+.calculation-value.inail-employer { color: #7c3aed; }
+.calculation-value.ffc-employer { color: #9333ea; }
+.calculation-value.total { color: #1f2937; }
+
+/* Results */
+.result-group {
+  border-top: 2px solid #e2e8f0;
+  padding-top: 16px;
+  margin-top: 16px;
+}
+
+.calculation-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.player-result {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  border: 2px solid #10b981;
+  color: #065f46;
+}
+
+.company-result {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 2px solid #f59e0b;
+  color: #92400e;
+}
+
+.result-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-value {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 18px;
+}
+
+/* Cost Breakdown */
+.cost-breakdown {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.breakdown-item.total {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1f2937;
+  border-top: 1px solid #d1d5db;
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.breakdown-label {
+  color: #6b7280;
+}
+
+.breakdown-value {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-weight: 600;
+  color: #374151;
+}
+
+.breakdown-divider {
+  border-top: 1px solid #d1d5db;
+  margin: 8px 0 4px 0;
+}
+
+/* Footer */
+.calculation-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 2px solid #e2e8f0;
+}
+
+/* Total Summary Section */
+.total-summary-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.total-summary-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+}
+
+.total-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.total-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.total-summary-item.highlight {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 2px solid #f59e0b;
+  font-weight: 700;
+}
+
+.total-label {
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.total-summary-item.highlight .total-label {
+  color: #92400e;
+  font-weight: 700;
+}
+
+.total-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.total-value.gross { color: #d97706; }
+.total-value.net { color: #059669; }
+.total-value.employer { color: #7c3aed; }
+.total-value.cost { color: #dc2626; }
+
+.total-summary-item.highlight .total-value {
+  font-size: 16px;
+  color: #92400e;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .calculation-sections {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .section-divider {
+    display: none;
+  }
+  
+  .input-output-summary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .summary-stats {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .stat-item {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .salary-calculation-display {
+    padding: 16px;
+  }
+  
+  .calculation-section {
+    padding: 16px;
+  }
+  
+  .calculation-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  
+  .calculation-result {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+}
+
+/* Barra di Loading Minimal */
+.calculation-loading {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 12px 0;
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  color: #3b82f6;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

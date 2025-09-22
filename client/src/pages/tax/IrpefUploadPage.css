@@ -1,0 +1,288 @@
+.irpef-upload-page {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.page-header h1 {
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.page-header p {
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.error-message {
+  background-color: var(--error);
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.success-message {
+  background-color: var(--success);
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.upload-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.upload-form {
+  background-color: var(--bg-secondary);
+  padding: 25px;
+  border-radius: 8px;
+  border: 2px solid var(--border-muted);
+}
+
+.template-section {
+  background-color: var(--bg-secondary);
+  padding: 25px;
+  border-radius: 8px;
+  border: 2px solid var(--border-muted);
+}
+
+.template-section h3 {
+  color: var(--text-primary);
+  margin-bottom: 15px;
+}
+
+.template-section p {
+  color: var(--text-muted);
+  margin-bottom: 15px;
+}
+
+.template-section ul {
+  margin-bottom: 20px;
+  padding-left: 20px;
+}
+
+.template-section li {
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.template-section li strong {
+  color: var(--error);
+  font-family: 'Courier New', monospace;
+}
+
+.file-input-group {
+  margin-bottom: 20px;
+}
+
+.file-label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  cursor: pointer;
+  padding: 15px;
+  border: 2px dashed var(--accent-primary);
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.file-label:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--accent-secondary);
+}
+
+.file-input {
+  display: none;
+}
+
+.file-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: var(--bg-primary);
+  border-radius: 6px;
+  border: 1px solid var(--border-secondary);
+}
+
+.file-info span {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.upload-actions {
+  text-align: center;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: 2px solid var(--accent-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+}
+
+.btn-secondary {
+  background-color: var(--text-muted);
+  color: white;
+  border: 2px solid var(--text-muted);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--gray-600);
+  border-color: var(--gray-600);
+}
+
+.preview-section {
+  background-color: var(--bg-primary);
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+  margin-bottom: 30px;
+}
+
+.preview-section h3 {
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.preview-table {
+  overflow-x: auto;
+}
+
+.preview-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+.preview-table th,
+.preview-table td {
+  padding: 12px;
+  text-align: left;
+  border: 1px solid var(--border-secondary);
+}
+
+.preview-table th {
+  background-color: var(--bg-secondary);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.preview-table tr:nth-child(even) {
+  background-color: var(--bg-secondary);
+}
+
+.preview-note {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.instructions-section {
+  background-color: var(--bg-primary);
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.instructions-section h3 {
+  color: var(--text-primary);
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.instructions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.instruction-item {
+  padding: 20px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent-primary);
+}
+
+.instruction-item h4 {
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.instruction-item p {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .irpef-upload-page {
+    padding: 10px;
+  }
+  
+  .upload-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .instructions {
+    grid-template-columns: 1fr;
+  }
+  
+  .file-info {
+    flex-direction: column;
+    gap: 5px;
+    text-align: center;
+  }
+  
+  .preview-table {
+    font-size: 14px;
+  }
+  
+  .preview-table th,
+  .preview-table td {
+    padding: 8px;
+  }
+}
+

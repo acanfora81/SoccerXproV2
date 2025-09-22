@@ -600,3 +600,8 @@ h6 { font-size: 1rem; }
 :root[data-theme="dark"] body {
   background: #000000 !important;
 }
+
+/* Dark mode per icone Users nelle card dashboard - VIOLA */
+:root[data-theme="dark"] .stat-card svg {
+  color: #8b5cf6 !important;
+}
