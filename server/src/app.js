@@ -1,7 +1,14 @@
 // server/src/app.js
 // Main application con sistema logout sicuro
 
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: __dirname + '/../.env' });
+// Fallback: carica anche prisma/.env se DATABASE_URL/DIRECT_URL non sono presenti
+if (!process.env.DATABASE_URL && !process.env.DIRECT_URL) {
+  try { require('dotenv').config({ path: __dirname + '/../prisma/.env', override: false }); } catch {}
+  if (!process.env.DATABASE_URL && !process.env.DIRECT_URL) {
+    try { require('dotenv').config({ path: __dirname + '/../prisma/.env.backup', override: false }); } catch {}
+  }
+}
 
 const express = require('express');
 const cors = require('cors');

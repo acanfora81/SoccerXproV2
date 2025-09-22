@@ -14,8 +14,11 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
+import useAuthStore from "../../store/authStore";
 
-export default function TaxRatesList({ teamId }) {
+export default function TaxRatesList({ teamId: teamIdProp }) {
+  const { user } = useAuthStore();
+  const teamId = teamIdProp || user?.teamId;
   const [taxRates, setTaxRates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,10 +28,10 @@ export default function TaxRatesList({ teamId }) {
   const [newRate, setNewRate] = useState({ year: new Date().getFullYear(), type: 'PROFESSIONAL', inps: '', inail: '', ffc: '' });
 
   const fetchTaxRates = async () => {
+    if (!teamId) return;
     try {
       setLoading(true);
       setError(null);
-      
       const response = await axios.get(`/api/taxrates?teamId=${teamId}`);
       setTaxRates(response.data.data || response.data);
     } catch (err) {
@@ -46,20 +49,14 @@ export default function TaxRatesList({ teamId }) {
 
   const handleConfirmDelete = async () => {
     const { rate } = deleteConfirm;
-    
+    if (!teamId) return;
     try {
       setLoading(true);
       setError(null);
       console.log('🔵 Eliminazione aliquota:', rate.id);
-      
       await axios.delete(`/api/taxrates/${rate.id}?teamId=${teamId}`);
-      
-      // Ricarica la lista dopo l'eliminazione
       await fetchTaxRates();
-      
-      // Chiudi popup di conferma
       setDeleteConfirm({ isOpen: false, rate: null });
-      
     } catch (err) {
       setError("Errore nell'eliminazione dell'aliquota");
       console.error("Errore eliminazione aliquota:", err);
@@ -77,10 +74,11 @@ export default function TaxRatesList({ teamId }) {
   const closeEdit = () => setEditingRate(null);
 
   const handleSaveEdit = async (updated) => {
+    if (!teamId) return;
     try {
       setLoading(true);
       setError(null);
-      await axios.put(`/api/taxrates/${updated.id}`, {
+      await axios.put(`/api/taxrates/${updated.id}?teamId=${teamId}`, {
         inps: updated.inps,
         inail: updated.inail,
         ffc: updated.ffc
@@ -95,6 +93,7 @@ export default function TaxRatesList({ teamId }) {
   };
 
   const handleCreate = async () => {
+    if (!teamId) return;
     try {
       setLoading(true);
       setError(null);

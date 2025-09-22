@@ -75,17 +75,20 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
         console.log('🔵 ALIQUOTE STIPENDIO:', rate ? 'TROVATE' : 'NON TROVATE', { contractType, possibleTypes, year: contractYear, rate });
         
         if (rate) {
-          console.log('🔵 DETTAGLIO ALIQUOTA TROVATA:', {
-            inps: rate.inps,
-            inail: rate.inail,
-            ffc: rate.ffc,
-            inpsType: typeof rate.inps,
-            inailType: typeof rate.inail,
-            ffcType: typeof rate.ffc
+          console.log('🔵 DETTAGLIO ALIQUOTA TROVATA (DB):', rate);
+          // Usa i valori esattamente come da DB (DB-driven)
+          setTaxRates({
+            inpsWorker: rate.inpsWorker,
+            inpsEmployer: rate.inpsEmployer,
+            ffcWorker: rate.ffcWorker,
+            ffcEmployer: rate.ffcEmployer,
+            inailEmployer: rate.inailEmployer,
+            solidarityWorker: rate.solidarityWorker,
+            solidarityEmployer: rate.solidarityEmployer
           });
+        } else {
+          setTaxRates(null);
         }
-        
-        setTaxRates(rate || null);
       } else {
         console.log('🔴 API TAXRATES: success = false', taxResponse.data);
       }
@@ -140,6 +143,13 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
     if (!netSalary || netSalary <= 0) {
       return { netSalary: 0, grossSalary: 0, companyCost: 0 };
     }
+    
+    // Verifica che taxRates sia disponibile
+    if (!taxRates) {
+      console.warn('⚠️ calculateSalaryFromNet: taxRates non disponibili, saltando calcolo');
+      return { netSalary: 0, grossSalary: 0, companyCost: 0 };
+    }
+    
     try {
       setCalculating(true);
       const response = await axios.post('/api/taxes/gross-from-net', {

@@ -14,8 +14,11 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
+import useAuthStore from "../../store/authStore";
 
-export default function BonusTaxRatesList({ teamId }) {
+export default function BonusTaxRatesList({ teamId: teamIdProp }) {
+  const { user } = useAuthStore();
+  const teamId = teamIdProp || user?.teamId;
   const [bonusTaxRates, setBonusTaxRates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,10 +28,10 @@ export default function BonusTaxRatesList({ teamId }) {
   const [newRate, setNewRate] = useState({ year: new Date().getFullYear(), type: 'SIGNING_BONUS', taxRate: '' });
 
   const fetchBonusTaxRates = async () => {
+    if (!teamId) return;
     try {
       setLoading(true);
       setError(null);
-      
       const response = await axios.get(`/api/bonustaxrates?teamId=${teamId}`);
       setBonusTaxRates(response.data.data || response.data);
     } catch (err) {
@@ -46,20 +49,14 @@ export default function BonusTaxRatesList({ teamId }) {
 
   const handleConfirmDelete = async () => {
     const { rate } = deleteConfirm;
-    
+    if (!teamId) return;
     try {
       setLoading(true);
       setError(null);
       console.log('🔵 Eliminazione aliquota bonus:', rate.id);
-      
       await axios.delete(`/api/bonustaxrates/${rate.id}?teamId=${teamId}`);
-      
-      // Ricarica la lista dopo l'eliminazione
       await fetchBonusTaxRates();
-      
-      // Chiudi popup di conferma
       setDeleteConfirm({ isOpen: false, rate: null });
-      
     } catch (err) {
       setError("Errore nell'eliminazione dell'aliquota bonus");
       console.error("Errore eliminazione aliquota bonus:", err);
@@ -80,6 +77,7 @@ export default function BonusTaxRatesList({ teamId }) {
   const closeEdit = () => setEditingRate(null);
 
   const handleSaveEdit = async (updated) => {
+    if (!teamId) return;
     try {
       setLoading(true);
       setError(null);
@@ -95,6 +93,7 @@ export default function BonusTaxRatesList({ teamId }) {
   };
 
   const handleCreate = async () => {
+    if (!teamId) return;
     try {
       setLoading(true);
       setError(null);

@@ -334,6 +334,34 @@
   color: var(--text-primary);
 }
 
+/* Force action buttons always visible */
+.additionals-table td:last-child {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.additionals-table td:last-child .btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+}
+.additionals-table td:last-child .btn.btn-small {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 6px;
+  justify-content: center;
+}
+
+/* Ensure actions are always visible regardless of hover rules elsewhere */
+.additionals-table td.actions-cell button,
+.additionals-table td.actions-cell .btn,
+.additionals-table td:last-child button,
+.additionals-table td:last-child .btn {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 @media (max-width: 768px) {
   .municipal-additionals-page {
     padding: 10px;
