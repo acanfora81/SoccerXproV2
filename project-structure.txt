@@ -1,4 +1,4 @@
-# Struttura progetto aggiornata: 19/09/2025, 14:32:12
+# Struttura progetto aggiornata: 22/09/2025, 12:08:39
 
 ├── client
 │   ├── public
@@ -8,7 +8,10 @@
 │   │   │   │   └── players-example.csv
 │   │   │   ├── tax
 │   │   │   │   ├── bonus-taxrates-example-italian.csv
-│   │   │   │   └── calcolatore.csv
+│   │   │   │   ├── calcolatore.csv
+│   │   │   │   ├── municipal-additionals-example-italian.csv
+│   │   │   │   ├── regional-additionals-example-italian.csv
+│   │   │   │   └── taxrates-example-italian.csv
 │   │   │   └── tax-regions
 │   │   │       ├── Serie-B-PRO-Abruzzo-Bolzano-Calabria-Emilia_Romagna-Lombardia-Marche-Puglia-Trento-Umbria.csv
 │   │   │       ├── Serie-B-PRO-Basilicata-Friuli_Venezia_Giulia-Sardegna-Sicilia-Valle_Aosta-Veneto.csv
@@ -17,7 +20,7 @@
 │   ├── src
 │   │   ├── assets
 │   │   │   ├── images
-│   │   │   │   ├── logo.png.png
+│   │   │   │   ├── Logo.png.png
 │   │   │   │   └── README.md
 │   │   │   └── react.svg
 │   │   ├── components
@@ -64,7 +67,9 @@
 │   │   │   │   ├── ContractDetailsModal.css
 │   │   │   │   ├── ContractDetailsModal.jsx
 │   │   │   │   ├── ContractHistoryModal.jsx
-│   │   │   │   └── NewContractModal.jsx
+│   │   │   │   ├── NewContractModal.jsx
+│   │   │   │   ├── SalaryCalculationDisplay.css
+│   │   │   │   └── SalaryCalculationDisplay.jsx
 │   │   │   ├── dashboard
 │   │   │   │   └── Dashboard.jsx
 │   │   │   ├── layout
@@ -117,11 +122,24 @@
 │   │   │   ├── tax
 │   │   │   │   ├── BonusTaxRatesList.jsx
 │   │   │   │   ├── BonusTaxRatesUpload.jsx
+│   │   │   │   ├── IrpefBracketsPage.css
+│   │   │   │   ├── IrpefBracketsPage.jsx
+│   │   │   │   ├── IrpefUploadPage.css
+│   │   │   │   ├── IrpefUploadPage.jsx
+│   │   │   │   ├── MunicipalAdditionalsPage.css
+│   │   │   │   ├── MunicipalAdditionalsPage.jsx
+│   │   │   │   ├── MunicipalAdditionalsUpload.jsx
+│   │   │   │   ├── RegionalAdditionalsPage.css
+│   │   │   │   ├── RegionalAdditionalsPage.jsx
+│   │   │   │   ├── RegionalAdditionalsUpload.jsx
 │   │   │   │   ├── TaxCalculator.jsx
 │   │   │   │   ├── TaxRatesList.jsx
 │   │   │   │   └── TaxRatesUpload.jsx
+│   │   │   ├── CheckoutPage.jsx
 │   │   │   ├── ContractsSummary.jsx
-│   │   │   └── NotFound.jsx
+│   │   │   ├── LandingPage.jsx
+│   │   │   ├── NotFound.jsx
+│   │   │   └── SignupPage.jsx
 │   │   ├── store
 │   │   │   └── authStore.js
 │   │   ├── styles
@@ -131,6 +149,7 @@
 │   │   │   │   └── navigation.css
 │   │   │   ├── analytics.css
 │   │   │   ├── animations.css
+│   │   │   ├── checkout.css
 │   │   │   ├── compare-drawer.css
 │   │   │   ├── components.css
 │   │   │   ├── contract-modal.css
@@ -144,16 +163,20 @@
 │   │   │   ├── global.css
 │   │   │   ├── import-wizard.css
 │   │   │   ├── index.css
+│   │   │   ├── landing.css
 │   │   │   ├── layout.css
 │   │   │   ├── loading.css
+│   │   │   ├── login.css
 │   │   │   ├── logo.css
 │   │   │   ├── mapping.css
 │   │   │   ├── performance-analytics.css
 │   │   │   ├── performance-pages.css
 │   │   │   ├── performance-players-list.css
 │   │   │   ├── players.css
+│   │   │   ├── signup.css
 │   │   │   ├── statistics.css
 │   │   │   ├── tax-calculator.css
+│   │   │   ├── tax-rates-list.css
 │   │   │   ├── team-dashboard.css
 │   │   │   ├── themes.css
 │   │   │   ├── upload.css
@@ -179,10 +202,13 @@
 │   ├── setup
 │   │   ├── project-structure-2025-08-30.md
 │   │   └── Recap_Progetto.md
+│   ├── CALCOLO_COSTO_SOCIETA.md
+│   ├── NUOVO_SISTEMA_CALCOLO_CORRETTO.md
 │   ├── README.md
 │   ├── REMOVAL_TAX_SCENARIOS.md
 │   ├── SERVER_REORGANIZATION.md
-│   └── SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md
+│   ├── SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md
+│   └── TAX_RATES_UPDATE_2025.md
 ├── scripts
 │   ├── seed-first-team.cjs
 │   └── seed-first-team.js
@@ -192,9 +218,14 @@
 │   │       ├── bonus-taxrates-example-italian.csv
 │   │       ├── bonus-taxrates-example.csv
 │   │       ├── bonus-taxrates-test.csv
+│   │       ├── irpef-brackets-example-2025.csv
+│   │       ├── README-ALIQUOTE-FISCALI.md
+│   │       ├── README-IRPEF-BRACKETS.md
+│   │       ├── taxrates-example-2025-complete.csv
 │   │       ├── taxrates-example-2025.csv
 │   │       ├── taxrates-example-italian.csv
-│   │       └── taxrates-example.csv
+│   │       ├── taxrates-example.csv
+│   │       └── taxrates-semplice-2025.csv
 │   ├── prisma
 │   │   ├── generated
 │   │   │   └── client
@@ -255,7 +286,11 @@
 │   │   │   └── tax
 │   │   │       └── engine-dynamic.js
 │   │   ├── middleware
+│   │   │   ├── audit.js
 │   │   │   ├── auth.js
+│   │   │   ├── require2FAIfSensitive.js
+│   │   │   ├── requireMedicalRole.js
+│   │   │   ├── requireVaultUnlock.js
 │   │   │   └── tenantContext.js
 │   │   ├── routes
 │   │   │   ├── auth
@@ -266,6 +301,10 @@
 │   │   │   │   └── contractsSummary.js
 │   │   │   ├── dashboard
 │   │   │   │   └── index.js
+│   │   │   ├── medical
+│   │   │   │   ├── cases.js
+│   │   │   │   ├── index.js
+│   │   │   │   └── vault.js
 │   │   │   ├── performance
 │   │   │   │   ├── compare.js
 │   │   │   │   └── performance.js
@@ -278,7 +317,14 @@
 │   │   │   │   ├── bonusTaxRatesUpload.js
 │   │   │   │   └── taxratesUpload.js
 │   │   │   ├── dashboard.js
-│   │   │   └── session-types.js
+│   │   │   ├── onboarding.js
+│   │   │   ├── session-types.js
+│   │   │   ├── taxes.js
+│   │   │   └── users.js
+│   │   ├── security
+│   │   │   └── medicalCrypto.js
+│   │   ├── services
+│   │   │   └── medicalKeyService.js
 │   │   ├── utils
 │   │   │   ├── columnMapper.js
 │   │   │   ├── dateParser.js
@@ -289,6 +335,7 @@
 │   │   │   ├── permissions.js
 │   │   │   ├── playerLookup.js
 │   │   │   ├── README.md
+│   │   │   ├── taxCalculator.js
 │   │   │   └── tokenBlacklist.js
 │   │   ├── validation
 │   │   │   └── mappingSchema.js
@@ -296,7 +343,42 @@
 │   ├── tests
 │   ├── uploads
 │   ├── jest.config.js
-│   └── package.json
+│   ├── migrate_tax_rates_data.sql
+│   ├── package.json
+│   ├── populate_irpef_brackets.js
+│   ├── populate_new_tax_columns.js
+│   ├── test_12500_calculation.js
+│   ├── test_calculation_35k.js
+│   ├── test_multiple_calculations.js
+│   ├── update_tax_rates_2025_correct.js
+│   ├── update_tax_rates_correct_2025.js
+│   └── update-tax-rates-2025.sql
+├── SISTEMA_CALCOLO_FISCALE
+│   ├── contracts.js
+│   ├── CORREZIONI_FINALI_APPLICATE.md
+│   ├── DATI_DATABASE.md
+│   ├── FORMULE_CALCOLO.md
+│   ├── ISTRUZIONI_USO.md
+│   ├── italianNumbers.js
+│   ├── MODIFICHE_100_DATABASE.md
+│   ├── MODIFICHE_CHIRURGICHE_APPLICATE.md
+│   ├── MODIFICHE_COMPLETE_APPLICATE.md
+│   ├── MunicipalAdditionalsPage.css
+│   ├── MunicipalAdditionalsPage.jsx
+│   ├── NewContractModal.jsx
+│   ├── README.md
+│   ├── RegionalAdditionalsPage.css
+│   ├── RegionalAdditionalsPage.jsx
+│   ├── RIEPILOGO_FINALE.md
+│   ├── SalaryCalculationDisplay.jsx
+│   ├── STATO_FINALE_SISTEMA.md
+│   ├── taxCalculator.js
+│   ├── taxes.js
+│   ├── test-calcoli.cjs
+│   ├── test-modifiche-chirurgiche.cjs
+│   ├── test-sistema-completo.cjs
+│   ├── test-sistema-semplificato.cjs
+│   └── useUnifiedFiscalCalculation.js
 ├── tests
 │   ├── backend
 │   │   ├── logout-security-test.js
@@ -324,15 +406,34 @@
 │   │   └── test-taxrates.js
 │   ├── README.md
 │   └── run-all-tests.js
+├── check-contract.js
+├── check-irpef-brackets.cjs
 ├── CSV_REORGANIZATION.md
 ├── env.template
 ├── et --hard 92ab240
+├── FIX_ERROR_FRONTEND.md
+├── fix-irpef-brackets.cjs
+├── GESTIONE_ALIQUOTE_IRPEF_COMPLETATA.md
+├── INTEGRAZIONE_COMPLETATA.md
+├── INTEGRAZIONE_FRONTEND_API.md
+├── ISTRUZIONI_TEST_CALCOLO.md
 ├── mock-players-performance.json
+├── MODIFICHE_CHIRURGICHE_APPLICATE.md
 ├── package-lock.json
 ├── package.json
+├── PROBLEMA_TAXCALCULATOR_RISOLTO.md
 ├── project-structure.txt
 ├── README.md
+├── SISTEMA_CALCOLO_FISCALE_AGGIORNATO.zip
 ├── test-api.js
+├── test-calcolo-33500.js
+├── test-calculator-fix.cjs
 ├── test-date-range.js
+├── test-dettaglio-calcolo.cjs
+├── test-excel-endpoint.cjs
+├── test-excel-vs-system.cjs
+├── test-excel-zero-contributi.cjs
+├── test-finale-database.cjs
+├── test-taxcalculator-debug.cjs
 ├── tili dei filtri e correzione selezione giocatori
 └── tree.js

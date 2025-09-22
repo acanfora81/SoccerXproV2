@@ -869,3 +869,362 @@ enum SubscriptionStatus {
   EXPIRED
 }
 
+// ===================== MEDICAL/GDPR CORE (v1) =====================
+enum MedicalCaseType { INJURY ILLNESS SURGERY SCREENING PREVENTIVE OTHER }
+enum InjuryMechanism { CONTACT NON_CONTACT OVERUSE RECURRENCE OTHER }
+enum InjurySeverity { MINIMAL MILD MODERATE SEVERE CAREER_ENDING UNKNOWN }
+enum RehabStage { ACUTE_PHASE PROTECTED_MOBILITY PROGRESSIVE_LOADING SPORT_SPECIFIC RETURN_TO_PLAY MAINTENANCE }
+enum ExamType {
+  MRI XRAY ULTRASOUND CT PET BONE_SCAN BLOOD_TEST URINE_TEST GENETIC_TEST
+  ECG ECHO STRESS_TEST SPIROMETRY ORTHO_VISIT CARDIO_VISIT NEURO_VISIT
+  PHYSIO_EVAL DENTAL VISION OTHER
+}
+enum TreatmentType {
+  PHYSIO MEDICATION INJECTION SURGERY REST MANUAL_THERAPY ELECTROTHERAPY
+  CRYOTHERAPY HYPERBARIC LASER PRP STEM_CELL TAPING BRACING CUSTOM_ORTHOTICS OTHER
+}
+enum VisibilityLevel { MEDICAL_ONLY COACHING_STAFF PLAYER_ACCESS TEAM_WIDE }
+enum DataClassification { PUBLIC SENSITIVE HIGHLY_SENSITIVE SPECIAL_CATEGORY }
+enum ConsentStatus { NOT_REQUESTED PENDING GRANTED REFUSED WITHDRAWN EXPIRED }
+enum LawfulBasis { CONSENT CONTRACT LEGAL_OBLIGATION VITAL_INTERESTS LEGITIMATE_INTEREST MEDICAL_PURPOSE }
+enum AuditAction {
+  CREATE READ UPDATE DELETE ENCRYPT DECRYPT ANONYMIZE EXPORT
+  CONSENT_GRANT CONSENT_WITHDRAW ACCESS_REQUEST ERASURE_REQUEST EMERGENCY_ACCESS PRINT SHARE
+}
+enum DataRetentionReason { ACTIVE_CONTRACT LEGAL_REQUIREMENT INSURANCE_CLAIM LITIGATION_HOLD HISTORICAL_STATISTICS }
+
+model GDPRConfiguration {
+  id                     String   @id @default(uuid())
+  teamId                 String   @unique @db.Uuid
+  dpoName                String
+  dpoEmail               String
+  dpoPhone               String?
+  dataRetentionDays      Int      @default(2555)
+  autoAnonymizeAfterDays Int      @default(3650)
+  requireExplicitConsent Boolean  @default(true)
+  allowDataPortability   Boolean  @default(true)
+  encryptionEnabled      Boolean  @default(true)
+  encryptionAlgorithm    String   @default("AES-256-GCM")
+  keyRotationDays        Int      @default(90)
+  vaultEnabled           Boolean  @default(true)
+  vaultTimeoutMinutes    Int      @default(15)
+  vaultRequire2FA        Boolean  @default(true)
+  emergencyAccessEnabled Boolean  @default(true)
+  auditLogRetentionDays  Int      @default(5475)
+  anonymizeLogsAfterDays Int      @default(1095)
+  lastComplianceCheck    DateTime?
+  nextComplianceCheck    DateTime?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([teamId])
+}
+
+model DataProcessingAgreement {
+  id              String   @id @default(uuid())
+  teamId          String   @db.Uuid
+  processorName   String
+  processorType   String
+  purpose         String
+  dataCategories  Json
+  startDate       DateTime
+  endDate         DateTime?
+  signedDocument  String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([teamId, isActive])
+}
+
+model MedicalVault {
+  id                  String   @id @default(uuid())
+  teamId              String   @unique @db.Uuid
+  encryptedMasterKey  String
+  masterKeySalt       String
+  masterKeyIterations Int      @default(100000)
+  vaultPasswordHash   String
+  vaultPasswordSalt   String
+  vaultPasswordHint   String?
+  failedAttempts      Int      @default(0)
+  lockedUntil         DateTime?
+  lastAccessAt        DateTime?
+  keyVersion          Int      @default(1)
+  keyRotatedAt        DateTime @default(now())
+  previousKeyHash     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([teamId])
+}
+
+model MedicalVaultAccess {
+  id               String   @id @default(uuid())
+  teamId           String   @db.Uuid
+  userId           Int
+  accessType       String
+  reason           String
+  grantedAt        DateTime @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  isEmergency      Boolean  @default(false)
+  approvedById     Int?
+  sessionTokenHash String?
+
+  @@index([teamId, userId, expiresAt])
+  @@index([sessionTokenHash])
+}
+
+model MedicalConsent {
+  id                 String       @id @default(uuid())
+  teamId             String       @db.Uuid
+  playerId           Int
+  consentType        String
+  purpose            String
+  lawfulBasis        LawfulBasis
+  dataCategories     Json
+  status             ConsentStatus
+  grantedAt          DateTime?
+  withdrawnAt        DateTime?
+  expiresAt          DateTime?
+  version            Int          @default(1)
+  previousVersionId  String?
+  consentFormText    String       @db.Text
+  signedDocumentPath String?
+  ipAddress          String?
+  userAgent          String?
+  createdById        Int?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@unique([teamId, playerId, consentType, version])
+  @@index([teamId, playerId, status])
+  @@index([expiresAt])
+}
+
+model MedicalCase {
+  id                 String          @id @default(uuid())
+  teamId             String          @db.Uuid
+  playerId           Int
+  caseNumber         String
+  type               MedicalCaseType
+  status             String          @default("OPEN")
+  onsetDate          DateTime
+  isAvailable        Boolean         @default(false)
+  encryptedData      String          @db.Text
+  encryptionKeyId    String
+  bodyAreaHash       String?
+  severityCategory   String?
+  estimatedWeeksOut  Int?
+  createdById        Int
+  updatedById        Int?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  deletedAt          DateTime?
+  deletionReason     String?
+
+  diagnoses          MedicalDiagnosis[]
+  examinations       MedicalExamination[]
+  treatments         MedicalTreatment[]
+  documents          MedicalDocument[]
+  accessLogs         MedicalAccessLog[]
+
+  @@index([teamId, playerId, status])
+  @@index([teamId, isAvailable])
+  @@index([caseNumber])
+  @@index([deletedAt])
+}
+
+model MedicalDiagnosis {
+  id                  String      @id @default(uuid())
+  caseId              String
+  encryptedDiagnosis  String      @db.Text
+  diagnosisDate       DateTime
+  isPrimary           Boolean     @default(false)
+  createdById         Int
+  createdAt           DateTime    @default(now())
+
+  case                MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  @@index([caseId, isPrimary])
+}
+
+model MedicalExamination {
+  id                 String       @id @default(uuid())
+  caseId             String
+  examType           ExamType
+  examDate           DateTime
+  isNormal           Boolean?
+  encryptedResults   String       @db.Text
+  encryptedImages    Json?
+  facilityName       String?
+  performedById      Int?
+  createdById        Int
+  createdAt          DateTime     @default(now())
+
+  case               MedicalCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  @@index([caseId, examType, examDate])
+}
+
+model MedicalTreatment {
+  id                 String       @id @default(uuid())
+  caseId             String
+  treatmentType      TreatmentType
+  startDate          DateTime
+  endDate            DateTime?
+  isCompleted        Boolean      @default(false)
+  encryptedDetails   String       @db.Text
+  prescribedById     Int?
+  administeredById   Int?
+  createdAt          DateTime     @default(now())
+
+  case               MedicalCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  @@index([caseId, treatmentType, startDate])
+}
+
+model MedicalDocument {
+  id                String            @id @default(uuid())
+  teamId            String            @db.Uuid
+  playerId          Int
+  caseId            String?
+  documentType      String
+  title             String?
+  mimeType          String
+  sizeBytes         Int
+  encryptedPath     String
+  encryptionKeyId   String
+  checksumSHA256    String
+  classification    DataClassification
+  visibility        VisibilityLevel
+  retentionUntil    DateTime
+  retentionReason   DataRetentionReason
+  uploadedById      Int
+  uploadedAt        DateTime          @default(now())
+  lastAccessedAt    DateTime?
+  accessCount       Int               @default(0)
+  deletedAt         DateTime?
+  deletedById       Int?
+
+  case              MedicalCase?      @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([teamId, playerId, classification])
+  @@index([retentionUntil])
+  @@index([deletedAt])
+}
+
+model MedicalAccessLog {
+  id               String      @id @default(uuid())
+  teamId           String      @db.Uuid
+  userId           Int
+  resourceType     String
+  resourceId       String
+  caseId           String?
+  playerId         Int?
+  action           AuditAction
+  accessReason     String?
+  lawfulBasis      LawfulBasis
+  ipAddressHash    String?
+  userAgent        String?
+  sessionId        String?
+  isEmergency      Boolean     @default(false)
+  emergencyReason  String?
+  wasSuccessful    Boolean
+  errorMessage     String?
+  accessedAt       DateTime    @default(now())
+  @@index([teamId, userId, accessedAt])
+  @@index([teamId, resourceType, resourceId])
+  @@index([teamId, playerId, accessedAt])
+  @@index([isEmergency])
+}
+
+model DataBreachRegister {
+  id                  String   @id @default(uuid())
+  teamId              String   @db.Uuid
+  breachDate          DateTime
+  discoveredDate      DateTime
+  reportedDate        DateTime?
+  description         String   @db.Text
+  dataCategories      Json
+  affectedRecords     Int
+  affectedPlayers     Json
+  riskLevel           String
+  possibleConsequences String  @db.Text
+  actionsTaken        String   @db.Text
+  notificationsSent   Json
+  notifiedDPA         Boolean  @default(false)
+  dpaReference        String?
+  createdById         Int
+  createdAt           DateTime @default(now())
+  @@index([teamId, breachDate])
+}
+
+model GDPRRequest {
+  id                String   @id @default(uuid())
+  teamId            String   @db.Uuid
+  playerId          Int
+  requestType       String
+  requestDetails    String   @db.Text
+  requestedAt       DateTime @default(now())
+  requestedBy       String
+  identityVerified  Boolean  @default(false)
+  verifiedAt        DateTime?
+  verifiedById      Int?
+  status            String
+  responseNotes     String?  @db.Text
+  completedAt       DateTime?
+  exportedDataPath  String?
+  processedById     Int?
+  @@index([teamId, playerId, requestType])
+  @@index([status])
+  @@index([requestedAt])
+}
+
+model AnonymizedMedicalData {
+  id                String   @id @default(uuid())
+  teamId            String   @db.Uuid
+  anonymousId       String   @unique
+  originalDeletedAt DateTime
+  yearOfBirth       Int?
+  position          String?
+  injuryType        String?
+  bodyArea          String?
+  recoveryDays      Int?
+  season            String?
+  ageGroup          String?
+  createdAt         DateTime @default(now())
+  @@index([teamId, season])
+  @@index([injuryType, bodyArea])
+}
+
+model DataRetentionPolicy {
+  id               String   @id @default(uuid())
+  teamId           String   @db.Uuid
+  dataType         String
+  retentionDays    Int
+  legalBasis       String
+  description      String   @db.Text
+  autoDelete       Boolean  @default(false)
+  autoAnonymize    Boolean  @default(true)
+  exceptions       Json?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  @@unique([teamId, dataType])
+  @@index([teamId, isActive])
+}
+
+model PlayerHealthProfile {
+  id               String   @id @default(uuid())
+  teamId           String   @db.Uuid
+  playerId         Int      @unique
+  encryptedProfile String   @db.Text
+  emergencyContact String?
+  emergencyPhone   String?
+  hasAllergies     Boolean  @default(false)
+  hasConditions    Boolean  @default(false)
+  hasMedications   Boolean  @default(false)
+  lastReviewDate   DateTime?
+  nextReviewDate   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  @@index([teamId, playerId])
+}
