@@ -127,3 +127,4 @@ ORDER BY b.min;
 3. **Region/Municipality Default:** Se mancanti, usa 'DEFAULT'
 4. **Precisione:** Tutti i calcoli usano `round2()` per arrotondamento a 2 decimali
 
+

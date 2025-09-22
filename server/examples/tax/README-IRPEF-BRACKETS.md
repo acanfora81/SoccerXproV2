@@ -210,3 +210,4 @@ Per problemi o domande:
 2. Verifica il formato del CSV con il template
 3. Testa con dati di esempio prima di caricare dati reali
 
+
