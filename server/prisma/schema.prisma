@@ -45,6 +45,7 @@ model Team {
   taxRates                TaxRate[]                   @relation("TeamTaxRates")
   transfers               transfers[]                 @relation("TeamTransfers")
   users                   UserProfile[]               @relation("TeamUsers")
+  subscription            Subscription?               @relation("TeamSubscription")
 
   @@map("teams")
 }
@@ -443,16 +444,25 @@ model contract_payment_schedule {
 }
 
 model TaxRate {
-  id        Int          @id @default(autoincrement())
-  year      Int
-  type      ContractType
-  inps      Decimal      @db.Decimal(5, 2)
-  inail     Decimal?     @db.Decimal(5, 2)
-  ffc       Decimal      @db.Decimal(5, 2)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  teamId    String       @map("team_id") @db.Uuid
-  team      Team         @relation("TeamTaxRates", fields: [teamId], references: [id])
+  id                 Int       @id @default(autoincrement())
+  year               Int
+  type               ContractType
+  // 👇 Colonne vecchie (mantenute per compatibilità)
+  inps               Decimal   @db.Decimal(5, 2) @default(9.19)  // quota INPS lavoratore (legacy)
+  inail              Decimal?  @db.Decimal(5, 2) @default(0.0)   // quota INAIL (legacy)
+  ffc                Decimal   @db.Decimal(5, 2) @default(6.25)  // quota FFC (legacy)
+  // 👇 Nuove colonne separate
+  inpsWorker         Decimal   @db.Decimal(5, 2) @default(9.19)  // quota contributiva a carico lavoratore (%)
+  inpsEmployer       Decimal   @db.Decimal(5, 2) @default(30.0)  // quota contributiva a carico datore (%)
+  inailEmployer      Decimal?  @db.Decimal(5, 2) @default(1.5)   // contributo INAIL (solo datore, %)
+  ffcWorker          Decimal   @db.Decimal(5, 2) @default(6.25)  // quota FFC a carico lavoratore (%)
+  ffcEmployer        Decimal   @db.Decimal(5, 2) @default(0.0)   // quota FFC a carico datore (%)
+  solidarityWorker   Decimal?  @db.Decimal(5, 2) @default(0.0)   // eventuale 0.5% a carico giocatore
+  solidarityEmployer Decimal?  @db.Decimal(5, 2) @default(0.5)   // eventuale quota società
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  teamId             String    @map("team_id") @db.Uuid
+  team               Team      @relation("TeamTaxRates", fields: [teamId], references: [id])
 
   @@unique([year, type, teamId])
   @@map("tax_rates")
@@ -576,6 +586,26 @@ model tax_regional_additional_scheme {
   @@index([year, region], map: "idx_regional_scheme_lookup")
 }
 
+model Subscription {
+  id            String              @id @default(uuid()) @db.Uuid
+  teamId        String              @unique @map("team_id") @db.Uuid
+  plan          SubscriptionPlan    @default(BASIC)
+  status        SubscriptionStatus  @default(ACTIVE)
+  startDate     DateTime            @default(now()) @map("start_date")
+  endDate       DateTime?           @map("end_date")
+  trialEndsAt   DateTime?           @map("trial_ends_at")
+  maxUsers      Int                 @default(5) @map("max_users")
+  maxPlayers    Int                 @default(25) @map("max_players")
+  features      Json?               @default("{}")
+  paymentMethod String?             @map("payment_method")
+  billingEmail  String?             @map("billing_email")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+  
+  team          Team                @relation("TeamSubscription", fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
 
 
 
@@ -822,5 +852,20 @@ enum TaxBase {
   IMPONIBILE_FISCALE
   LORDO
   NETTO
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PROFESSIONAL
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
 }
 

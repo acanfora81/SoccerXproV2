@@ -1,6 +1,6 @@
 /* client/src/styles/statistics.css */
 
-/* Stili per modulo statistiche giocatori - Athlos */
+/* Stili per modulo statistiche giocatori - Soccer X Pro Suite */
 @import url('./variables.css');
 
 .statistics-container {
@@ -385,4 +385,24 @@
 
 :root[data-theme="dark"] .stat-card:hover {
   box-shadow: 0 8px 25px rgb(139 92 246 / 10%);
+}
+
+/* Dark mode per icone Users - VIOLA */
+:root[data-theme="dark"] .stat-icon svg {
+  color: #8b5cf6 !important;
+}
+
+/* Dark mode per icone Users nella pagina importazione */
+:root[data-theme="dark"] .import-wizard-header svg {
+  color: #8b5cf6 !important;
+}
+
+/* Dark mode per icone Users nelle activity items */
+:root[data-theme="dark"] .activity-icon svg {
+  color: #8b5cf6 !important;
+}
+
+/* Dark mode per numeri delle statistiche - VIOLA */
+:root[data-theme="dark"] .stat-number {
+  color: #8b5cf6 !important;
 }

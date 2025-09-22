@@ -1,5 +1,5 @@
 import React from 'react';
-import logoSrc from '../../assets/images/logo.png.png';
+import logoSrc from '../../assets/images/Logo.png.png';
 
 const Logo = ({ 
   size = 'medium', 
@@ -22,7 +22,7 @@ const Logo = ({
       {/* Logo con immagine reale */}
       <img 
         src={logoSrc}
-        alt="Athlos Logo"
+        alt="Soccer X Pro Suite Logo"
         className="logo-image"
         style={{
           width: logoSize.width,
@@ -63,7 +63,7 @@ const Logo = ({
           fontWeight: '600',
           color: 'var(--text-color-primary)'
         }}>
-          Athlos
+          Soccer X Pro Suite
         </span>
       )}
     </div>

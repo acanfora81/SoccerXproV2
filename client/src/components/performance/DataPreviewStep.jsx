@@ -272,7 +272,7 @@ const DataPreviewStep = ({ fileId, mappingResult, originalExtension, onBack, onR
             </button>
             <button 
               type="button"
-              onClick={() => navigate('/performance/analytics')} 
+              onClick={() => navigate('/dashboard/performance/analytics')} 
               className="btn btn-primary"
             >
               <ArrowRight size={16} />

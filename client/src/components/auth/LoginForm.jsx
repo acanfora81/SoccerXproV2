@@ -1,13 +1,14 @@
 // client/src/components/auth/LoginForm.jsx
-// 🔐 FORM LOGIN/REGISTER per Athlos - Con store Zustand
+// 🔐 FORM LOGIN/REGISTER per Soccer X Pro Suite - Con store Zustand
 
 import { useState, useEffect } from 'react';
 import { LogIn, Mail, Lock, User, UserPlus } from 'lucide-react';
 import Logo from '../ui/Logo';
 import useAuthStore from '../../store/authStore';
 import '../../styles/logo.css';
+import '../../styles/login.css';
 
-const LoginForm = () => {
+const LoginForm = ({ onLoginSuccess }) => {
   // 🏪 Hook per lo store di autenticazione
   const {
     login,
@@ -77,6 +78,7 @@ const LoginForm = () => {
           if (result.data.access_token) {
             // Login automatico dopo registrazione - il componente si smonterà automaticamente
             console.log('🟢 Registrazione + login automatico completati'); // INFO - rimuovere in produzione
+            if (onLoginSuccess) onLoginSuccess();
           } else {
             // Solo registrazione, richiede login manuale
             setLocalSuccess('Registrazione completata! Effettua il login.');
@@ -104,6 +106,7 @@ const LoginForm = () => {
         if (result.success) {
           console.log('🟢 Login completato'); // INFO - rimuovere in produzione
           // Il componente si smonterà automaticamente
+          if (onLoginSuccess) onLoginSuccess();
         }
         // Gli errori sono gestiti dallo store
       }
@@ -113,36 +116,27 @@ const LoginForm = () => {
     }
   };
 
-  // 🎯 Pulsante demo admin
-  const handleDemoAdmin = () => {
-    setFormData({ 
-      ...formData, 
-      email: 'admin@soccerxpro.com', 
-      password: 'Admin123!' 
-    });
-  };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <div className="auth-logo-container">
-            <Logo size="large" showText={true} className="auth-logo" />
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-card">
+          <div className="login-header">
+            <div className="login-logo-container">
+              <Logo size="large" showText={true} className="login-logo" />
+            </div>
+            <div className="login-title-section">
+              <div className="login-arrow">→</div>
+              <h1 className="login-title">
+                {isRegisterMode ? 'Registrazione' : 'Accesso'}
+              </h1>
+              <p className="login-subtitle">
+                {isRegisterMode ? 'Crea un nuovo account' : 'Accedi al sistema di gestione'}
+              </p>
+            </div>
           </div>
-          <h1 className="auth-title">
-            {isRegisterMode ? (
-              <UserPlus size={32} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
-            ) : (
-              <LogIn size={32} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
-            )}
-            {isRegisterMode ? 'Registrazione' : 'Accesso'}
-          </h1>
-          <p className="auth-subtitle">
-            {isRegisterMode ? 'Crea un nuovo account' : 'Accedi al sistema di gestione'}
-          </p>
-        </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="login-form" onSubmit={handleSubmit}>
           {/* Email - sempre presente */}
           <div className="form-group">
             <label htmlFor="email" className="form-label">
@@ -245,82 +239,50 @@ const LoginForm = () => {
             </>
           )}
 
-          {/* Messaggi di errore (dallo store) */}
-          {error && (
-            <div style={{ 
-              color: '#EF4444', 
-              fontSize: '14px', 
-              textAlign: 'center',
-              padding: '10px',
-              border: '1px solid #EF4444',
-              borderRadius: '6px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)'
-            }}>
-              {error}
-            </div>
-          )}
-
-          {/* Messaggi di successo (locali) */}
-          {localSuccess && (
-            <div style={{ 
-              color: '#10B981', 
-              fontSize: '14px', 
-              textAlign: 'center',
-              padding: '10px',
-              border: '1px solid #10B981',
-              borderRadius: '6px',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)'
-            }}>
-              {localSuccess}
-            </div>
-          )}
-
-          {/* Pulsante principale */}
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              isRegisterMode ? 'Registrazione...' : 'Accesso in corso...'
-            ) : (
-              isRegisterMode ? 'Registrati' : 'Accedi'
+            {/* Messaggi di errore (dallo store) */}
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
             )}
-          </button>
 
-          {/* Pulsante demo (solo in modalità login) */}
-          {!isRegisterMode && (
+            {/* Messaggi di successo (locali) */}
+            {localSuccess && (
+              <div className="success-message">
+                {localSuccess}
+              </div>
+            )}
+
+            {/* Pulsante principale */}
             <button 
-              type="button" 
-              className="btn btn-secondary"
-              onClick={handleDemoAdmin}
+              type="submit" 
+              className="btn btn-primary"
               disabled={isLoading}
             >
-              Demo Admin
+              {isLoading ? (
+                isRegisterMode ? 'Registrazione...' : 'Accesso in corso...'
+              ) : (
+                isRegisterMode ? 'Registrati' : 'Accedi'
+              )}
             </button>
-          )}
-        </form>
 
-        {/* Link per toggle modalità */}
-        <div className="auth-link">
-          <button
-            type="button"
-            onClick={toggleMode}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-primary)',
-              textDecoration: 'underline',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-            disabled={isLoading}
-          >
-            {isRegisterMode 
-              ? 'Hai già un account? Accedi' 
-              : 'Non hai un account? Registrati'
-            }
-          </button>
+          </form>
+
+          {/* Link per toggle modalità */}
+          <div className="login-link">
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="login-toggle-btn"
+              disabled={isLoading}
+            >
+              {isRegisterMode 
+                ? 'Hai già un account? Accedi' 
+                : 'Non hai un account? Registrati'
+              }
+            </button>
+          </div>
+
         </div>
       </div>
     </div>

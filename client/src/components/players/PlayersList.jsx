@@ -1,5 +1,5 @@
 // client/src/components/players/PlayersList.jsx
-// Componente lista giocatori per Athlos
+// Componente lista giocatori per Soccer X Pro Suite
 
 import { useState, useEffect, useCallback } from 'react';
 import { Users, Plus, Search, Filter, Edit3, Trash2, Upload, Download, Wrench } from 'lucide-react';
@@ -79,7 +79,7 @@ const PlayersList = () => {
   // Handler per navigare alla pagina di upload
   const handleUploadPlayers = () => {
     console.log('🔵 Navigazione alla pagina upload giocatori');
-    navigate('/players/upload');
+    navigate('/dashboard/players/upload');
   };
 
   // Handler per correggere i caratteri accentati

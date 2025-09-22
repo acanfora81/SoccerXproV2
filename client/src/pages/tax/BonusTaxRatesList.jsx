@@ -7,7 +7,10 @@ import {
   CheckCircle,
   Calendar,
   FileText,
-  Trash2
+  Trash2,
+  Edit3,
+  Info,
+  BarChart3
 } from "lucide-react";
 import axios from "axios";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
@@ -17,6 +20,9 @@ export default function BonusTaxRatesList({ teamId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, rate: null });
+  const [editingRate, setEditingRate] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newRate, setNewRate] = useState({ year: new Date().getFullYear(), type: 'SIGNING_BONUS', taxRate: '' });
 
   const fetchBonusTaxRates = async () => {
     try {
@@ -65,6 +71,42 @@ export default function BonusTaxRatesList({ teamId }) {
   const handleCancelDelete = () => {
     console.log('🔵 Annullamento eliminazione aliquota bonus');
     setDeleteConfirm({ isOpen: false, rate: null });
+  };
+
+  const openEdit = (rate) => {
+    setEditingRate(rate);
+  };
+
+  const closeEdit = () => setEditingRate(null);
+
+  const handleSaveEdit = async (updated) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await axios.put(`/api/bonustaxrates/${updated.id}?teamId=${teamId}`, updated);
+      await fetchBonusTaxRates();
+      setEditingRate(null);
+    } catch (err) {
+      setError("Errore nel salvataggio dell'aliquota bonus");
+      console.error('Errore salvataggio aliquota bonus:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await axios.post('/api/bonustaxrates', { ...newRate, teamId });
+      await fetchBonusTaxRates();
+      setShowAddForm(false);
+    } catch (err) {
+      setError("Errore nella creazione dell'aliquota bonus");
+      console.error('Errore creazione aliquota bonus:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -155,49 +197,85 @@ export default function BonusTaxRatesList({ teamId }) {
               </div>
             )}
 
-            {/* Info Banner - Horizontal */}
-            {bonusTaxRates.length > 0 && (
-              <div className="mt-6 mb-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      <Calculator size={24} color="#3B82F6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-blue-900 mb-3">
-                        💡 Informazioni
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-blue-800 mb-1">
-                            📊 Aliquote Visualizzate
-                          </h4>
-                          <p className="text-sm text-blue-700">
-                            Qui puoi vedere tutte le aliquote fiscali per bonus e indennità caricate per il tuo team, organizzate per anno e tipo di bonus.
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-blue-800 mb-1">
-                            🔄 Aggiornamenti
-                          </h4>
-                          <p className="text-sm text-blue-700">
-                            Le aliquote vengono aggiornate automaticamente quando carichi nuovi file CSV o Excel.
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-blue-800 mb-1">
-                            📝 Utilizzo
-                          </h4>
-                          <p className="text-sm text-blue-700">
-                            Queste aliquote vengono utilizzate automaticamente nei calcoli dei contratti dei giocatori.
-                          </p>
-                        </div>
+            {/* Form aggiunta manuale */}
+            <div className="mb-4" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
+                {showAddForm ? 'Chiudi' : 'Aggiungi Aliquota'}
+              </button>
+            </div>
+
+            {showAddForm && (
+              <div className="add-form" style={{ marginBottom: 24 }}>
+                <h3 style={{ textAlign: 'center' }}>➕ Aggiungi Aliquota Bonus</h3>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div className="input-group">
+                    <label>Anno</label>
+                    <input type="number" value={newRate.year}
+                      onChange={(e)=>setNewRate({ ...newRate, year: parseInt(e.target.value) })}
+                      style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+                  </div>
+                  <div className="input-group">
+                    <label>Tipo Bonus</label>
+                    <select value={newRate.type} onChange={(e)=>setNewRate({ ...newRate, type: e.target.value })}
+                      style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+                      <option value="IMAGE_RIGHTS">Diritti Immagine</option>
+                      <option value="LOYALTY_BONUS">Bonus Fedeltà</option>
+                      <option value="SIGNING_BONUS">Bonus Firma</option>
+                      <option value="ACCOMMODATION_BONUS">Bonus Alloggio</option>
+                      <option value="CAR_ALLOWANCE">Indennità Auto</option>
+                      <option value="TRANSFER_ALLOWANCE">Indennità di Trasferta</option>
+                    </select>
+                  </div>
+                  <div className="input-group">
+                    <label>Aliquota (%)</label>
+                    <input type="number" min="0" max="100" step="0.01" value={newRate.taxRate}
+                      onChange={(e)=>setNewRate({ ...newRate, taxRate: e.target.value })}
+                      style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+                  </div>
+                </div>
+                <div className="form-actions" style={{ textAlign: 'center' }}>
+                  <button className="btn btn-success" onClick={handleCreate} disabled={loading}>Salva</button>
+                </div>
+              </div>
+            )}
+
+            {/* Info Panel (sempre visibile, sopra ai contenuti) */}
+            <div className="mt-2 mb-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0"><Info size={24} color="#3B82F6" /></div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-3">Informazioni</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-800 mb-1 flex items-center gap-2">
+                          <BarChart3 size={16} /> Aliquote Visualizzate
+                        </h4>
+                        <p className="text-sm text-blue-700">
+                          Qui puoi vedere tutte le aliquote fiscali per bonus e indennità per il tuo team, organizzate per anno e tipo di bonus.
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-800 mb-1 flex items-center gap-2">
+                          <RefreshCw size={16} /> Aggiornamenti
+                        </h4>
+                        <p className="text-sm text-blue-700">
+                          Le aliquote vengono aggiornate automaticamente da file CSV/Excel oppure manualmente tramite il modulo qui sopra.
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-800 mb-1 flex items-center gap-2">
+                          <CheckCircle size={16} /> Utilizzo
+                        </h4>
+                        <p className="text-sm text-blue-700">
+                          Le aliquote sono utilizzate automaticamente nei calcoli dei contratti giocatori.
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Bonus Tax Rates Table */}
             {bonusTaxRates.length > 0 ? (
@@ -264,15 +342,20 @@ export default function BonusTaxRatesList({ teamId }) {
                                   {new Date(rate.updatedAt).toLocaleDateString('it-IT')}
                                 </td>
                                 <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center">
-                                  <div className="flex justify-center">
+                                  <div className="actions-inline">
+                                    <button
+                                      onClick={() => openEdit(rate)}
+                                      className="action-btn edit-icon-only"
+                                      title="Modifica aliquota bonus"
+                                    >
+                                      <Edit3 size={14} />
+                                    </button>
                                     <button
                                       onClick={() => handleDelete(rate)}
-                                      className="action-btn delete-btn"
-                                      style={{ fontSize: '0.65rem', padding: '0.2rem 0.2rem' }}
+                                      className="action-btn delete-icon-only"
                                       title="Elimina aliquota bonus"
                                     >
-                                      <Trash2 size={10} />
-                                      Elimina
+                                      <Trash2 size={14} />
                                     </button>
                                   </div>
                                 </td>
@@ -295,7 +378,7 @@ export default function BonusTaxRatesList({ teamId }) {
                   Carica le tue prime aliquote fiscali per bonus e indennità per iniziare
                 </p>
                 <button
-                  onClick={() => window.location.href = '/bonustaxrates/upload'}
+                  onClick={() => window.location.href = '/dashboard/bonustaxrates/upload'}
                   className="btn btn-primary"
                 >
                   Carica Aliquote Bonus
@@ -332,6 +415,38 @@ export default function BonusTaxRatesList({ teamId }) {
           cancelText="Annulla"
           type="danger"
         />
+      )}
+
+      {/* Modale modifica semplice inline usando ConfirmDialog come contenitore */}
+      {editingRate && (
+        <ConfirmDialog
+          isOpen={!!editingRate}
+          onClose={closeEdit}
+          onConfirm={() => handleSaveEdit(editingRate)}
+          title={`Modifica aliquota — ${getBonusTypeLabel(editingRate.type)} (${editingRate.year})`}
+          confirmText="Salva"
+          cancelText="Annulla"
+          type="success"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <label style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Aliquota (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={editingRate.taxRate ?? ''}
+              onChange={(e) => setEditingRate({ ...editingRate, taxRate: e.target.value })}
+              style={{
+                padding: '8px 12px',
+                border: '2px solid var(--border-secondary)',
+                borderRadius: 6,
+                background: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
+              }}
+            />
+          </div>
+        </ConfirmDialog>
       )}
     </div>
  );

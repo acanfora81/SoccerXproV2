@@ -81,7 +81,7 @@ export default function PlayersUpload({ teamId }) {
       <div className="import-wizard-header">
         <div className="header-content">
           <div className="header-title">
-            <Users size={32} color="#3B82F6" />
+            <Users size={32} />
             <div>
               <h1>Importazione Giocatori</h1>
               <p>Carica i dati dei tuoi giocatori da file CSV o Excel</p>

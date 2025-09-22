@@ -1,6 +1,34 @@
 /* client/src/styles/contracts.css */
 /* Stili per la sezione Contratti - Coerenti con il design system */
 
+/* Fix per allineamento icona nei pulsanti */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn svg {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* Fix specifico per il pulsante "Crea Primo Contratto" */
+.empty-state .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  line-height: 1;
+}
+
+.empty-state .btn svg {
+  margin: 0;
+  vertical-align: top;
+}
+
 .contracts-list {
   padding: 20px;
   max-width: 1200px;

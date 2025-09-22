@@ -26,9 +26,18 @@ import TaxRatesUpload from './pages/tax/TaxRatesUpload';
 import TaxRatesList from './pages/tax/TaxRatesList';
 import BonusTaxRatesUpload from './pages/tax/BonusTaxRatesUpload';
 import BonusTaxRatesList from './pages/tax/BonusTaxRatesList';
+import RegionalAdditionalsUpload from './pages/tax/RegionalAdditionalsUpload';
+import MunicipalAdditionalsUpload from './pages/tax/MunicipalAdditionalsUpload';
 import PlayersUpload from './pages/players/PlayersUpload';
 import ContractsSummary from './pages/ContractsSummary';
 import TaxCalculator from './pages/tax/TaxCalculator';
+import IrpefBracketsPage from './pages/tax/IrpefBracketsPage';
+import IrpefUploadPage from './pages/tax/IrpefUploadPage';
+import RegionalAdditionalsPage from './pages/tax/RegionalAdditionalsPage';
+import MunicipalAdditionalsPage from './pages/tax/MunicipalAdditionalsPage';
+import SignupPage from './pages/SignupPage';
+import LandingPage from './pages/LandingPage';
+import CheckoutPage from './pages/CheckoutPage';
 import NotFound from './pages/NotFound';
 
 // 🎨 STILI GLOBALI AGGIORNATI - IMPORTANTE!
@@ -75,25 +84,37 @@ function App() {
   return (
     <div className="App">
       <RouteProgress />
-      {!isAuthenticated ? (
-        <LoginForm />
-      ) : (
+      <Routes>
+        {/* Route pubbliche (non richiedono autenticazione) */}
+        <Route path="/" element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
+        } />
+        <Route path="/login" element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm onLoginSuccess={() => window.location.reload()} />
+        } />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/checkout/:plan" element={<CheckoutPage />} />
+        
+        {/* Route private (richiedono autenticazione) */}
+        <Route path="/dashboard/*" element={
+          !isAuthenticated ? (
+            <Navigate to="/" replace />
+          ) : (
         <FiltersProvider>
           <MainLayout 
             user={user}
             onLogout={handleLogout}
           >
             <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/" element={<Dashboard />} />
               <Route path="/players" element={<PlayersList />} />
               <Route path="/players/upload" element={<PlayersUpload teamId={user?.teamId} />} />
               <Route path="/players/stats" element={<PlayerStatistics />} />
               <Route path="/performance/team" element={<TeamDashboard />} />
               <Route path="/performance/players" element={<PerformancePlayersListPage />} />
               {/* Redirect legacy per compatibilità */}
-              <Route path="/performance/players/list" element={<Navigate to="/performance/players" replace />} />
-              <Route path="/performance/dossier" element={<Navigate to="/performance/players" replace />} />
+              <Route path="/performance/players/list" element={<Navigate to="/dashboard/performance/players" replace />} />
+              <Route path="/performance/dossier" element={<Navigate to="/dashboard/performance/players" replace />} />
               <Route path="/performance/dossier/:playerId" element={<DossierPage />} />
               <Route path="/performance/compare" element={<ComparePage />} />
               <Route path="/performance/analytics" element={<AnalyticsAdvanced />} />
@@ -107,7 +128,13 @@ function App() {
               <Route path="/taxrates/list" element={<TaxRatesList teamId={user?.teamId} />} />
               <Route path="/bonustaxrates/upload" element={<BonusTaxRatesUpload teamId={user?.teamId} />} />
               <Route path="/bonustaxrates/list" element={<BonusTaxRatesList teamId={user?.teamId} />} />
+              <Route path="/regional-additionals/upload" element={<RegionalAdditionalsUpload />} />
+              <Route path="/municipal-additionals/upload" element={<MunicipalAdditionalsUpload />} />
               <Route path="/tax/calculator" element={<TaxCalculator />} />
+              <Route path="/tax/irpef-brackets" element={<IrpefBracketsPage />} />
+              <Route path="/tax/irpef-upload" element={<IrpefUploadPage />} />
+              <Route path="/tax/regional-additionals" element={<RegionalAdditionalsPage />} />
+              <Route path="/tax/municipal-additionals" element={<MunicipalAdditionalsPage />} />
               <Route path="/medical" element={
                 <div className="page-placeholder"><h2>Area Medica</h2><p>Modulo in sviluppo - Infortuni e visite mediche</p></div>
               } />
@@ -122,7 +149,9 @@ function App() {
             </Routes>
           </MainLayout>
         </FiltersProvider>
-      )}
+          )
+        } />
+      </Routes>
     </div>
   );
 }

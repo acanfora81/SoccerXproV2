@@ -1,4 +1,4 @@
-# Logo Athlos
+# Logo Soccer X Pro Suite
 
 ## Come aggiungere il logo reale
 
@@ -37,7 +37,7 @@ const Logo = ({
     <div className={`logo-container ${className}`} style={style}>
       <img 
         src="/src/assets/images/logo.png"
-        alt="Athlos Logo"
+        alt="Soccer X Pro Suite Logo"
         className="logo-image"
         style={{
           width: logoSize.width,
@@ -53,7 +53,7 @@ const Logo = ({
           fontWeight: '600',
           color: 'var(--text-color-primary)'
         }}>
-          Athlos
+          Soccer X Pro Suite
         </span>
       )}
     </div>

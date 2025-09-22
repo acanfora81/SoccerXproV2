@@ -21,5 +21,6 @@
 @import './styles/tax-calculator.css' layer(pages);
 @import './styles/team-dashboard.css' layer(pages);
 @import './styles/performance-players-list.css' layer(pages);
+@import './styles/tax-rates-list.css' layer(pages);
 @import './components/ui/segmented.css' layer(components);
 @import './styles/loading.css' layer(components);

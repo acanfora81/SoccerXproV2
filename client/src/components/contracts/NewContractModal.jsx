@@ -10,6 +10,7 @@ import { useUnifiedFiscalCalculation } from '../../hooks/useUnifiedFiscalCalcula
 import { parseItalianNumber, parseItalianNumberToFloat, formatItalianNumber, formatItalianCurrency } from '../../utils/italianNumbers';
 import BonusField from './BonusField';
 import BonusCalculationDisplay from './BonusCalculationDisplay';
+import SalaryCalculationDisplay from './SalaryCalculationDisplay';
 import '../../styles/contract-modal.css';
 
 const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }) => {
@@ -162,6 +163,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     taxRates,
     bonusTaxRates,
     loading: taxLoading,
+    calculating: taxCalculating,
     error: taxError,
     calculateUnified
   } = useUnifiedFiscalCalculation(
@@ -181,6 +183,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     // Procedi anche se abbiamo solo le aliquote stipendio
     if (!taxRates) {
       console.log('🔴 Nessuna aliquota stipendio disponibile');
+      console.log('🔴 Parametri hook:', { teamId: user?.teamId, contractYear: formData.startDate ? new Date(formData.startDate).getFullYear() : null, contractType: formData.contractType });
       setUnifiedCalculations(null);
       return;
     }
@@ -206,11 +209,15 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
       customTransferAllowanceTax: formData.customTransferAllowanceTax ? parseItalianNumberToFloat(formData.customTransferAllowanceTax) : undefined
     };
 
-    // Esegue il calcolo unificato
+    // Esegue il calcolo unificato (ora async)
     // console.log('🔵 Chiamando calculateUnified con dati'); // Ridotto per performance
-    const calculations = calculateUnified(calculationData);
-    // console.log('🔵 Risultato calcoli'); // Ridotto per performance
-    setUnifiedCalculations(calculations);
+    calculateUnified(calculationData).then(calculations => {
+      // console.log('🔵 Risultato calcoli'); // Ridotto per performance
+      setUnifiedCalculations(calculations);
+    }).catch(error => {
+      console.error('❌ Errore calcolo unificato:', error);
+      setUnifiedCalculations(null);
+    });
 
     // NON aggiornare automaticamente i campi qui per evitare loop infiniti
     // L'aggiornamento automatico avviene solo quando si cambia modalità di calcolo
@@ -330,7 +337,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
   // Funzione helper per ottenere il calcolo di un singolo bonus
   const getBonusCalculation = (bonusField) => {
     if (!unifiedCalculations?.bonuses?.details) return null;
-    return unifiedCalculations.bonuses.details[bonusField];
+    return unifiedCalculations?.bonuses?.details?.[bonusField] || null;
   };
 
 
@@ -494,13 +501,13 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         // Passando da lordo a netto, aggiorna il campo netSalary
         setFormData(prev => ({
           ...prev,
-          netSalary: formatNumber(unifiedCalculations.salary.netSalary)
+          netSalary: formatNumber(unifiedCalculations?.salary?.netSalary || 0)
         }));
       } else {
         // Passando da netto a lordo, aggiorna il campo salary
         setFormData(prev => ({
           ...prev,
-          salary: formatNumber(unifiedCalculations.salary.grossSalary)
+          salary: formatNumber(unifiedCalculations?.salary?.grossSalary || 0)
         }));
       }
     }
@@ -518,7 +525,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
 
     // Aggiorna automaticamente il campo del bonus se abbiamo calcoli esistenti
     if (unifiedCalculations?.bonuses?.details?.[bonusField]) {
-      const calc = unifiedCalculations.bonuses.details[bonusField];
+      const calc = unifiedCalculations?.bonuses?.details?.[bonusField];
       
       // Se stiamo passando da lordo a netto, mostra il netto calcolato
       // Se stiamo passando da netto a lordo, mostra il lordo calcolato
@@ -554,7 +561,14 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     // Validazione campi obbligatori
     if (!formData.startDate) errors.startDate = 'Data inizio è obbligatoria';
     if (!formData.endDate) errors.endDate = 'Data fine è obbligatoria';
-    if (!formData.salary || formData.salary <= 0) errors.salary = 'Stipendio deve essere maggiore di 0';
+    
+    // Validazione stipendio (considera entrambe le modalità)
+    const salaryValue = calculationMode === 'net' ? formData.netSalary : formData.salary;
+    const salaryNumeric = parseItalianNumberToFloat(salaryValue);
+    if (!salaryValue || salaryNumeric <= 0) {
+      errors.salary = calculationMode === 'net' ? 'Stipendio netto deve essere maggiore di 0' : 'Stipendio lordo deve essere maggiore di 0';
+    }
+    
     if (!formData.contractType) errors.contractType = 'Tipo contratto è obbligatorio';
     if (!formData.playerId) errors.playerId = 'Giocatore è obbligatorio';
 
@@ -590,6 +604,12 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
       return;
     }
 
+    // Verifica che i calcoli fiscali siano stati eseguiti se necessario
+    if (calculationMode === 'net' && (!unifiedCalculations?.salary?.grossSalary || unifiedCalculations.salary.grossSalary <= 0)) {
+      setError('Impossibile calcolare il lordo dal netto inserito. Verifica che le aliquote fiscali siano caricate.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -597,7 +617,34 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
       // Prepara dati per l'invio
       const contractData = {
         ...formData,
-        salary: parseItalianNumberToFloat(formData.salary),
+        // Usa il valore corretto in base alla modalità di calcolo
+        // FIX: Assicurati che il valore sia sempre un numero valido e non troppo grande
+        salary: (() => {
+          if (calculationMode === 'net') {
+            // Se l'utente ha inserito il netto, usa il lordo calcolato
+            const grossSalary = unifiedCalculations?.salary?.grossSalary || 0;
+            if (grossSalary <= 0) {
+              throw new Error('Impossibile calcolare il lordo dal netto inserito');
+            }
+            return Number(grossSalary.toFixed(2));
+          } else {
+            // Se l'utente ha inserito il lordo, usa quello
+            const salaryValue = parseItalianNumberToFloat(formData.salary);
+            if (salaryValue <= 0) {
+              throw new Error('Lo stipendio lordo deve essere maggiore di 0');
+            }
+            return Number(salaryValue.toFixed(2));
+          }
+        })(),
+        netSalary: (() => {
+          let netValue;
+          if (calculationMode === 'net') {
+            netValue = parseItalianNumberToFloat(formData.netSalary);
+          } else {
+            netValue = unifiedCalculations?.salary?.netSalary || 0;
+          }
+          return Number(netValue.toFixed(2)); // Forza massimo 2 decimali
+        })(),
         buyPrice: formData.buyPrice ? parseItalianNumberToFloat(formData.buyPrice) : null,
         responsibleUserId: formData.responsibleUserId || null,
         // Bonus - invia sempre, anche se 0
@@ -605,12 +652,27 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         loyaltyBonus: formData.loyaltyBonus ? parseItalianNumberToFloat(formData.loyaltyBonus) : 0,
         signingBonus: formData.signingBonus ? parseItalianNumberToFloat(formData.signingBonus) : 0,
         accommodationBonus: formData.accommodationBonus ? parseItalianNumberToFloat(formData.accommodationBonus) : 0,
-        carAllowance: formData.carAllowance ? parseItalianNumberToFloat(formData.carAllowance) : 0,
-        netSalary: formData.netSalary ? parseItalianNumberToFloat(formData.netSalary) : 0
+        carAllowance: formData.carAllowance ? parseItalianNumberToFloat(formData.carAllowance) : 0
       };
 
       console.log('📤 Invio dati contratto:', contractData);
+      console.log('🔍 Debug valori numerici:', {
+        originalSalary: formData.salary,
+        originalNetSalary: formData.netSalary,
+        calculationMode,
+        unifiedGrossSalary: unifiedCalculations?.salary?.grossSalary,
+        unifiedNetSalary: unifiedCalculations?.salary?.netSalary,
+        finalSalary: contractData.salary,
+        finalNetSalary: contractData.netSalary
+      });
       console.log('🔐 Stato autenticazione:', { isAuthenticated, user: user?.email, role: user?.role });
+      console.log('🔍 Debug campi obbligatori:', {
+        playerId: contractData.playerId,
+        startDate: contractData.startDate,
+        endDate: contractData.endDate,
+        salary: contractData.salary,
+        contractType: contractData.contractType
+      });
 
       let response;
       if (editingContract) {
@@ -957,59 +1019,18 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                 </div>
               )}
 
-              {taxRates && unifiedCalculations?.salary && (
-                <div className="calculations-summary">
-                  <h4 className="calculations-title">Calcoli Automatici</h4>
-                  <div className="calculations-grid-compact">
-                      <div className="calculation-item-compact">
-                        <span className="calculation-label">INPS:</span>
-                        <span className="calculation-value inps">
-                          €{unifiedCalculations.salary.inps.toLocaleString('it-IT', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </span>
-                      </div>
-                      <div className="calculation-item-compact">
-                        <span className="calculation-label">INAIL:</span>
-                        <span className="calculation-value inail">
-                          €{unifiedCalculations.salary.inail.toLocaleString('it-IT', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </span>
-                      </div>
-                      <div className="calculation-item-compact">
-                        <span className="calculation-label">FFC:</span>
-                        <span className="calculation-value ffc">
-                          €{unifiedCalculations.salary.ffc.toLocaleString('it-IT', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </span>
-                      </div>
-                      <div className="calculation-item-compact total">
-                        <span className="calculation-label">Totale Contributi:</span>
-                        <span className="calculation-value total">
-                          €{unifiedCalculations.salary.totalContributions.toLocaleString('it-IT', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </span>
-                      </div>
-                      <div className="calculation-item-compact gross">
-                        <span className="calculation-label">
-                          {calculationMode === 'net' ? 'Stipendio Lordo:' : 'Stipendio Netto:'}
-                        </span>
-                        <span className="calculation-value gross">
-                          €{(calculationMode === 'net' ? unifiedCalculations.salary.grossSalary : unifiedCalculations.salary.netSalary).toLocaleString('it-IT', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </span>
-                      </div>
-                  </div>
-                </div>
+              {/* Nuovo componente di visualizzazione */}
+              {taxRates && (
+                <SalaryCalculationDisplay 
+                  calculation={unifiedCalculations?.salary}
+                  calculationMode={calculationMode}
+                  inputAmount={calculationMode === 'net' ? 
+                    formatItalianNumber(parseItalianNumberToFloat(formData.netSalary)) : 
+                    formatItalianNumber(parseItalianNumberToFloat(formData.salary))
+                  }
+                  totalCalculation={unifiedCalculations}
+                  calculating={taxCalculating}
+                />
               )}
 
               {taxRates && !unifiedCalculations?.salary && (formData.netSalary || formData.salary) && (
@@ -1073,7 +1094,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                   <div>
                     <span>{taxError}</span>
                     <button 
-                      onClick={() => window.location.href = '/bonustaxrates/upload'}
+                      onClick={() => window.location.href = '/dashboard/bonustaxrates/upload'}
                       className="btn btn-sm btn-outline ml-2"
                     >
                       Carica Aliquote
@@ -1091,7 +1112,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                       <p>Nessuna aliquota bonus trovata per {formData.startDate ? new Date(formData.startDate).getFullYear() : 'questo anno'}.</p>
                       <p>Carica le aliquote bonus dalla sezione <strong>"Carica Aliquote Bonus"</strong> per vedere i calcoli automatici.</p>
                       <button 
-                        onClick={() => window.location.href = '/bonustaxrates/upload'}
+                        onClick={() => window.location.href = '/dashboard/bonustaxrates/upload'}
                         className="btn btn-sm btn-primary mt-2"
                       >
                         Carica Aliquote Bonus
@@ -1584,13 +1605,13 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                           <>
                             <span className="gross">€{formatItalianNumber(parseItalianNumberToFloat(formData.salary))}</span>
                             <span className="arrow">→</span>
-                            <span className="net">€{unifiedCalculations.salary.netSalary.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="net">€{(unifiedCalculations?.salary?.netSalary || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </>
                         ) : (
                           <>
                             <span className="net">€{formatItalianNumber(parseItalianNumberToFloat(formData.netSalary))}</span>
                             <span className="arrow">→</span>
-                            <span className="gross">€{unifiedCalculations.salary.grossSalary.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="gross">€{(unifiedCalculations?.salary?.grossSalary || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </>
                         )}
                       </div>
@@ -1598,13 +1619,13 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                   )}
 
                   {/* Bonus Totali */}
-                  {unifiedCalculations.bonuses && unifiedCalculations.bonuses.totalGross > 0 && (
+                  {unifiedCalculations?.bonuses && unifiedCalculations.bonuses.totalGross > 0 && (
                     <div className="summary-item">
                       <div className="summary-label">Bonus Totali:</div>
                       <div className="summary-value">
-                        <span className="gross">€{unifiedCalculations.bonuses.totalGross.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="gross">€{(unifiedCalculations?.bonuses?.totalGross || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         <span className="arrow">→</span>
-                        <span className="net">€{unifiedCalculations.bonuses.totalNet.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="net">€{(unifiedCalculations?.bonuses?.totalNet || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                   )}
@@ -1613,7 +1634,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                   <div className="summary-item">
                     <div className="summary-label">Tasse Totali:</div>
                     <div className="summary-value taxes">
-                      €{unifiedCalculations.total.taxes.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      €{(unifiedCalculations?.total?.taxes || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
 
@@ -1621,7 +1642,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                   <div className="summary-item total">
                     <div className="summary-label">🎯 TOTALE CONTRATTO:</div>
                     <div className="summary-value total">
-                      €{unifiedCalculations.total.net.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      €{(unifiedCalculations?.total?.net || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
                 </div>

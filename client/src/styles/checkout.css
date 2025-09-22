@@ -1,0 +1,484 @@
+/* client/src/styles/checkout.css */
+/* Stili per la pagina di checkout */
+
+.checkout-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ===== HEADER ===== */
+.checkout-header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.back-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.step-indicator {
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 6px 12px;
+  border-radius: 16px;
+}
+
+/* ===== CONTENT ===== */
+.checkout-content {
+  padding: 40px 0;
+}
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+/* ===== MAIN CONTENT ===== */
+.checkout-main {
+  max-width: 600px;
+}
+
+.step-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.step-content p {
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+  font-size: 1.125rem;
+}
+
+/* ===== FORMS ===== */
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-group input {
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 16px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.form-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-secondary);
+}
+
+.form-group small {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ===== PAYMENT DEMO ===== */
+.payment-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.demo-notice {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  align-items: flex-start;
+}
+
+.demo-notice svg {
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.demo-notice h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.demo-notice p {
+  font-size: 14px;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.card-input svg {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  z-index: 1;
+}
+
+.card-input input {
+  padding-left: 44px;
+}
+
+/* ===== SUCCESS STEP ===== */
+.success-step {
+  text-align: center;
+}
+
+.success-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.success-icon svg {
+  color: var(--success);
+}
+
+.next-steps {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 32px;
+  text-align: left;
+}
+
+.next-steps h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: var(--text-primary);
+}
+
+.next-steps ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.next-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.next-steps li::before {
+  content: '✓';
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* ===== ACTIONS ===== */
+.checkout-actions {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-large {
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  min-width: 200px;
+}
+
+/* ===== SIDEBAR ===== */
+.checkout-sidebar {
+  position: sticky;
+  top: 20px;
+}
+
+.order-summary {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.order-summary h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 16px;
+}
+
+.plan-summary {
+  margin-bottom: 20px;
+}
+
+.plan-summary h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+}
+
+.plan-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.plan-features {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.plan-features h5 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--text-primary);
+}
+
+.plan-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.plan-features li svg {
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+.trial-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid var(--success);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--success);
+}
+
+.trial-info svg {
+  color: var(--success);
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.total-final {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 8px;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .checkout-layout {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .checkout-sidebar {
+    order: -1;
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    gap: 16px;
+  }
+
+  .logo {
+    font-size: 18px;
+  }
+
+  .step-indicator {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .step-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .btn-large {
+    width: 100%;
+  }
+}
+
+/* ===== DARK THEME ===== */
+:root[data-theme="dark"] .checkout-page {
+  background: #000000;
+}
+
+:root[data-theme="dark"] .checkout-header {
+  background: #000000;
+}
+
+:root[data-theme="dark"] .order-summary {
+  background: #000000;
+}
+
+:root[data-theme="dark"] .next-steps {
+  background: #000000;
+}
+
+:root[data-theme="dark"] .form-group input {
+  background: #000000;
+}
+
+:root[data-theme="dark"] .form-group input:disabled {
+  background: #1a1a1a;
+}
+
+
+

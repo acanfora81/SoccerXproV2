@@ -22,7 +22,7 @@ const LogoWithImage = ({
       {/* Logo con immagine reale */}
       <img 
         src={logoSrc}
-        alt="Athlos Logo"
+        alt="Soccer X Pro Suite Logo"
         className="logo-image"
         style={{
           width: logoSize.width,
@@ -63,7 +63,7 @@ const LogoWithImage = ({
           fontWeight: '600',
           color: 'var(--text-color-primary)'
         }}>
-          Athlos
+          Soccer X Pro Suite
         </span>
       )}
     </div>

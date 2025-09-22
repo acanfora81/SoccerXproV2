@@ -32,24 +32,9 @@
   justify-content: center;
 }
 
-.sidebar.closed .sidebar-toggle {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.sidebar.closed .sidebar-toggle:hover {
-  background: var(--text-primary);
-  color: var(--bg-primary);
+/* Regole per sidebar chiusa - pulsante sempre visibile */
+.sidebar.closed .sidebar-toggle-container {
+  display: flex;
 }
 
 .sidebar-header {
@@ -58,8 +43,9 @@
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   box-sizing: border-box;
+  position: relative;
 }
 
 .logo {
@@ -71,8 +57,35 @@
   font-size: 24px;
 }
 
+/* Logo specifico per sidebar */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebar-logo .logo-image {
+  width: 48px !important;
+  height: 48px !important;
+  object-fit: contain;
+}
+
 .sidebar.closed .logo-text {
   display: none;
+}
+
+/* Container per il pulsante di toggle */
+.sidebar-toggle-container {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar.closed .sidebar-toggle-container {
+  padding: 10px;
 }
 
 .sidebar-toggle {
@@ -83,6 +96,10 @@
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
+  right: auto;
+  top: auto;
+  transform: none;
 }
 
 .sidebar-toggle:hover {

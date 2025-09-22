@@ -257,9 +257,13 @@ export default function BonusTaxRatesUpload({ teamId }) {
                 <h3>📄 File di Esempio</h3>
               </div>
               <div className="help-content">
-                <p>È disponibile un file di esempio nel server:</p>
-                <p><code>server/examples/tax/bonus-taxrates-example-italian.csv</code></p>
-                <p>Puoi usarlo come template per il tuo file.</p>
+                <p>Scarica il template CSV pronto da compilare:</p>
+                <p>
+                  <a href="/examples/tax/bonus-taxrates-example-italian.csv" download className="btn btn-primary">
+                    <Download size={16} /> Scarica esempio
+                  </a>
+                </p>
+                <p>Separatore consigliato: punto e virgola (;)</p>
               </div>
             </div>
           </div>

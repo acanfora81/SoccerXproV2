@@ -161,37 +161,6 @@ const ContractsList = () => {
     setIsModalOpen(true);
   };
 
-  // Handler per correggere i contratti esistenti
-  const handleFixExistingContracts = async () => {
-    if (!window.confirm('Vuoi correggere i valori dei contratti esistenti? Questa operazione moltiplicherà per 1000 i valori sotto 1000.')) {
-      return;
-    }
-
-    try {
-      console.log('🔧 Avvio correzione contratti esistenti...');
-      
-      const response = await fetch('/api/contracts/fix-existing', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert(`✅ ${result.message}`);
-        // Ricarica i contratti
-        fetchContracts();
-      } else {
-        alert(`❌ Errore: ${result.message}`);
-      }
-    } catch (error) {
-      console.error('❌ Errore durante la correzione:', error);
-      alert('❌ Errore durante la correzione dei contratti');
-    }
-  };
 
   // Handler per chiudere modale
   const handleCloseModal = () => {
@@ -425,13 +394,6 @@ const ContractsList = () => {
           <p>{filteredContracts.length} contratti trovati</p>
         </div>
         <div className="header-right">
-        <button 
-          className="btn btn-warning" 
-          onClick={handleFixExistingContracts}
-          style={{ marginRight: '10px' }}
-        >
-          🔧 Correggi Contratti
-        </button>
         <button className="btn btn-primary" onClick={handleAddContract}>
           <Plus size={20} />
           Nuovo Contratto

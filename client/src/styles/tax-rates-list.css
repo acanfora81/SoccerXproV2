@@ -1,0 +1,134 @@
+/* Stili condivisi per Aliquote Stipendi (TaxRatesList) e Aliquote Bonus (BonusTaxRatesList) */
+
+/* Contenitore principale coerente */
+.statistics-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Banner e card coerenti con variabili tema */
+.bg-blue-50 {
+  background-color: var(--bg-secondary) !important;
+}
+.border-blue-200 {
+  border-color: var(--border-secondary) !important;
+}
+.text-blue-900,
+.text-gray-900 {
+  color: var(--text-primary) !important;
+}
+.text-blue-800,
+.text-blue-700 { color: var(--text-primary) !important; }
+.text-gray-700,
+.text-gray-500 { color: var(--text-muted) !important; }
+
+.bg-white { background-color: var(--bg-primary) !important; }
+.border-gray-200, .border-gray-300 { border-color: var(--border-secondary) !important; }
+.bg-gray-50 { background-color: var(--bg-secondary) !important; }
+
+/* Colori stato coerenti */
+.text-green-700 { color: var(--success) !important; }
+.text-red-700 { color: var(--error) !important; }
+.text-orange-700 { color: var(--warning) !important; }
+
+/* Tabelle coerenti con Scaglioni/Addizionali */
+.statistics-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.statistics-container th,
+.statistics-container td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.statistics-container thead th {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.statistics-container tbody tr:hover {
+  background-color: var(--bg-secondary);
+}
+
+/* Bottoni coerenti con sistema */
+.action-btn.delete-btn,
+.statistics-container .btn.btn-outline,
+.statistics-container .btn.btn-primary {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+}
+
+.statistics-container .btn.btn-primary {
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--text-on-accent);
+}
+
+.statistics-container .btn.btn-outline {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-secondary);
+  color: var(--text-primary);
+}
+
+.action-btn.delete-btn {
+  background-color: var(--error);
+  border: 2px solid var(--error);
+  color: #fff;
+}
+
+/* Icon-only square delete button */
+.actions-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* margine tra pulsanti */
+}
+
+.action-btn.delete-icon-only {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--error) !important;
+  border: 2px solid var(--error) !important;
+  color: #fff !important;
+  border-radius: 6px;
+}
+
+.action-btn.edit-icon-only {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--accent-primary) !important;
+  border: 2px solid var(--accent-primary) !important;
+  color: var(--text-on-accent) !important;
+  border-radius: 6px;
+}
+
+.action-btn.delete-icon-only:hover { background-color: #dc2626 !important; border-color: #dc2626 !important; }
+.action-btn.edit-icon-only:hover { background-color: var(--accent-secondary) !important; border-color: var(--accent-secondary) !important; }
+
+/* Badge colore coerente */
+.inline-flex.rounded-full {
+  border: 1px solid var(--border-secondary);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary) !important;
+}
+
+/* Dark theme mapping */
+[data-theme="dark"] .bg-blue-50 { background-color: var(--bg-secondary) !important; }
+[data-theme="dark"] .bg-white { background-color: var(--bg-primary) !important; }
+[data-theme="dark"] .bg-gray-50 { background-color: var(--bg-secondary) !important; }
+
