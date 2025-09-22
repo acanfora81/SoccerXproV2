@@ -154,6 +154,10 @@ app.use('/api/contracts-summary', contractsSummary);
 const taxesRoutes = require('./routes/taxes');
 app.use('/api/taxes', taxesRoutes);
 
+// 🏥 Medical Area (GDPR)
+const medicalRoutes = require('./routes/medical');
+app.use('/api/medical', medicalRoutes);
+
 
 // Riepilogo route
 console.log('🔵 [DEBUG] Route caricate:');
@@ -171,6 +175,7 @@ console.log('  - /api/bonustaxrates/* (Bonus Tax Rates Upload)');
 console.log('  - /api/contracts-summary/summary (Contracts Summary)');
 console.log('  - /api/contracts-summary/export (Contracts Export)');
 console.log('  - /api/taxes/* (Tax Calculations)');
+console.log('  - /api/medical/* (Medical GDPR)');
 console.log('');
 
 
