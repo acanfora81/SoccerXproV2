@@ -176,3 +176,4 @@ Il sistema è ora:
 - ✅ **Logging completo** per debug e verifica
 - ✅ **Precisione elevata** (95.5% vs target Excel)
 
+

@@ -87,3 +87,4 @@ Se hai problemi con il caricamento, controlla:
 3. I tipi di contratto (deve essere uno dei valori validi)
 4. I valori numerici (usare virgola per i decimali)
 
+
