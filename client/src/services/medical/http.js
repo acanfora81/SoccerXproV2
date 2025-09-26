@@ -6,6 +6,13 @@ async function handle(res) {
     const text = await res.text().catch(() => '');
     const err = new Error(text || `HTTP ${res.status}`);
     err.status = res.status;
+    
+    // Special handling for consent gating (451)
+    if (res.status === 451) {
+      err.message = 'Consent required - Access blocked due to missing GDPR consent';
+      err.consentRequired = true;
+    }
+    
     try { 
       err.meta = JSON.parse(text); 
     } catch {} 
