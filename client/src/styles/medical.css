@@ -1,0 +1,298 @@
+/* client/src/styles/medical.css */
+.medical-page { 
+  padding: 20px; 
+  max-width: 1280px; 
+  margin: 0 auto; 
+}
+
+.medical-grid { 
+  display: grid; 
+  gap: 16px; 
+}
+
+.medical-kpi { 
+  display: grid; 
+  grid-template-columns: repeat(4, minmax(0,1fr)); 
+  gap: 12px; 
+}
+
+.card { 
+  background: var(--card-bg, #111); 
+  border: 1px solid var(--border-color, #2a2a2a); 
+  border-radius: 14px; 
+  padding: 16px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,.2); 
+}
+
+.card h3 { 
+  margin: 0 0 8px; 
+  font-size: 16px; 
+}
+
+.toolbar { 
+  display: flex; 
+  gap: 8px; 
+  align-items: center; 
+  justify-content: space-between; 
+  margin-bottom: 12px; 
+}
+
+.btn { 
+  padding: 8px 12px; 
+  border-radius: 10px; 
+  border: 1px solid var(--border-color,#2a2a2a); 
+  background: var(--btn-bg,#181818); 
+  cursor: pointer; 
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--btn-hover-bg, #2a2a2a);
+}
+
+.btn.primary { 
+  background: var(--accent,#4f46e5); 
+  border-color: transparent; 
+  color: white; 
+}
+
+.btn.primary:hover {
+  background: var(--accent-hover, #4338ca);
+}
+
+.input, .select { 
+  padding: 8px 10px; 
+  border-radius: 10px; 
+  border: 1px solid var(--border-color,#2a2a2a); 
+  background: transparent; 
+  color: inherit; 
+}
+
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--accent, #4f46e5);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.table { 
+  width: 100%; 
+  border-collapse: collapse; 
+}
+
+.table th, .table td { 
+  padding: 8px 10px; 
+  border-bottom: 1px solid var(--border-color,#2a2a2a); 
+  text-align: left; 
+}
+
+.table th {
+  background: var(--th-bg, #1a1a1a);
+  font-weight: 600;
+}
+
+.badge { 
+  display:inline-flex; 
+  align-items:center; 
+  gap:6px; 
+  padding: 4px 8px; 
+  border-radius: 999px; 
+  font-size: 12px; 
+  border:1px solid transparent; 
+  font-weight: 500;
+}
+
+.badge.success { 
+  background:#0f5132; 
+  color:#d1fae5; 
+}
+
+.badge.warning { 
+  background:#5a4b10; 
+  color:#fef9c3; 
+}
+
+.badge.orange { 
+  background:#5b3412; 
+  color:#ffedd5; 
+}
+
+.badge.danger { 
+  background:#5b1412; 
+  color:#ffe4e6; 
+}
+
+.badge.info {
+  background: #1e3a8a;
+  color: #dbeafe;
+}
+
+.kpi-chip { 
+  display:flex; 
+  flex-direction:column; 
+  gap:4px; 
+}
+
+.kpi-chip .value { 
+  font-size: 22px; 
+  font-weight: 700; 
+}
+
+.modal { 
+  position:fixed; 
+  inset:0; 
+  background:rgba(0,0,0,.5); 
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  z-index: 1000;
+}
+
+.modal__content { 
+  background: var(--card-bg,#111); 
+  border:1px solid var(--border-color,#2a2a2a); 
+  border-radius:14px; 
+  padding:16px; 
+  width: 560px; 
+  max-width: 95vw; 
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.row { 
+  display:flex; 
+  gap:10px; 
+}
+
+.row > * { 
+  flex:1; 
+}
+
+/* Medical specific styles */
+.medical-severity-minor {
+  background: #0f5132;
+  color: #d1fae5;
+}
+
+.medical-severity-moderate {
+  background: #5a4b10;
+  color: #fef9c3;
+}
+
+.medical-severity-major {
+  background: #5b3412;
+  color: #ffedd5;
+}
+
+.medical-severity-severe {
+  background: #5b1412;
+  color: #ffe4e6;
+}
+
+.medical-status-active {
+  background: #5b1412;
+  color: #ffe4e6;
+}
+
+.medical-status-recovering {
+  background: #5a4b10;
+  color: #fef9c3;
+}
+
+.medical-status-healed {
+  background: #0f5132;
+  color: #d1fae5;
+}
+
+.medical-status-chronic {
+  background: #1e3a8a;
+  color: #dbeafe;
+}
+
+/* Upload progress */
+.upload-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--border-color, #2a2a2a);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: var(--accent, #4f46e5);
+  transition: width 0.3s ease;
+}
+
+/* Visit cards */
+.visit-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.visit-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+
+/* Calendar styles */
+.calendar-day {
+  min-height: 120px;
+}
+
+.calendar-day h3 {
+  border-bottom: 1px solid var(--border-color, #2a2a2a);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.calendar-visit-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color, #2a2a2a);
+  font-size: 14px;
+}
+
+.calendar-visit-item:last-child {
+  border-bottom: none;
+}
+
+.calendar-visit-time {
+  font-weight: 600;
+  color: var(--accent, #4f46e5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .medical-kpi {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+  
+  .medical-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .row {
+    flex-direction: column;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .modal__content {
+    width: 95vw;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .medical-kpi {
+    grid-template-columns: 1fr;
+  }
+  
+  .medical-page {
+    padding: 12px;
+  }
+}
