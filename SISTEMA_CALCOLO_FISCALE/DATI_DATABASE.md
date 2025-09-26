@@ -128,3 +128,10 @@ ORDER BY b.min;
 4. **Precisione:** Tutti i calcoli usano `round2()` per arrotondamento a 2 decimali
 
 
+
+
+
+
+
+
+

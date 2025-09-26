@@ -97,6 +97,81 @@ const useAuthStore = create(
       },
 
       /**
+       * 📝 Registrazione utente con creazione team
+       */
+      registerWithTeam: async (userData) => {
+        console.log('🔵 AuthStore: tentativo registrazione con team per', userData.email); // INFO DEV - rimuovere in produzione
+        
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await apiFetch('/api/auth/register-with-team', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData)
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            console.log('🟢 AuthStore: registrazione con team riuscita', data.data.email); // INFO - rimuovere in produzione
+            
+            // La registrazione con team include login automatico
+            // Verifica la sessione tramite /me
+            try {
+              const meRes = await apiFetch('/api/auth/me');
+              if (meRes.ok) {
+                const me = await meRes.json();
+                set({
+                  user: me.user,
+                  isAuthenticated: true,
+                  isLoading: false,
+                  error: null
+                });
+              } else {
+                // Fallback: usa user della risposta
+                set({
+                  user: data.data,
+                  isAuthenticated: true,
+                  isLoading: false,
+                  error: null
+                });
+              }
+            } catch (_) {
+              set({
+                user: data.data,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null
+              });
+            }
+
+            return { success: true, data };
+          } else {
+            console.log('🟡 AuthStore: registrazione con team fallita', data.error); // WARNING - rimuovere in produzione
+            
+            set({
+              isLoading: false,
+              error: data.error || 'Errore durante la registrazione'
+            });
+
+            return { success: false, error: data.error };
+          }
+        } catch (error) {
+          console.log('🔴 AuthStore: errore rete registrazione con team', error.message); // ERROR - mantenere essenziali
+          
+          set({
+            isLoading: false,
+            error: 'Errore di connessione'
+          });
+
+          return { success: false, error: 'Errore di connessione' };
+        }
+      },
+
+      /**
        * 📝 Registrazione utente
        */
       register: async (userData) => {

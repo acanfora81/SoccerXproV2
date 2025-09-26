@@ -2,25 +2,93 @@
 
 /* I filtri ora usano gli stili di contracts.css */
 
-/* Stili specifici per il pulsante Excel verde */
-.contracts-filters .filter-box .export-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: none;
-  color: white;
-  font-weight: 600;
-  transition: all 0.2s ease;
+/* ========== PULSANTI IDENTICI A GESTIONE GIOCATORI ========== */
+
+/* Pulsante Excel - Verde */
+.btn-excel { 
+  background: #16a34a !important; /* Verde Excel */ 
+  color: white !important; 
+  border-color: #16a34a !important; 
 }
 
-.contracts-filters .filter-box .export-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+.btn-excel:hover { 
+  background: #15803d !important; 
+  border-color: #15803d !important; 
+  color: white !important; 
 }
 
-.contracts-filters .filter-box .export-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+/* Pulsante Refresh - Blu */
+.btn-refresh { 
+  background: #0ea5e9 !important; /* Blu cielo */ 
+  color: white !important; 
+  border-color: #0ea5e9 !important; 
+}
+
+.btn-refresh:hover { 
+  background: #0284c7 !important; 
+  border-color: #0284c7 !important; 
+  color: white !important; 
+}
+
+/* Dark mode per btn-excel */
+:root[data-theme="dark"] .btn-excel { 
+  background: #16a34a !important; 
+  color: white !important; 
+  border-color: #16a34a !important; 
+}
+
+:root[data-theme="dark"] .btn-excel:hover { 
+  background: #15803d !important; 
+  border-color: #15803d !important; 
+  color: white !important; 
+}
+
+/* Dark mode per btn-refresh */
+:root[data-theme="dark"] .btn-refresh { 
+  background: #0ea5e9 !important; 
+  color: white !important; 
+  border-color: #0ea5e9 !important; 
+}
+
+:root[data-theme="dark"] .btn-refresh:hover { 
+  background: #0284c7 !important; 
+  border-color: #0284c7 !important; 
+  color: white !important; 
+}
+
+/* Stili dimensioni e layout identici a PlayersList */
+.btn-excel, .btn-refresh { 
+  font-size: 13px !important; 
+  padding: 8px 16px !important; 
+  font-weight: 700 !important; /* Bold */ 
+  text-align: center !important; 
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: center !important; 
+  line-height: 1 !important; 
+  gap: 6px !important; /* Spazio tra icona e testo */ 
+}
+
+/* Icone SVG bianche per i pulsanti - Solo colore, no stroke */
+.btn-excel svg,
+.btn-refresh svg {
+  color: white !important;
+}
+
+.btn-excel:hover svg,
+.btn-refresh:hover svg {
+  color: white !important;
+}
+
+/* Dark mode per icone SVG */
+:root[data-theme="dark"] .btn-excel svg,
+:root[data-theme="dark"] .btn-refresh svg {
+  color: white !important;
+}
+
+:root[data-theme="dark"] .btn-excel:hover svg,
+:root[data-theme="dark"] .btn-refresh:hover svg {
+  color: white !important;
 }
 
 /* Container tabella */
@@ -51,8 +119,8 @@
 .contracts-summary-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
-  min-width: 1800px; /* Ridotta da 2000px */
+  font-size: 13px;
+  min-width: 1200px; /* Ridotta significativamente */
 }
 
 .contracts-summary-table thead {
@@ -64,12 +132,12 @@
 }
 
 .contracts-summary-table th {
-  padding: 12px 8px;
+  padding: 16px 12px;
   text-align: center;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   white-space: nowrap;
 }
@@ -78,15 +146,7 @@
   border-right: none;
 }
 
-.sub-header {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-}
-
-.sub-header th {
-  padding: 8px;
-  font-size: 10px;
-  font-weight: 500;
-}
+/* Rimosso sub-header - non più necessario */
 
 /* Righe del corpo */
 .contract-row {
@@ -103,10 +163,25 @@
 }
 
 .contracts-summary-table td {
-  padding: 8px 6px;
+  padding: 12px 8px;
   text-align: center;
   border-right: 1px solid #e2e8f0;
   vertical-align: middle;
+}
+
+/* Rimuovi solo i bordi laterali per la cella status */
+.status-cell {
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* Mantieni i bordi per le altre celle */
+.protocol-cell {
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+.player-cell {
+  border-left: 1px solid #e2e8f0 !important;
 }
 
 .contracts-summary-table td:last-child {
@@ -126,40 +201,95 @@
 }
 
 .status-cell {
-  padding: 8px 12px;
+  padding: 12px 8px;
+  text-align: center;
+  vertical-align: middle;
+  border: none !important;
+  background: transparent;
+  line-height: 1.2;
+  display: table-cell;
+  height: 100%;
 }
 
 .status-badge {
   display: inline-block;
-  padding: 3px 8px;
-  border-radius: 16px;
-  font-size: 9px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+  text-align: center;
+  border: none;
+  outline: none;
+  line-height: 1.2;
+  vertical-align: middle;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Colori personalizzati per i badge */
+.status-active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: none;
+}
+
+.status-expired {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: none;
+}
+
+.status-draft {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: none;
+}
+
+.status-terminated {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+  box-shadow: none;
+}
+
+.status-default {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  box-shadow: none;
 }
 
 .player-cell {
-  text-align: left;
-  min-width: 120px;
+  text-align: center;
+  min-width: 140px;
+  vertical-align: middle;
+  display: table-cell;
+  height: 100%;
 }
 
 .player-info {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto;
+  width: fit-content;
+  padding-top: 1px;
 }
 
 .player-icon {
   color: #6b7280;
   flex-shrink: 0;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 .player-name {
   font-weight: 600;
   color: #1e293b;
+  font-size: 13px;
 }
 
 .date-cell {
@@ -201,7 +331,8 @@
 
 .amount-value {
   font-family: 'Courier New', monospace;
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 /* Colori specifici per i tipi di importo */
@@ -223,6 +354,15 @@
 
 .ffc-amount .amount-value {
   color: #059669;
+}
+
+.company-cost .amount-value {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.bonuses .amount-value {
+  color: #7c3aed;
 }
 
 .agent-cell {
@@ -296,29 +436,34 @@
 
 @media (max-width: 768px) {
   .contracts-summary-table {
-    font-size: 10px;
+    font-size: 11px;
+    min-width: 1000px;
   }
   
   .contracts-summary-table th,
   .contracts-summary-table td {
-    padding: 6px 4px;
+    padding: 8px 6px;
+  }
+  
+  .player-name {
+    font-size: 12px;
   }
   
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 12px;
   }
   
   .stat-item {
-    padding: 10px;
+    padding: 12px;
   }
   
   .stat-value {
-    font-size: 12px;
+    font-size: 13px;
   }
   
   .amount-value {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 
@@ -328,10 +473,14 @@
   }
   
   .contracts-summary-table {
-    min-width: 1400px;
+    min-width: 900px;
   }
   
   .stat-value {
-    font-size: 11px;
+    font-size: 12px;
+  }
+  
+  .amount-value {
+    font-size: 10px;
   }
 }

@@ -158,7 +158,8 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
         year: contractYear || 2025,
         region: 'Marche',
         municipality: 'Pesaro',
-        contractType: contractType
+        contractType: contractType,
+        teamId: teamId
       });
       if (response.data.success) {
         return response.data.data;
@@ -171,7 +172,7 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
     } finally {
       setCalculating(false);
     }
-  }, [taxRates, contractYear, contractType]);
+  }, [taxRates, contractYear, contractType, teamId]);
 
   // Calcola stipendio dal lordo usando l'API backend
   const calculateSalaryFromGross = useCallback(async (grossSalary) => {
@@ -186,7 +187,8 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
         year: contractYear || 2025,
         region: 'Marche',
         municipality: 'Pesaro',
-        contractType: contractType
+        contractType: contractType,
+        teamId: teamId
       });
       if (response.data.success) {
         return response.data.data;
@@ -199,7 +201,7 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
     } finally {
       setCalculating(false);
     }
-  }, [taxRates, contractYear, contractType]);
+  }, [taxRates, contractYear, contractType, teamId]);
 
   // Calcola tasse per un bonus specifico (supporta aliquote personalizzate)
   const calculateBonusTax = useCallback((bonusType, grossAmount, customTaxRate = null) => {

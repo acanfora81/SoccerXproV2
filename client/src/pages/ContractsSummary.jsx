@@ -87,11 +87,11 @@ export default function ContractsSummary() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'EXPIRED': return 'bg-red-100 text-red-800';
-      case 'DRAFT': return 'bg-yellow-100 text-yellow-800';
-      case 'TERMINATED': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-blue-100 text-blue-800';
+      case 'ACTIVE': return 'status-active';
+      case 'EXPIRED': return 'status-expired';
+      case 'DRAFT': return 'status-draft';
+      case 'TERMINATED': return 'status-terminated';
+      default: return 'status-default';
     }
   };
 
@@ -195,17 +195,17 @@ export default function ContractsSummary() {
                 <button
                   onClick={exportToExcel}
                   disabled={exporting || contracts.length === 0}
-                  className="btn btn-primary export-btn"
+                  className="btn btn-excel"
                 >
                   {exporting ? (
                     <>
-                      <RefreshCw size={16} className="animate-spin" />
+                      <RefreshCw size={20} className="animate-spin" />
                       Esportazione...
                     </>
                   ) : (
                     <>
-                      <Download size={16} />
-                      Esporta Excel
+                      <Download size={20} />
+                      Esporta in Excel
                     </>
                   )}
                 </button>
@@ -214,15 +214,15 @@ export default function ContractsSummary() {
               <div className="filter-box">
                 <button
                   onClick={fetchContracts}
-                  className="btn btn-outline"
+                  className="btn btn-refresh"
                 >
-                  <RefreshCw size={16} />
+                  <RefreshCw size={20} />
                   Aggiorna
                 </button>
               </div>
             </div>
 
-            {/* Tabella Contratti */}
+            {/* Tabella Contratti - Versione Minimal */}
             {filteredContracts.length > 0 ? (
               <div className="table-container">
                 <div className="table-wrapper">
@@ -230,109 +230,81 @@ export default function ContractsSummary() {
                     <thead>
                       <tr>
                         <th>Protocollo</th>
-                        <th>STATUS</th>
-                        <th>Nominativo</th>
-                        <th>Data di nascita</th>
-                        <th>Data scadenza contratto</th>
-                        <th>NETTO COMPRENSIVO DI INDENNITA' DI TRASFERTA</th>
-                        <th>Emolumenti CONTRATTI</th>
-                        <th colSpan="3">Costo aziendale</th>
-                        <th>Premi contratto</th>
-                        <th>INCENTIVO ALL'ESODO</th>
-                        <th>Indennità</th>
-                        <th>Diritti d'immagine</th>
-                        <th>ALLOGGIO</th>
-                        <th>PROCURATORE</th>
-                      </tr>
-                      <tr className="sub-header">
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th>Contributi INPS</th>
-                        <th>Contributi INAIL</th>
-                        <th>FFC</th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
+                        <th>Status</th>
+                        <th>Giocatore</th>
+                        <th>Scadenza</th>
+                        <th>Stipendio Netto</th>
+                        <th>Stipendio Lordo</th>
+                        <th>Costo Azienda</th>
+                        <th>Bonus Totali</th>
+                        <th>Procuratore</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredContracts.map((contract, index) => (
-                        <tr key={index} className="contract-row">
-                          <td className="protocol-cell">
-                            <span className="protocol-number">{contract.protocolNumber || '-'}</span>
-                          </td>
-                          <td className="status-cell">
-                            <span className={`status-badge ${getStatusColor(contract.status)}`}>
-                              {getStatusLabel(contract.status)}
-                            </span>
-                          </td>
-                          <td className="player-cell">
-                            <div className="player-info">
-                              <User size={16} className="player-icon" />
-                              <span className="player-name">{contract.playerName || '-'}</span>
-                            </div>
-                          </td>
-                          <td className="date-cell">
-                            <div className="date-info">
-                              <Calendar size={16} className="date-icon" />
-                              <span>{formatDate(contract.birthDate)}</span>
-                            </div>
-                          </td>
-                          <td className="date-cell">
-                            <div className="date-info">
-                              <Calendar size={16} className="date-icon" />
-                              <span>{formatDate(contract.endDate)}</span>
-                            </div>
-                          </td>
-                          <td className="amount-cell net-amount">
-                            <div className="amount-info">
-                              <Euro size={16} className="amount-icon" />
-                              <span className="amount-value">{formatCurrency(contract.netTotal)}</span>
-                            </div>
-                          </td>
-                          <td className="amount-cell gross-amount">
-                            <div className="amount-info">
-                              <Euro size={16} className="amount-icon" />
-                              <span className="amount-value">{formatCurrency(contract.grossSalary)}</span>
-                            </div>
-                          </td>
-                          <td className="amount-cell inps-amount">
-                            <span className="amount-value">{formatCurrency(contract.inpsContributions)}</span>
-                          </td>
-                          <td className="amount-cell inail-amount">
-                            <span className="amount-value">{formatCurrency(contract.inailContributions)}</span>
-                          </td>
-                          <td className="amount-cell ffc-amount">
-                            <span className="amount-value">{formatCurrency(contract.ffcContributions)}</span>
-                          </td>
-                          <td className="amount-cell">
-                            <span className="amount-value">{formatCurrency(contract.contractPremiums)}</span>
-                          </td>
-                          <td className="amount-cell">
-                            <span className="amount-value">{formatCurrency(contract.exitIncentive)}</span>
-                          </td>
-                          <td className="amount-cell">
-                            <span className="amount-value">{formatCurrency(contract.allowances)}</span>
-                          </td>
-                          <td className="amount-cell">
-                            <span className="amount-value">{formatCurrency(contract.imageRights)}</span>
-                          </td>
-                          <td className="amount-cell">
-                            <span className="amount-value">{formatCurrency(contract.accommodation)}</span>
-                          </td>
-                          <td className="agent-cell">
-                            <span className="agent-name">{contract.agentName || '-'}</span>
-                          </td>
-                        </tr>
-                      ))}
+                      {filteredContracts.map((contract, index) => {
+                        const totalBonuses = (contract.contractPremiums || 0) + 
+                                           (contract.exitIncentive || 0) + 
+                                           (contract.allowances || 0) + 
+                                           (contract.imageRights || 0) + 
+                                           (contract.accommodation || 0);
+                        
+                        const totalCompanyCost = (contract.grossSalary || 0) + 
+                                                (contract.inpsContributions || 0) + 
+                                                (contract.inailContributions || 0) + 
+                                                (contract.ffcContributions || 0);
+                        
+                        return (
+                          <tr key={index} className="contract-row">
+                            <td className="protocol-cell">
+                              <span className="protocol-number">{contract.protocolNumber || '-'}</span>
+                            </td>
+                            <td className="status-cell">
+                              <span className={`status-badge ${getStatusColor(contract.status)}`}>
+                                {getStatusLabel(contract.status)}
+                              </span>
+                            </td>
+                            <td className="player-cell">
+                              <div className="player-info">
+                                <User size={16} className="player-icon" />
+                                <span className="player-name">{contract.playerName || '-'}</span>
+                              </div>
+                            </td>
+                            <td className="date-cell">
+                              <div className="date-info">
+                                <Calendar size={16} className="date-icon" />
+                                <span>{formatDate(contract.endDate)}</span>
+                              </div>
+                            </td>
+                            <td className="amount-cell net-amount">
+                              <div className="amount-info">
+                                <Euro size={16} className="amount-icon" />
+                                <span className="amount-value">{formatCurrency(contract.netTotal)}</span>
+                              </div>
+                            </td>
+                            <td className="amount-cell gross-amount">
+                              <div className="amount-info">
+                                <Euro size={16} className="amount-icon" />
+                                <span className="amount-value">{formatCurrency(contract.grossSalary)}</span>
+                              </div>
+                            </td>
+                            <td className="amount-cell company-cost">
+                              <div className="amount-info">
+                                <Euro size={16} className="amount-icon" />
+                                <span className="amount-value">{formatCurrency(totalCompanyCost)}</span>
+                              </div>
+                            </td>
+                            <td className="amount-cell bonuses">
+                              <div className="amount-info">
+                                <Euro size={16} className="amount-icon" />
+                                <span className="amount-value">{formatCurrency(totalBonuses)}</span>
+                              </div>
+                            </td>
+                            <td className="agent-cell">
+                              <span className="agent-name">{contract.agentName || '-'}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -372,23 +344,25 @@ export default function ContractsSummary() {
                     <div className="stat-value">{filteredContracts.length}</div>
                   </div>
                   <div className="stat-item">
-                    <div className="stat-label">Valore Netto</div>
+                    <div className="stat-label">Valore Netto Totale</div>
                     <div className="stat-value">
                       {formatCurrency(filteredContracts.reduce((sum, c) => sum + (c.netTotal || 0), 0))}
                     </div>
                   </div>
                   <div className="stat-item">
-                    <div className="stat-label">Tasse Totali</div>
+                    <div className="stat-label">Costo Azienda Totale</div>
                     <div className="stat-value">
                       {formatCurrency(filteredContracts.reduce((sum, c) => 
-                        sum + (c.inpsContributions || 0) + (c.inailContributions || 0) + (c.ffcContributions || 0), 0
+                        sum + (c.grossSalary || 0) + (c.inpsContributions || 0) + (c.inailContributions || 0) + (c.ffcContributions || 0), 0
                       ))}
                     </div>
                   </div>
                   <div className="stat-item">
-                    <div className="stat-label">Valore Lordo</div>
+                    <div className="stat-label">Bonus Totali</div>
                     <div className="stat-value">
-                      {formatCurrency(filteredContracts.reduce((sum, c) => sum + (c.grossSalary || 0), 0))}
+                      {formatCurrency(filteredContracts.reduce((sum, c) => 
+                        sum + (c.contractPremiums || 0) + (c.exitIncentive || 0) + (c.allowances || 0) + (c.imageRights || 0) + (c.accommodation || 0), 0
+                      ))}
                     </div>
                   </div>
                 </div>

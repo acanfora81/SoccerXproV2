@@ -1,10 +1,10 @@
 const express = require('express');
-const { PrismaClient } = require('../../../prisma/generated/client');
+const { getPrismaClient } = require('../../config/database');
 const { getTeamDataKey } = require('../../services/medicalKeyService');
 const { aeadWrap } = require('../../security/medicalCrypto');
 const { audit } = require('../../middleware/audit');
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 function anonCaseNumber() { return 'MC-' + Math.random().toString(36).slice(2,8).toUpperCase(); }
 function hashBodyArea(area) { return area ? require('crypto').createHash('sha256').update(String(area)).digest('hex').slice(0,16) : null; }

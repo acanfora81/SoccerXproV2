@@ -1,9 +1,13 @@
 const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
-const { PrismaClient } = require("../../../prisma/generated/client");
-const prisma = new PrismaClient();
+const { getPrismaClient } = require("../../config/database");
+const prisma = getPrismaClient();
 const router = express.Router();
+
+// ⚠️ WARNING: Questo file contiene riferimenti a tabelle obsolete
+// tax_municipal_additional e tax_regional_additional sono state rimosse
+// Usa tax_municipal_additional_rule e tax_regional_additional_scheme invece
 
 const upload = multer({ dest: "uploads/" });
 
@@ -30,23 +34,18 @@ router.get("/", async (req, res) => {
     });
 
     console.log('🟢 TaxRates GET: Trovate', taxRates.length, 'aliquote');
-    console.log('🔵 TaxRates GET: Dettaglio aliquote:', taxRates.map(r => ({
-      id: r.id,
-      year: r.year,
-      type: r.type,
-      // Colonne legacy
-      inps: r.inps,
-      inail: r.inail,
-      ffc: r.ffc,
-      // Nuove colonne separate
-      inpsWorker: r.inpsWorker,
-      inpsEmployer: r.inpsEmployer,
-      inailEmployer: r.inailEmployer,
-      ffcWorker: r.ffcWorker,
-      ffcEmployer: r.ffcEmployer,
-      solidarityWorker: r.solidarityWorker,
-      solidarityEmployer: r.solidarityEmployer
-    })));
+    console.log('🔵 TaxRates GET: Esempio aliquota:', taxRates[0] ? {
+      id: taxRates[0].id,
+      year: taxRates[0].year,
+      type: taxRates[0].type,
+      inpsWorker: taxRates[0].inpsWorker,
+      inpsEmployer: taxRates[0].inpsEmployer,
+      inailEmployer: taxRates[0].inailEmployer,
+      ffcWorker: taxRates[0].ffcWorker,
+      ffcEmployer: taxRates[0].ffcEmployer,
+      solidarityWorker: taxRates[0].solidarityWorker,
+      solidarityEmployer: taxRates[0].solidarityEmployer
+    } : null);
 
     res.json({
       success: true,
@@ -137,10 +136,6 @@ router.post("/upload", upload.single("file"), async (req, res) => {
         const year = parseInt(String(yearStr));
         const type = String(typeStr).trim().toUpperCase();
         const num = (v) => v !== undefined && v !== null && String(v).trim() !== '' ? parseFloat(String(v).replace('%','').replace(',','.')) : null;
-        // legacy
-        const inps = num(get(['inps','aliquota_inps']));
-        const inail = num(get(['inail','aliquota_inail']));
-        const ffc = num(get(['ffc','aliquota_ffc']));
         // split
         const inpsWorker = num(get(['inps_lavoratore','inpsWorker','inps_worker']));
         const inpsEmployer = num(get(['inps_datore','inpsEmployer','inps_employer']));
@@ -157,14 +152,13 @@ router.post("/upload", upload.single("file"), async (req, res) => {
           continue;
         }
 
-        console.log('🔵 TaxRates Upload: Upserting:', { year, type, inps, inail, ffc, inpsWorker, inpsEmployer, ffcWorker, ffcEmployer, inailEmployer, solidarityWorker, solidarityEmployer, teamId });
+        console.log('🔵 TaxRates Upload: Upserting:', { year, type, inpsWorker, inpsEmployer, ffcWorker, ffcEmployer, inailEmployer, solidarityWorker, solidarityEmployer, teamId });
 
         await prisma.taxRate.upsert({
           where: {
             year_type_teamId: { year, type, teamId },
           },
           update: { 
-            inps, inail, ffc,
             inpsWorker, inpsEmployer,
             ffcWorker, ffcEmployer,
             inailEmployer,
@@ -172,13 +166,13 @@ router.post("/upload", upload.single("file"), async (req, res) => {
             updatedAt: new Date() 
           },
           create: { year, type, teamId,
-            inps, inail, ffc,
-            inpsWorker: inpsWorker ?? inps,
+            inpsWorker,
             inpsEmployer,
-            ffcWorker: ffcWorker ?? ffc,
+            ffcWorker,
             ffcEmployer,
             inailEmployer,
-            solidarityWorker, solidarityEmployer },
+            solidarityWorker,
+            solidarityEmployer },
         });
 
         processedCount++;
@@ -280,8 +274,8 @@ router.delete("/:id", async (req, res) => {
 // POST /api/taxrates - creazione/upsert manuale aliquote stipendi
 router.post('/', async (req, res) => {
   try {
-    const { teamId, year, type, inps, inail, ffc,
-      // campi "split" opzionali
+    const { teamId, year, type,
+      // campi split
       inpsWorker, inpsEmployer, ffcWorker, ffcEmployer, inailEmployer,
       solidarityWorker, solidarityEmployer } = req.body;
     if (!teamId || !year || !type) {
@@ -290,9 +284,6 @@ router.post('/', async (req, res) => {
     const yearInt = parseInt(year);
     const normalizedType = String(type).trim().toUpperCase();
     const parseNum = (v) => v !== undefined && v !== null && v !== '' ? parseFloat(String(v).replace(',', '.')) : null;
-    const inpsF = parseNum(inps);
-    const inailF = parseNum(inail);
-    const ffcF = parseNum(ffc);
     const inpsWorkerF = parseNum(inpsWorker);
     const inpsEmployerF = parseNum(inpsEmployer);
     const ffcWorkerF = parseNum(ffcWorker);
@@ -304,7 +295,6 @@ router.post('/', async (req, res) => {
     const saved = await prisma.taxRate.upsert({
       where: { year_type_teamId: { year: yearInt, type: normalizedType, teamId } },
       update: { 
-        inps: inpsF, inail: inailF, ffc: ffcF,
         inpsWorker: inpsWorkerF, inpsEmployer: inpsEmployerF,
         ffcWorker: ffcWorkerF, ffcEmployer: ffcEmployerF,
         inailEmployer: inailEmployerF,
@@ -313,10 +303,9 @@ router.post('/', async (req, res) => {
       },
       create: { 
         year: yearInt, type: normalizedType, teamId,
-        inps: inpsF, inail: inailF, ffc: ffcF,
-        inpsWorker: inpsWorkerF ?? inpsF, 
+        inpsWorker: inpsWorkerF, 
         inpsEmployer: inpsEmployerF,
-        ffcWorker: ffcWorkerF ?? ffcF, 
+        ffcWorker: ffcWorkerF, 
         ffcEmployer: ffcEmployerF,
         inailEmployer: inailEmployerF,
         solidarityWorker: solidarityWorkerF,
@@ -335,11 +324,22 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { inps, inail, ffc } = req.body;
+    const {
+      inpsWorker, inpsEmployer,
+      ffcWorker, ffcEmployer,
+      inailEmployer,
+      solidarityWorker, solidarityEmployer
+    } = req.body;
+
+    const parseNum = (v) => v !== undefined ? parseFloat(String(v).replace(',', '.')) : undefined;
     const data = {};
-    if (inps !== undefined) data.inps = parseFloat(String(inps).replace(',', '.'));
-    if (inail !== undefined) data.inail = parseFloat(String(inail).replace(',', '.'));
-    if (ffc !== undefined) data.ffc = parseFloat(String(ffc).replace(',', '.'));
+    if (inpsWorker !== undefined) data.inpsWorker = parseNum(inpsWorker);
+    if (inpsEmployer !== undefined) data.inpsEmployer = parseNum(inpsEmployer);
+    if (ffcWorker !== undefined) data.ffcWorker = parseNum(ffcWorker);
+    if (ffcEmployer !== undefined) data.ffcEmployer = parseNum(ffcEmployer);
+    if (inailEmployer !== undefined) data.inailEmployer = parseNum(inailEmployer);
+    if (solidarityWorker !== undefined) data.solidarityWorker = parseNum(solidarityWorker);
+    if (solidarityEmployer !== undefined) data.solidarityEmployer = parseNum(solidarityEmployer);
     data.updatedAt = new Date();
 
     const updated = await prisma.taxRate.update({ where: { id: parseInt(id) }, data });
@@ -587,14 +587,15 @@ router.get('/regional-additionals', async (req, res) => {
       whereClause.year = parseInt(year);
     }
     
-    // Recupera addizionali fisse
-    const flatAdditionals = await prisma.tax_regional_additional.findMany({
-      where: whereClause,
-      orderBy: [
-        { year: 'desc' },
-        { region: 'asc' }
-      ]
-    });
+    // ⚠️ DEPRECATO: tax_regional_additional è stata rimossa
+    // Usa tax_regional_additional_scheme con flat_rate invece
+    const flatAdditionals = []; // await prisma.tax_regional_additional.findMany({
+    //   where: whereClause,
+    //   orderBy: [
+    //     { year: 'desc' },
+    //     { region: 'asc' }
+    //   ]
+    // });
     
     // Recupera addizionali progressive
     const progressiveAdditionals = await prisma.tax_regional_additional_scheme.findMany({
@@ -714,18 +715,22 @@ router.post('/regional-additionals', async (req, res) => {
         });
       }
       
-      const newAdditional = await prisma.tax_regional_additional.upsert({
+      // ⚠️ DEPRECATO: Usa tax_regional_additional_scheme invece
+      const newAdditional = await prisma.tax_regional_additional_scheme.upsert({
         where: {
-          year_region: { year: parseInt(year), region }
+          year_region_is_default: { year: parseInt(year), region, is_default: true }
         },
         update: { 
-          rate: parseFloat(flatRate),
+          is_progressive: false,
+          flat_rate: parseFloat(flatRate),
           createdat: new Date()
         },
         create: {
           year: parseInt(year),
           region,
-          rate: parseFloat(flatRate)
+          is_progressive: false,
+          flat_rate: parseFloat(flatRate),
+          is_default: true
         }
       });
       
@@ -747,11 +752,13 @@ router.delete('/regional-additionals/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
+    // ⚠️ DEPRECATO: tax_regional_additional è stata rimossa
     // Prova prima a eliminare come addizionale fissa
     try {
-      const deleted = await prisma.tax_regional_additional.delete({
-        where: { id }
-      });
+      // const deleted = await prisma.tax_regional_additional.delete({
+      //   where: { id }
+      // });
+      throw new Error('tax_regional_additional non più supportata');
       
       console.log('🟢 Regional Additionals DELETE: Eliminata addizionale fissa:', id);
       res.json({ 
@@ -804,15 +811,16 @@ router.get('/municipal-additionals', async (req, res) => {
     if (region) whereClause.region = region;
     if (municipality) whereClause.municipality = municipality;
     
-    // Recupera addizionali fisse
-    const flatAdditionals = await prisma.tax_municipal_additional.findMany({
-      where: whereClause,
-      orderBy: [
-        { year: 'desc' },
-        { region: 'asc' },
-        { municipality: 'asc' }
-      ]
-    });
+    // ⚠️ DEPRECATO: tax_municipal_additional è stata rimossa
+    // Usa tax_municipal_additional_rule con flat_rate invece
+    const flatAdditionals = []; // await prisma.tax_municipal_additional.findMany({
+    //   where: whereClause,
+    //   orderBy: [
+    //     { year: 'desc' },
+    //     { region: 'asc' },
+    //     { municipality: 'asc' }
+    //   ]
+    // });
     
     // Recupera addizionali progressive
     const progressiveAdditionals = await prisma.tax_municipal_additional_rule.findMany({

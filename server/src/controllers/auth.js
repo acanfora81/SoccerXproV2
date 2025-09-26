@@ -4,6 +4,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const { getPrismaClient } = require('../config/database');
 const { AUTH_ERRORS, API_ERRORS, createErrorResponse } = require('../constants/errors');
+const MultiTenantAuthService = require('../services/MultiTenantAuthService');
 
 console.log('🟢 [INFO] Caricamento controller autenticazione sicuro...'); // INFO - rimuovere in produzione
 
@@ -308,6 +309,142 @@ const register = async (req, res) => {
 };
 
 /**
+ * 📝 Registrazione nuovo utente con creazione team
+ * POST /api/auth/register-with-team
+ */
+const registerWithTeam = async (req, res) => {
+  try {
+    const { email, password, first_name, last_name, teamName, plan = 'BASIC' } = req.body;
+
+    console.log('🔵 [CONTROLLER] Tentativo registrazione con team per:', email);
+
+    // Validazione input
+    if (!email || !password || !first_name || !last_name || !teamName) {
+      const errorResponse = createErrorResponse(
+        API_ERRORS.REQUIRED_FIELD_MISSING,
+        'Email, password, nome, cognome e nome team richiesti'
+      );
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    // Validazione piano
+    const validPlans = ['BASIC', 'PROFESSIONAL', 'PREMIUM', 'ENTERPRISE'];
+    if (!validPlans.includes(plan)) {
+      const errorResponse = createErrorResponse(
+        API_ERRORS.INVALID_VALUE,
+        'Piano non valido',
+        `Piani validi: ${validPlans.join(', ')}`
+      );
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    // Controllo email esistente
+    try {
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = existingUsers?.users?.find(u => u.email === email);
+
+      if (existingUser) {
+        const errorResponse = createErrorResponse(
+          API_ERRORS.EMAIL_ALREADY_EXISTS,
+          'Email già registrata'
+        );
+        return res.status(errorResponse.status).json(errorResponse.body);
+      }
+    } catch (checkError) {
+      console.log('🟡 [WARN] Errore controllo email esistente:', checkError.message);
+    }
+
+    let supabaseUser = null;
+
+    try {
+      // STEP 1: Crea utente Supabase
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
+      });
+
+      if (error || !data?.user) {
+        const errorResponse = createErrorResponse(
+          API_ERRORS.VALIDATION_FAILED,
+          error?.message || 'Errore registrazione'
+        );
+        return res.status(errorResponse.status).json(errorResponse.body);
+      }
+
+      supabaseUser = data.user;
+      console.log('🟢 [CONTROLLER] Utente Supabase creato:', supabaseUser.id);
+
+      // STEP 2: Delega al servizio (transazione atomica)
+      const authService = new MultiTenantAuthService();
+      const result = await authService.registerWithNewTeam({
+        supabaseUserId: supabaseUser.id,
+        email,
+        first_name,
+        last_name,
+        teamName,
+        plan
+      });
+
+      console.log('🟢 [CONTROLLER] Team e UserProfile creati:', result.team.id, result.userProfile.id);
+
+      // STEP 3: Login automatico
+      const { data: loginData, error: loginError } = await supabasePublic.auth.signInWithPassword({ email, password });
+
+      if (loginError || !loginData?.session) {
+        return res.status(201).json({
+          success: true,
+          message: 'Team e account creati con successo, login manuale richiesto',
+          data: {
+            teamId: result.team.id,
+            teamName: result.team.name,
+            userId: result.userProfile.id,
+            email: result.userProfile.email
+          }
+        });
+      }
+
+      // Cookie HttpOnly
+      res.cookie('access_token', loginData.session.access_token, getCookieOptions(ACCESS_TTL));
+      res.cookie('refresh_token', loginData.session.refresh_token, getCookieOptions(REFRESH_TTL));
+
+      // Risposta di successo
+      return res.status(201).json({
+        success: true,
+        message: 'Team e account creati con successo',
+        data: {
+          teamId: result.team.id,
+          teamName: result.team.name,
+          userId: result.userProfile.id,
+          email: result.userProfile.email,
+          role: result.userProfile.role,
+          theme_preference: result.userProfile.theme_preference,
+          first_name: result.userProfile.first_name,
+          last_name: result.userProfile.last_name,
+          is_active: result.userProfile.is_active
+        }
+      });
+
+    } catch (error) {
+      console.log('🔴 [CONTROLLER] Errore durante registrazione:', error.message);
+
+      // Rollback Supabase se necessario
+      if (supabaseUser) {
+        const authService = new MultiTenantAuthService();
+        await authService.rollbackSupabaseUser(supabaseUser.id);
+      }
+
+      throw error;
+    }
+
+  } catch (error) {
+    console.log('🔴 [CONTROLLER] Errore registrazione con team:', error.message);
+    const errorResponse = createErrorResponse(AUTH_ERRORS.AUTH_ERROR);
+    res.status(errorResponse.status).json(errorResponse.body);
+  }
+};
+
+/**
  * 🚪 Logout utente
  * POST /api/auth/logout
  */
@@ -407,6 +544,7 @@ const createUserProfile = async (supabaseUser, additionalData = {}) => {
         first_name: additionalData.first_name || 'Nome',
         last_name: additionalData.last_name || 'Cognome',
         role: additionalData.role || 'SECRETARY',
+        teamId: additionalData.teamId || null, // 👈 AGGIUNTO teamId
         is_active: true,
         updated_at: new Date().toISOString()
       },
@@ -416,6 +554,7 @@ const createUserProfile = async (supabaseUser, additionalData = {}) => {
         first_name: additionalData.first_name || 'Nome',
         last_name: additionalData.last_name || 'Cognome',
         role: additionalData.role || 'SECRETARY',
+        teamId: additionalData.teamId || null, // 👈 AGGIUNTO teamId
         theme_preference: 'light',
         language_preference: 'it',
         is_active: true,
@@ -424,7 +563,7 @@ const createUserProfile = async (supabaseUser, additionalData = {}) => {
       }
     });
 
-    console.log('🟢 [INFO] UserProfile creato/aggiornato');
+    console.log('🟢 [INFO] UserProfile creato/aggiornato con teamId:', additionalData.teamId || 'null');
     return userProfile;
 
   } catch (error) {
@@ -464,6 +603,7 @@ const updateLastLogin = async (userId) => {
 module.exports = {
   login,
   register,
+  registerWithTeam,
   logout,
   refreshToken
 };

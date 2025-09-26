@@ -165,7 +165,8 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     loading: taxLoading,
     calculating: taxCalculating,
     error: taxError,
-    calculateUnified
+    calculateUnified,
+    calculateSalaryFromNet
   } = useUnifiedFiscalCalculation(
     hookParams.teamId,
     hookParams.contractYear,
@@ -209,19 +210,59 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
       customTransferAllowanceTax: formData.customTransferAllowanceTax ? parseItalianNumberToFloat(formData.customTransferAllowanceTax) : undefined
     };
 
-    // Esegue il calcolo unificato (ora async)
-    // console.log('🔵 Chiamando calculateUnified con dati'); // Ridotto per performance
-    calculateUnified(calculationData).then(calculations => {
-      // console.log('🔵 Risultato calcoli'); // Ridotto per performance
-      setUnifiedCalculations(calculations);
-    }).catch(error => {
-      console.error('❌ Errore calcolo unificato:', error);
-      setUnifiedCalculations(null);
-    });
+    // Esegue il calcolo appropriato in base alla modalità
+    if (calculationMode === 'net' && parseItalianNumberToFloat(formData.netSalary) > 0) {
+      // Modalità netto → usa il backend per il calcolo del lordo
+      console.log('🔵 Chiamando calculateSalaryFromNet con:', parseItalianNumberToFloat(formData.netSalary));
+      calculateSalaryFromNet(parseItalianNumberToFloat(formData.netSalary))
+        .then(backendResult => {
+          console.log('🟢 Risultato dal backend:', backendResult);
+          
+          // FIX: Calcola solo i bonus senza rifare il calcolo stipendio
+          // Usa calculateUnified ma con salary = 0 per evitare il calcolo stipendio
+          const bonusOnlyData = {
+            ...calculationData,
+            salary: 0, // Imposta a 0 per evitare calcolo stipendio
+            netSalary: 0, // Imposta a 0 per evitare calcolo stipendio
+            calculationMode: 'gross' // Modalità gross ma con salary = 0
+          };
+          
+          return calculateUnified(bonusOnlyData).then(bonusCalculations => {
+            // Combina il risultato del backend per lo stipendio con i bonus calcolati
+            const combinedResult = {
+              salary: backendResult, // Usa direttamente il risultato del backend
+              bonuses: bonusCalculations.bonuses,
+              total: {
+                gross: (backendResult?.grossSalary || 0) + (bonusCalculations.bonuses?.totalGross || 0),
+                net: (backendResult?.netSalary || 0) + (bonusCalculations.bonuses?.totalNet || 0),
+                taxes: (backendResult?.totaleContributiWorker || 0) + (bonusCalculations.bonuses?.totalTax || 0),
+                employerContributions: backendResult?.totaleContributiEmployer || 0,
+                companyCost: (backendResult?.companyCost || 0) + (bonusCalculations.bonuses?.totalGross || 0)
+              }
+            };
+            
+            console.log('🟢 Risultato combinato finale:', combinedResult);
+            setUnifiedCalculations(combinedResult);
+          });
+        })
+        .catch(error => {
+          console.error('❌ Errore calcolo backend:', error);
+          setUnifiedCalculations(null);
+        });
+    } else {
+      // Modalità lordo o altri casi → usa il calcolo locale
+      console.log('🔵 Chiamando calculateUnified con dati locali');
+      calculateUnified(calculationData).then(calculations => {
+        setUnifiedCalculations(calculations);
+      }).catch(error => {
+        console.error('❌ Errore calcolo unificato:', error);
+        setUnifiedCalculations(null);
+      });
+    }
 
     // NON aggiornare automaticamente i campi qui per evitare loop infiniti
     // L'aggiornamento automatico avviene solo quando si cambia modalità di calcolo
-  }, [taxRates, bonusTaxRates, calculationMode, formData, bonusModes, calculateUnified]);
+  }, [taxRates, bonusTaxRates, calculationMode, formData, bonusModes, calculateUnified, calculateSalaryFromNet]);
 
   // Funzione per gestire l'input dei numeri (solo pulizia, no formattazione) - MEMOIZZATA
   const handleNumberInput = useCallback((e, fieldName) => {

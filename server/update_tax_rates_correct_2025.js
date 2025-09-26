@@ -83,15 +83,55 @@ async function updateTaxRatesCorrect() {
 
     console.log('✅ Detrazioni aggiornate a 1.880€');
 
-    // Aggiorna addizionali per Marche/Pesaro
-    await prisma.tax_regional_additional.updateMany({
-      where: { year: 2025, region: 'DEFAULT' },
-      data: { rate: 1.23 }  // ✅ Corretto (era 1.0)
+    // Aggiorna addizionali per Marche/Pesaro usando le nuove tabelle
+    // Addizionale Regionale
+    await prisma.tax_regional_additional_scheme.upsert({
+      where: { 
+        year_region_is_default: { 
+          year: 2025, 
+          region: 'DEFAULT', 
+          is_default: true 
+        } 
+      },
+      update: { 
+        is_progressive: false, 
+        flat_rate: 1.23,
+        createdat: new Date()
+      },
+      create: { 
+        year: 2025, 
+        region: 'DEFAULT', 
+        is_progressive: false, 
+        flat_rate: 1.23,
+        is_default: true,
+        createdat: new Date()
+      }
     });
 
-    await prisma.tax_municipal_additional.updateMany({
-      where: { year: 2025, region: 'DEFAULT', municipality: 'DEFAULT' },
-      data: { rate: 0.8 }   // ✅ Corretto (era 0.5)
+    // Addizionale Comunale
+    await prisma.tax_municipal_additional_rule.upsert({
+      where: { 
+        year_region_municipality_is_default: { 
+          year: 2025, 
+          region: 'DEFAULT', 
+          municipality: 'DEFAULT', 
+          is_default: true 
+        } 
+      },
+      update: { 
+        is_progressive: false, 
+        flat_rate: 0.8,
+        createdat: new Date()
+      },
+      create: { 
+        year: 2025, 
+        region: 'DEFAULT', 
+        municipality: 'DEFAULT', 
+        is_progressive: false, 
+        flat_rate: 0.8,
+        is_default: true,
+        createdat: new Date()
+      }
     });
 
     console.log('✅ Addizionali aggiornate: 1,23% + 0,8% = 2,03%');
@@ -106,6 +146,11 @@ async function updateTaxRatesCorrect() {
 }
 
 updateTaxRatesCorrect();
+
+
+
+
+
 
 
 

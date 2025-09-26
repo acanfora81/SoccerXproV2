@@ -1,8 +1,8 @@
 const crypto = require('crypto');
 const argon2 = require('argon2');
-const { PrismaClient } = require('../../prisma/generated/client');
+const { getPrismaClient } = require('../config/database');
 const { aeadWrap, aeadUnwrap } = require('../security/medicalCrypto');
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 const MASTER_KEY = Buffer.from(process.env.MEDICAL_MASTER_KEY || '', 'base64');
 if (MASTER_KEY.length !== 32) throw new Error('MEDICAL_MASTER_KEY (32B base64) non valido');

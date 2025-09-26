@@ -4,10 +4,12 @@ generator client {
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")   // Usa sempre il pooler
-  directUrl  = env("DATABASE_URL")   // Forza Prisma a non usare mai 5432
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["soccerxpro"] // 👈 forza Prisma a generare per questo schema
 }
+
+
 
 model Team {
   id                      String                      @id @default(uuid()) @db.Uuid
@@ -46,8 +48,10 @@ model Team {
   transfers               transfers[]                 @relation("TeamTransfers")
   users                   UserProfile[]               @relation("TeamUsers")
   subscription            Subscription?               @relation("TeamSubscription")
+  invites                 TeamInvite[]                @relation("TeamInvites")
 
   @@map("teams")
+  @@schema("soccerxpro")
 }
 
 model UserProfile {
@@ -72,8 +76,11 @@ model UserProfile {
   createdPlayers          Player[]          @relation("PlayerCreator")
   transfers               transfers[]
   team                    Team?             @relation("TeamUsers", fields: [teamId], references: [id])
+  createdInvites          TeamInvite[]      @relation("InvitesCreated")
+  usedInvites             TeamInvite[]      @relation("InvitesUsed")
 
   @@map("user_profiles")
+  @@schema("soccerxpro")
 }
 
 model Player {
@@ -105,6 +112,7 @@ model Player {
   transfers         transfers[]
 
   @@map("players")
+  @@schema("soccerxpro")
 }
 
 model PerformanceData {
@@ -163,6 +171,7 @@ model PerformanceData {
   team                               Team         @relation("TeamPerformances", fields: [teamId], references: [id])
 
   @@map("performance_data")
+  @@schema("soccerxpro")
 }
 
 model budgets {
@@ -180,6 +189,7 @@ model budgets {
   expenses     expenses[]
 
   @@unique([year, category])
+  @@schema("soccerxpro")
 }
 
 model contract_clauses {
@@ -196,6 +206,7 @@ model contract_clauses {
   percentage  Decimal?   @db.Decimal(5, 2)
   contracts   contracts  @relation(fields: [contractId], references: [id])
   team        Team       @relation("TeamContractClauses", fields: [teamId], references: [id])
+  @@schema("soccerxpro")
 }
 
 model contracts {
@@ -293,6 +304,7 @@ model contracts {
   @@index([teamId, endDate], map: "contracts_team_end_idx")
   @@index([teamId, playerId, status], map: "contracts_team_player_status_idx")
   @@index([teamId, startDate], map: "contracts_team_start_idx")
+  @@schema("soccerxpro")
 }
 
 model contract_files {
@@ -309,6 +321,7 @@ model contract_files {
   contract     contracts   @relation("ContractFilesForContract", fields: [contractId], references: [id])
   team         Team        @relation("TeamContractFiles", fields: [teamId], references: [id])
   uploadedBy   UserProfile @relation("ContractFilesUploadedBy", fields: [uploadedById], references: [id])
+  @@schema("soccerxpro")
 }
 
 model contract_amendments {
@@ -322,6 +335,7 @@ model contract_amendments {
   teamId        String        @map("team_id") @db.Uuid
   contract      contracts     @relation("ContractAmendmentsForContract", fields: [contractId], references: [id])
   team          Team          @relation("TeamContractAmendments", fields: [teamId], references: [id])
+  @@schema("soccerxpro")
 }
 
 model expenses {
@@ -337,6 +351,7 @@ model expenses {
   teamId      String         @map("team_id") @db.Uuid
   budgets     budgets?       @relation(fields: [budgetId], references: [id])
   team        Team           @relation("TeamExpenses", fields: [teamId], references: [id])
+  @@schema("soccerxpro")
 }
 
 model injuries {
@@ -361,6 +376,7 @@ model injuries {
   players        Player           @relation(fields: [playerId], references: [id])
   team           Team             @relation("TeamInjuries", fields: [teamId], references: [id])
   medical_visits medical_visits[]
+  @@schema("soccerxpro")
 }
 
 model medical_visits {
@@ -380,6 +396,7 @@ model medical_visits {
   injuries  injuries? @relation(fields: [injuryId], references: [id])
   players   Player    @relation(fields: [playerId], references: [id])
   team      Team      @relation("TeamMedicalVisits", fields: [teamId], references: [id])
+  @@schema("soccerxpro")
 }
 
 model player_statistics {
@@ -399,6 +416,7 @@ model player_statistics {
   team          Team     @relation("TeamStatistics", fields: [teamId], references: [id])
 
   @@unique([playerId, season])
+  @@schema("soccerxpro")
 }
 
 model transfers {
@@ -420,6 +438,7 @@ model transfers {
   user_profiles UserProfile    @relation(fields: [createdById], references: [id])
   players       Player         @relation(fields: [playerId], references: [id])
   team          Team           @relation("TeamTransfers", fields: [teamId], references: [id])
+  @@schema("soccerxpro")
 }
 
 model contract_payment_schedule {
@@ -441,16 +460,13 @@ model contract_payment_schedule {
   team              Team                @relation("TeamPaymentSchedule", fields: [teamId], references: [id], onUpdate: NoAction, map: "contract_payment_schedule_team_fkey")
 
   @@index([teamId, contractId, status], map: "cps_team_contract_status_idx")
+  @@schema("soccerxpro")
 }
 
 model TaxRate {
   id                 Int       @id @default(autoincrement())
   year               Int
   type               ContractType
-  // 👇 Colonne vecchie (mantenute per compatibilità)
-  inps               Decimal   @db.Decimal(5, 2) @default(9.19)  // quota INPS lavoratore (legacy)
-  inail              Decimal?  @db.Decimal(5, 2) @default(0.0)   // quota INAIL (legacy)
-  ffc                Decimal   @db.Decimal(5, 2) @default(6.25)  // quota FFC (legacy)
   // 👇 Nuove colonne separate
   inpsWorker         Decimal   @db.Decimal(5, 2) @default(9.19)  // quota contributiva a carico lavoratore (%)
   inpsEmployer       Decimal   @db.Decimal(5, 2) @default(30.0)  // quota contributiva a carico datore (%)
@@ -466,6 +482,7 @@ model TaxRate {
 
   @@unique([year, type, teamId])
   @@map("tax_rates")
+  @@schema("soccerxpro")
 }
 
 model BonusTaxRate {
@@ -480,6 +497,7 @@ model BonusTaxRate {
 
   @@unique([year, type, teamId])
   @@map("bonus_tax_rates")
+  @@schema("soccerxpro")
 }
 
 model tax_config {
@@ -492,7 +510,13 @@ model tax_config {
   ulterioredetrazionefixed   Float    @default(0)
   ulterioredetrazionepercent Float    @default(0)
   bonusl207fixed             Float    @default(0)
+  detrazioneFascia1          Float    @default(1955)  // base fascia 0–15k
+  detrazioneMinimo           Float    @default(690)   // minimo garantito
+  detrazioneFascia2          Float    @default(1910)  // base fascia 15k–28k
+  detrazioneFascia2Max       Float    @default(1190)  // quota aggiuntiva fascia 15k–28k
+  detrazioneFascia3          Float    @default(1910)  // base fascia 28k–50k
   createdat                  DateTime @default(now()) @db.Timestamptz(6)
+  @@schema("soccerxpro")
 }
 
 model tax_irpef_bracket {
@@ -502,18 +526,9 @@ model tax_irpef_bracket {
   max       Float?
   rate      Float
   createdat DateTime @default(now()) @db.Timestamptz(6)
+  @@schema("soccerxpro")
 }
 
-model tax_municipal_additional {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  year         Int
-  region       String
-  municipality String
-  rate         Float
-  createdat    DateTime @default(now()) @db.Timestamptz(6)
-
-  @@unique([year, region, municipality], map: "uq_tax_municipal_additional")
-}
 
 model tax_municipal_additional_bracket {
   id                            String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -525,6 +540,7 @@ model tax_municipal_additional_bracket {
   tax_municipal_additional_rule tax_municipal_additional_rule @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([rule_id, min], map: "idx_municipal_bracket_rule")
+  @@schema("soccerxpro")
 }
 
 model tax_municipal_additional_rule {
@@ -544,17 +560,9 @@ model tax_municipal_additional_rule {
 
   @@unique([year, region, municipality, is_default], map: "uq_municipal_rule")
   @@index([year, region, municipality], map: "idx_municipal_rule_lookup")
+  @@schema("soccerxpro")
 }
 
-model tax_regional_additional {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  year      Int
-  region    String
-  rate      Float
-  createdat DateTime @default(now()) @db.Timestamptz(6)
-
-  @@unique([year, region], map: "uq_tax_regional_additional")
-}
 
 model tax_regional_additional_bracket {
   id                             String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -566,6 +574,7 @@ model tax_regional_additional_bracket {
   tax_regional_additional_scheme tax_regional_additional_scheme @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([scheme_id, min], map: "idx_regional_bracket_scheme")
+  @@schema("soccerxpro")
 }
 
 model tax_regional_additional_scheme {
@@ -584,6 +593,7 @@ model tax_regional_additional_scheme {
 
   @@unique([year, region, is_default], map: "uq_regional_scheme")
   @@index([year, region], map: "idx_regional_scheme_lookup")
+  @@schema("soccerxpro")
 }
 
 // Extra deduction rules (ulteriore detrazione) per anno a scaglioni
@@ -592,10 +602,12 @@ model tax_extra_deduction_rule {
   year      Int
   min       Float
   max       Float?
-  amount    Float    // importo fisso da applicare nello scaglione
+  amount    Float    // importo fisso (valore alla soglia "min")
+  slope     Float?   @default(0)  // variazione lineare €/€ sopra min
   createdat DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([year, min], map: "idx_extra_deduction_year_min")
+  @@schema("soccerxpro")
 }
 
 model tax_bonus_l207_rule {
@@ -603,11 +615,13 @@ model tax_bonus_l207_rule {
   year      Int
   min       Float
   max       Float?
-  amount    Float    // importo bonus L207 da applicare nello scaglione
+  amount    Float    // importo iniziale alla soglia "min"
+  slope     Float?   @default(0)  // €/€ di variazione lineare
   createdat DateTime @default(now()) @db.Timestamptz(6)
 
   @@unique([year, min], map: "uq_bonus_l207_year_min")
   @@index([year, min], map: "idx_bonus_l207_year_min")
+  @@schema("soccerxpro")
 }
 
 model Subscription {
@@ -629,9 +643,32 @@ model Subscription {
   team          Team                @relation("TeamSubscription", fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+  @@schema("soccerxpro")
 }
 
+model TeamInvite {
+  id        String   @id @default(uuid()) @db.Uuid
+  teamId    String   @map("team_id") @db.Uuid
+  email     String
+  role      UserRole @default(SECRETARY)
+  token     String   @unique
+  createdById Int
+  isUsed    Boolean  @default(false)
+  usedAt    DateTime?
+  usedByUserId Int?
+  expiresAt DateTime
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  team      Team     @relation("TeamInvites", fields: [teamId], references: [id])
+  createdBy UserProfile @relation("InvitesCreated", fields: [createdById], references: [id])
+  usedBy    UserProfile? @relation("InvitesUsed", fields: [usedByUserId], references: [id])
 
+  @@index([teamId, isUsed])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("team_invites")
+  @@schema("soccerxpro")
+}
 
 
 
@@ -656,6 +693,7 @@ enum BodyPart {
   CALF
   ANKLE
   FOOT
+  @@schema("soccerxpro")
 }
 
 enum BudgetCategory {
@@ -668,6 +706,7 @@ enum BudgetCategory {
   TRAVEL
   MARKETING
   OTHER
+  @@schema("soccerxpro")
 }
 
 enum ClauseType {
@@ -682,6 +721,7 @@ enum ClauseType {
   SELL_ON_PERCENTAGE
   BUY_OPTION_FEE
   OBLIGATION_FEE
+  @@schema("soccerxpro")
 }
 
 enum ContractStatus {
@@ -692,6 +732,7 @@ enum ContractStatus {
   RENEWED
   SUSPENDED
   ON_LOAN
+  @@schema("soccerxpro")
 }
 
 enum ContractType {
@@ -703,6 +744,7 @@ enum ContractType {
   AMATEUR
   APPRENTICESHIP
   TRAINING_AGREEMENT
+  @@schema("soccerxpro")
 }
 
 enum ContractRole {
@@ -711,6 +753,7 @@ enum ContractRole {
   YOUTH_SERIES
   APPRENTICESHIP
   OTHER
+  @@schema("soccerxpro")
 }
 
 enum PaymentFrequency {
@@ -719,6 +762,7 @@ enum PaymentFrequency {
   PER_APPEARANCE
   QUARTERLY
   ANNUAL
+  @@schema("soccerxpro")
 }
 
 enum AmendmentType {
@@ -726,12 +770,14 @@ enum AmendmentType {
   EXTENSION
   MODIFICATION
   TERMINATION
+  @@schema("soccerxpro")
 }
 
 enum FootType {
   LEFT
   RIGHT
   BOTH
+  @@schema("soccerxpro")
 }
 
 enum InjurySeverity {
@@ -739,6 +785,7 @@ enum InjurySeverity {
   MODERATE
   MAJOR
   SEVERE
+  @@schema("soccerxpro")
 }
 
 enum InjuryStatus {
@@ -746,6 +793,7 @@ enum InjuryStatus {
   RECOVERING
   HEALED
   CHRONIC
+  @@schema("soccerxpro")
 }
 
 enum InjuryType {
@@ -758,6 +806,7 @@ enum InjuryType {
   SPRAIN
   OVERUSE
   OTHER
+  @@schema("soccerxpro")
 }
 
 enum Position {
@@ -765,6 +814,7 @@ enum Position {
   DEFENDER
   MIDFIELDER
   FORWARD
+  @@schema("soccerxpro")
 }
 
 enum TransferStatus {
@@ -775,6 +825,7 @@ enum TransferStatus {
   COMPLETED
   FAILED
   CANCELLED
+  @@schema("soccerxpro")
 }
 
 enum TransferType {
@@ -784,6 +835,7 @@ enum TransferType {
   LOAN_OUT
   FREE_TRANSFER
   EXCHANGE
+  @@schema("soccerxpro")
 }
 
 enum UserRole {
@@ -793,6 +845,7 @@ enum UserRole {
   SECRETARY
   SCOUT
   PREPARATORE_ATLETICO
+  @@schema("soccerxpro")
 }
 
 enum VisitType {
@@ -802,6 +855,7 @@ enum VisitType {
   FITNESS_TEST
   SPECIALIST_CONSULTATION
   EMERGENCY
+  @@schema("soccerxpro")
 }
 
 enum TaxRegime {
@@ -810,6 +864,7 @@ enum TaxRegime {
   IMPATRIATE
   NON_RESIDENT
   SPECIAL_REGIME
+  @@schema("soccerxpro")
 }
 
 enum WorkPermitStatus {
@@ -819,6 +874,7 @@ enum WorkPermitStatus {
   REJECTED
   EXPIRED
   RENEWAL_PENDING
+  @@schema("soccerxpro")
 }
 
 enum MedicalExamResult {
@@ -827,6 +883,7 @@ enum MedicalExamResult {
   FAILED
   CONDITIONAL
   RETEST_REQUIRED
+  @@schema("soccerxpro")
 }
 
 enum ComplianceStatus {
@@ -835,6 +892,7 @@ enum ComplianceStatus {
   REJECTED
   NEEDS_REVIEW
   EXPIRED
+  @@schema("soccerxpro")
 }
 
 enum ContractPriority {
@@ -842,6 +900,7 @@ enum ContractPriority {
   NORMAL
   HIGH
   CRITICAL
+  @@schema("soccerxpro")
 }
 
 enum BonusType {
@@ -851,6 +910,7 @@ enum BonusType {
   ACCOMMODATION_BONUS
   CAR_ALLOWANCE
   TRANSFER_ALLOWANCE
+  @@schema("soccerxpro")
 }
 
 enum PaymentScheduleType {
@@ -862,6 +922,7 @@ enum PaymentScheduleType {
   TRANSFER_FEE
   AGENT_COMMISSION
   OTHER
+  @@schema("soccerxpro")
 }
 
 enum PaymentStatus {
@@ -870,12 +931,14 @@ enum PaymentStatus {
   OVERDUE
   PARTIAL
   CANCELLED
+  @@schema("soccerxpro")
 }
 
 enum TaxBase {
   IMPONIBILE_FISCALE
   LORDO
   NETTO
+  @@schema("soccerxpro")
 }
 
 enum SubscriptionPlan {
@@ -883,6 +946,7 @@ enum SubscriptionPlan {
   PROFESSIONAL
   PREMIUM
   ENTERPRISE
+  @@schema("soccerxpro")
 }
 
 enum SubscriptionStatus {
@@ -891,6 +955,7 @@ enum SubscriptionStatus {
   SUSPENDED
   CANCELLED
   EXPIRED
+  @@schema("soccerxpro")
 }
 
 // ===================== MEDICAL/GDPR CORE (v1) =====================
@@ -901,6 +966,7 @@ enum MedicalCaseType {
   SCREENING
   PREVENTIVE
   OTHER
+  @@schema("soccerxpro")
 }
 enum InjuryMechanism {
   CONTACT
@@ -908,6 +974,7 @@ enum InjuryMechanism {
   OVERUSE
   RECURRENCE
   OTHER
+  @@schema("soccerxpro")
 }
 // Se in futuro servirà la scala più granulare, usare MedicalInjurySeverity al posto di InjurySeverity
 enum MedicalInjurySeverity {
@@ -917,6 +984,7 @@ enum MedicalInjurySeverity {
   SEVERE
   CAREER_ENDING
   UNKNOWN
+  @@schema("soccerxpro")
 }
 enum RehabStage {
   ACUTE_PHASE
@@ -925,6 +993,7 @@ enum RehabStage {
   SPORT_SPECIFIC
   RETURN_TO_PLAY
   MAINTENANCE
+  @@schema("soccerxpro")
 }
 enum ExamType {
   MRI
@@ -947,6 +1016,7 @@ enum ExamType {
   DENTAL
   VISION
   OTHER
+  @@schema("soccerxpro")
 }
 enum TreatmentType {
   PHYSIO
@@ -965,18 +1035,21 @@ enum TreatmentType {
   BRACING
   CUSTOM_ORTHOTICS
   OTHER
+  @@schema("soccerxpro")
 }
 enum VisibilityLevel {
   MEDICAL_ONLY
   COACHING_STAFF
   PLAYER_ACCESS
   TEAM_WIDE
+  @@schema("soccerxpro")
 }
 enum DataClassification {
   PUBLIC
   SENSITIVE
   HIGHLY_SENSITIVE
   SPECIAL_CATEGORY
+  @@schema("soccerxpro")
 }
 enum ConsentStatus {
   NOT_REQUESTED
@@ -985,6 +1058,7 @@ enum ConsentStatus {
   REFUSED
   WITHDRAWN
   EXPIRED
+  @@schema("soccerxpro")
 }
 enum LawfulBasis {
   CONSENT
@@ -993,6 +1067,7 @@ enum LawfulBasis {
   VITAL_INTERESTS
   LEGITIMATE_INTEREST
   MEDICAL_PURPOSE
+  @@schema("soccerxpro")
 }
 enum AuditAction {
   CREATE
@@ -1010,6 +1085,7 @@ enum AuditAction {
   EMERGENCY_ACCESS
   PRINT
   SHARE
+  @@schema("soccerxpro")
 }
 enum DataRetentionReason {
   ACTIVE_CONTRACT
@@ -1017,6 +1093,7 @@ enum DataRetentionReason {
   INSURANCE_CLAIM
   LITIGATION_HOLD
   HISTORICAL_STATISTICS
+  @@schema("soccerxpro")
 }
 
 model GDPRConfiguration {
@@ -1044,6 +1121,7 @@ model GDPRConfiguration {
   updatedAt              DateTime @updatedAt
 
   @@index([teamId])
+  @@schema("soccerxpro")
 }
 
 model DataProcessingAgreement {
@@ -1061,6 +1139,7 @@ model DataProcessingAgreement {
   updatedAt       DateTime @updatedAt
 
   @@index([teamId, isActive])
+  @@schema("soccerxpro")
 }
 
 model MedicalVault {
@@ -1082,6 +1161,7 @@ model MedicalVault {
   updatedAt           DateTime @updatedAt
 
   @@index([teamId])
+  @@schema("soccerxpro")
 }
 
 model MedicalVaultAccess {
@@ -1099,6 +1179,7 @@ model MedicalVaultAccess {
 
   @@index([teamId, userId, expiresAt])
   @@index([sessionTokenHash])
+  @@schema("soccerxpro")
 }
 
 model MedicalConsent {
@@ -1126,6 +1207,7 @@ model MedicalConsent {
   @@unique([teamId, playerId, consentType, version])
   @@index([teamId, playerId, status])
   @@index([expiresAt])
+  @@schema("soccerxpro")
 }
 
 model MedicalCase {
@@ -1159,6 +1241,7 @@ model MedicalCase {
   @@index([teamId, isAvailable])
   @@index([caseNumber])
   @@index([deletedAt])
+  @@schema("soccerxpro")
 }
 
 model MedicalDiagnosis {
@@ -1172,6 +1255,7 @@ model MedicalDiagnosis {
 
   case                MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
   @@index([caseId, isPrimary])
+  @@schema("soccerxpro")
 }
 
 model MedicalExamination {
@@ -1189,6 +1273,7 @@ model MedicalExamination {
 
   case               MedicalCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
   @@index([caseId, examType, examDate])
+  @@schema("soccerxpro")
 }
 
 model MedicalTreatment {
@@ -1205,6 +1290,7 @@ model MedicalTreatment {
 
   case               MedicalCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
   @@index([caseId, treatmentType, startDate])
+  @@schema("soccerxpro")
 }
 
 model MedicalDocument {
@@ -1235,6 +1321,7 @@ model MedicalDocument {
   @@index([teamId, playerId, classification])
   @@index([retentionUntil])
   @@index([deletedAt])
+  @@schema("soccerxpro")
 }
 
 model MedicalAccessLog {
@@ -1261,6 +1348,7 @@ model MedicalAccessLog {
   @@index([teamId, resourceType, resourceId])
   @@index([teamId, playerId, accessedAt])
   @@index([isEmergency])
+  @@schema("soccerxpro")
 }
 
 model DataBreachRegister {
@@ -1282,6 +1370,7 @@ model DataBreachRegister {
   createdById         Int
   createdAt           DateTime @default(now())
   @@index([teamId, breachDate])
+  @@schema("soccerxpro")
 }
 
 model GDPRRequest {
@@ -1303,6 +1392,7 @@ model GDPRRequest {
   @@index([teamId, playerId, requestType])
   @@index([status])
   @@index([requestedAt])
+  @@schema("soccerxpro")
 }
 
 model AnonymizedMedicalData {
@@ -1320,6 +1410,7 @@ model AnonymizedMedicalData {
   createdAt         DateTime @default(now())
   @@index([teamId, season])
   @@index([injuryType, bodyArea])
+  @@schema("soccerxpro")
 }
 
 model DataRetentionPolicy {
@@ -1337,6 +1428,7 @@ model DataRetentionPolicy {
   updatedAt        DateTime @updatedAt
   @@unique([teamId, dataType])
   @@index([teamId, isActive])
+  @@schema("soccerxpro")
 }
 
 model PlayerHealthProfile {
@@ -1354,4 +1446,5 @@ model PlayerHealthProfile {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   @@index([teamId, playerId])
+  @@schema("soccerxpro")
 }

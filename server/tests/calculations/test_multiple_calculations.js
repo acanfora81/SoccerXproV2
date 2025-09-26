@@ -1,5 +1,5 @@
-const { PrismaClient } = require('./prisma/generated/client');
-const { calcolaStipendioCompleto } = require('./src/utils/taxCalculator');
+const { PrismaClient } = require('../../prisma/generated/client');
+const { calcolaStipendioCompleto } = require('../../src/utils/taxCalculator');
 
 const prisma = new PrismaClient();
 
@@ -105,7 +105,5 @@ async function testMultipleCalculations() {
 }
 
 testMultipleCalculations();
-
-
 
 

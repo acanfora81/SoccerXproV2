@@ -3,47 +3,48 @@ const { PrismaClient } = require('../../prisma/generated/client');
 
 console.log('🟢 [INFO] Inizializzazione database config...'); // INFO - rimuovere in produzione
 
-// Usa una variabile globale per evitare nuovi client ad ogni hot-reload
-let prisma = global.__PRISMA__;
+// Configurazione URL database
+const originalUrl = process.env.DIRECT_URL || process.env.DATABASE_URL || '';
+if (!originalUrl) {
+  throw new Error('DATABASE_URL o DIRECT_URL non configurata. Verifica server/.env');
+}
 
-if (!prisma) {
-  console.log('🔵 [DEBUG] Creazione nuovo Prisma Client...'); // INFO DEV - rimuovere in produzione
-  
-  // Modifica URL per disabilitare prepared statements (fix errore PostgreSQL)
-  const originalUrl = process.env.DATABASE_URL || process.env.DIRECT_URL || '';
-  if (!originalUrl) {
-    throw new Error('DATABASE_URL o DIRECT_URL non configurata. Verifica server/.env');
-  }
-  const modifiedUrl = originalUrl + (
-    originalUrl.includes('?') ? '&' : '?'
-  ) + 'prepared_statements=false';
-  
-  console.log('🔵 [DEBUG] Database URL modificato per disabilitare prepared statements'); // INFO DEV - rimuovere in produzione
-  
-  prisma = new PrismaClient({
+// Aggiungi parametri solo se non sono già presenti
+let databaseUrl = originalUrl;
+if (!databaseUrl.includes('prepared_statements=false')) {
+  databaseUrl += (databaseUrl.includes('?') ? '&' : '?') + 'prepared_statements=false';
+}
+if (!databaseUrl.includes('connection_limit=')) {
+  databaseUrl += (databaseUrl.includes('?') ? '&' : '?') + 'connection_limit=1';
+}
+
+console.log('🔵 [DEBUG] Database URL configurato per disabilitare prepared statements'); // INFO DEV - rimuovere in produzione
+
+// Crea una nuova istanza di Prisma ogni volta per evitare conflitti
+function createPrismaClient() {
+  return new PrismaClient({
     datasources: {
       db: {
-        url: modifiedUrl
+        url: databaseUrl
       }
     },
     log: process.env.NODE_ENV === 'production' 
       ? ['error'] 
-      : ['error', 'warn'], // Rimuovi 'query' per meno verbosità 
+      : ['error'], // Solo errori per ridurre verbosità
     errorFormat: 'pretty'
   });
-  
-  global.__PRISMA__ = prisma;
-  console.log('🟢 [INFO] Prisma Client inizializzato con prepared_statements=false'); // INFO - rimuovere in produzione
-} else {
-  console.log('🔵 [DEBUG] Riutilizzo Prisma Client esistente'); // INFO DEV - rimuovere in produzione
 }
 
+// Istanza Prisma singleton per l'app
+let sharedPrisma = null;
+
 function getPrismaClient() {
-  if (!prisma) {
-    console.log('🟡 [WARN] Warning: getPrismaClient chiamato ma prisma non inizializzato'); // WARNING - rimuovere in produzione
-    throw new Error('Prisma client non inizializzato');
+  if (!sharedPrisma) {
+    console.log('🔵 [DEBUG] Creazione nuovo Prisma Client...'); // INFO DEV - rimuovere in produzione
+    sharedPrisma = createPrismaClient();
+    console.log('🟢 [INFO] Prisma Client inizializzato'); // INFO - rimuovere in produzione
   }
-  return prisma;
+  return sharedPrisma;
 }
 
 // Test connessione al primo utilizzo
@@ -55,7 +56,8 @@ async function testConnection() {
   try {
     console.log('🔵 [DEBUG] Test connessione database...'); // INFO DEV - rimuovere in produzione
     await prisma.$connect();
-    await prisma.$queryRaw`SELECT 1 as test`;
+    // Test semplice senza query raw per evitare problemi con prepared statements
+    await prisma.team.findFirst({ take: 1 });
     console.log('🟢 [INFO] Connessione database OK'); // INFO - rimuovere in produzione
     connectionTested = true;
   } catch (error) {
@@ -64,17 +66,17 @@ async function testConnection() {
   }
 }
 
-// Test connessione automatico
-testConnection().catch(err => {
-  console.log('🔴 CRITICO: Impossibile connettersi al database:', err.message); // ERROR - mantenere essenziali
-});
+// Test connessione automatico disabilitato per evitare conflitti con prepared statements
+// testConnection().catch(err => {
+//   console.log('🔴 CRITICO: Impossibile connettersi al database:', err.message); // ERROR - mantenere essenziali
+// });
 
 // Chiudi con grazia se il processo termina
 process.on('beforeExit', async () => {
   try {
     console.log('🟡 [WARN] Chiusura connessione database...'); // WARNING - rimuovere in produzione
-    if (prisma) {
-      await prisma.$disconnect();
+    if (sharedPrisma) {
+      await sharedPrisma.$disconnect();
       console.log('🟢 [INFO] Database disconnesso'); // INFO - rimuovere in produzione
     }
   } catch (error) {
@@ -85,16 +87,16 @@ process.on('beforeExit', async () => {
 // Gestione errori di connessione
 process.on('SIGINT', async () => {
   console.log('🟡 [WARN] SIGINT ricevuto, chiusura database...'); // WARNING - rimuovere in produzione
-  if (prisma) {
-    await prisma.$disconnect();
+  if (sharedPrisma) {
+    await sharedPrisma.$disconnect();
   }
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('🟡 [WARN] SIGTERM ricevuto, chiusura database...'); // WARNING - rimuovere in produzione  
-  if (prisma) {
-    await prisma.$disconnect();
+  if (sharedPrisma) {
+    await sharedPrisma.$disconnect();
   }
   process.exit(0);
 });

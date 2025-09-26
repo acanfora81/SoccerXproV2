@@ -474,11 +474,13 @@
 /* Stili per pulsanti esportazione/importazione */
 .btn-excel { background: #16a34a !important; /* Verde Excel */ color: white !important; border-color: #16a34a !important; }
 .btn-excel:hover { background: #15803d !important; border-color: #15803d !important; color: white !important; }
+
 .btn-import { background: #0ea5e9 !important; /* Blu cielo */ color: white !important; border-color: #0ea5e9 !important; }
 .btn-import:hover { background: #0284c7 !important; border-color: #0284c7 !important; color: white !important; }
 /* Dark mode overrides per i pulsanti */
 :root[data-theme="dark"] .btn-excel { background: #16a34a !important; color: white !important; border-color: #16a34a !important; }
 :root[data-theme="dark"] .btn-excel:hover { background: #15803d !important; border-color: #15803d !important; color: white !important; }
+
 :root[data-theme="dark"] .btn-import { background: #0ea5e9 !important; color: white !important; border-color: #0ea5e9 !important; }
 :root[data-theme="dark"] .btn-import:hover { background: #0284c7 !important; border-color: #0284c7 !important; color: white !important; }
 /* Stile per pulsante Correggi Caratteri - ARANCIONE SCURO */

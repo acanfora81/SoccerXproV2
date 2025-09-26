@@ -168,3 +168,10 @@ L'implementazione della gestione delle aliquote IRPEF è **completata con succes
 Il sistema è ora **pronto per l'uso in produzione** e può essere facilmente esteso per supportare altre tipologie di aliquote fiscali.
 
 
+
+
+
+
+
+
+

@@ -1,5 +1,5 @@
-const { PrismaClient } = require('../../prisma/generated/client');
-const prisma = new PrismaClient();
+const { getPrismaClient } = require('../config/database');
+const prisma = getPrismaClient();
 
 function round2(v) {
   return Math.round((v + Number.EPSILON) * 100) / 100;
@@ -23,30 +23,46 @@ async function calcolaIrpef(taxableIncome, year) {
     }
 
     let irpefLorda = 0;
+    console.log(`🔵 Calcolo IRPEF per imponibile €${taxableIncome} con ${brackets.length} scaglioni`);
     for (const b of brackets) {
       const max = b.max ?? taxableIncome;
       if (taxableIncome > b.min) {
         const base = Math.min(taxableIncome, max) - b.min;
-        irpefLorda += base * (b.rate / 100);
+        const tassaScaglione = base * (b.rate / 100);
+        irpefLorda += tassaScaglione;
+        console.log(`🔵 Scaglione €${b.min}-${b.max || 'illimitato'} al ${b.rate}%: base €${base} = €${tassaScaglione}`);
       }
     }
+    console.log(`🔵 IRPEF lorda totale: €${irpefLorda}`);
 
     // Recupera detrazioni dal database (se assenti, usa default sicuri)
     const taxConfig = await prisma.tax_config.findUnique({
       where: { year: validYear }
     });
 
-    // Calcola detrazioni usando formula piecewise con fallback
+    // Calcola detrazioni lavoro dipendente usando formula parametrica per fasce
     let detrazioni = 0;
     const R = taxableIncome;
-    
-    // Formula detrazioni 2025 (AIC/MEF) con fallback se taxConfig mancante
+
+    const detrazioneFascia1 = taxConfig?.detrazioneFascia1 ?? 1955; // base fascia 0–15k
+    const detrazioneMinimo = taxConfig?.detrazioneMinimo ?? 690; // minimo garantito
+    const detrazioneFascia2 = taxConfig?.detrazioneFascia2 ?? 1910; // base 15k–28k
+    const detrazioneFascia2Max = taxConfig?.detrazioneFascia2Max ?? 1190; // quota aggiuntiva 15k–28k
+    const detrazioneFascia3 = taxConfig?.detrazioneFascia3 ?? 1910; // base 28k–50k
+
     if (R <= 15000) {
-      detrazioni = (taxConfig?.detrazionifixed ?? 1880);
+      const base = detrazioneFascia1 * (R / 15000);
+      detrazioni = Math.max(base, detrazioneMinimo);
+      console.log(`🔵 Fascia 0-15k: base €${base}, minimo €${detrazioneMinimo} → €${detrazioni}`);
     } else if (R <= 28000) {
-      detrazioni = 1910 + (1190 * (28000 - R) / 13000);
+      detrazioni = detrazioneFascia2 + (detrazioneFascia2Max * (28000 - R)) / 13000;
+      console.log(`🔵 Fascia 15k-28k: €${detrazioneFascia2} + €${(detrazioneFascia2Max * (28000 - R)) / 13000} → €${detrazioni}`);
     } else if (R <= 50000) {
-      detrazioni = 1910 * ((50000 - R) / 22000);
+      detrazioni = Math.max(detrazioneFascia3 * ((50000 - R) / 22000), 0);
+      console.log(`🔵 Fascia 28k-50k: €${detrazioneFascia3} × ${((50000 - R) / 22000)} → €${detrazioni}`);
+    } else {
+      detrazioni = 0;
+      console.log(`🔵 Fascia >50k: €${detrazioni}`);
     }
 
     // ========================================
@@ -64,8 +80,11 @@ async function calcolaIrpef(taxableIncome, year) {
       for (const rule of extraRules) {
         const ruleMax = rule.max ?? Infinity;
         if (R >= rule.min && R < ruleMax) {
-          ulterioreDetrazione = rule.amount;
-          console.log(`🔵 Ulteriore detrazione applicata: €${ulterioreDetrazione} per scaglione ${rule.min}-${rule.max || 'illimitato'}`);
+          // Calcolo con slope: amount + (slope × (reddito - min))
+          const baseAmount = rule.amount;
+          const slopeAmount = (rule.slope || 0) * (R - rule.min);
+          ulterioreDetrazione = baseAmount + slopeAmount;
+          console.log(`🔵 Ulteriore detrazione applicata: €${baseAmount} + (${rule.slope || 0} × ${R - rule.min}) = €${ulterioreDetrazione} per scaglione ${rule.min}-${rule.max || 'illimitato'}`);
           break;
         }
       }
@@ -80,8 +99,11 @@ async function calcolaIrpef(taxableIncome, year) {
 
     const totalDetrazioni = detrazioni + ulterioreDetrazione;
     console.log(`🔵 Detrazioni totali: base €${detrazioni} + ulteriore €${ulterioreDetrazione} = €${totalDetrazioni}`);
+    
+    const irpefFinale = Math.max(irpefLorda - totalDetrazioni, 0);
+    console.log(`🔵 IRPEF finale: €${irpefLorda} - €${totalDetrazioni} = €${irpefFinale}`);
 
-    return round2(Math.max(irpefLorda - totalDetrazioni, 0));
+    return round2(irpefFinale);
   } catch (error) {
     console.error('❌ Errore calcolo IRPEF:', error);
     throw new Error(`Errore calcolo IRPEF: ${error.message}`);
@@ -199,8 +221,11 @@ async function calcolaStipendioCompleto(grossSalary, taxRates, year, region = nu
       for (const rule of bonusRules) {
         const ruleMax = rule.max ?? Infinity;
         if (taxableIncome >= rule.min && taxableIncome < ruleMax) {
-          bonusL207 = rule.amount;
-          console.log(`🔵 Bonus L207 applicato: €${bonusL207} per scaglione ${rule.min}-${rule.max || 'illimitato'}`);
+          // Calcolo con slope: amount + (slope × (reddito - min))
+          const baseAmount = rule.amount;
+          const slopeAmount = (rule.slope || 0) * (taxableIncome - rule.min);
+          bonusL207 = baseAmount + slopeAmount;
+          console.log(`🔵 Bonus L207 applicato: €${baseAmount} + (${rule.slope || 0} × ${taxableIncome - rule.min}) = €${bonusL207} per scaglione ${rule.min}-${rule.max || 'illimitato'}`);
           break;
         }
       }
@@ -222,7 +247,8 @@ async function calcolaStipendioCompleto(grossSalary, taxRates, year, region = nu
     const inailEmployer = (contractType === 'APPRENTICESHIP') ? 0 : grossSalary * (parseFloat(taxRates.inailEmployer) / 100);
     
     const ffcEmployer = grossSalary * (parseFloat(taxRates.ffcEmployer) / 100);
-    const solidarityEmployer = grossSalary * (parseFloat(taxRates.solidarityEmployer || 0) / 100);
+    // ❗ Fondo di solidarietà è solo a carico lavoratore: non applicare quota datore
+    const solidarityEmployer = 0;
     const totaleContributiEmployer = inpsEmployer + inailEmployer + ffcEmployer + solidarityEmployer;
 
     const companyCost = grossSalary + totaleContributiEmployer;
@@ -243,7 +269,16 @@ async function calcolaStipendioCompleto(grossSalary, taxRates, year, region = nu
       ffcEmployer: round2(ffcEmployer),
       solidarityEmployer: round2(solidarityEmployer),
       totaleContributiEmployer: round2(totaleContributiEmployer),
-      companyCost: round2(companyCost)
+      companyCost: round2(companyCost),
+      _rawRates: {
+        inpsWorker: parseFloat(taxRates.inpsWorker),
+        ffcWorker: parseFloat(taxRates.ffcWorker),
+        solidarityWorker: parseFloat(taxRates.solidarityWorker || 0),
+        inpsEmployer: parseFloat(taxRates.inpsEmployer),
+        inailEmployer: parseFloat(taxRates.inailEmployer || 0),
+        ffcEmployer: parseFloat(taxRates.ffcEmployer),
+        solidarityEmployer: 0
+      }
     };
   } catch (error) {
     console.error('❌ Errore calcolo stipendio completo:', error);
@@ -265,15 +300,15 @@ async function calcolaLordoDaNetto(netSalary, taxRates, year, region = null, mun
     
     // Ricerca binaria per trovare il lordo esatto
     let lo = netSalary; // minimo possibile
-    let hi = netSalary * 2; // massimo ragionevole
+    let hi = netSalary * 3; // massimo ragionevole aumentato per sicurezza
     let bestResult = null;
     let bestDiff = Infinity;
     
-    // Tolleranza: 1 euro
+    // Tolleranza standard: 1 €
     const tolerance = 1.0;
     
-    // 12 iterazioni (compromesso ottimale tra precisione e velocità)
-    for (let i = 0; i < 12; i++) {
+           // 14 iterazioni per maggiore precisione
+           for (let i = 0; i < 14; i++) {
       const mid = (lo + hi) / 2;
       const result = await calcolaStipendioCompleto(mid, taxRates, validYear, region, municipality, contractType);
       

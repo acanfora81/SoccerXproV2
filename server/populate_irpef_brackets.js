@@ -1,6 +1,15 @@
 const { PrismaClient } = require('./prisma/generated/client');
 
-const prisma = new PrismaClient();
+// Crea istanza Prisma dedicata per script popolamento con configurazione corretta
+// Usa una connessione completamente separata per evitare conflitti
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: (process.env.DIRECT_URL || process.env.DATABASE_URL) + '&connection_limit=1&prepared_statements=false'
+    }
+  },
+  log: ['error']
+});
 
 async function populateIrpefBrackets() {
   try {
@@ -105,6 +114,12 @@ async function populateIrpefBrackets() {
 }
 
 populateIrpefBrackets();
+
+
+
+
+
+
 
 
 

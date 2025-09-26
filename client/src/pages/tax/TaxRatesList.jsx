@@ -25,7 +25,14 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, rate: null });
   const [editingRate, setEditingRate] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newRate, setNewRate] = useState({ year: new Date().getFullYear(), type: 'PROFESSIONAL', inps: '', inail: '', ffc: '' });
+  const [newRate, setNewRate] = useState({ 
+    year: new Date().getFullYear(), 
+    type: 'PROFESSIONAL',
+    inpsWorker: '', inpsEmployer: '',
+    inailEmployer: '',
+    ffcWorker: '', ffcEmployer: '',
+    solidarityWorker: '', solidarityEmployer: ''
+  });
 
   const fetchTaxRates = async () => {
     if (!teamId) return;
@@ -79,9 +86,13 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
       setLoading(true);
       setError(null);
       await axios.put(`/api/taxrates/${updated.id}?teamId=${teamId}`, {
-        inps: updated.inps,
-        inail: updated.inail,
-        ffc: updated.ffc
+        inpsWorker: updated.inpsWorker,
+        inpsEmployer: updated.inpsEmployer,
+        inailEmployer: updated.inailEmployer,
+        ffcWorker: updated.ffcWorker,
+        ffcEmployer: updated.ffcEmployer,
+        solidarityWorker: updated.solidarityWorker,
+        solidarityEmployer: updated.solidarityEmployer
       });
       await fetchTaxRates();
       setEditingRate(null);
@@ -196,7 +207,7 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
 
             {showAddForm && (
               <div className="add-form" style={{ marginBottom: 24 }}>
-                <h3 style={{ textAlign: 'center' }}>➕ Aggiungi Aliquota Stipendi</h3>
+                <h3 style={{ textAlign: 'center' }}>➕ Aggiungi Aliquota Stipendi (campi split)</h3>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                   <div className="input-group">
                     <label>Anno</label>
@@ -213,21 +224,45 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
                     </select>
                   </div>
                   <div className="input-group">
-                    <label>INPS (%)</label>
-                    <input type="number" min="0" max="100" step="0.01" value={newRate.inps}
-                      onChange={(e)=>setNewRate({ ...newRate, inps: e.target.value })}
+                    <label>INPS Lavoratore (%)</label>
+                    <input type="number" min="0" max="100" step="0.01" value={newRate.inpsWorker}
+                      onChange={(e)=>setNewRate({ ...newRate, inpsWorker: e.target.value })}
                       style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
                   </div>
                   <div className="input-group">
-                    <label>INAIL (%)</label>
-                    <input type="number" min="0" max="100" step="0.01" value={newRate.inail}
-                      onChange={(e)=>setNewRate({ ...newRate, inail: e.target.value })}
+                    <label>INPS Datore (%)</label>
+                    <input type="number" min="0" max="100" step="0.01" value={newRate.inpsEmployer}
+                      onChange={(e)=>setNewRate({ ...newRate, inpsEmployer: e.target.value })}
                       style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
                   </div>
                   <div className="input-group">
-                    <label>FFC (%)</label>
-                    <input type="number" min="0" max="100" step="0.01" value={newRate.ffc}
-                      onChange={(e)=>setNewRate({ ...newRate, ffc: e.target.value })}
+                    <label>INAIL Datore (%)</label>
+                    <input type="number" min="0" max="100" step="0.01" value={newRate.inailEmployer}
+                      onChange={(e)=>setNewRate({ ...newRate, inailEmployer: e.target.value })}
+                      style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+                  </div>
+                  <div className="input-group">
+                    <label>FFC Lavoratore (%)</label>
+                    <input type="number" min="0" max="100" step="0.01" value={newRate.ffcWorker}
+                      onChange={(e)=>setNewRate({ ...newRate, ffcWorker: e.target.value })}
+                      style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+                  </div>
+                  <div className="input-group">
+                    <label>FFC Datore (%)</label>
+                    <input type="number" min="0" max="100" step="0.01" value={newRate.ffcEmployer}
+                      onChange={(e)=>setNewRate({ ...newRate, ffcEmployer: e.target.value })}
+                      style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+                  </div>
+                  <div className="input-group">
+                    <label>Solidarietà Lavoratore (%)</label>
+                    <input type="number" min="0" max="100" step="0.01" value={newRate.solidarityWorker}
+                      onChange={(e)=>setNewRate({ ...newRate, solidarityWorker: e.target.value })}
+                      style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+                  </div>
+                  <div className="input-group">
+                    <label>Solidarietà Datore (%)</label>
+                    <input type="number" min="0" max="100" step="0.01" value={newRate.solidarityEmployer}
+                      onChange={(e)=>setNewRate({ ...newRate, solidarityEmployer: e.target.value })}
                       style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
                   </div>
                 </div>
@@ -291,15 +326,11 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
                           <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
                             Tipo Contratto
                           </th>
-                          <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            INPS
-                          </th>
-                          <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            INAIL
-                          </th>
-                          <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            FFC
-                          </th>
+                          <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">INPS Lav.</th>
+                          <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">INPS Dat.</th>
+                          <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">INAIL Dat.</th>
+                          <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">FFC Lav.</th>
+                          <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">FFC Dat.</th>
                           <th className="border border-gray-300 px-8 py-4 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
                             Totale
                           </th>
@@ -319,10 +350,12 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
                             return a.type.localeCompare(b.type);
                           })
                           .map((rate, index) => {
-                            const inps = parseFloat(rate.inps) || 0;
-                            const inail = parseFloat(rate.inail) || 0;
-                            const ffc = parseFloat(rate.ffc) || 0;
-                            const total = inps + inail + ffc;
+                            const inpsW = parseFloat(rate.inpsWorker) || 0;
+                            const inpsE = parseFloat(rate.inpsEmployer) || 0;
+                            const inailE = parseFloat(rate.inailEmployer) || 0;
+                            const ffcW = parseFloat(rate.ffcWorker) || 0;
+                            const ffcE = parseFloat(rate.ffcEmployer) || 0;
+                            const total = inpsW + inailE + ffcW; // totale a carico lavoratore + INAIL datore (visual)
 
                             return (
                               <tr key={index} className="hover:bg-gray-50">
@@ -339,21 +372,11 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
                                     {getTypeLabel(rate.type)}
                                   </span>
                                 </td>
-                                <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center">
-                                  <span className="text-sm font-medium text-red-700">
-                                    {formatPercentage(rate.inps)}
-                                  </span>
-                                </td>
-                                <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center">
-                                  <span className="text-sm font-medium text-orange-700">
-                                    {formatPercentage(rate.inail)}
-                                  </span>
-                                </td>
-                                <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center">
-                                  <span className="text-sm font-medium text-green-700">
-                                    {formatPercentage(rate.ffc)}
-                                  </span>
-                                </td>
+                                <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center"><span className="text-sm font-medium text-red-700">{formatPercentage(rate.inpsWorker)}</span></td>
+                                <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center"><span className="text-sm font-medium text-blue-700">{formatPercentage(rate.inpsEmployer)}</span></td>
+                                <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center"><span className="text-sm font-medium text-purple-700">{formatPercentage(rate.inailEmployer)}</span></td>
+                                <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center"><span className="text-sm font-medium text-green-700">{formatPercentage(rate.ffcWorker)}</span></td>
+                                <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center"><span className="text-sm font-medium text-indigo-700">{formatPercentage(rate.ffcEmployer)}</span></td>
                                 <td className="border border-gray-300 px-8 py-4 whitespace-nowrap text-center">
                                   <span className="text-sm font-bold text-gray-900">
                                     {total.toFixed(2).replace('.', ',')}%
@@ -450,21 +473,45 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <div className="input-group">
-              <label>INPS (%)</label>
-              <input type="number" min="0" max="100" step="0.01" value={editingRate.inps ?? ''}
-                onChange={(e)=>setEditingRate({ ...editingRate, inps: e.target.value })}
+              <label>INPS Lavoratore (%)</label>
+              <input type="number" min="0" max="100" step="0.01" value={editingRate.inpsWorker ?? ''}
+                onChange={(e)=>setEditingRate({ ...editingRate, inpsWorker: e.target.value })}
                 style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
             </div>
             <div className="input-group">
-              <label>INAIL (%)</label>
-              <input type="number" min="0" max="100" step="0.01" value={editingRate.inail ?? ''}
-                onChange={(e)=>setEditingRate({ ...editingRate, inail: e.target.value })}
+              <label>INPS Datore (%)</label>
+              <input type="number" min="0" max="100" step="0.01" value={editingRate.inpsEmployer ?? ''}
+                onChange={(e)=>setEditingRate({ ...editingRate, inpsEmployer: e.target.value })}
                 style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
             </div>
             <div className="input-group">
-              <label>FFC (%)</label>
-              <input type="number" min="0" max="100" step="0.01" value={editingRate.ffc ?? ''}
-                onChange={(e)=>setEditingRate({ ...editingRate, ffc: e.target.value })}
+              <label>INAIL Datore (%)</label>
+              <input type="number" min="0" max="100" step="0.01" value={editingRate.inailEmployer ?? ''}
+                onChange={(e)=>setEditingRate({ ...editingRate, inailEmployer: e.target.value })}
+                style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+            </div>
+            <div className="input-group">
+              <label>FFC Lavoratore (%)</label>
+              <input type="number" min="0" max="100" step="0.01" value={editingRate.ffcWorker ?? ''}
+                onChange={(e)=>setEditingRate({ ...editingRate, ffcWorker: e.target.value })}
+                style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+            </div>
+            <div className="input-group">
+              <label>FFC Datore (%)</label>
+              <input type="number" min="0" max="100" step="0.01" value={editingRate.ffcEmployer ?? ''}
+                onChange={(e)=>setEditingRate({ ...editingRate, ffcEmployer: e.target.value })}
+                style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+            </div>
+            <div className="input-group">
+              <label>Solidarietà Lavoratore (%)</label>
+              <input type="number" min="0" max="100" step="0.01" value={editingRate.solidarityWorker ?? ''}
+                onChange={(e)=>setEditingRate({ ...editingRate, solidarityWorker: e.target.value })}
+                style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+            </div>
+            <div className="input-group">
+              <label>Solidarietà Datore (%)</label>
+              <input type="number" min="0" max="100" step="0.01" value={editingRate.solidarityEmployer ?? ''}
+                onChange={(e)=>setEditingRate({ ...editingRate, solidarityEmployer: e.target.value })}
                 style={{ padding: '8px 12px', border: '2px solid var(--border-secondary)', borderRadius: 6, background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
             </div>
           </div>
