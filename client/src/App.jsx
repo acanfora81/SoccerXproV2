@@ -43,6 +43,7 @@ import SignupPage from './pages/SignupPage';
 import LandingPage from './pages/LandingPage';
 import CheckoutPage from './pages/CheckoutPage';
 import NotFound from './pages/NotFound';
+import { medicalRoutes } from './routes/medicalRoutes';
 
 // 🎨 STILI GLOBALI AGGIORNATI - IMPORTANTE!
 import './index.css'; // ← Questo contiene TUTTI i CSS importati
@@ -144,9 +145,8 @@ function App() {
               <Route path="/tax/irpef-upload" element={<IrpefUploadPage />} />
               <Route path="/tax/regional-additionals" element={<RegionalAdditionalsPage />} />
               <Route path="/tax/municipal-additionals" element={<MunicipalAdditionalsPage />} />
-              <Route path="/medical" element={
-                <div className="page-placeholder"><h2>Area Medica</h2><p>Modulo in sviluppo - Infortuni e visite mediche</p></div>
-              } />
+              {/* Medical Routes */}
+              {medicalRoutes('/medical')}
               <Route path="/market" element={
                 <div className="page-placeholder"><h2>Mercato</h2><p>Modulo in sviluppo - Trasferimenti e scouting</p></div>
               } />
