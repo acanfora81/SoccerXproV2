@@ -129,13 +129,13 @@ export default function InjuriesPage() {
                           Chiudi
                         </button>
                       )}
-                      <button 
-                        className="btn" 
-                        onClick={() => handlePromoteToCase(r.id)}
-                        style={{ fontSize: '12px', padding: '4px 8px' }}
-                      >
-                        Promuovi
-                      </button>
+                  <button 
+                    className="btn" 
+                    onClick={() => window.location.href = `/medical/cases/new?injuryId=${r.id}`}
+                    style={{ fontSize: '12px', padding: '4px 8px' }}
+                  >
+                    Promuovi a Caso GDPR
+                  </button>
                     </div>
                   </td>
                 </tr>
