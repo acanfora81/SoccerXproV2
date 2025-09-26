@@ -1,7 +1,7 @@
 const express = require('express');
-const { PrismaClient } = require('../../../prisma/generated/client');
+const { getPrismaClient } = require('../../config/database');
 const { setVaultPassphrase, verifyVaultPassphrase } = require('../../services/medicalKeyService');
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 const router = express.Router();
 
 router.post('/enable', async (req, res) => {

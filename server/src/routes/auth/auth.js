@@ -4,7 +4,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { authenticate } = require('../../middleware/auth');
-const { login, register, logout, refreshToken } = require('../../controllers/auth');
+const { login, register, registerWithTeam, logout, refreshToken } = require('../../controllers/auth');
 
 const router = express.Router();
 
@@ -90,6 +90,33 @@ router.post('/register', authRateLimit, (req, res, next) => {
   
   next();
 }, register);
+
+/**
+ * 📝 Registrazione nuovo utente con creazione team
+ * POST /api/auth/register-with-team
+ */
+router.post('/register-with-team', authRateLimit, (req, res, next) => {
+  console.log('🔵 [DEBUG] POST /api/auth/register-with-team chiamato'); // INFO - rimuovere in produzione
+  
+  // Validazione base
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({
+      error: 'Body richiesta non valido',
+      code: 'INVALID_REQUEST_BODY'
+    });
+  }
+  
+  // Validazione email format base
+  const { email } = req.body;
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({
+      error: 'Formato email non valido',
+      code: 'INVALID_EMAIL_FORMAT'
+    });
+  }
+  
+  next();
+}, registerWithTeam);
 
 /**
  * 🚪 Logout utente
@@ -201,6 +228,7 @@ router.get('/health', (req, res) => {
     endpoints: {
       'POST /login': 'Login utente',
       'POST /register': 'Registrazione utente',
+      'POST /register-with-team': 'Registrazione utente con creazione team',
       'POST /logout': 'Logout utente (richiede auth)',
       'POST /refresh': 'Refresh token',
       'GET /me': 'Info utente corrente (richiede auth)',

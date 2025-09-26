@@ -177,3 +177,10 @@ Il sistema è ora:
 - ✅ **Precisione elevata** (95.5% vs target Excel)
 
 
+
+
+
+
+
+
+

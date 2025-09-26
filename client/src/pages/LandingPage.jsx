@@ -116,13 +116,8 @@ const LandingPage = () => {
   };
 
   const handleChoosePlan = (planKey) => {
-    if (planKey === 'BASIC') {
-      // Piano gratuito - vai direttamente al signup
-      navigate(`/signup?plan=${planKey}`);
-    } else {
-      // Piani a pagamento - vai al checkout
-      navigate(`/checkout/${planKey}`);
-    }
+    // Tutti i piani vanno al form unificato di registrazione
+    navigate(`/signup?plan=${planKey}`);
   };
 
   const handleLoginClick = () => {

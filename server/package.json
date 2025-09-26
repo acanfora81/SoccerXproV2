@@ -50,6 +50,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
     "pino": "^9.9.0",
     "redis": "^4.7.1",
     "xlsx": "^0.18.5",

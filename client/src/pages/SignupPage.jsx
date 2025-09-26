@@ -4,12 +4,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2, Users, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
-import { apiFetch } from '../utils/http';
+import useAuthStore from '../store/authStore';
 import '../styles/signup.css';
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { registerWithTeam } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: form, 2: success
@@ -17,6 +18,8 @@ const SignupPage = () => {
   const [formData, setFormData] = useState({
     teamName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
     plan: 'BASIC'
@@ -99,6 +102,16 @@ const SignupPage = () => {
       return false;
     }
 
+    if (!formData.password || formData.password.length < 6) {
+      setError('La password deve essere almeno 6 caratteri');
+      return false;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Le password non coincidono');
+      return false;
+    }
+
     if (!formData.firstName.trim()) {
       setError('Il nome è obbligatorio');
       return false;
@@ -121,37 +134,27 @@ const SignupPage = () => {
     setError('');
 
     try {
-      console.log('🟢 [SIGNUP] Invio dati onboarding:', {
+      console.log('🟢 [SIGNUP] Invio dati registrazione con team:', {
         teamName: formData.teamName,
         email: formData.email,
         plan: formData.plan
       });
 
-      const response = await apiFetch('/api/onboarding', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          teamName: formData.teamName.trim(),
-          email: formData.email.trim(),
-          firstName: formData.firstName.trim(),
-          lastName: formData.lastName.trim(),
-          plan: formData.plan
-        })
+      const result = await registerWithTeam({
+        teamName: formData.teamName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        plan: formData.plan
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Errore durante la creazione del team');
-      }
-
-      if (data.success) {
-        console.log('🟢 [SIGNUP] Team creato con successo:', data.data);
-        setStep(2);
+      if (result.success) {
+        console.log('🟢 [SIGNUP] Team e utente creati con successo');
+        // Reindirizza direttamente alla dashboard
+        navigate('/dashboard');
       } else {
-        throw new Error(data.error || 'Errore sconosciuto');
+        throw new Error(result.error || 'Errore durante la creazione del team');
       }
 
     } catch (err) {
@@ -286,6 +289,34 @@ const SignupPage = () => {
                 <small>Questa sarà la tua email di accesso come amministratore</small>
               </div>
             </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="password">Password *</label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="Minimo 6 caratteri"
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="confirmPassword">Conferma Password *</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  placeholder="Ripeti la password"
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Selezione Piano */}
@@ -349,7 +380,7 @@ const SignupPage = () => {
                 </>
               ) : (
                 <>
-                  Crea Team
+                  Crea Team e Account
                   <ArrowRight size={20} />
                 </>
               )}

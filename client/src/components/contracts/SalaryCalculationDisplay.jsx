@@ -73,7 +73,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
             <h6 className="group-title">📊 Dettaglio Lavoratore</h6>
             <div className="calculation-grid">
               <div className="calculation-item">
-                <span className="calculation-label">INPS Worker (9,19%):</span>
+                <span className="calculation-label">INPS Worker ({(calculation?._rawRates?.inpsWorker ?? 9.19).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):</span>
                 <span className="calculation-value inps">
                   €{calculation.inpsWorker?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
@@ -82,7 +82,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
                 </span>
               </div>
               <div className="calculation-item">
-                <span className="calculation-label">FFC Worker (1,25%):</span>
+                <span className="calculation-label">FFC Worker ({(calculation?._rawRates?.ffcWorker ?? 1.25).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):</span>
                 <span className="calculation-value ffc">
                   €{calculation.ffcWorker?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
@@ -91,7 +91,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
                 </span>
               </div>
               <div className="calculation-item">
-                <span className="calculation-label">Solidarietà Worker (0,50%):</span>
+                <span className="calculation-label">Solidarietà Worker ({(calculation?._rawRates?.solidarityWorker ?? 0.5).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):</span>
                 <span className="calculation-value solidarity">
                   €{calculation.solidarityWorker?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
@@ -165,7 +165,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
             <h6 className="group-title">🏢 Dettaglio Società</h6>
             <div className="calculation-grid">
               <div className="calculation-item">
-                <span className="calculation-label">INPS Employer (29,58%):</span>
+                <span className="calculation-label">INPS Employer ({(calculation?._rawRates?.inpsEmployer ?? 30).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):</span>
                 <span className="calculation-value inps-employer">
                   €{calculation.inpsEmployer?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
@@ -174,7 +174,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
                 </span>
               </div>
               <div className="calculation-item">
-                <span className="calculation-label">INAIL Employer (7,90%):</span>
+                <span className="calculation-label">INAIL Employer ({(calculation?._rawRates?.inailEmployer ?? 1.5).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):</span>
                 <span className="calculation-value inail-employer">
                   €{calculation.inailEmployer?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
@@ -183,9 +183,18 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
                 </span>
               </div>
               <div className="calculation-item">
-                <span className="calculation-label">FFC Employer (6,25%):</span>
+                <span className="calculation-label">FFC Employer ({(calculation?._rawRates?.ffcEmployer ?? 5).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):</span>
                 <span className="calculation-value ffc-employer">
                   €{calculation.ffcEmployer?.toLocaleString('it-IT', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  }) || '0,00'}
+                </span>
+              </div>
+              <div className="calculation-item">
+                <span className="calculation-label">Solidarietà Employer (0,50%):</span>
+                <span className="calculation-value solidarity-employer">
+                  €{calculation.solidarityEmployer?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                   }) || '0,00'}

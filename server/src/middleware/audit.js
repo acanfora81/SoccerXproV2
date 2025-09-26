@@ -1,5 +1,5 @@
-const { PrismaClient } = require('../../prisma/generated/client');
-const prisma = new PrismaClient();
+const { getPrismaClient } = require('../config/database');
+const prisma = getPrismaClient();
 
 function audit(action, resourceTypeGetter, lawfulBasis = 'MEDICAL_PURPOSE') {
   return async function(req, res, next) {

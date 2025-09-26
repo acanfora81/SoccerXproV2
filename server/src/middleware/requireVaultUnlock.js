@@ -1,5 +1,5 @@
-const { PrismaClient } = require('../../prisma/generated/client');
-const prisma = new PrismaClient();
+const { getPrismaClient } = require('../config/database');
+const prisma = getPrismaClient();
 
 module.exports = async function requireVaultUnlock(req, res, next) {
   const teamId = req.teamId;

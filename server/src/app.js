@@ -95,6 +95,7 @@ app.get('/health', async (req, res) => {
 // Test DB
 app.get('/test-db', async (req, res) => {
   try {
+    // Test solo la connessione senza query per evitare prepared statements
     await prisma.$connect();
     res.json({ status: 'OK', message: 'Database connection successful' });
   } catch (error) {
@@ -105,6 +106,7 @@ app.get('/test-db', async (req, res) => {
     });
   }
 });
+
 
 // 🧪 Test auth
 const testAuthRoutes = require('./routes/auth/test-auth');

@@ -1,5 +1,5 @@
 // prisma-test.js
-const { PrismaClient } = require('./prisma/generated/client');
+const { PrismaClient } = require('../../prisma/generated/client');
 const prisma = new PrismaClient();
 
 async function main() {
@@ -14,3 +14,5 @@ async function main() {
 }
 
 main();
+
+

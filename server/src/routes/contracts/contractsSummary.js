@@ -1,8 +1,8 @@
 const express = require('express');
-const { PrismaClient } = require('../../../prisma/generated/client');
+const { getPrismaClient } = require('../../config/database');
 const XLSX = require('xlsx');
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 // GET /api/contracts/summary - Recupera il riepilogo dei contratti
 router.get('/summary', async (req, res) => {

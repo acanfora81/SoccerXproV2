@@ -1,8 +1,8 @@
 const express = require('express');
-const { PrismaClient } = require('../../../prisma/generated/client');
+const { getPrismaClient } = require('../../config/database');
 const { audit } = require('../../middleware/audit');
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 router.post('/', audit('CONSENT_GRANT', req => ({ type:'consent', id:'(new)', playerId:req.body?.playerId })), async (req, res) => {
   const { playerId, consentType, purpose, lawfulBasis, dataCategories, expiresAt, consentFormText } = req.body || {};

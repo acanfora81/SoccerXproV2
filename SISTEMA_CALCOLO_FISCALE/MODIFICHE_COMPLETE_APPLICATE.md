@@ -162,3 +162,10 @@ Il sistema è ora:
 **Utente inserisce netto → Sistema calcola lordo istantaneamente → Nessuna reiterazione visibile → Risultato coerente**
 
 
+
+
+
+
+
+
+
