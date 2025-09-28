@@ -109,3 +109,5 @@ Se riscontri problemi:
 3. Rigenera il client Prisma se necessario: `npx prisma generate`
 
 
+
+

@@ -14,9 +14,15 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { formatItalianCurrency } from '../../../utils/italianNumbers';
+import ContractDetailsModal from '../ContractDetailsModal';
+import NewContractModal from '../NewContractModal';
 
 const ContractTables = ({ expiring, topPlayers }) => {
   const [activeTable, setActiveTable] = useState('expiring');
+  const [viewingContract, setViewingContract] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Formatta valuta
   const formatCurrency = (amount, currency = 'EUR') => {
@@ -49,15 +55,6 @@ const ContractTables = ({ expiring, topPlayers }) => {
     return 'normal';
   };
 
-  // Ottieni icona per status
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'ACTIVE': return <Clock size={16} className="status-active" />;
-      case 'RENEWED': return <TrendingUp size={16} className="status-renewed" />;
-      case 'EXPIRED': return <AlertTriangle size={16} className="status-expired" />;
-      default: return <Clock size={16} className="status-default" />;
-    }
-  };
 
   // Traduce status in italiano
   const getStatusLabel = (status) => {
@@ -69,6 +66,43 @@ const ContractTables = ({ expiring, topPlayers }) => {
       case 'DRAFT': return 'Bozza';
       case 'SUSPENDED': return 'Sospeso';
       default: return status;
+    }
+  };
+
+  // Gestione visualizzazione contratto
+  const handleViewContract = (contract) => {
+    console.log('🔵 Apertura modale visualizzazione contratto:', contract.id);
+    setViewingContract(contract);
+    setIsViewModalOpen(true);
+  };
+
+  const handleViewModalClose = () => {
+    console.log('🔵 Chiusura modale visualizzazione contratto');
+    setIsViewModalOpen(false);
+    setViewingContract(null);
+  };
+
+  // Gestione modifica contratto
+  const handleEditContract = (contract) => {
+    console.log('🔵 Apertura modale modifica contratto:', contract.id);
+    setEditingContract(contract);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditModalClose = () => {
+    console.log('🔵 Chiusura modale modifica contratto');
+    setIsEditModalOpen(false);
+    setEditingContract(null);
+  };
+
+  const handleEditModalSuccess = () => {
+    console.log('🔵 Contratto modificato con successo');
+    // Chiudi il modal
+    setIsEditModalOpen(false);
+    setEditingContract(null);
+    // Notifica il componente padre per ricaricare i dati
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('contractUpdated'));
     }
   };
 
@@ -121,7 +155,6 @@ const ContractTables = ({ expiring, topPlayers }) => {
                 <tr key={contract.id} className={getDaysClass(daysRemaining)}>
                   <td>
                     <div className="player-info">
-                      <User size={16} />
                       <span>{contract.playerName}</span>
                     </div>
                   </td>
@@ -141,17 +174,24 @@ const ContractTables = ({ expiring, topPlayers }) => {
                   </td>
                   <td>
                     <div className="status-cell">
-                      {getStatusIcon(contract.status)}
                       <span>{getStatusLabel(contract.status)}</span>
                     </div>
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button className="btn-icon" title="Visualizza">
-                        <Eye size={16} />
+                      <button 
+                        className="btn-icon btn-icon-success" 
+                        title="Visualizza"
+                        onClick={() => handleViewContract(contract)}
+                      >
+                        <Eye size={16} color="#ffffff" />
                       </button>
-                      <button className="btn-icon" title="Modifica">
-                        <Edit size={16} />
+                      <button 
+                        className="btn-icon btn-icon-primary" 
+                        title="Modifica"
+                        onClick={() => handleEditContract(contract)}
+                      >
+                        <Edit size={16} color="#ffffff" />
                       </button>
                     </div>
                   </td>
@@ -205,7 +245,6 @@ const ContractTables = ({ expiring, topPlayers }) => {
                 </td>
                 <td>
                   <div className="player-info">
-                    <User size={16} />
                     <span>{player.playerName}</span>
                   </div>
                 </td>
@@ -224,17 +263,24 @@ const ContractTables = ({ expiring, topPlayers }) => {
                 </td>
                 <td>
                   <div className="status-cell">
-                    {getStatusIcon(player.status)}
                     <span>{getStatusLabel(player.status)}</span>
                   </div>
                 </td>
                 <td>
                   <div className="action-buttons">
-                    <button className="btn-icon" title="Visualizza">
-                      <Eye size={16} />
+                    <button 
+                      className="btn-icon btn-icon-success" 
+                      title="Visualizza"
+                      onClick={() => handleViewContract(player)}
+                    >
+                      <Eye size={16} color="#ffffff" />
                     </button>
-                    <button className="btn-icon" title="Modifica">
-                      <Edit size={16} />
+                    <button 
+                      className="btn-icon btn-icon-primary" 
+                      title="Modifica"
+                      onClick={() => handleEditContract(player)}
+                    >
+                      <Edit size={16} color="#ffffff" />
                     </button>
                   </div>
                 </td>
@@ -278,6 +324,21 @@ const ContractTables = ({ expiring, topPlayers }) => {
         {activeTable === 'expiring' && <ExpiringTable />}
         {activeTable === 'topPlayers' && <TopPlayersTable />}
       </div>
+
+      {/* Modale dettagli contratto */}
+      <ContractDetailsModal
+        isOpen={isViewModalOpen}
+        onClose={handleViewModalClose}
+        contract={viewingContract}
+      />
+
+      {/* Modale modifica contratto */}
+      <NewContractModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditModalClose}
+        onSuccess={handleEditModalSuccess}
+        editingContract={editingContract}
+      />
     </div>
   );
 };

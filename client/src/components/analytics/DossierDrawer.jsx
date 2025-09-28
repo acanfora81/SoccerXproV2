@@ -91,7 +91,13 @@ const DossierDrawer = ({
         console.log('🟢 DossierDrawer: dossier aggiornato con successo'); // INFO - rimuovere in produzione
       } catch (err) {
         console.log('🔴 DossierDrawer: errore caricamento dossier', err.message); // ERROR - mantenere essenziali
-        setError(err.message);
+        
+        // Gestione specifica per errori 500 (dati mancanti nel database)
+        if (err.message.includes('500') || err.message.includes('Internal Server Error')) {
+          setError('NO_DATA'); // Flag speciale per dati mancanti
+        } else {
+          setError(err.message);
+        }
       } finally {
         // 🔧 FIX: Reset del loading state appropriato
         setInitialLoading(false);
@@ -132,14 +138,47 @@ const DossierDrawer = ({
     return (
       <div className="dossier-drawer">
         <div className="drawer-header">
-          <h3>Errore</h3>
+          <h3>{error === 'NO_DATA' ? 'Dati Non Disponibili' : 'Errore'}</h3>
           <button className="close-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
         <div className="drawer-content">
           <div className="error-state">
-            <p>Errore nel caricamento: {error}</p>
+            {error === 'NO_DATA' ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}></div>
+                <h4 style={{ color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
+                  Nessun Dato Disponibile
+                </h4>
+                <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
+                  Non ci sono ancora dati di performance per questo giocatore nel database.
+                </p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                  I dati appariranno qui una volta che il giocatore avrà completato delle sessioni di allenamento.
+                </p>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+                <h4 style={{ color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
+                  Errore di Connessione
+                </h4>
+                <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
+                  {error}
+                </p>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setError(null);
+                    setPlayer(null);
+                    // Il useEffect si riattiverà automaticamente
+                  }}
+                >
+                  Riprova
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -6,55 +6,31 @@
 
 /* Pulsante Excel - Verde */
 .btn-excel { 
-  background: #16a34a !important; /* Verde Excel */ 
-  color: white !important; 
-  border-color: #16a34a !important; 
+  background: var(--color-success) !important;
+  color: var(--text-on-accent) !important; 
+  border-color: var(--color-success) !important; 
 }
 
 .btn-excel:hover { 
-  background: #15803d !important; 
-  border-color: #15803d !important; 
-  color: white !important; 
+  background: var(--color-success-hover) !important; 
+  border-color: var(--color-success-hover) !important; 
+  color: var(--text-on-accent) !important; 
 }
 
 /* Pulsante Refresh - Blu */
 .btn-refresh { 
-  background: #0ea5e9 !important; /* Blu cielo */ 
-  color: white !important; 
-  border-color: #0ea5e9 !important; 
+  background: var(--color-primary) !important;
+  color: var(--text-on-accent) !important; 
+  border-color: var(--color-primary) !important; 
 }
 
 .btn-refresh:hover { 
-  background: #0284c7 !important; 
-  border-color: #0284c7 !important; 
-  color: white !important; 
+  background: var(--color-primary-hover) !important; 
+  border-color: var(--color-primary-hover) !important; 
+  color: var(--text-on-accent) !important; 
 }
 
-/* Dark mode per btn-excel */
-:root[data-theme="dark"] .btn-excel { 
-  background: #16a34a !important; 
-  color: white !important; 
-  border-color: #16a34a !important; 
-}
-
-:root[data-theme="dark"] .btn-excel:hover { 
-  background: #15803d !important; 
-  border-color: #15803d !important; 
-  color: white !important; 
-}
-
-/* Dark mode per btn-refresh */
-:root[data-theme="dark"] .btn-refresh { 
-  background: #0ea5e9 !important; 
-  color: white !important; 
-  border-color: #0ea5e9 !important; 
-}
-
-:root[data-theme="dark"] .btn-refresh:hover { 
-  background: #0284c7 !important; 
-  border-color: #0284c7 !important; 
-  color: white !important; 
-}
+/* Dark mode gestito automaticamente dalle variabili CSS */
 
 /* Stili dimensioni e layout identici a PlayersList */
 .btn-excel, .btn-refresh { 
@@ -69,41 +45,30 @@
   gap: 6px !important; /* Spazio tra icona e testo */ 
 }
 
-/* Icone SVG bianche per i pulsanti - Solo colore, no stroke */
+/* Icone SVG per i pulsanti */
 .btn-excel svg,
 .btn-refresh svg {
-  color: white !important;
+  color: var(--text-on-accent) !important;
 }
 
 .btn-excel:hover svg,
 .btn-refresh:hover svg {
-  color: white !important;
-}
-
-/* Dark mode per icone SVG */
-:root[data-theme="dark"] .btn-excel svg,
-:root[data-theme="dark"] .btn-refresh svg {
-  color: white !important;
-}
-
-:root[data-theme="dark"] .btn-excel:hover svg,
-:root[data-theme="dark"] .btn-refresh:hover svg {
-  color: white !important;
+  color: var(--text-on-accent) !important;
 }
 
 /* Container tabella */
 .table-container {
   margin: 24px 0;
-  background: white;
+  background: var(--color-bg);
   border-radius: 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border);
   padding: 0;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
 }
 
 .table-container:hover {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   box-shadow: 0 12px 24px rgba(59, 130, 246, 0.1);
   transform: translateY(-2px);
 }
@@ -192,7 +157,7 @@
 .protocol-cell {
   background: #f1f5f9;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text);
 }
 
 .protocol-number {
@@ -280,7 +245,7 @@
 }
 
 .player-icon {
-  color: #6b7280;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
   width: 16px;
   height: 16px;
@@ -288,7 +253,7 @@
 
 .player-name {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text);
   font-size: 13px;
 }
 
@@ -304,7 +269,7 @@
 }
 
 .date-icon {
-  color: #6b7280;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
   width: 12px;
   height: 12px;
@@ -323,7 +288,7 @@
 }
 
 .amount-icon {
-  color: #6b7280;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
   width: 12px;
   height: 12px;
@@ -337,32 +302,32 @@
 
 /* Colori specifici per i tipi di importo */
 .net-amount .amount-value {
-  color: #059669;
+  color: var(--color-success);
 }
 
 .gross-amount .amount-value {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .inps-amount .amount-value {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .inail-amount .amount-value {
-  color: #ea580c;
+  color: var(--color-warning);
 }
 
 .ffc-amount .amount-value {
-  color: #059669;
+  color: var(--color-success);
 }
 
 .company-cost .amount-value {
-  color: #dc2626;
+  color: var(--color-danger);
   font-weight: 700;
 }
 
 .bonuses .amount-value {
-  color: #7c3aed;
+  color: var(--color-primary);
 }
 
 .agent-cell {
@@ -372,7 +337,7 @@
 
 .agent-name {
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 /* Statistiche */
@@ -387,7 +352,7 @@
 }
 
 .summary-stats:hover {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   box-shadow: 0 12px 24px rgba(59, 130, 246, 0.1);
   transform: translateY(-2px);
 }
@@ -408,14 +373,14 @@
 }
 
 .stat-item:hover {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
 .stat-label {
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
   margin-bottom: 6px;
@@ -424,7 +389,7 @@
 .stat-value {
   font-size: 14px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text);
   font-family: 'Courier New', monospace;
   white-space: nowrap;
   overflow: hidden;

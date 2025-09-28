@@ -4,7 +4,9 @@ import { getAnalytics, getInjuryAnalytics, getVisitAnalytics, getCaseAnalytics, 
 import { LineAnalytics, PieAnalytics, BarAnalytics } from '../../components/medical/AnalyticsChart';
 import ExportButton from '../../components/medical/ExportButton';
 import PageHeader from '../../components/medical/PageHeader';
-import KPIChip from '../../components/medical/KPIChip';
+import KPICard from '../../components/medical/KPICard';
+import SkeletonBox, { SkeletonCard } from '../../components/medical/SkeletonBox';
+import EmptyState from '../../components/medical/EmptyState';
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('30d');
@@ -85,30 +87,43 @@ export default function AnalyticsPage() {
       />
 
       {isLoading ? (
-        <div className="card">Caricamento analytics...</div>
+        <div className="stats-grid">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       ) : (
         <>
           {/* KPI Overview */}
-          <div className="medical-kpi" style={{ marginBottom: '24px' }}>
-            <KPIChip 
-              label="Infortuni Totali" 
+          <div className="stats-grid" style={{ marginBottom: '24px' }}>
+            <KPICard 
               value={analytics?.totalInjuries || 0}
+              label="Infortuni Totali" 
+              icon="🩹"
               hint={`${timeRange} periodo`}
+              trend={analytics?.totalInjuries > 0 ? 1 : 0}
             />
-            <KPIChip 
-              label="Visite Mediche" 
+            <KPICard 
               value={analytics?.totalVisits || 0}
+              label="Visite Mediche" 
+              icon="🩺"
               hint={`${timeRange} periodo`}
+              trend={analytics?.totalVisits > 0 ? 1 : 0}
             />
-            <KPIChip 
-              label="Casi Aperti" 
+            <KPICard 
               value={analytics?.openCases || 0}
+              label="Casi Aperti" 
+              icon="📂"
               hint="Attualmente attivi"
+              trend={analytics?.openCases > 0 ? 1 : 0}
             />
-            <KPIChip 
-              label="Consensi Attivi" 
+            <KPICard 
               value={analytics?.activeConsents || 0}
+              label="Consensi Attivi" 
+              icon="✅"
               hint="Non scaduti"
+              trend={analytics?.activeConsents > 0 ? 1 : 0}
             />
           </div>
 

@@ -194,8 +194,8 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: white;
+  background: var(--color-primary); /* Usa la nuova variabile invece del gradiente */
+  color: var(--text-on-accent); /* Testo bianco tramite variabile */
   display: flex;
   align-items: center;
   justify-content: center;

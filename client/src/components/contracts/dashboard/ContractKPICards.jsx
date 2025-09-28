@@ -1,16 +1,7 @@
 // client/src/components/contracts/dashboard/ContractKPICards.jsx
 // Componente per le metriche principali (KPI) della dashboard contratti
 
-import { 
-  Euro, 
-  Users, 
-  Calendar, 
-  TrendingUp, 
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
+import { ICONS, ICON_SIZES } from '../../../config/icons-map';
 import { formatItalianCurrency } from '../../../utils/italianNumbers';
 
 const ContractKPICards = ({ data }) => {
@@ -26,9 +17,43 @@ const ContractKPICards = ({ data }) => {
 
   // Calcola trend (positivo/negativo)
   const getTrendIcon = (trend) => {
-    if (trend > 0) return <TrendingUp size={16} className="trend-up" />;
-    if (trend < 0) return <TrendingDown size={16} className="trend-down" />;
-    return <CheckCircle size={16} className="trend-neutral" />;
+    const iconStyle = {
+      color: '#ffffff',
+      fill: '#ffffff',
+      stroke: '#ffffff',
+      backgroundColor: 'transparent'
+    };
+    
+    if (trend > 0) return (
+      <ICONS.trendUp 
+        size={ICON_SIZES.sm} 
+        className="trend-up" 
+        color="#ffffff" 
+        fill="#ffffff"
+        stroke="#ffffff"
+        style={iconStyle}
+      />
+    );
+    if (trend < 0) return (
+      <ICONS.trendDown 
+        size={ICON_SIZES.sm} 
+        className="trend-down" 
+        color="#ffffff" 
+        fill="#ffffff"
+        stroke="#ffffff"
+        style={iconStyle}
+      />
+    );
+    return (
+      <ICONS.target 
+        size={ICON_SIZES.sm} 
+        className="trend-neutral" 
+        color="#ffffff" 
+        fill="#ffffff"
+        stroke="#ffffff"
+        style={iconStyle}
+      />
+    );
   };
 
   const getTrendClass = (trend) => {
@@ -44,7 +69,7 @@ const ContractKPICards = ({ data }) => {
       title: 'Valore Totale',
       value: formatCurrency(data.totalValue),
       subtitle: 'Contratti attivi',
-      icon: Euro,
+      icon: ICONS.export,
       trend: data.totalValueTrend || 0,
       trendLabel: 'vs mese scorso',
       color: 'primary'
@@ -54,7 +79,7 @@ const ContractKPICards = ({ data }) => {
       title: 'Contratti Attivi',
       value: formatNumber(data.activeContracts),
       subtitle: 'Giocatori sotto contratto',
-      icon: Users,
+      icon: ICONS.players,
       trend: data.activeContractsTrend || 0,
       trendLabel: 'vs mese scorso',
       color: 'success'
@@ -64,7 +89,7 @@ const ContractKPICards = ({ data }) => {
       title: 'In Scadenza',
       value: formatNumber(data.expiringContracts),
       subtitle: 'Prossimi 90 giorni',
-      icon: AlertTriangle,
+      icon: ICONS.warning,
       trend: data.expiringContractsTrend || 0,
       trendLabel: 'vs mese scorso',
       color: 'warning'
@@ -74,7 +99,7 @@ const ContractKPICards = ({ data }) => {
       title: 'Stipendio Medio',
       value: formatCurrency(data.averageSalary),
       subtitle: 'Per giocatore attivo',
-      icon: TrendingUp,
+      icon: ICONS.trendUp,
       trend: data.averageSalaryTrend || 0,
       trendLabel: 'vs mese scorso',
       color: 'info'
@@ -84,7 +109,7 @@ const ContractKPICards = ({ data }) => {
       title: 'Rinnovi Mese',
       value: formatNumber(data.renewalsThisMonth),
       subtitle: 'Contratti rinnovati',
-      icon: CheckCircle,
+      icon: ICONS.target,
       trend: data.renewalsThisMonthTrend || 0,
       trendLabel: 'vs mese scorso',
       color: 'success'
@@ -94,7 +119,7 @@ const ContractKPICards = ({ data }) => {
       title: 'Rinnovi Sospesi',
       value: formatNumber(data.pendingRenewals),
       subtitle: 'Da gestire',
-      icon: Clock,
+      icon: ICONS.time,
       trend: data.pendingRenewalsTrend || 0,
       trendLabel: 'vs mese scorso',
       color: 'warning'
@@ -109,7 +134,18 @@ const ContractKPICards = ({ data }) => {
           <div key={card.id} className={`kpi-card kpi-card--${card.color}`}>
             <div className="kpi-card__header">
               <div className="kpi-card__icon">
-                <IconComponent size={20} />
+                <IconComponent 
+                  size={ICON_SIZES.md} 
+                  color="#ffffff" 
+                  fill="#ffffff"
+                  stroke="#ffffff"
+                  style={{
+                    color: '#ffffff',
+                    fill: '#ffffff',
+                    stroke: '#ffffff',
+                    backgroundColor: 'transparent'
+                  }}
+                />
               </div>
               <span className="kpi-card__title">{card.title}</span>
               <div className="kpi-card__trend">

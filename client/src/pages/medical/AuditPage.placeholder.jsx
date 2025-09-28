@@ -4,7 +4,10 @@ import { listAudit, getAuditStats, getAuditSummary, exportAudit } from '../../se
 import AuditRow from '../../components/medical/AuditRow';
 import ExportButton from '../../components/medical/ExportButton';
 import PageHeader from '../../components/medical/PageHeader';
-import KPIChip from '../../components/medical/KPIChip';
+import KPICard from '../../components/medical/KPICard';
+import SkeletonBox, { SkeletonTable } from '../../components/medical/SkeletonBox';
+import EmptyState from '../../components/medical/EmptyState';
+import StatusBadge from '../../components/medical/StatusBadge';
 
 export default function AuditPage() {
   const [filters, setFilters] = useState({
@@ -69,26 +72,34 @@ export default function AuditPage() {
 
       {/* Audit Stats */}
       {auditStats && (
-        <div className="medical-kpi" style={{ marginBottom: '24px' }}>
-          <KPIChip 
-            label="Accessi Totali" 
+        <div className="stats-grid" style={{ marginBottom: '24px' }}>
+          <KPICard 
             value={auditStats.totalAccesses || 0}
+            label="Accessi Totali" 
+            icon="📊"
             hint="Nel periodo selezionato"
+            trend={auditStats.totalAccesses > 0 ? 1 : 0}
           />
-          <KPIChip 
-            label="Accessi Riusciti" 
+          <KPICard 
             value={auditStats.successfulAccesses || 0}
+            label="Accessi Riusciti" 
+            icon="✅"
             hint={`${((auditStats.successfulAccesses / auditStats.totalAccesses) * 100 || 0).toFixed(1)}%`}
+            trend={auditStats.successfulAccesses > 0 ? 1 : 0}
           />
-          <KPIChip 
-            label="Utenti Attivi" 
+          <KPICard 
             value={auditStats.activeUsers || 0}
+            label="Utenti Attivi" 
+            icon="👥"
             hint="Utenti unici"
+            trend={auditStats.activeUsers > 0 ? 1 : 0}
           />
-          <KPIChip 
-            label="Azioni Bloccate" 
+          <KPICard 
             value={auditStats.blockedActions || 0}
+            label="Azioni Bloccate" 
+            icon="🚫"
             hint="Accessi negati"
+            trend={auditStats.blockedActions > 0 ? -1 : 0}
           />
         </div>
       )}
@@ -200,20 +211,20 @@ export default function AuditPage() {
         </h3>
         
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            Caricamento log accessi...
-          </div>
+          <SkeletonTable rows={8} columns={7} />
         ) : error ? (
           <div style={{ color: 'salmon', textAlign: 'center', padding: '40px' }}>
             Errore: {String(error.message)}
           </div>
         ) : items.length === 0 ? (
-          <div style={{ textAlign: 'center', opacity: 0.7, padding: '40px' }}>
-            Nessun record di audit trovato
-          </div>
+          <EmptyState
+            title="Nessun record di audit trovato"
+            message="I log di accesso appariranno qui quando ci saranno attività"
+            icon="📊"
+          />
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="table">
+            <table className="table-enterprise">
               <thead>
                 <tr>
                   <th>Data/Ora</th>

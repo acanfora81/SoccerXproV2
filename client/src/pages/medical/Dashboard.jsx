@@ -5,7 +5,9 @@ import { getVisitsToday, getVisitStats } from '../../services/medical/visitServi
 import { getDocumentStats } from '../../services/medical/documentService';
 import '../../styles/medical.css';
 import PageHeader from '../../components/medical/PageHeader';
-import KPIChip from '../../components/medical/KPIChip';
+import KPICard from '../../components/medical/KPICard';
+import SkeletonBox, { SkeletonCard } from '../../components/medical/SkeletonBox';
+import EmptyState from '../../components/medical/EmptyState';
 
 export default function Dashboard() {
   // Fetch KPI data
@@ -47,28 +49,45 @@ export default function Dashboard() {
       />
       
       {isLoading ? (
-        <div className="card">Caricamento dati...</div>
+        <div className="stats-grid">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       ) : (
-        <div className="medical-kpi">
-          <KPIChip 
-            label="Infortuni Attivi" 
+        <div className="stats-grid">
+          <KPICard 
             value={kpi.activeInjuries} 
+            label="Infortuni Attivi" 
+            icon="🩹"
             hint="Giocatori fuori per infortunio"
+            trend={kpi.activeInjuries > 0 ? 1 : 0}
+            delay={0}
           />
-          <KPIChip 
-            label="Visite Oggi" 
+          <KPICard 
             value={kpi.visitsToday} 
+            label="Visite Oggi" 
+            icon="🩺"
             hint="Visite mediche programmate"
+            trend={kpi.visitsToday > 0 ? 1 : 0}
+            delay={0.1}
           />
-          <KPIChip 
-            label="Consensi in Scadenza" 
+          <KPICard 
             value={kpi.consentsExpiring} 
+            label="Consensi in Scadenza" 
+            icon="⚠️"
             hint="Necessaria rinnovazione"
+            trend={kpi.consentsExpiring > 0 ? -1 : 0}
+            delay={0.2}
           />
-          <KPIChip 
-            label="Documenti in Retention" 
+          <KPICard 
             value={kpi.docsRetentionSoon} 
+            label="Documenti in Retention" 
+            icon="📄"
             hint="Scadenza conservazione"
+            trend={kpi.docsRetentionSoon > 0 ? -1 : 0}
+            delay={0.3}
           />
         </div>
       )}

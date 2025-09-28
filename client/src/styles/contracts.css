@@ -43,21 +43,23 @@
   align-items: flex-start;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--color-border);
 }
 
 .header-left h2 {
-  color: var(--text-primary);
-  font-size: 28px;
+  color: var(--color-primary);
+  font-size: var(--text-2xl);
   font-weight: 600;
   margin: 0 0 5px;
+  font-family: var(--font-sans);
 }
 
 .header-left p {
-  color: var(--text-primary);
-  opacity: 70%;
+  color: var(--color-primary);
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  opacity: 0.8;
 }
 
 .header-right {
@@ -85,15 +87,16 @@
   align-items: center;
   gap: 15px;
   padding: 20px;
-  background: var(--bg-primary);
-  border: 2px solid var(--border-color);
+  background: var(--color-bg);
+  border: 2px solid var(--color-primary);
   border-radius: 16px;
   transition: all 0.2s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  border-color: var(--color-primary-hover);
 }
 
 .stat-icon {
@@ -102,24 +105,87 @@
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  background: var(--primary-light);
-  color: var(--primary-color);
+  background: #ffffff;
+  color: var(--color-primary);
   border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  opacity: 0.9;
+  transition: all 0.2s ease;
 }
 
 .stat-icon.active {
-  background: var(--success-light);
-  color: var(--success-color);
+  background: #ffffff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  opacity: 0.9;
+  transition: all 0.2s ease;
 }
 
 .stat-icon.warning {
-  background: var(--warning-light);
-  color: var(--warning-color);
+  background: #ffffff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  opacity: 0.9;
+  transition: all 0.2s ease;
 }
 
 .stat-icon.success {
-  background: var(--info-light);
-  color: var(--info-color);
+  background: #ffffff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  opacity: 0.9;
+  transition: all 0.2s ease;
+}
+
+/* Icone SVG delicate e sottili - tutte outline */
+.stat-icon svg {
+  color: var(--color-primary);
+  fill: none !important;                    /* Forza outline */
+  stroke: var(--color-primary);
+  stroke-width: 1.5;                        /* Spessore uniforme */
+  opacity: 0.9;
+  width: 20px;
+  height: 20px;
+  transition: all 0.2s ease;
+}
+
+.stat-icon.active svg,
+.stat-icon.warning svg,
+.stat-icon.success svg,
+.stat-icon.critical svg,
+.stat-icon.high svg {
+  color: var(--color-primary);
+  fill: none !important;                    /* Forza outline */
+  stroke: var(--color-primary);
+  stroke-width: 1.5;                        /* Spessore uniforme */
+  opacity: 0.9;
+  width: 20px;
+  height: 20px;
+  transition: all 0.2s ease;
+}
+
+/* Forza tutti gli elementi SVG interni ad essere outline */
+.stat-icon svg * {
+  fill: none !important;
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+}
+
+/* Hover effect delicato */
+.stat-card:hover .stat-icon {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.stat-card:hover .stat-icon svg {
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.stat-card:hover .stat-icon svg * {
+  fill: none !important;
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
 }
 
 .stat-content {
@@ -127,16 +193,22 @@
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--color-primary) !important;
+  margin-bottom: 4px;
   line-height: 1;
+  font-family: var(--font-sans);
 }
 
 .stat-label {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin-top: 0.25rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-primary) !important;
+  margin-top: 0;
+  font-family: var(--font-sans);
 }
 
 /* Filtri */
@@ -152,8 +224,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg-primary);
-  border: 2px solid var(--border-color);
+  background: var(--color-bg);
+  border: 2px solid var(--color-primary);
   border-radius: 8px;
   padding: 10px 15px;
   min-width: 200px;
@@ -161,7 +233,7 @@
 
 .search-box svg,
 .filter-box svg {
-  color: var(--text-primary);
+  color: var(--color-primary);
   opacity: 60%;
 }
 
@@ -170,14 +242,14 @@
   background: transparent;
   border: none;
   outline: none;
-  color: var(--text-primary);
-  font-size: 14px;
+  color: var(--color-primary);
+  font-size: var(--text-sm);
   flex: 1;
+  font-family: var(--font-sans);
 }
 
 .search-box .search-input::placeholder {
-  color: var(--text-primary);
-  opacity: 50%;
+  color: var(--color-text-muted);
 }
 
 .filter-box .filter-select {
@@ -194,14 +266,15 @@
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  font-size: 0.875rem;
-  color: var(--text-primary);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-family: var(--font-sans);
 }
 
 .checkbox-label input[type="checkbox"] {
   width: 1rem;
   height: 1rem;
-  accent-color: var(--primary-color);
+  accent-color: var(--color-primary);
 }
 
 /* Grid contratti */
@@ -213,8 +286,8 @@
 
 /* Card contratto */
 .contract-card {
-  background: var(--bg-primary);
-  border: 2px solid var(--border-color);
+  background: var(--color-bg);
+  border: 2px solid var(--color-primary);
   border-radius: 16px;
   padding: 24px;
   transition: all 0.2s ease;
@@ -227,7 +300,8 @@
 
 .contract-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+  border-color: var(--color-primary-hover);
 }
 
 /* Contenuto principale della card */
@@ -242,7 +316,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  min-height: 80px;
+  padding: 8px 0;
 }
 
 .status-section {
@@ -253,11 +329,12 @@
 }
 
 .player-position {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+  font-family: var(--font-sans);
 }
 
 .player-info {
@@ -274,8 +351,8 @@
 .avatar-circle {
   width: 2.5rem;
   height: 2.5rem;
-  background: var(--accent-primary);
-  color: white;
+  background: var(--color-primary);
+  color: var(--text-on-accent);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -292,21 +369,30 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-height: 60px;
+  padding: 4px 0;
 }
 
 .player-name {
   margin: 0;
-  font-size: 1.375rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
+  color: var(--color-primary);
+  line-height: 1.3;
   text-align: center;
+  font-family: var(--font-sans);
+  padding: 8px 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .player-meta {
-  font-size: 0.875rem;
-  color: var(--text-primary);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
   font-weight: 500;
+  font-family: var(--font-sans);
 }
 
 /* Status badge */
@@ -320,48 +406,63 @@
 }
 
 .status-green {
-  background: #dcfce7;
-  color: #16a34a;
+  background: transparent;
+  color: var(--color-primary) !important;
 }
 
 .status-yellow {
-  background: #fef3c7;
-  color: #d97706;
+  background: var(--color-warning);
+  background-opacity: 0.1;
+  color: var(--color-warning);
 }
 
 .status-red {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--color-danger);
+  background-opacity: 0.1;
+  color: var(--color-danger);
 }
 
 .status-blue {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--color-primary);
+  background-opacity: 0.1;
+  color: var(--color-primary);
 }
 
 .status-active {
-  background: var(--success-light);
-  color: var(--success-color);
+  background: var(--color-success);
+  background-opacity: 0.1;
+  color: #ffffff !important;
+}
+
+/* Badge Attivo senza sfondo, testo blu del progetto */
+.status-badge.status-active,
+.kpi-value.status-value.status-green {
+  background: transparent !important;
+  color: var(--color-primary) !important;
 }
 
 .status-draft {
-  background: var(--warning-light);
-  color: var(--warning-color);
+  background: var(--color-warning);
+  background-opacity: 0.1;
+  color: var(--color-warning);
 }
 
 .status-expired {
-  background: var(--error-light);
-  color: var(--error-color);
+  background: var(--color-danger);
+  background-opacity: 0.1;
+  color: var(--color-danger);
 }
 
 .status-terminated {
-  background: var(--gray-light);
-  color: var(--gray-color);
+  background: var(--color-text-muted);
+  background-opacity: 0.1;
+  color: var(--color-text-muted);
 }
 
 .status-renewed {
-  background: var(--info-light);
-  color: var(--info-color);
+  background: var(--color-primary);
+  background-opacity: 0.1;
+  color: var(--color-primary);
 }
 
 /* Dettagli contratto */
@@ -391,42 +492,46 @@
 
 /* Regole specifiche per le card contratti */
 .contract-card .kpi-label {
-  font-size: 2.5rem !important;
-  color: var(--text-secondary) !important;
+  font-size: var(--text-2xl) !important;
+  color: var(--color-primary) !important;
   font-weight: 700 !important;
   margin-bottom: 0.75rem !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
   text-align: center !important;
+  font-family: var(--font-sans) !important;
 }
 
 .contract-card .kpi-value {
-  font-size: 2.5rem !important;
-  color: var(--text-primary) !important;
+  font-size: var(--text-2xl) !important;
+  color: var(--color-primary) !important;
   font-weight: 700 !important;
   text-align: center !important;
+  font-family: var(--font-sans) !important;
 }
 
 /* Regole generali come fallback */
 .kpi-label {
-  font-size: 2.5rem !important;
-  color: var(--text-secondary);
+  font-size: var(--text-2xl) !important;
+  color: var(--color-primary) !important;
   font-weight: 700;
   margin-bottom: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: center;
+  font-family: var(--font-sans);
 }
 
 .kpi-value {
-  font-size: 2.5rem !important;
-  color: var(--text-primary);
+  font-size: var(--text-2xl) !important;
+  color: var(--color-primary) !important;
   font-weight: 700;
   text-align: center;
+  font-family: var(--font-sans);
 }
 
 .kpi-value.salary {
-  color: var(--success-color);
+  color: var(--color-success);
 }
 
 .kpi-value.status-value {
@@ -437,23 +542,26 @@
 }
 
 .kpi-value.status-value.status-green {
-  background: #dcfce7;
-  color: #16a34a;
+  background: transparent;
+  color: var(--color-primary) !important;
 }
 
 .kpi-value.status-value.status-yellow {
-  background: #fef3c7;
-  color: #d97706;
+  background: var(--color-warning);
+  background-opacity: 0.1;
+  color: var(--color-warning);
 }
 
 .kpi-value.status-value.status-red {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--color-danger);
+  background-opacity: 0.1;
+  color: var(--color-danger);
 }
 
 .kpi-value.status-value.status-blue {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--color-primary);
+  background-opacity: 0.1;
+  color: var(--color-primary);
 }
 
 /* Alert scadenza */
@@ -546,57 +654,95 @@
   opacity: 0.9;
 }
 
-/* Pulsante Visualizza - Blu Scuro */
+/* Pulsante Visualizza - Verde */
 .view-btn {
-  background: #1e40af;
-  border-color: #1e40af;
-  color: white;
+  background: var(--color-success) !important;
+  border-color: var(--color-success) !important;
+  color: var(--text-on-accent) !important;
 }
 
-/* Pulsante Storia - Viola */
+/* Pulsante Storia - Blu */
 .history-btn {
-  background: #7c3aed;
-  border-color: #7c3aed;
-  color: white;
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--text-on-accent) !important;
 }
 
 .view-btn:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-  color: white;
+  background: var(--color-success-hover) !important;
+  border-color: var(--color-success-hover) !important;
+  color: var(--text-on-accent) !important;
 }
 
 .history-btn:hover {
-  background: #6d28d9;
-  border-color: #6d28d9;
-  color: white;
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  color: var(--text-on-accent) !important;
 }
 
-/* Pulsante Modifica - Giallo */
+/* Pulsante Modifica - Giallo/Arancione */
 .edit-btn {
-  background: #eab308;
-  border-color: #eab308;
-  color: white;
+  background: var(--color-warning) !important;
+  border-color: var(--color-warning) !important;
+  color: var(--text-on-accent) !important;
 }
 
 .edit-btn:hover {
-  background: #ca8a04;
-  border-color: #ca8a04;
-  color: white;
+  background: var(--color-warning-hover) !important;
+  border-color: var(--color-warning-hover) !important;
+  color: var(--text-on-accent) !important;
 }
 
 /* Pulsante Elimina - Rosso */
 .delete-btn {
-  background: #dc2626;
-  border-color: #dc2626;
-  color: white;
+  background: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+  color: var(--text-on-accent) !important;
 }
 
 .delete-btn:hover {
-  background: #b91c1c;
-  border-color: #b91c1c;
-  color: white;
+  background: var(--color-danger-hover) !important;
+  border-color: var(--color-danger-hover) !important;
+  color: var(--text-on-accent) !important;
 }
+
+/* Fix per pulsanti standard nelle card contratti */
+.btn-primary {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.btn-secondary {
+  background: var(--color-text-secondary) !important;
+  border-color: var(--color-text-secondary) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.btn-secondary:hover {
+  background: var(--color-text) !important;
+  border-color: var(--color-text) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.btn-warning {
+  background: var(--color-warning) !important;
+  border-color: var(--color-warning) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.btn-warning:hover {
+  background: var(--color-warning-hover) !important;
+  border-color: var(--color-warning-hover) !important;
+  color: var(--text-on-accent) !important;
+}
+
 
 /* Empty state */
 .empty-state {
@@ -801,15 +947,21 @@
   color: var(--info-color);
 }
 
-/* Statistiche con colori urgenza */
+/* Statistiche uniformi - sfondo bianco, icone blu delicate */
 .stat-icon.critical {
-  background: var(--error-light);
-  color: var(--error-color);
+  background: #ffffff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  opacity: 0.9;
+  transition: all 0.2s ease;
 }
 
 .stat-icon.high {
-  background: var(--warning-light);
-  color: var(--warning-color);
+  background: #ffffff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  opacity: 0.9;
+  transition: all 0.2s ease;
 }
 
 /* Dark mode support */
@@ -817,12 +969,1009 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* ===== FORZA COLORI BLU DEL PROGETTO - MASSIMA PRIORITÀ ===== */
+.contracts-stats .stat-value,
+.contracts-stats .stat-label,
+.contract-card .kpi-value,
+.contract-card .kpi-label,
+.kpi-value,
+.kpi-label {
+  color: var(--color-primary) !important;
+}
+
+/* ===== FORZA FONT IDENTICI ALLA DASHBOARD CONTRATTI ===== */
+.contracts-stats .stat-value {
+  font-size: var(--text-2xl) !important;
+  font-weight: 700 !important;
+  margin-bottom: 4px !important;
+  line-height: 1 !important;
+  font-family: var(--font-sans) !important;
+}
+
+.contracts-stats .stat-label {
+  font-size: var(--text-sm) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 4px !important;
+  font-family: var(--font-sans) !important;
+}
+
+/* Forza anche per tutti i selettori possibili delle card stats */
+.contracts-stats .stat-card .stat-value,
+.contracts-stats .stat-card .stat-label,
+.stat-card .stat-value,
+.stat-card .stat-label {
+  font-size: var(--text-2xl) !important;
+  font-weight: 700 !important;
+  color: var(--color-primary) !important;
+  font-family: var(--font-sans) !important;
+}
+
+.stat-card .stat-label {
+  font-size: var(--text-sm) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 4px !important;
+}
+
+/* ===== REGOLE SUPER-SPECIFICHE PER SOVRASCRIVERE TUTTO ===== */
+.contracts-list .contracts-stats .stat-card .stat-value,
+.contracts-list .contracts-stats .stat-card .stat-label,
+.contracts-list .stat-value,
+.contracts-list .stat-label {
+  font-size: var(--text-2xl) !important;
+  font-weight: 700 !important;
+  color: var(--color-primary) !important;
+  font-family: var(--font-sans) !important;
+  line-height: 1 !important;
+  margin-bottom: 4px !important;
+}
+
+.contracts-list .contracts-stats .stat-card .stat-label,
+.contracts-list .stat-label {
+  font-size: var(--text-sm) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* ===== FORZA BORDI BLU/VIOLA PER LE CARD KPI ===== */
+.contracts-stats .stat-card,
+.contracts-list .stat-card,
+.stat-card {
+  border: 2px solid var(--color-primary) !important;
+}
+
+.contracts-stats .stat-card:hover,
+.contracts-list .stat-card:hover,
+.stat-card:hover {
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Dark mode */
+[data-theme="dark"] .contracts-stats .stat-card,
+[data-theme="dark"] .contracts-list .stat-card,
+[data-theme="dark"] .stat-card {
+  border-color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .contracts-stats .stat-card:hover,
+[data-theme="dark"] .contracts-list .stat-card:hover,
+[data-theme="dark"] .stat-card:hover {
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* ===== FORZA BORDI BLU/VIOLA PER LE CARD DEI GIOCATORI ===== */
+.contracts-grid .contract-card,
+.contract-card {
+  border: 2px solid var(--color-primary) !important;
+}
+
+.contracts-grid .contract-card:hover,
+.contract-card:hover {
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Dark mode per card giocatori */
+[data-theme="dark"] .contracts-grid .contract-card,
+[data-theme="dark"] .contract-card {
+  border-color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .contracts-grid .contract-card:hover,
 [data-theme="dark"] .contract-card:hover {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* ===== FORZA BORDI BLU/VIOLA PER I FILTRI ===== */
+.filters-bar .search-box,
+.filters-bar .filter-box,
+.search-box,
+.filter-box {
+  border: 2px solid var(--color-primary) !important;
+}
+
+.filters-bar .search-box:hover,
+.filters-bar .filter-box:hover,
+.search-box:hover,
+.filter-box:hover {
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Dark mode per filtri */
+[data-theme="dark"] .filters-bar .search-box,
+[data-theme="dark"] .filters-bar .filter-box,
+[data-theme="dark"] .search-box,
+[data-theme="dark"] .filter-box {
+  border-color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .filters-bar .search-box:hover,
+[data-theme="dark"] .filters-bar .filter-box:hover,
+[data-theme="dark"] .search-box:hover,
+[data-theme="dark"] .filter-box:hover {
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2) !important;
+}
+
+/* ===== FORZA VISIBILITÀ NOMI GIOCATORI - MASSIMA PRIORITÀ ===== */
+.contract-card .player-name,
+.contract-card h3.player-name,
+.contracts-grid .contract-card .player-name,
+.contracts-grid .contract-card h3.player-name {
+  font-size: var(--text-2xl) !important;
+  font-weight: 700 !important;
+  color: var(--color-primary) !important;
+  line-height: 1.3 !important;
+  text-align: center !important;
+  font-family: var(--font-sans) !important;
+  padding: 8px 0 !important;
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+}
+
+/* Dark mode per nomi giocatori */
+[data-theme="dark"] .contract-card .player-name,
+[data-theme="dark"] .contract-card h3.player-name,
+[data-theme="dark"] .contracts-grid .contract-card .player-name,
+[data-theme="dark"] .contracts-grid .contract-card h3.player-name {
+  color: var(--color-primary) !important;
+}
+
+/* ===== STILI PER LA NUOVA TABELLA CONTRATTI ===== */
+.table-wrapper {
+  background: var(--color-bg);
+  border: 2px solid var(--color-primary);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-bg);
+}
+
+.dashboard-table th {
+  background: var(--bg-secondary);
+  color: var(--color-primary);
+  font-weight: 600;
+  padding: 16px 12px;
+  text-align: center;
+  border-bottom: 2px solid var(--color-primary);
+  font-size: 14px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.dashboard-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+/* Allineamento specifico per ogni colonna */
+.dashboard-table th:nth-child(1),
+.dashboard-table td:nth-child(1) {
+  text-align: left;
+  width: 200px;
+}
+
+.dashboard-table th:nth-child(2),
+.dashboard-table td:nth-child(2) {
+  text-align: center;
+  width: 120px;
+}
+
+.dashboard-table th:nth-child(3),
+.dashboard-table td:nth-child(3) {
+  text-align: right;
+  width: 120px;
+}
+
+.dashboard-table th:nth-child(4),
+.dashboard-table td:nth-child(4) {
+  text-align: center;
+  width: 100px;
+}
+
+.dashboard-table th:nth-child(5),
+.dashboard-table td:nth-child(5) {
+  text-align: center;
+  width: 100px;
+}
+
+.dashboard-table th:nth-child(6),
+.dashboard-table td:nth-child(6) {
+  text-align: center;
+  width: 100px;
+}
+
+.dashboard-table th:nth-child(7),
+.dashboard-table td:nth-child(7) {
+  text-align: center;
+  width: 120px;
+}
+
+.dashboard-table th:nth-child(8),
+.dashboard-table td:nth-child(8) {
+  text-align: center;
+  width: 300px;
+}
+
+/* Stili per le celle specifiche */
+.player-name {
+  font-weight: 600;
+  color: var(--color-primary);
+  font-size: 14px;
+}
+
+.type-badge,
+.role-badge {
+  background: transparent;
+  color: var(--color-primary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+}
+
+.salary-value {
+  font-weight: 600;
+  color: var(--color-primary);
+  font-size: 14px;
+}
+
+.period-value {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.signed-value {
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.status-cell {
+  display: flex;
+  justify-content: center;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.status-badge.status-green {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Pulsanti icona piccoli e quadrati come Timeline */
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.btn-icon:hover {
+  background: var(--color-primary);
+  color: var(--text-on-accent);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* Icone SVG per pulsanti azioni */
+.btn-icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-primary);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+/* Hover per le icone */
+.btn-icon:hover svg {
+  color: var(--text-on-accent);
+  opacity: 1;
+}
+
+/* Pulsanti colorati per le azioni */
+.btn-icon-success {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.btn-icon-success svg {
+  color: var(--text-on-accent);
+  opacity: 1;
+}
+
+.btn-icon-success:hover {
+  background: var(--color-success-hover);
+  border-color: var(--color-success-hover);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.btn-icon-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-icon-primary svg {
+  color: var(--text-on-accent);
+  opacity: 1;
+}
+
+.btn-icon-primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-icon-warning {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.btn-icon-warning svg {
+  color: var(--text-on-accent);
+  opacity: 1;
+}
+
+.btn-icon-warning:hover {
+  background: var(--color-warning-hover);
+  border-color: var(--color-warning-hover);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.btn-icon-danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-icon-danger svg {
+  color: var(--text-on-accent);
+  opacity: 1;
+}
+
+.btn-icon-danger:hover {
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Tooltip personalizzati per i pulsanti */
+.btn-icon[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-text);
+  color: var(--color-bg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+.btn-icon[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid var(--color-text);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Dark mode per la tabella */
+[data-theme="dark"] .table-wrapper {
+  background: #000000;
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .dashboard-table {
+  background: #000000;
+}
+
+[data-theme="dark"] .dashboard-table th {
+  background: #000000;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+[data-theme="dark"] .dashboard-table td {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .player-name {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .btn-icon {
+  background: #000000;
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .btn-icon:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="dark"] .btn-icon svg {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .btn-icon:hover svg {
+  color: var(--text-on-accent);
+}
+
+/* Dark mode per pulsanti colorati */
+[data-theme="dark"] .btn-icon-success {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+[data-theme="dark"] .btn-icon-success:hover {
+  background: var(--color-success-hover);
+  border-color: var(--color-success-hover);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+}
+
+[data-theme="dark"] .btn-icon-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .btn-icon-primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+[data-theme="dark"] .btn-icon-warning {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+[data-theme="dark"] .btn-icon-warning:hover {
+  background: var(--color-warning-hover);
+  border-color: var(--color-warning-hover);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+[data-theme="dark"] .btn-icon-danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+[data-theme="dark"] .btn-icon-danger:hover {
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+/* ===== FORZA COLORI PULSANTI NEL TEMA LIGHT - MASSIMA PRIORITÀ ===== */
+.dashboard-table .action-buttons .btn-icon-success,
+.table-wrapper .action-buttons .btn-icon-success,
+.action-buttons .btn-icon-success {
+  background: var(--color-success) !important;
+  border-color: var(--color-success) !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-success svg,
+.table-wrapper .action-buttons .btn-icon-success svg,
+.action-buttons .btn-icon-success svg {
+  color: var(--text-on-accent) !important;
+  opacity: 1 !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-success:hover,
+.table-wrapper .action-buttons .btn-icon-success:hover,
+.action-buttons .btn-icon-success:hover {
+  background: var(--color-success-hover) !important;
+  border-color: var(--color-success-hover) !important;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3) !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-primary,
+.table-wrapper .action-buttons .btn-icon-primary,
+.action-buttons .btn-icon-primary {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-primary svg,
+.table-wrapper .action-buttons .btn-icon-primary svg,
+.action-buttons .btn-icon-primary svg {
+  color: var(--text-on-accent) !important;
+  opacity: 1 !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-primary:hover,
+.table-wrapper .action-buttons .btn-icon-primary:hover,
+.action-buttons .btn-icon-primary:hover {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-warning,
+.table-wrapper .action-buttons .btn-icon-warning,
+.action-buttons .btn-icon-warning {
+  background: var(--color-warning) !important;
+  border-color: var(--color-warning) !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-warning svg,
+.table-wrapper .action-buttons .btn-icon-warning svg,
+.action-buttons .btn-icon-warning svg {
+  color: var(--text-on-accent) !important;
+  opacity: 1 !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-warning:hover,
+.table-wrapper .action-buttons .btn-icon-warning:hover,
+.action-buttons .btn-icon-warning:hover {
+  background: var(--color-warning-hover) !important;
+  border-color: var(--color-warning-hover) !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-danger,
+.table-wrapper .action-buttons .btn-icon-danger,
+.action-buttons .btn-icon-danger {
+  background: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-danger svg,
+.table-wrapper .action-buttons .btn-icon-danger svg,
+.action-buttons .btn-icon-danger svg {
+  color: var(--text-on-accent) !important;
+  opacity: 1 !important;
+}
+
+.dashboard-table .action-buttons .btn-icon-danger:hover,
+.table-wrapper .action-buttons .btn-icon-danger:hover,
+.action-buttons .btn-icon-danger:hover {
+  background: var(--color-danger-hover) !important;
+  border-color: var(--color-danger-hover) !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Dark mode per i tooltip */
+[data-theme="dark"] .btn-icon[title]:hover::after {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+[data-theme="dark"] .btn-icon[title]:hover::before {
+  border-bottom-color: var(--color-text);
+}
+
+/* ===== FORZA COLORI PULSANTI NEL TEMA DARK - MASSIMA PRIORITÀ ===== */
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-success,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-success,
+[data-theme="dark"] .action-buttons .btn-icon-success {
+  background: var(--color-success) !important;
+  border-color: var(--color-success) !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-success svg,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-success svg,
+[data-theme="dark"] .action-buttons .btn-icon-success svg {
+  color: var(--text-on-accent) !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-success:hover,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-success:hover,
+[data-theme="dark"] .action-buttons .btn-icon-success:hover {
+  background: var(--color-success-hover) !important;
+  border-color: var(--color-success-hover) !important;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4) !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-primary,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-primary,
+[data-theme="dark"] .action-buttons .btn-icon-primary {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-primary svg,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-primary svg,
+[data-theme="dark"] .action-buttons .btn-icon-primary svg {
+  color: var(--text-on-accent) !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-primary:hover,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-primary:hover,
+[data-theme="dark"] .action-buttons .btn-icon-primary:hover {
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4) !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-warning,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-warning,
+[data-theme="dark"] .action-buttons .btn-icon-warning {
+  background: var(--color-warning) !important;
+  border-color: var(--color-warning) !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-warning svg,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-warning svg,
+[data-theme="dark"] .action-buttons .btn-icon-warning svg {
+  color: var(--text-on-accent) !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-warning:hover,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-warning:hover,
+[data-theme="dark"] .action-buttons .btn-icon-warning:hover {
+  background: var(--color-warning-hover) !important;
+  border-color: var(--color-warning-hover) !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-danger,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-danger,
+[data-theme="dark"] .action-buttons .btn-icon-danger {
+  background: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-danger svg,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-danger svg,
+[data-theme="dark"] .action-buttons .btn-icon-danger svg {
+  color: var(--text-on-accent) !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-danger:hover,
+[data-theme="dark"] .table-wrapper .action-buttons .btn-icon-danger:hover,
+[data-theme="dark"] .action-buttons .btn-icon-danger:hover {
+  background: var(--color-danger-hover) !important;
+  border-color: var(--color-danger-hover) !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ===== FORZA STILI PERIODO SEMPLIFICATO - MASSIMA PRIORITÀ ===== */
+.dashboard-table .period-value,
+.table-wrapper .period-value {
+  color: var(--color-text) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* Dark mode per periodo */
+[data-theme="dark"] .dashboard-table .period-value,
+[data-theme="dark"] .table-wrapper .period-value {
+  color: var(--color-text) !important;
+}
+
+/* ===== FORZA COLORI HEADER CONTRATTI - MASSIMA PRIORITÀ ===== */
+.contracts-list .contracts-header .header-left h2,
+.contracts-list .contracts-header h2,
+.contracts-header .header-left h2,
+.contracts-header h2 {
+  color: var(--color-primary) !important;
+  font-size: var(--text-2xl) !important;
+  font-weight: 600 !important;
+  margin: 0 0 5px !important;
+  font-family: var(--font-sans) !important;
+}
+
+.contracts-list .contracts-header .header-left p,
+.contracts-list .contracts-header p,
+.contracts-header .header-left p,
+.contracts-header p {
+  color: var(--color-primary) !important;
+  margin: 0 !important;
+  font-size: var(--text-sm) !important;
+  font-family: var(--font-sans) !important;
+  opacity: 0.8 !important;
+}
+
+/* Dark mode per header */
+[data-theme="dark"] .contracts-list .contracts-header .header-left h2,
+[data-theme="dark"] .contracts-list .contracts-header h2,
+[data-theme="dark"] .contracts-header .header-left h2,
+[data-theme="dark"] .contracts-header h2 {
+  color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .contracts-list .contracts-header .header-left p,
+[data-theme="dark"] .contracts-list .contracts-header p,
+[data-theme="dark"] .contracts-header .header-left p,
+[data-theme="dark"] .contracts-header p {
+  color: var(--color-primary) !important;
+}
+
+/* ===== FORZA COLORI TITOLI E TESTI PAGINA CONTRATTI ===== */
+.contracts-list h3,
+.contracts-list .empty-state h3,
+.contracts-list .error-state h3,
+.empty-state h3,
+.error-state h3 {
+  color: var(--color-primary) !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  margin: 0 0 0.5rem 0 !important;
+  font-family: var(--font-sans) !important;
+}
+
+.contracts-list .empty-state p,
+.contracts-list .error-state p,
+.empty-state p,
+.error-state p {
+  color: var(--color-primary) !important;
+  font-size: 0.875rem !important;
+  margin: 0 0 2rem 0 !important;
+  font-family: var(--font-sans) !important;
+  opacity: 0.8 !important;
+}
+
+/* Dark mode per titoli e testi */
+[data-theme="dark"] .contracts-list h3,
+[data-theme="dark"] .contracts-list .empty-state h3,
+[data-theme="dark"] .contracts-list .error-state h3,
+[data-theme="dark"] .empty-state h3,
+[data-theme="dark"] .error-state h3 {
+  color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .contracts-list .empty-state p,
+[data-theme="dark"] .contracts-list .error-state p,
+[data-theme="dark"] .empty-state p,
+[data-theme="dark"] .error-state p {
+  color: var(--color-primary) !important;
+}
+
+/* ===== FORZA TUTTI I TESTI DELLA TABELLA IN BLU - MASSIMA PRIORITÀ ===== */
+.dashboard-table td,
+.dashboard-table td *,
+.table-wrapper td,
+.table-wrapper td *,
+.dashboard-table .player-name,
+.dashboard-table .type-badge,
+.dashboard-table .role-badge,
+.dashboard-table .salary-value,
+.dashboard-table .period-value,
+.dashboard-table .signed-value,
+.dashboard-table .status-badge,
+.table-wrapper .player-name,
+.table-wrapper .type-badge,
+.table-wrapper .role-badge,
+.table-wrapper .salary-value,
+.table-wrapper .period-value,
+.table-wrapper .signed-value,
+.table-wrapper .status-badge {
+  color: var(--color-text) !important;
+}
+
+/* Elementi generici */
+.dashboard-table tbody td,
+.dashboard-table tbody td span,
+.dashboard-table tbody td div,
+.table-wrapper tbody td,
+.table-wrapper tbody td span,
+.table-wrapper tbody td div {
+  color: var(--color-text) !important;
+}
+
+/* Dark mode per tutti i testi della tabella */
+[data-theme="dark"] .dashboard-table td,
+[data-theme="dark"] .dashboard-table td *,
+[data-theme="dark"] .table-wrapper td,
+[data-theme="dark"] .table-wrapper td *,
+[data-theme="dark"] .dashboard-table .player-name,
+[data-theme="dark"] .dashboard-table .type-badge,
+[data-theme="dark"] .dashboard-table .role-badge,
+[data-theme="dark"] .dashboard-table .salary-value,
+[data-theme="dark"] .dashboard-table .period-value,
+[data-theme="dark"] .dashboard-table .signed-value,
+[data-theme="dark"] .dashboard-table .status-badge,
+[data-theme="dark"] .table-wrapper .player-name,
+[data-theme="dark"] .table-wrapper .type-badge,
+[data-theme="dark"] .table-wrapper .role-badge,
+[data-theme="dark"] .table-wrapper .salary-value,
+[data-theme="dark"] .table-wrapper .period-value,
+[data-theme="dark"] .table-wrapper .signed-value,
+[data-theme="dark"] .table-wrapper .status-badge {
+  color: var(--color-text) !important;
+}
+
+[data-theme="dark"] .dashboard-table tbody td,
+[data-theme="dark"] .dashboard-table tbody td span,
+[data-theme="dark"] .dashboard-table tbody td div,
+[data-theme="dark"] .table-wrapper tbody td,
+[data-theme="dark"] .table-wrapper tbody td span,
+[data-theme="dark"] .table-wrapper tbody td div {
+  color: var(--color-text) !important;
+}
+
+/* ===== BADGE E STATUS - RIPRISTINATI ORIGINALI ===== */
+.dashboard-table .status-badge.status-green,
+.dashboard-table .status-badge.status-blue,
+.dashboard-table .status-badge.status-red,
+.dashboard-table .status-badge.status-yellow,
+.dashboard-table .status-badge.status-default,
+.table-wrapper .status-badge.status-green,
+.table-wrapper .status-badge.status-blue,
+.table-wrapper .status-badge.status-red,
+.table-wrapper .status-badge.status-yellow,
+.table-wrapper .status-badge.status-default {
+  background: var(--color-success) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--color-success) !important;
+}
+
+/* Dark mode per badge e status */
+[data-theme="dark"] .dashboard-table .status-badge.status-green,
+[data-theme="dark"] .dashboard-table .status-badge.status-blue,
+[data-theme="dark"] .dashboard-table .status-badge.status-red,
+[data-theme="dark"] .dashboard-table .status-badge.status-yellow,
+[data-theme="dark"] .dashboard-table .status-badge.status-default,
+[data-theme="dark"] .table-wrapper .status-badge.status-green,
+[data-theme="dark"] .table-wrapper .status-badge.status-blue,
+[data-theme="dark"] .table-wrapper .status-badge.status-red,
+[data-theme="dark"] .table-wrapper .status-badge.status-yellow,
+[data-theme="dark"] .table-wrapper .status-badge.status-default {
+  background: var(--color-success) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--color-success) !important;
+}
+
+/* ===== REGOLE ICONE RIMOSSE - CONFLITTI RISOLTI ===== */
+
+[data-theme="dark"] .type-badge,
+[data-theme="dark"] .role-badge {
+  background: transparent;
+  color: var(--color-primary);
+  border: none;
+}
+
+/* ===== ICONE BIANCHE SOLO PER LISTA CONTRATTI ===== */
+/* Forza icone bianche solo nella pagina Lista Contratti */
+.dashboard-table .action-buttons .btn-icon svg,
+.dashboard-table .action-buttons .btn-icon-success svg,
+.dashboard-table .action-buttons .btn-icon-primary svg,
+.dashboard-table .action-buttons .btn-icon-warning svg,
+.dashboard-table .action-buttons .btn-icon-danger svg {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode per icone bianche nella Lista Contratti */
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon svg,
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-success svg,
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-primary svg,
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-warning svg,
+[data-theme="dark"] .dashboard-table .action-buttons .btn-icon-danger svg {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+[data-theme="dark"] .salary-value {
+  color: var(--color-primary);
+}
+
+[data-theme="dark"] .period-start,
+[data-theme="dark"] .period-end,
+[data-theme="dark"] .signed-value {
+  color: var(--color-text);
+}
+
+/* Forza anche per tutti i selettori possibili */
+div.stat-value,
+div.stat-label,
+div.kpi-value,
+div.kpi-label,
+span.stat-value,
+span.stat-label,
+span.kpi-value,
+span.kpi-label {
+  color: var(--color-primary) !important;
+}
+
+/* ===== FORZA COLORI BLU PER I FILTRI - MASSIMA PRIORITÀ ===== */
+.search-box .search-input,
+.filter-box .filter-select,
+.search-box svg,
+.filter-box svg,
+input[type="text"],
+select,
+.search-input,
+.filter-select {
+  color: var(--color-primary) !important;
+}
+
+/* Forza anche per tutti i selettori possibili dei filtri */
+div.search-input,
+div.filter-select,
+input.search-input,
+select.filter-select,
+.search-box input,
+.filter-box select {
+  color: var(--color-primary) !important;
+}
+
+[data-theme="dark"] .contract-card:hover {
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+  border-color: var(--color-primary-hover);
 }
 
 [data-theme="dark"] .stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  border-color: var(--color-primary-hover);
 }
 
 [data-theme="dark"] .urgency-section.critical {
@@ -845,12 +1994,12 @@
 
 :root[data-theme="dark"] .stat-card {
   background: #000000 !important;
-  border-color: var(--border-color) !important;
+  border-color: var(--color-primary) !important;
 }
 
 :root[data-theme="dark"] .contract-card {
   background: #000000 !important;
-  border-color: var(--border-color) !important;
+  border-color: var(--color-primary) !important;
 }
 
 :root[data-theme="dark"] .expiring-contracts {

@@ -190,6 +190,12 @@ const ALL_MENU_ITEMS = [
     requiredPermission: 'medical:read',
     submenu: [
       { 
+        id: 'medical-dashboard', 
+        label: 'Dashboard', 
+        path: '/dashboard/medical/dashboard',
+        requiredPermission: 'medical:read'
+      },
+      { 
         id: 'medical-injuries', 
         label: 'Infortuni', 
         path: '/dashboard/medical/injuries',
@@ -202,10 +208,46 @@ const ALL_MENU_ITEMS = [
         requiredPermission: 'medical:write'
       },
       { 
-        id: 'medical-reports', 
-        label: 'Rapporti', 
-        path: '/dashboard/medical/reports',
+        id: 'medical-calendar', 
+        label: 'Calendario', 
+        path: '/dashboard/medical/calendar',
+        requiredPermission: 'medical:read'
+      },
+      { 
+        id: 'medical-cases', 
+        label: 'Casi GDPR', 
+        path: '/dashboard/medical/cases',
         requiredPermission: 'medical:confidential'
+      },
+      { 
+        id: 'medical-documents', 
+        label: 'Documenti', 
+        path: '/dashboard/medical/documents',
+        requiredPermission: 'medical:confidential'
+      },
+      { 
+        id: 'medical-consents', 
+        label: 'Consensi', 
+        path: '/dashboard/medical/consents',
+        requiredPermission: 'medical:confidential'
+      },
+      { 
+        id: 'medical-analytics', 
+        label: 'Analytics', 
+        path: '/dashboard/medical/analytics',
+        requiredPermission: 'medical:read'
+      },
+      { 
+        id: 'medical-audit', 
+        label: 'Audit', 
+        path: '/dashboard/medical/audit',
+        requiredPermission: 'medical:audit'
+      },
+      { 
+        id: 'medical-settings', 
+        label: 'Impostazioni', 
+        path: '/dashboard/medical/settings',
+        requiredPermission: 'medical:admin'
       }
     ]
   },

@@ -23,7 +23,7 @@ const CompareBar = ({
         {!isDisabled && (
           <button 
             type="button"
-            className="btn-primary"
+            className="btn btn-primary"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -35,7 +35,7 @@ const CompareBar = ({
           </button>
         )}
         
-        <button className="btn-secondary" onClick={onClear}>
+        <button className="btn btn-secondary" onClick={onClear}>
           <X size={16} /> Pulisci
         </button>
       </div>

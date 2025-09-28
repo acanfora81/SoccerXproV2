@@ -6,6 +6,8 @@ import MedicalSeverityBadge from '../../components/medical/MedicalSeverityBadge'
 import PageHeader from '../../components/medical/PageHeader';
 import EmptyState from '../../components/medical/EmptyState';
 import { useMedicalUIStore } from '../../store/medical/useMedicalUIStore';
+import SkeletonBox, { SkeletonTable } from '../../components/medical/SkeletonBox';
+import StatusBadge from '../../components/medical/StatusBadge';
 
 export default function InjuriesPage() {
   const qc = useQueryClient();
@@ -83,17 +85,18 @@ export default function InjuriesPage() {
       />
 
       <div className="card">
-        {isLoading && <div>Caricamento…</div>}
+        {isLoading && <SkeletonTable rows={5} columns={7} />}
         {error && <div style={{ color:'salmon' }}>Errore: {String(error.message)}</div>}
         
-        {rows.length === 0 && !isLoading ? (
+        {rows.length === 0 && !isLoading && !error ? (
           <EmptyState
             title="Nessun infortunio trovato"
-            subtitle="Inizia registrando un nuovo infortunio"
-            cta={<button className="btn primary" onClick={() => setNewInjuryOpen(true)}>+ Nuovo Infortunio</button>}
+            message="Inizia registrando un nuovo infortunio"
+            icon="🩹"
+            action={<button className="btn primary" onClick={() => setNewInjuryOpen(true)}>+ Nuovo Infortunio</button>}
           />
-        ) : (
-          <table className="table">
+        ) : !isLoading && !error && rows.length > 0 && (
+          <table className="table-enterprise">
             <thead>
               <tr>
                 <th>Giocatore</th>
@@ -113,11 +116,7 @@ export default function InjuriesPage() {
                   <td>{r.injuryType}</td>
                   <td><MedicalSeverityBadge severity={r.severity} /></td>
                   <td>{new Date(r.injuryDate).toLocaleDateString('it-IT')}</td>
-                  <td>
-                    <span className={`badge medical-status-${r.status.toLowerCase()}`}>
-                      {r.status}
-                    </span>
-                  </td>
+                  <td><StatusBadge status={r.status} /></td>
                   <td>
                     <div style={{ display: 'flex', gap: '4px' }}>
                       {r.status === 'ACTIVE' && (

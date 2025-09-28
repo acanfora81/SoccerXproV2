@@ -149,10 +149,7 @@
   color: var(--text-primary) !important;
 }
 
-:root[data-theme="dark"] .datepicker-actions .btn-secondary:hover {
-  background: #000000 !important;
-  border-color: var(--border-color) !important;
-}
+/* RIMOSSO: conflitto con override coerente */
 
 /* Override per metric rows e altri elementi grigi - NERO PURO */
 :root[data-theme="dark"] .metric-row {
@@ -577,44 +574,9 @@
   justify-content: flex-end;
 }
 
-.datepicker-actions .btn-secondary {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-/* Dark theme buttons */
-:root[data-theme="dark"] .datepicker-actions .btn-secondary { background: #11121a; border-color: #374151; color: #e5e7eb; }
+/* RIMOSSO: conflitto con override coerente */
 
-.datepicker-actions .btn-secondary:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
-}
-
-.datepicker-actions .btn-primary {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.datepicker-actions .btn-primary:hover:not(:disabled) {
-  background: var(--accent);
-  opacity: 0.9;
-}
-
-.datepicker-actions .btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* RIMOSSO: conflitto con regole globali forzate */
 
 /* Filtri legacy rimossi - ora usa il sistema unificato in filters.css */
 
@@ -1000,8 +962,8 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--accent); /* Blu del progetto per default */
-  color: #fff; /* Testo bianco per default */
+  background: var(--color-primary); /* Usa la nuova variabile */
+  color: var(--text-on-accent); /* Testo bianco tramite variabile */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1037,6 +999,19 @@
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--color-primary); /* Usa la nuova variabile */
+  color: var(--text-on-accent); /* Testo bianco tramite variabile */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 
 .player-details {
@@ -1467,56 +1442,53 @@
   margin-top: 1rem;
 }
 
-.btn-sm {
-  padding: 0.4rem 0.7rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  border: none;
-  font-weight: 500;
-}
+/* RIMOSSO: definizioni duplicate di .btn-sm che confliggevano con global.css */
 
-/* Density-specific button sizing */
-.density-compact .btn-sm {
-  padding: 0.3rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  gap: 3px;
-}
+/* RIMOSSO: conflitto con regole globali forzate */
 
-.density-medium .btn-sm {
-  padding: 0.4rem 0.7rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  gap: 4px;
-}
-
-.density-wide .btn-sm {
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  gap: 5px;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: #fff;
-}
-
+/* Pulsanti secondari → Arancioni */
 .btn-secondary {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
+  background: var(--color-warning);
+  border: 2px solid var(--color-warning);
+  color: var(--text-on-accent);
+}
+.btn-secondary:hover {
+  background: var(--color-warning-hover);
+  border-color: var(--color-warning-hover);
+  color: var(--text-on-accent);
 }
 
 .btn-secondary.selected {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
+  background: var(--color-warning-hover);
+  color: var(--text-on-accent);
+  border-color: var(--color-warning-hover);
 }
+
+/* Override coerente per tutti i pulsanti secondari */
+.datepicker-actions .btn-secondary,
+.btn-secondary {
+  background: var(--color-warning) !important;
+  border: 2px solid var(--color-warning) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.datepicker-actions .btn-secondary:hover,
+.btn-secondary:hover {
+  background: var(--color-warning-hover) !important;
+  border-color: var(--color-warning-hover) !important;
+  color: var(--text-on-accent) !important;
+}
+
+/* Pulsanti compatti solo dentro le card giocatori */
+.player-card .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  min-width: 100px; /* larghezza minima uniforme */
+  justify-content: center;
+}
+
+/* RIMOSSO: regole conflittuali - sostituite con fix definitivo alla fine del file */
 
 /* Alert/PB come chip nel footer */
 .alerts-chips {
@@ -1722,12 +1694,12 @@
   height: 40px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--bg-secondary);
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-on-accent);
 }
 
 .dossier-header .player-avatar img {
@@ -1859,11 +1831,11 @@
   height: 48px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--primary-color);
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-on-accent);
   font-weight: 600;
 }
 
@@ -1881,8 +1853,8 @@
   justify-content: center;
   font-size: 0.9rem;
   font-weight: 600;
-  background: var(--accent); /* Blu del progetto */
-  color: #fff; /* Testo bianco */
+  background: var(--color-primary); /* Usa la nuova variabile */
+  color: var(--text-on-accent); /* Testo bianco tramite variabile */
   border-radius: 50%; /* Cerchio */
 }
 
@@ -1929,12 +1901,7 @@
   background: var(--bg-secondary);
 }
 
-/* Bottoni e contrasto migliorato */
-.btn-secondary {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-}
+/* Bottoni e contrasto migliorato - RIMOSSO: conflitto con definizione principale */
 
 .tab-btn.active,
 .quick-filter-btn.active,
@@ -2364,11 +2331,11 @@
   height: 40px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--primary-color);
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--text-on-accent);
   font-weight: 600;
   font-size: 0.875rem;
 }
@@ -3252,11 +3219,7 @@
   border: 1px solid var(--border-color) !important;
 }
 
-:root[data-theme="dark"] .datepicker-actions .btn-secondary {
-  background: #000000 !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-primary) !important;
-}
+/* RIMOSSO: conflitto con override coerente */
 
 /* Dark mode per metric value */
 :root[data-theme="dark"] .metric-value {
@@ -3310,4 +3273,94 @@
 :root[data-theme="dark"] .recharts-cartesian-axis-tick-value {
   fill: var(--text-secondary) !important;
 }
+
+/* ===== FIX DEFINITIVO PULSANTI CARD GIOCATORI ===== */
+/* Posizionato alla FINE di performance-players-list.css per massima priorità */
+
+/* Reset completo e uniformazione pulsanti */
+.player-card .card-footer .btn-sm,
+.player-card .card-footer button {
+  /* Reset totale */
+  all: revert !important;
+  
+  /* Dimensioni IDENTICHE forzate con massima priorità */
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
+  height: 36px !important;
+  
+  /* Stile uniforme base */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 8px 16px !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+  text-decoration: none !important;
+  outline: none !important;
+  font-family: inherit !important;
+}
+
+/* Pulsante Dossier (blu) - con massima specificità */
+.player-card .card-footer button:first-child,
+.player-card .card-footer .btn-primary {
+  background-color: #3B82F6 !important;
+  border-color: #3B82F6 !important;
+  color: #ffffff !important;
+}
+
+.player-card .card-footer button:first-child:hover,
+.player-card .card-footer .btn-primary:hover {
+  background-color: #2563EB !important;
+  border-color: #2563EB !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Pulsante Confronta (arancione) - con massima specificità */
+.player-card .card-footer button:last-child,
+.player-card .card-footer .btn-secondary {
+  background-color: #F59E0B !important;
+  border-color: #F59E0B !important;
+  color: #ffffff !important;
+}
+
+.player-card .card-footer button:last-child:hover,
+.player-card .card-footer .btn-secondary:hover {
+  background-color: #D97706 !important;
+  border-color: #D97706 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Icone uniformi */
+.player-card .card-footer button svg,
+.player-card .card-footer .btn-sm svg {
+  width: 14px !important;
+  height: 14px !important;
+  flex-shrink: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Dark mode overrides */
+:root[data-theme="dark"] .player-card .card-footer button:first-child,
+:root[data-theme="dark"] .player-card .card-footer .btn-primary {
+  background-color: #8B5CF6 !important;
+  border-color: #8B5CF6 !important;
+}
+
+:root[data-theme="dark"] .player-card .card-footer button:first-child:hover,
+:root[data-theme="dark"] .player-card .card-footer .btn-primary:hover {
+  background-color: #7C3AED !important;
+  border-color: #7C3AED !important;
+}
+
+/* ===== FINE FIX PULSANTI ===== */
 

@@ -146,7 +146,7 @@ function App() {
               <Route path="/tax/regional-additionals" element={<RegionalAdditionalsPage />} />
               <Route path="/tax/municipal-additionals" element={<MunicipalAdditionalsPage />} />
               {/* Medical Routes */}
-              {medicalRoutes('/medical')}
+              {medicalRoutes('/dashboard/medical')}
               <Route path="/market" element={
                 <div className="page-placeholder"><h2>Mercato</h2><p>Modulo in sviluppo - Trasferimenti e scouting</p></div>
               } />

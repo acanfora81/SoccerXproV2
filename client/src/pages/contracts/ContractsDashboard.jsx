@@ -36,6 +36,20 @@ const ContractsDashboard = () => {
   });
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // Ascolta eventi di aggiornamento contratti
+  useEffect(() => {
+    const handleContractUpdate = () => {
+      console.log('🔄 Evento aggiornamento contratto ricevuto, ricarico dashboard...');
+      fetchDashboardData();
+    };
+
+    window.addEventListener('contractUpdated', handleContractUpdate);
+    
+    return () => {
+      window.removeEventListener('contractUpdated', handleContractUpdate);
+    };
+  }, []);
+
   // Carica dati dashboard
   const fetchDashboardData = async () => {
     try {
