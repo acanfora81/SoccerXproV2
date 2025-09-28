@@ -16,6 +16,7 @@ import SettingsPage from '../pages/medical/SettingsPage';
 export function medicalRoutes(base = '/medical') {
   return (
     <>
+      <Route path={`${base}`} element={<Dashboard />} />
       <Route path={`${base}/dashboard`} element={<Dashboard />} />
       <Route path={`${base}/injuries`} element={<InjuriesPage />} />
       <Route path={`${base}/visits`} element={<VisitsPage />} />

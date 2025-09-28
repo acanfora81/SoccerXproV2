@@ -6,6 +6,7 @@ import PageHeader from '../../components/medical/PageHeader';
 import EmptyState from '../../components/medical/EmptyState';
 import { useMedicalUIStore } from '../../store/medical/useMedicalUIStore';
 import { VisitType } from '../../utils/enums';
+import SkeletonBox, { SkeletonCard } from '../../components/medical/SkeletonBox';
 
 export default function VisitsPage() {
   const qc = useQueryClient();
@@ -62,16 +63,23 @@ export default function VisitsPage() {
         </>}
       />
 
-      {isLoading && <div className="card">Caricamento…</div>}
+      {isLoading && (
+        <div className="medical-grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))' }}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      )}
       {error && <div className="card" style={{ color:'salmon' }}>Errore: {String(error.message)}</div>}
 
-      {items.length === 0 && !isLoading ? (
+      {items.length === 0 && !isLoading && !error ? (
         <EmptyState
           title="Nessuna visita trovata"
-          subtitle="Inizia programmando una nuova visita medica"
-          cta={<button className="btn primary" onClick={() => setNewVisitOpen(true)}>+ Nuova Visita</button>}
+          message="Inizia programmando una nuova visita medica"
+          icon="🩺"
+          action={<button className="btn primary" onClick={() => setNewVisitOpen(true)}>+ Nuova Visita</button>}
         />
-      ) : (
+      ) : !isLoading && !error && items.length > 0 && (
         <div className="medical-grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))' }}>
           {items.map(v => (
             <VisitCard 

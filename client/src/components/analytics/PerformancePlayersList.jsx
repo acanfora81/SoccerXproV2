@@ -1,40 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { ICONS, ICON_SIZES } from '../../config/icons-map';
 import { 
-  Search,
-  Filter,
-  Users,
-  Shield,
-  Zap,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  ChevronDown,
-  ChevronUp,
-  MoreHorizontal,
-  FileText,
-  BarChart3,
-  Target,
-  Heart,
-  Clock,
-  Calendar,
-  Settings,
-  Save,
-  Eye,
-  EyeOff,
-  Grid,
-  List,
-  Maximize2,
-  Minimize2,
-  CheckSquare,
-  Square,
-  AlertTriangle,
-  Crown,
-  ArrowUpRight,
-  ArrowDownRight,
-  Activity,
-  Layers,
-  ArrowLeftRight
+  BarChart3, Layers, Zap, Heart, Crown, ArrowLeftRight, ArrowUpRight,
+  Minus, TrendingUp, TrendingDown, Shield, Target, Activity, Users
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { apiFetch } from '../../utils/http';
@@ -544,18 +513,18 @@ const PerformancePlayersList = () => {
       {/* Footer Azioni Compatte */}
       <div className="card-footer">
                  <button 
-           className="btn-primary btn-sm"
+           className="btn btn-primary btn-sm"
            onClick={() => handleOpenDossier(player.id)}
          >
-           <FileText size={14} /> Dossier
+           <ICONS.add size={ICON_SIZES.sm} /> Dossier
          </button>
                  <button
-           className={`btn-secondary btn-sm ${isSelected ? 'selected' : ''}`}
+           className={`btn btn-secondary btn-sm ${isSelected ? 'selected' : ''}`}
            onClick={() => onToggleSelection(player.id)}
            disabled={!isSelected && (selectedPlayers?.size || 0) >= 8}
            aria-disabled={!isSelected && (selectedPlayers?.size || 0) >= 8}
          >
-           {isSelected ? <CheckSquare size={14} /> : <Square size={14} />}
+           <ICONS.compare size={ICON_SIZES.sm} />
            Confronta
          </button>
         {/* Alert/PB come chip nel footer */}
@@ -583,9 +552,9 @@ const PerformancePlayersList = () => {
     return (
       <div className="players-list-container">
         <div className="error-state">
-          <AlertTriangle size={48} color="#EF4444" />
+          <ICONS.warning size={48} color="#EF4444" />
           <p>Errore nel caricamento: {error}</p>
-          <button onClick={fetchPlayers} className="btn-primary">
+          <button onClick={fetchPlayers} className="btn btn-primary">
             Riprova
           </button>
         </div>
@@ -621,9 +590,10 @@ const PerformancePlayersList = () => {
                 </h3>
                 <div className="role-actions">
                   <button 
-                    className="btn-secondary btn-sm"
+                    className="btn btn-secondary btn-sm"
                     onClick={() => selectAllRole(role)}
                   >
+                    <ICONS.selectAll size={ICON_SIZES.sm} />
                     Seleziona tutti
                   </button>
                 </div>

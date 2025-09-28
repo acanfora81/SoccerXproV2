@@ -96,8 +96,8 @@
 }
 
 .kpi-card {
-  background: var(--bg-primary);
-  border: 2px solid var(--accent);
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   padding: 20px;
   min-height: 80px;
@@ -112,24 +112,24 @@
 
 .kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px var(--shadow-color);
-  border-color: var(--accent-strong);
+  box-shadow: 0 8px 25px var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .kpi-card--primary {
-  border-color: var(--primary-color);
+  border-color: var(--color-primary);
 }
 
 .kpi-card--success {
-  border-color: var(--success-color);
+  border-color: var(--color-success);
 }
 
 .kpi-card--warning {
-  border-color: var(--warning-color);
+  border-color: var(--color-warning);
 }
 
 .kpi-card--info {
-  border-color: var(--info-color);
+  border-color: var(--color-primary);
 }
 
 .kpi-card__header {
@@ -138,9 +138,10 @@
   justify-content: flex-start;
   gap: 12px;
   margin-bottom: 16px;
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
   width: 100%;
 }
+
 
 .kpi-card__icon {
   width: 20px;
@@ -148,19 +149,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
+  color: #ffffff !important;
 }
 
-.kpi-card--success .kpi-card__icon {
-  color: var(--success-color);
+.kpi-card__icon svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
-.kpi-card--warning .kpi-card__icon {
-  color: var(--warning-color);
+.kpi-card__icon svg * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
-.kpi-card--info .kpi-card__icon {
-  color: var(--info-color);
+/* CSS SEMPLIFICATO - le icone ora hanno style inline */
+.kpi-card__icon {
+  color: #ffffff !important;
+}
+
+.kpi-card__icon svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 .kpi-card__trend {
@@ -170,21 +182,11 @@
   margin-left: auto;
 }
 
-.trend-up {
-  color: var(--success-color);
-}
-
-.trend-down {
-  color: var(--error-color);
-}
-
-.trend-neutral {
-  color: var(--text-secondary);
-}
 
 .trend-value {
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
+  font-family: var(--font-sans);
 }
 
 .kpi-card__content {
@@ -195,25 +197,28 @@
 }
 
 .kpi-card__value {
-  font-size: 24px;
+  font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--color-primary);
   margin-bottom: 4px;
   line-height: 1;
+  font-family: var(--font-sans);
 }
 
 .kpi-card__title {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--text-secondary);
+  color: var(--color-primary);
   margin-bottom: 4px;
+  font-family: var(--font-sans);
 }
 
 .kpi-card__subtitle {
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
 }
 
 .kpi-card__footer {
@@ -221,22 +226,23 @@
 }
 
 .trend-label {
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
 }
 
 /* ===== GRAFICI ===== */
 .charts-container {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 24px;
 }
 
 /* Custom Tooltip */
 .custom-tooltip {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -459,26 +465,120 @@
   overflow-x: auto;
 }
 
+/* ===== ALLINEAMENTO PERFETTO TABELLA TIMELINE ===== */
 .dashboard-table {
   width: 100%;
   border-collapse: collapse;
 }
 
+/* TITOLI COLONNE - Allineamento specifico per ogni colonna */
 .dashboard-table th {
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-weight: 600;
   padding: 16px 12px;
-  text-align: left;
   border-bottom: 2px solid var(--border-color);
   font-size: 14px;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
+/* Allineamento SPECIFICO per ogni titolo basato sul numero di colonna */
+.dashboard-table thead tr th:nth-child(1) { 
+  text-align: left !important;   /* Data Scadenza */
+}
+.dashboard-table thead tr th:nth-child(2) { 
+  text-align: left !important;   /* Giocatore */
+}
+.dashboard-table thead tr th:nth-child(3) { 
+  text-align: left !important;   /* Ruolo */
+}
+.dashboard-table thead tr th:nth-child(4) { 
+  text-align: right !important;  /* Stipendio - allineato a destra come i valori */
+  padding-right: 24px !important;
+}
+.dashboard-table thead tr th:nth-child(5) { 
+  text-align: center !important; /* Status */
+}
+.dashboard-table thead tr th:nth-child(6) { 
+  text-align: center !important; /* Giorni Rimanenti */
+}
+.dashboard-table thead tr th:nth-child(7) { 
+  text-align: center !important; /* Azioni */
+}
+
+/* CONTENUTO CELLE - Deve corrispondere ESATTAMENTE ai titoli */
 .dashboard-table td {
   padding: 16px 12px;
   border-bottom: 1px solid var(--border-color);
   font-size: 14px;
+  vertical-align: middle;
 }
+
+.dashboard-table tbody tr td:nth-child(1) { 
+  text-align: left !important;   /* Data */
+}
+.dashboard-table tbody tr td:nth-child(2) { 
+  text-align: left !important;   /* Giocatore */
+}
+.dashboard-table tbody tr td:nth-child(3) { 
+  text-align: left !important;   /* Ruolo */
+}
+.dashboard-table tbody tr td:nth-child(4) { 
+  text-align: right !important;  /* Stipendio */
+  padding-right: 24px !important;
+}
+.dashboard-table tbody tr td:nth-child(5) { 
+  text-align: center !important; /* Status */
+}
+.dashboard-table tbody tr td:nth-child(6) { 
+  text-align: center !important; /* Giorni */
+}
+.dashboard-table tbody tr td:nth-child(7) { 
+  text-align: center !important; /* Azioni */
+}
+
+/* Fix specifici per contenuti particolari */
+.dashboard-table .date-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.dashboard-table .salary-value {
+  display: block;
+  text-align: right;
+  font-weight: 600;
+}
+
+.dashboard-table .status-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.dashboard-table .action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Dark mode - mantieni allineamenti */
+:root[data-theme="dark"] .dashboard-table th {
+  background: #000000 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Forza gli stessi allineamenti in dark mode */
+:root[data-theme="dark"] .dashboard-table thead tr th:nth-child(4) { 
+  text-align: right !important;
+  padding-right: 24px !important;
+}
+
 
 .dashboard-table tr:hover {
   background: var(--bg-primary);
@@ -594,21 +694,38 @@
 .btn-icon {
   width: 32px;
   height: 32px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .btn-icon:hover {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
+  background: var(--color-primary);
+  color: var(--text-on-accent);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* Icone SVG semplici e delicate */
+.btn-icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-primary);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+/* Hover delicato per le icone */
+.btn-icon:hover svg {
+  color: var(--text-on-accent);
+  opacity: 1;
 }
 
 /* ===== TIMELINE ===== */
@@ -702,73 +819,20 @@
   gap: 12px;
 }
 
-.dashboard-timeline .contract-item {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  transition: all 0.2s ease;
-}
-
-.dashboard-timeline .contract-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.dashboard-timeline .contract-item.critical {
-  border-left: 4px solid var(--error-color);
-}
-
-.dashboard-timeline .contract-item.warning {
-  border-left: 4px solid var(--warning-color);
-}
-
-.dashboard-timeline .contract-item.expired {
-  border-left: 4px solid var(--text-secondary);
-}
-
-.contract-date {
+/* Stile per la data con icona nella timeline */
+.date-content {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  min-width: 120px;
+  color: var(--color-primary);
 }
 
-.contract-info {
-  flex: 1;
+.date-content svg {
+  color: var(--color-primary);
+  opacity: 0.7;
 }
 
-.player-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
 
-.contract-details {
-  display: flex;
-  gap: 16px;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.contract-status {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.status-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-}
 
 .timeline-stats {
   display: grid;
@@ -779,24 +843,46 @@
   border-top: 1px solid var(--border-color);
 }
 
-.stat-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
-  text-align: center;
+/* Card di riepilogo timeline - regole specifiche con alta priorità */
+.timeline-stats .stat-card {
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  padding: 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  min-height: 160px !important;
+  justify-content: center !important;
+  width: 100% !important;
 }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--primary-color);
-  margin-bottom: 4px;
+.timeline-stats .stat-card .stat-label {
+  font-size: var(--text-sm) !important;  /* 0.875rem = 14px - come KPI in alto */
+  font-family: var(--font-sans) !important;  /* Font esplicito come KPI */
+  color: var(--color-primary) !important;
+  font-weight: 700 !important;
+  margin-bottom: 16px !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1.2 !important;
 }
 
-.stat-label {
-  font-size: 14px;
-  color: var(--text-secondary);
+.timeline-stats .stat-card .stat-value {
+  font-size: var(--text-2xl) !important;  /* 1.5rem = 24px - come KPI in alto */
+  font-family: var(--font-sans) !important;  /* Font esplicito come KPI */
+  font-weight: 700 !important;            /* 700 - come KPI in alto */
+  color: var(--color-primary) !important;
+  text-align: center !important;
+  margin: 0 !important;
+  line-height: 1 !important;              /* Come KPI in alto */
+  display: block !important;
+  width: 100% !important;
+  /* Forza il font-weight per evitare interferenze */
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
 
 /* ===== STATI VUOTI ===== */
@@ -922,11 +1008,7 @@
   border-color: var(--border-color) !important;
 }
 
-:root[data-theme="dark"] .btn-icon {
-  background: #000000 !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-secondary) !important;
-}
+/* Dark mode gestito automaticamente dalle variabili CSS */
 
 :root[data-theme="dark"] .nav-btn {
   background: #000000 !important;
@@ -943,6 +1025,15 @@
   background: #000000 !important;
   border-color: var(--border-color) !important;
 }
+
+:root[data-theme="dark"] .timeline-stats .stat-card .stat-value {
+  color: var(--color-primary) !important;
+}
+
+:root[data-theme="dark"] .timeline-stats .stat-card .stat-label {
+  color: var(--color-primary) !important;
+}
+
 
 /* Override più specifici per assicurare sfondo nero intorno ai grafici */
 :root[data-theme="dark"] .dashboard-container {
@@ -1193,3 +1284,6 @@
 :root[data-theme="dark"] .status-default {
   color: var(--text-secondary) !important;
 }
+
+
+

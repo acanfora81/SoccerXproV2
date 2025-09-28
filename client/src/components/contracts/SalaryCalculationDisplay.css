@@ -1,12 +1,12 @@
 /* client/src/components/contracts/SalaryCalculationDisplay.css */
 
 .salary-calculation-display {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 20px;
   margin: 16px 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .no-calculation {
@@ -14,7 +14,7 @@
   flex-direction: column;
   align-items: center;
   padding: 40px 20px;
-  color: #64748b;
+  color: var(--color-text-muted);
   text-align: center;
 }
 
@@ -35,7 +35,7 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 12px 0;
-  color: #1e293b;
+  color: var(--color-text);
   font-size: 18px;
   font-weight: 600;
 }
@@ -46,14 +46,14 @@
   gap: 12px;
   flex-wrap: wrap;
   padding: 12px 16px;
-  background: #ffffff;
+  background: var(--color-bg);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
 }
 
 .input-label, .output-label {
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -66,17 +66,17 @@
 
 .input-value.net, .output-value.net {
   background: #dcfce7;
-  color: #15803d;
+  color: var(--color-success);
 }
 
 .input-value.gross, .output-value.gross {
   background: #fef3c7;
-  color: #d97706;
+  color: var(--color-warning);
 }
 
 .arrow {
   font-size: 18px;
-  color: #6366f1;
+  color: var(--color-primary);
   font-weight: bold;
 }
 
@@ -97,10 +97,10 @@
 
 /* Individual Sections */
 .calculation-section {
-  background: #ffffff;
+  background: var(--color-bg);
   border-radius: 10px;
   padding: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -132,7 +132,7 @@
 }
 
 .company-header .section-title {
-  color: #d97706;
+  color: var(--color-warning);
 }
 
 /* Calculation Groups */
@@ -147,7 +147,7 @@
 .group-title {
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-secondary);
   margin: 0 0 8px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -164,9 +164,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #f8fafc;
+  background: var(--color-surface);
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
 }
 
 .calculation-item.total {
@@ -196,7 +196,7 @@
 
 .calculation-label {
   font-size: 13px;
-  color: #4b5563;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -207,16 +207,16 @@
 }
 
 /* Value Colors */
-.calculation-value.inps { color: #0ea5e9; }
-.calculation-value.ffc { color: #8b5cf6; }
-.calculation-value.solidarity { color: #06b6d4; }
-.calculation-value.taxable { color: #6366f1; }
-.calculation-value.irpef { color: #dc2626; }
-.calculation-value.addizionali { color: #ea580c; }
-.calculation-value.inps-employer { color: #0284c7; }
-.calculation-value.inail-employer { color: #7c3aed; }
-.calculation-value.ffc-employer { color: #9333ea; }
-.calculation-value.total { color: #1f2937; }
+.calculation-value.inps { color: var(--color-primary); }
+.calculation-value.ffc { color: var(--color-primary); }
+.calculation-value.solidarity { color: var(--color-primary); }
+.calculation-value.taxable { color: var(--color-primary); }
+.calculation-value.irpef { color: var(--color-danger); }
+.calculation-value.addizionali { color: var(--color-warning); }
+.calculation-value.inps-employer { color: var(--color-primary); }
+.calculation-value.inail-employer { color: var(--color-primary); }
+.calculation-value.ffc-employer { color: var(--color-primary); }
+.calculation-value.total { color: var(--color-text); }
 
 /* Results */
 .result-group {
@@ -244,7 +244,7 @@
 .company-result {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
   border: 2px solid #f59e0b;
-  color: #92400e;
+  color: var(--color-warning);
 }
 
 .result-label {
@@ -278,20 +278,20 @@
 .breakdown-item.total {
   font-weight: 700;
   font-size: 14px;
-  color: #1f2937;
+  color: var(--color-text);
   border-top: 1px solid #d1d5db;
   padding-top: 8px;
   margin-top: 4px;
 }
 
 .breakdown-label {
-  color: #6b7280;
+  color: var(--color-text-muted);
 }
 
 .breakdown-value {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 .breakdown-divider {
@@ -312,14 +312,14 @@
   padding: 16px;
   background: linear-gradient(135deg, #f8fafc, #f1f5f9);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
 }
 
 .total-summary-title {
   margin: 0 0 12px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text);
   text-align: center;
 }
 
@@ -334,9 +334,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #ffffff;
+  background: var(--color-bg);
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
 }
 
 .total-summary-item.highlight {
@@ -347,12 +347,12 @@
 
 .total-label {
   font-size: 13px;
-  color: #4b5563;
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .total-summary-item.highlight .total-label {
-  color: #92400e;
+  color: var(--color-warning);
   font-weight: 700;
 }
 
@@ -362,14 +362,14 @@
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-.total-value.gross { color: #d97706; }
-.total-value.net { color: #059669; }
-.total-value.employer { color: #7c3aed; }
-.total-value.cost { color: #dc2626; }
+.total-value.gross { color: var(--color-warning); }
+.total-value.net { color: var(--color-success); }
+.total-value.employer { color: var(--color-primary); }
+.total-value.cost { color: var(--color-danger); }
 
 .total-summary-item.highlight .total-value {
   font-size: 16px;
-  color: #92400e;
+  color: var(--color-warning);
 }
 
 .summary-stats {
@@ -388,7 +388,7 @@
 
 .stat-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -397,7 +397,7 @@
 .stat-value {
   font-size: 16px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-text);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
@@ -452,8 +452,8 @@
 
 /* Barra di Loading Minimal */
 .calculation-loading {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 12px 16px;
   margin: 12px 0;
@@ -463,14 +463,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 500;
 }
 
 .loading-spinner {
   animation: spin 1s linear infinite;
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 @keyframes spin {

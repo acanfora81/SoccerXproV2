@@ -405,7 +405,12 @@ const ContractsList = () => {
       <div className="contracts-stats">
         <div className="stat-card">
           <div className="stat-icon">
-            <FileText size={24} />
+            <FileText 
+              size={24} 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth={1.5}
+            />
           </div>
           <div className="stat-content">
             <div className="stat-value">{stats.total || 0}</div>
@@ -414,7 +419,12 @@ const ContractsList = () => {
         </div>
         <div className="stat-card">
           <div className="stat-icon active">
-            <CheckCircle size={24} />
+            <CheckCircle 
+              size={24} 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth={1.5}
+            />
           </div>
           <div className="stat-content">
             <div className="stat-value">{stats.active || 0}</div>
@@ -423,7 +433,12 @@ const ContractsList = () => {
         </div>
         <div className="stat-card">
           <div className="stat-icon warning">
-            <Clock size={24} />
+            <Clock 
+              size={24} 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth={1.5}
+            />
           </div>
           <div className="stat-content">
             <div className="stat-value">{stats.expiring || 0}</div>
@@ -432,7 +447,12 @@ const ContractsList = () => {
         </div>
         <div className="stat-card">
           <div className="stat-icon success">
-            <Euro size={24} />
+            <Euro 
+              size={24} 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth={1.5}
+            />
           </div>
           <div className="stat-content">
             <div className="stat-value">{formatCurrency(stats.totalValue || 0)}</div>
@@ -515,138 +535,92 @@ const ContractsList = () => {
           )}
         </div>
       ) : (
-        <div className="contracts-grid">
-          {filteredContracts.map(contract => (
-            <div key={contract.id} className="contract-card">
-              <div className="contract-content">
-                {/* Header con info giocatore */}
-                <div className="contract-header">
-                <div className="player-info">
-                  <div className="player-avatar">
-                    <div className="avatar-circle">
-                      {contract.players.firstName?.[0]}{contract.players.lastName?.[0]}
-                    </div>
-                  </div>
-                  <div className="player-details">
-                    <h3 className="player-name">
+        <div className="table-wrapper">
+          <table className="dashboard-table">
+            <thead>
+              <tr>
+                <th>Giocatore</th>
+                <th>Tipo</th>
+                <th>Stipendio</th>
+                <th>Firmato</th>
+                <th>Periodo</th>
+                <th>Status</th>
+                <th>Ruolo</th>
+                <th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredContracts.map(contract => (
+                <tr key={contract.id}>
+                  <td>
+                    <span className="player-name">
                       {contract.players.firstName} {contract.players.lastName}
-                    </h3>
-                  </div>
-                </div>
-              </div>
-
-              {/* Informazioni contratto */}
-              <div className="contract-details">
-                <div className="kpi-grid">
-                  <div className="kpi-item">
-                    <div className="kpi-label">Tipo</div>
-                    <div className="kpi-value">{getTypeLabel(contract.contractType)}</div>
-                  </div>
-                  <div className="kpi-item">
-                    <div className="kpi-label">Stipendio</div>
-                    <div className="kpi-value salary">
+                    </span>
+                  </td>
+                  <td>
+                    <span className="type-badge">{getTypeLabel(contract.contractType)}</span>
+                  </td>
+                  <td>
+                    <span className="salary-value">
                       {formatCurrency(contract.salary, contract.currency)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="signed-value">
+                      {contract.signedDate ? formatDate(contract.signedDate) : '-'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="period-value">
+                      {formatDate(contract.endDate)}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="status-cell">
+                      <span className={`status-badge ${getStatusColor(contract.status)}`}>
+                        {getStatusLabel(contract.status)}
+                      </span>
                     </div>
-                  </div>
-                  <div className="kpi-item">
-                    <div className="kpi-label">Periodo</div>
-                    <div className="kpi-value">
-                      {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
+                  </td>
+                  <td>
+                    <span className="role-badge">{getPositionLabel(contract.players.position)}</span>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button 
+                        className="btn-icon btn-icon-success" 
+                        title="Visualizza contratto"
+                        onClick={() => handleViewContract(contract)}
+                      >
+                        <Eye size={16} color="#ffffff" />
+                      </button>
+                      <button 
+                        className="btn-icon btn-icon-primary" 
+                        title="Visualizza storia contratti"
+                        onClick={() => handleViewHistory(contract)}
+                      >
+                        <History size={16} color="#ffffff" />
+                      </button>
+                      <button 
+                        className="btn-icon btn-icon-warning" 
+                        title="Modifica contratto"
+                        onClick={() => handleEditContract(contract)}
+                      >
+                        <Edit3 size={16} color="#ffffff" />
+                      </button>
+                      <button 
+                        className="btn-icon btn-icon-danger" 
+                        title="Elimina contratto"
+                        onClick={() => handleDeleteContract(contract)}
+                      >
+                        <Trash2 size={16} color="#ffffff" />
+                      </button>
                     </div>
-                  </div>
-                  {contract.signedDate && (
-                    <div className="kpi-item">
-                      <div className="kpi-label">Firmato</div>
-                      <div className="kpi-value">{formatDate(contract.signedDate)}</div>
-                    </div>
-                  )}
-                  <div className="kpi-item">
-                    <div className="kpi-label">Stato Contratto</div>
-                    <div className={`kpi-value status-value ${getStatusColor(contract.status)}`}>
-                      {getStatusLabel(contract.status)}
-                    </div>
-                  </div>
-                  <div className="kpi-item">
-                    <div className="kpi-label">Ruolo</div>
-                    <div className="kpi-value">
-                      {getPositionLabel(contract.players.position)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Alert scadenza */}
-              {contract.status === 'ACTIVE' && isExpiring(contract.endDate) && (
-                <div className="expiry-alert">
-                  <AlertTriangle size={16} />
-                  <span>Scade tra {getDaysUntilExpiry(contract.endDate)} giorni</span>
-                </div>
-              )}
-
-              {/* Clausole */}
-              {contract.contract_clauses && contract.contract_clauses.length > 0 && (
-                <div className="clauses-section">
-                  <div className="clauses-header">
-                    <span>Clausole ({contract.contract_clauses.length})</span>
-                  </div>
-                  <div className="clauses-list">
-                    {contract.contract_clauses.slice(0, 2).map(clause => (
-                      <div key={clause.id} className="clause-item">
-                        <span className="clause-type">{clause.clauseType}</span>
-                        {clause.amount && (
-                          <span className="clause-amount">
-                            {formatCurrency(clause.amount, clause.currency)}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                    {contract.contract_clauses.length > 2 && (
-                      <div className="clause-more">
-                        +{contract.contract_clauses.length - 2} altre
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              </div>
-
-              {/* Azioni */}
-              <div className="contract-actions">
-                <button 
-                  className="action-btn view-btn" 
-                  title="Visualizza contratto"
-                  onClick={() => handleViewContract(contract)}
-                >
-                  <Eye size={14} />
-                  Visualizza
-                </button>
-                <button 
-                  className="action-btn history-btn" 
-                  title="Storia contratti giocatore"
-                  onClick={() => handleViewHistory(contract)}
-                >
-                  <History size={14} />
-                  Storia
-                </button>
-                <button 
-                  className="action-btn edit-btn" 
-                  title="Modifica contratto"
-                  onClick={() => handleEditContract(contract)}
-                >
-                  <Edit3 size={14} />
-                  Modifica
-                </button>
-                <button 
-                  className="action-btn delete-btn" 
-                  title="Elimina contratto"
-                  onClick={() => handleDeleteContract(contract)}
-                >
-                  <Trash2 size={14} />
-                  Elimina
-                </button>
-              </div>
-            </div>
-          ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

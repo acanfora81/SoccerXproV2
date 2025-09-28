@@ -347,7 +347,7 @@ const TeamDashboard = () => {
         <div className="error-state">
           <AlertTriangle size={48} color="#EF4444" />
           <p>Errore nel caricamento: {error}</p>
-          <button onClick={handleRefresh} className="btn-primary">
+          <button onClick={handleRefresh} className="btn btn-primary">
             Riprova
           </button>
         </div>
