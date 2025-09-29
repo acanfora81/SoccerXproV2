@@ -1,0 +1,295 @@
+/* ========== TWO FACTOR AUTHENTICATION MODAL ========== */
+
+.two-fa-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.two-fa-modal {
+  background: var(--color-bg);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 2px solid var(--color-border);
+}
+
+.two-fa-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.two-fa-modal__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.two-fa-modal__title h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.two-fa-modal__close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.two-fa-modal__close:hover {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.two-fa-modal__content {
+  padding: 32px;
+}
+
+.two-fa-modal__error {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  border: 1px solid var(--color-danger);
+}
+
+/* ========== SETUP STEPS ========== */
+
+.two-fa-setup-step {
+  text-align: center;
+}
+
+.two-fa-setup-step__icon {
+  margin-bottom: 16px;
+}
+
+.two-fa-setup-step h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.two-fa-setup-step p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* ========== QR CODE ========== */
+
+.two-fa-loading {
+  padding: 40px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.two-fa-qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.two-fa-qr-code {
+  max-width: 200px;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 12px;
+  background: white;
+}
+
+.two-fa-secret-manual {
+  width: 100%;
+  text-align: left;
+}
+
+.two-fa-secret-manual p {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.two-fa-secret-code {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.two-fa-secret-code code {
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: none;
+  word-break: break-all;
+}
+
+.two-fa-copy-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.two-fa-copy-btn:hover {
+  background: var(--color-primary-light);
+}
+
+/* ========== TOKEN INPUT ========== */
+
+.two-fa-verify-step {
+  text-align: center;
+}
+
+.two-fa-token-input {
+  margin-bottom: 32px;
+}
+
+.two-fa-code-field {
+  width: 100%;
+  max-width: 200px;
+  padding: 16px 20px;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg);
+  color: var(--text-primary);
+  letter-spacing: 4px;
+  font-family: 'Courier New', monospace;
+  transition: all 0.2s ease;
+}
+
+.two-fa-code-field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.two-fa-code-field::placeholder {
+  color: var(--text-placeholder);
+  letter-spacing: 4px;
+}
+
+/* ========== BACKUP CODES ========== */
+
+.two-fa-backup-step {
+  text-align: center;
+}
+
+.two-fa-backup-codes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 24px 0;
+  padding: 20px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.two-fa-backup-code {
+  padding: 8px 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.two-fa-backup-code code {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ========== ACTIONS ========== */
+
+.two-fa-modal__actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.two-fa-modal__actions .btn {
+  min-width: 120px;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 640px) {
+  .two-fa-modal {
+    width: 95%;
+    margin: 20px;
+  }
+
+  .two-fa-modal__header,
+  .two-fa-modal__content {
+    padding: 20px;
+  }
+
+  .two-fa-backup-codes {
+    grid-template-columns: 1fr;
+  }
+
+  .two-fa-modal__actions {
+    flex-direction: column;
+  }
+
+  .two-fa-modal__actions .btn {
+    width: 100%;
+  }
+}
+
+/* ========== DARK THEME ========== */
+
+[data-theme="dark"] .two-fa-qr-code {
+  background: #ffffff;
+}
+
+[data-theme="dark"] .two-fa-modal__close:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+[data-theme="dark"] .two-fa-copy-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+}

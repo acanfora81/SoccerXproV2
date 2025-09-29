@@ -304,8 +304,14 @@ const ALL_MENU_ITEMS = [
         requiredPermission: 'user:management'
       }
     ]
-  }
-  ,
+  },
+  {
+    id: 'security',
+    label: 'Sicurezza 2FA',
+    icon: Shield,
+    path: '/dashboard/security/2fa',
+    requiredPermission: null // Tutti gli utenti autenticati possono gestire la propria 2FA
+  },
   {
     id: 'utilities',
     label: 'Utilità di Sistema',
@@ -336,13 +342,14 @@ const hasPermission = (userRole, requiredPermission) => {
   
   // Mappa semplificata ruoli -> permessi (sincronizza con backend)
   const rolePermissions = {
-    'ADMIN': ['players:read', 'players:write', 'performance:read', 'performance:write', 'performance:import', 'performance:export', 'performance:analytics', 'contracts:read', 'contracts:write', 'contracts:approve', 'medical:read', 'medical:write', 'medical:confidential', 'market:read', 'market:write', 'scout:reports', 'admin:read', 'admin:write', 'admin:budget', 'user:management', 'audit:read'],
+    // ADMIN vede tutto: wildcard "*" bypassa i controlli
+    'ADMIN': ['*'],
     
     'DIRECTOR_SPORT': ['players:read', 'players:write', 'performance:read', 'performance:analytics', 'contracts:read', 'contracts:write', 'contracts:approve', 'medical:read', 'admin:read', 'market:read', 'market:write', 'scout:reports', 'audit:read'],
     
     'MEDICAL_STAFF': ['players:read', 'medical:read', 'medical:write', 'medical:confidential', 'performance:read'],
     
-    'SECRETARY': ['players:read', 'contracts:read', 'contracts:write', 'admin:read', 'admin:write', 'market:read'],
+    'SECRETARY': ['players:read', 'contracts:read', 'contracts:write', 'admin:read', 'admin:write', 'market:read', 'medical:read'],
     
     'SCOUT': ['players:read', 'market:read', 'market:write', 'scout:reports'],
     
@@ -350,6 +357,7 @@ const hasPermission = (userRole, requiredPermission) => {
   };
   
   const userPermissions = rolePermissions[userRole] || [];
+  if (userPermissions.includes('*')) return true;
   return userPermissions.includes(requiredPermission);
 };
 
@@ -383,7 +391,15 @@ const MainLayout = ({ children, onLogout }) => {
   console.log('🔵 MainLayout: dati utente', user); // INFO DEV - rimuovere in produzione
 
   // Filtra menu in base al ruolo utente
-  const userRole = user?.role || 'GUEST';
+  // Normalizza ruolo per permessi (gestisce traduzioni/alias)
+  const normalizeRole = (role) => {
+    if (!role) return 'GUEST';
+    const r = String(role).toUpperCase();
+    // Alias comuni
+    if (['ADMINISTRATOR', 'AMMINISTRATORE', 'SUPERADMIN', 'SUPER_ADMIN'].includes(r)) return 'ADMIN';
+    return r;
+  };
+  const userRole = normalizeRole(user?.role);
   const menuItems = filterMenuItems(ALL_MENU_ITEMS, userRole);
   
   console.log('🔵 Menu filtrati per ruolo:', userRole, '- Visibili:', menuItems.length); // INFO DEV - rimuovere in produzione
@@ -498,7 +514,7 @@ const MainLayout = ({ children, onLogout }) => {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
-          <Logo size="large" showText={false} className="sidebar-logo" />
+          <Logo size="fullwidth" showText={false} className="sidebar-logo" />
         </div>
 
         <nav className="sidebar-nav">

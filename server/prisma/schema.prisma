@@ -75,6 +75,7 @@ model UserProfile {
   createdPerformanceData  PerformanceData[] @relation("PerformanceDataCreator")
   createdPlayers          Player[]          @relation("PlayerCreator")
   transfers               transfers[]
+  twoFactorAuth           TwoFactorAuth?    @relation("UserTwoFactorAuth")
   team                    Team?             @relation("TeamUsers", fields: [teamId], references: [id])
   createdInvites          TeamInvite[]      @relation("InvitesCreated")
   usedInvites             TeamInvite[]      @relation("InvitesUsed")
@@ -1446,5 +1447,18 @@ model PlayerHealthProfile {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   @@index([teamId, playerId])
+  @@schema("soccerxpro")
+}
+
+model TwoFactorAuth {
+  id              String   @id @default(uuid())
+  userId          Int      @unique @map("userId")
+  secret          String
+  isEnabled       Boolean  @default(false) @map("is_enabled")
+  backupCodes     String[] @map("backup_codes")
+  lastUsed        DateTime? @map("last_used")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  user            UserProfile @relation("UserTwoFactorAuth", fields: [userId], references: [id], onDelete: Cascade)
   @@schema("soccerxpro")
 }

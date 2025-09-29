@@ -17,42 +17,14 @@ const ContractKPICards = ({ data }) => {
 
   // Calcola trend (positivo/negativo)
   const getTrendIcon = (trend) => {
-    const iconStyle = {
-      color: '#ffffff',
-      fill: '#ffffff',
-      stroke: '#ffffff',
-      backgroundColor: 'transparent'
-    };
-    
     if (trend > 0) return (
-      <ICONS.trendUp 
-        size={ICON_SIZES.sm} 
-        className="trend-up" 
-        color="#ffffff" 
-        fill="#ffffff"
-        stroke="#ffffff"
-        style={iconStyle}
-      />
+      <ICONS.trendUp size={ICON_SIZES.sm} className="trend-up" />
     );
     if (trend < 0) return (
-      <ICONS.trendDown 
-        size={ICON_SIZES.sm} 
-        className="trend-down" 
-        color="#ffffff" 
-        fill="#ffffff"
-        stroke="#ffffff"
-        style={iconStyle}
-      />
+      <ICONS.trendDown size={ICON_SIZES.sm} className="trend-down" />
     );
     return (
-      <ICONS.target 
-        size={ICON_SIZES.sm} 
-        className="trend-neutral" 
-        color="#ffffff" 
-        fill="#ffffff"
-        stroke="#ffffff"
-        style={iconStyle}
-      />
+      <ICONS.target size={ICON_SIZES.sm} className="trend-neutral" />
     );
   };
 
@@ -134,18 +106,7 @@ const ContractKPICards = ({ data }) => {
           <div key={card.id} className={`kpi-card kpi-card--${card.color}`}>
             <div className="kpi-card__header">
               <div className="kpi-card__icon">
-                <IconComponent 
-                  size={ICON_SIZES.md} 
-                  color="#ffffff" 
-                  fill="#ffffff"
-                  stroke="#ffffff"
-                  style={{
-                    color: '#ffffff',
-                    fill: '#ffffff',
-                    stroke: '#ffffff',
-                    backgroundColor: 'transparent'
-                  }}
-                />
+                <IconComponent size={ICON_SIZES.md} />
               </div>
               <span className="kpi-card__title">{card.title}</span>
               <div className="kpi-card__trend">

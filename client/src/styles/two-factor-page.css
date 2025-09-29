@@ -1,0 +1,262 @@
+/* ========== TWO FACTOR AUTHENTICATION PAGE ========== */
+
+.two-fa-page {
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.two-fa-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: var(--text-secondary);
+}
+
+.two-fa-loading-state .spin {
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+  color: var(--color-primary);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ========== STATUS CARD ========== */
+
+.two-fa-status-card {
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  transition: all 0.2s ease;
+}
+
+.two-fa-status-card.enabled {
+  border-color: var(--color-success);
+  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(16, 185, 129, 0.02) 100%);
+}
+
+.two-fa-status-card.disabled {
+  border-color: var(--color-warning);
+  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(245, 158, 11, 0.02) 100%);
+}
+
+.two-fa-status-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.two-fa-status-icon {
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.two-fa-status-card.enabled .two-fa-status-icon {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.two-fa-status-card.disabled .two-fa-status-icon {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.two-fa-status-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.two-fa-status-info p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.two-fa-status-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.two-fa-status-actions .btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ========== INFO SECTION ========== */
+
+.two-fa-info-section {
+  margin-bottom: 32px;
+}
+
+.two-fa-info-section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+.two-fa-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.two-fa-info-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.two-fa-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.two-fa-info-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px auto;
+  background: var(--color-bg-secondary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.two-fa-info-card h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.two-fa-info-card p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ========== BACKUP CODES DISPLAY ========== */
+
+.two-fa-backup-display {
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-primary);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 24px;
+}
+
+.two-fa-backup-display h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.two-fa-backup-display p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.two-fa-backup-codes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.two-fa-backup-code-item {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.two-fa-backup-code-item code {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .two-fa-page {
+    padding: 16px;
+  }
+
+  .two-fa-status-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .two-fa-status-actions {
+    justify-content: center;
+  }
+
+  .two-fa-status-actions .btn {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .two-fa-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .two-fa-backup-codes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .two-fa-status-actions {
+    flex-direction: column;
+  }
+
+  .two-fa-status-actions .btn {
+    width: 100%;
+  }
+
+  .two-fa-backup-codes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========== DARK THEME ========== */
+
+[data-theme="dark"] .two-fa-status-card.enabled {
+  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(16, 185, 129, 0.05) 100%);
+}
+
+[data-theme="dark"] .two-fa-status-card.disabled {
+  background: linear-gradient(135deg, var(--color-bg) 0%, rgba(245, 158, 11, 0.05) 100%);
+}

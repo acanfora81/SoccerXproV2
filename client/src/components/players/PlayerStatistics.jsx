@@ -3,8 +3,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Users, Calendar, Ruler, Target } from 'lucide-react';
+import PlayersKPI from './PlayersKPI';
+import '../../styles/contracts-dashboard.css';
 import PageLoader from '../ui/PageLoader';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import '../../styles/statistics.css';
 
 const PlayerStatistics = () => {
@@ -256,59 +258,22 @@ const PlayerStatistics = () => {
   return (
     <div className="statistics-container">
       {/* Header */}
-      <div className="statistics-header">
-        <h2>Statistiche Giocatori</h2>
-        <p>Analisi dettagliata della rosa - {totalPlayers} giocatori totali</p>
-      </div>
-
-      {/* Statistiche Generali */}
-      <div className="stats-overview">
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Users size={24} />
-          </div>
-          <div className="stat-content">
-            <h3>Giocatori Totali</h3>
-            <p className="stat-number">{totalPlayers}</p>
-            <span className="stat-detail">{activePlayers} attivi</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Calendar size={24} />
-          </div>
-          <div className="stat-content">
-            <h3>Età Media</h3>
-            <p className="stat-number">{avgAge} anni</p>
-            <span className="stat-detail">Rosa completa</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Target size={24} />
-          </div>
-          <div className="stat-content">
-            <h3>Maglie Utilizzate</h3>
-            <p className="stat-number">{shirtStats.used}/99</p>
-            <span className="stat-detail">{shirtStats.available} disponibili</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Ruler size={24} />
-          </div>
-          <div className="stat-content">
-            <h3>Dati Fisici</h3>
-            <p className="stat-number">
-              {playersWithHeight}/{totalPlayers}
-            </p>
-            <span className="stat-detail">Altezza registrata</span>
+      <div className="import-wizard-header">
+        <div className="header-content">
+          <div className="header-title">
+            <Users size={32} color="#3B82F6" />
+            <div>
+              <h2>Statistiche Giocatori</h2>
+              <p>Analisi dettagliata della rosa - {totalPlayers} giocatori totali</p>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* KPI Cards - sotto il titolo, prima dei filtri */}
+      <PlayersKPI players={players} />
+
+      {/* Statistiche Generali - sostituite dalle KPI sopra */}
 
       {/* Selettore grafici */}
       <div className="chart-selector">
@@ -336,20 +301,45 @@ const PlayerStatistics = () => {
             <h3>Distribuzione per Ruolo</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
+                <defs>
+                  <linearGradient id="gradSlice1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.5} />
+                  </linearGradient>
+                  <linearGradient id="gradSlice2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#10B981" stopOpacity={0.5} />
+                  </linearGradient>
+                  <linearGradient id="gradSlice3" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.5} />
+                  </linearGradient>
+                  <linearGradient id="gradSlice4" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.5} />
+                  </linearGradient>
+                </defs>
                 <Pie
                   data={positionStats}
                   cx="50%"
                   cy="50%"
+                  innerRadius={55}
                   outerRadius={100}
-                  fill="#8884d8"
+                  paddingAngle={2}
+                  cornerRadius={6}
                   dataKey="value"
-                  label={({ name, percentage }) => `${name}: ${percentage}%`}
+                  labelLine={false}
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                 >
                   {positionStats.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={`url(#gradSlice${(index % 4) + 1})`} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value, name, props) => [
+                  `${((props?.payload?.percent || 0) * 100).toFixed(0)}%`,
+                  props?.payload?.name
+                ]} />
+                <Legend verticalAlign="bottom" formatter={(value) => value} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -359,12 +349,18 @@ const PlayerStatistics = () => {
           <div className="chart-container">
             <h3>Distribuzione per Fasce d'Età</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ageStats}>
+                <BarChart data={ageStats}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip formatter={(value) => [value, 'Giocatori']} />
-                <Bar dataKey="value" fill="#3B82F6" />
+                  <defs>
+                    <linearGradient id="gradBarBlue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.4} />
+                    </linearGradient>
+                  </defs>
+                  <Bar dataKey="value" fill="url(#gradBarBlue)" radius={[6,6,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -403,11 +399,13 @@ const PlayerStatistics = () => {
                     formatter={(value) => [value, 'Giocatori']}
                     labelFormatter={(label) => `Nazionalità: ${label}`}
                   />
-                  <Bar 
-                    dataKey="value" 
-                    fill="#10B981"
-                    radius={[4, 4, 0, 0]}
-                  />
+                  <defs>
+                    <linearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10B981" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#10B981" stopOpacity={0.4} />
+                    </linearGradient>
+                  </defs>
+                  <Bar dataKey="value" fill="url(#gradGreen)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -439,8 +437,14 @@ const PlayerStatistics = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="position" />
                 <YAxis />
-                <Tooltip />
-                <Bar dataKey="avgHeight" fill="#F59E0B" name="Altezza (cm)" />
+                <Tooltip formatter={(value) => [`${value} cm`, 'Altezza media']} />
+                <defs>
+                  <linearGradient id="gradOrange" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.4} />
+                  </linearGradient>
+                </defs>
+                <Bar dataKey="avgHeight" fill="url(#gradOrange)" radius={[6, 6, 0, 0]} name="Altezza (cm)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
