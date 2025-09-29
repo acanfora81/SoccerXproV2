@@ -28,6 +28,7 @@ import BonusTaxRatesUpload from './pages/tax/BonusTaxRatesUpload';
 import BonusTaxRatesList from './pages/tax/BonusTaxRatesList';
 import RegionalAdditionalsUpload from './pages/tax/RegionalAdditionalsUpload';
 import MunicipalAdditionalsUpload from './pages/tax/MunicipalAdditionalsUpload';
+import TwoFactorAuthPage from './pages/TwoFactorAuthPage';
 import TaxConfigPage from './pages/tax/TaxConfigPage';
 import ChoosePlan from './pages/onboarding/ChoosePlan';
 import PaymentSim from './pages/onboarding/PaymentSim';
@@ -145,8 +146,11 @@ function App() {
               <Route path="/tax/irpef-upload" element={<IrpefUploadPage />} />
               <Route path="/tax/regional-additionals" element={<RegionalAdditionalsPage />} />
               <Route path="/tax/municipal-additionals" element={<MunicipalAdditionalsPage />} />
+              {/* Security Routes */}
+              <Route path="/security/2fa" element={<TwoFactorAuthPage />} />
               {/* Medical Routes */}
-              {medicalRoutes('/dashboard/medical')}
+              {/* Route mediche come percorsi RELATIVI sotto /dashboard */}
+              {medicalRoutes('medical')}
               <Route path="/market" element={
                 <div className="page-placeholder"><h2>Mercato</h2><p>Modulo in sviluppo - Trasferimenti e scouting</p></div>
               } />

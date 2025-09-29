@@ -53,6 +53,7 @@ import {
   Dumbbell,
   Gauge,
   CircleDot
+  , Euro
 } from "lucide-react";
 
 // Tutte le icone sono da lucide-react per coerenza e controllo CSS completo
@@ -134,6 +135,7 @@ export const ICONS = {
   market: Target,            // es: Mercato
   admin: Settings,           // es: Amministrazione
   utilities: Settings,       // es: Utilità
+  euro: Euro,                // simbolo Euro per KPI economiche
 };
 
 // =========================

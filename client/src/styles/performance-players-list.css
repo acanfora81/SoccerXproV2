@@ -485,6 +485,18 @@
   background: var(--bg-secondary);
 }
 
+.nav-btn:active {
+  background: var(--bg-secondary);
+  opacity: 1;
+  transform: none;
+}
+
+.nav-btn:focus {
+  background: var(--bg-secondary);
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
 .month-title {
   font-weight: 600;
   color: var(--text-primary);

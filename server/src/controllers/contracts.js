@@ -120,8 +120,9 @@ const getContracts = async (req, res) => {
           }
         },
         orderBy: [
-          { status: 'asc' },
-          { endDate: 'asc' }
+          { endDate: 'asc' },           // Prima per data di scadenza (più urgente)
+          { players: { position: 'asc' } },  // Poi per ruolo
+          { players: { lastName: 'asc' } }   // Infine per cognome
         ],
         skip,
         take
@@ -2416,25 +2417,63 @@ const getDashboardAll = async (req, res) => {
     }));
 
     // Formatta contratti in scadenza
-    const formattedExpiring = expiringContractsData.map(contract => ({
-      id: contract.id,
-      playerName: `${contract.players.firstName} ${contract.players.lastName}`,
-      role: contract.contractRole || contract.players.position || 'Non specificato',
-      salary: contract.salary,
-      currency: contract.currency,
-      endDate: contract.endDate,
-      status: contract.status
-    }));
+    const formattedExpiring = expiringContractsData
+      .map(contract => ({
+        id: contract.id,
+        playerName: `${contract.players.firstName} ${contract.players.lastName}`,
+        role: contract.contractRole || contract.players.position || 'Non specificato',
+        salary: contract.salary,
+        currency: contract.currency,
+        endDate: contract.endDate,
+        status: contract.status,
+        // Aggiungi campi per ordinamento
+        position: contract.players.position || '',
+        lastName: contract.players.lastName || ''
+      }))
+      .sort((a, b) => {
+        // Prima ordina per data di scadenza
+        const dateA = new Date(a.endDate);
+        const dateB = new Date(b.endDate);
+        if (dateA.getTime() !== dateB.getTime()) {
+          return dateA - dateB;
+        }
+        // Se le date sono uguali, ordina per ruolo
+        if (a.position !== b.position) {
+          return a.position.localeCompare(b.position, 'it', { sensitivity: 'base' });
+        }
+        // Se i ruoli sono uguali, ordina per cognome
+        return a.lastName.localeCompare(b.lastName, 'it', { sensitivity: 'base' });
+      })
+      .map(({ position, lastName, ...contract }) => contract); // Rimuovi campi temporanei
 
     // Formatta top players
-    const formattedTopPlayers = topPlayersData.map(contract => ({
-      id: contract.id,
-      playerName: `${contract.players.firstName} ${contract.players.lastName}`,
-      role: contract.contractRole || contract.players.position || 'Non specificato',
-      salary: contract.salary,
-      currency: contract.currency,
-      status: contract.status
-    }));
+    const formattedTopPlayers = topPlayersData
+      .map(contract => ({
+        id: contract.id,
+        playerName: `${contract.players.firstName} ${contract.players.lastName}`,
+        role: contract.contractRole || contract.players.position || 'Non specificato',
+        salary: contract.salary,
+        currency: contract.currency,
+        status: contract.status,
+        // Aggiungi campi per ordinamento
+        position: contract.players.position || '',
+        lastName: contract.players.lastName || ''
+      }))
+      .sort((a, b) => {
+        // Prima ordina per stipendio (decrescente per top players)
+        const salaryA = parseFloat(a.salary || 0);
+        const salaryB = parseFloat(b.salary || 0);
+        if (salaryA !== salaryB) {
+          return salaryB - salaryA; // Decrescente
+        }
+        // Se gli stipendi sono uguali, ordina per ruolo
+        if (a.position !== b.position) {
+          return a.position.localeCompare(b.position, 'it', { sensitivity: 'base' });
+        }
+        // Se i ruoli sono uguali, ordina per cognome
+        return a.lastName.localeCompare(b.lastName, 'it', { sensitivity: 'base' });
+      })
+      .map(({ position, lastName, ...contract }) => contract); // Rimuovi campi temporanei
 
     res.json({
       success: true,

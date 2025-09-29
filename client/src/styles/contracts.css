@@ -140,7 +140,7 @@
 /* Icone SVG delicate e sottili - tutte outline */
 .stat-icon svg {
   color: var(--color-primary);
-  fill: none !important;                    /* Forza outline */
+  fill: none !important;                    /* Outline in tema light */
   stroke: var(--color-primary);
   stroke-width: 1.5;                        /* Spessore uniforme */
   opacity: 0.9;
@@ -155,7 +155,7 @@
 .stat-icon.critical svg,
 .stat-icon.high svg {
   color: var(--color-primary);
-  fill: none !important;                    /* Forza outline */
+  fill: none !important;                    /* Outline in tema light */
   stroke: var(--color-primary);
   stroke-width: 1.5;                        /* Spessore uniforme */
   opacity: 0.9;
@@ -186,6 +186,14 @@
   fill: none !important;
   stroke: var(--color-primary);
   stroke-width: 1.5;
+}
+
+/* Tema dark: icone bianche come dashboard */
+[data-theme="dark"] .stat-icon svg,
+[data-theme="dark"] .stat-icon svg * {
+  color: var(--text-on-accent) !important;
+  stroke: var(--text-on-accent) !important;
+  fill: var(--text-on-accent) !important;
 }
 
 .stat-content {
@@ -411,28 +419,28 @@
 }
 
 .status-yellow {
-  background: var(--color-warning);
-  background-opacity: 0.1;
+  background: #F59E0B1A; /* 10% alpha */
   color: var(--color-warning);
 }
+[data-theme="dark"] .status-yellow { background: #EAB3081A; }
 
 .status-red {
-  background: var(--color-danger);
-  background-opacity: 0.1;
+  background: #EF44441A;
   color: var(--color-danger);
 }
+[data-theme="dark"] .status-red { background: #F871711A; }
 
 .status-blue {
-  background: var(--color-primary);
-  background-opacity: 0.1;
+  background: #3B82F61A;
   color: var(--color-primary);
 }
+[data-theme="dark"] .status-blue { background: #8B5CF61A; }
 
 .status-active {
-  background: var(--color-success);
-  background-opacity: 0.1;
+  background: #10B9811A;
   color: #ffffff !important;
 }
+[data-theme="dark"] .status-active { background: #22C55E1A; }
 
 /* Badge Attivo senza sfondo, testo blu del progetto */
 .status-badge.status-active,
@@ -442,28 +450,28 @@
 }
 
 .status-draft {
-  background: var(--color-warning);
-  background-opacity: 0.1;
+  background: #F59E0B1A;
   color: var(--color-warning);
 }
+[data-theme="dark"] .status-draft { background: #EAB3081A; }
 
 .status-expired {
-  background: var(--color-danger);
-  background-opacity: 0.1;
+  background: #EF44441A;
   color: var(--color-danger);
 }
+[data-theme="dark"] .status-expired { background: #F871711A; }
 
 .status-terminated {
-  background: var(--color-text-muted);
-  background-opacity: 0.1;
+  background: #6B72801A;
   color: var(--color-text-muted);
 }
+[data-theme="dark"] .status-terminated { background: #94A3B81A; }
 
 .status-renewed {
-  background: var(--color-primary);
-  background-opacity: 0.1;
+  background: #3B82F61A;
   color: var(--color-primary);
 }
+[data-theme="dark"] .status-renewed { background: #8B5CF61A; }
 
 /* Dettagli contratto */
 .contract-details {
@@ -547,22 +555,22 @@
 }
 
 .kpi-value.status-value.status-yellow {
-  background: var(--color-warning);
-  background-opacity: 0.1;
+  background: #F59E0B1A;
   color: var(--color-warning);
 }
+[data-theme="dark"] .kpi-value.status-value.status-yellow { background: #EAB3081A; }
 
 .kpi-value.status-value.status-red {
-  background: var(--color-danger);
-  background-opacity: 0.1;
+  background: #EF44441A;
   color: var(--color-danger);
 }
+[data-theme="dark"] .kpi-value.status-value.status-red { background: #F871711A; }
 
 .kpi-value.status-value.status-blue {
-  background: var(--color-primary);
-  background-opacity: 0.1;
+  background: #3B82F61A;
   color: var(--color-primary);
 }
+[data-theme="dark"] .kpi-value.status-value.status-blue { background: #8B5CF61A; }
 
 /* Alert scadenza */
 .expiry-alert {
@@ -981,7 +989,7 @@
 
 /* ===== FORZA FONT IDENTICI ALLA DASHBOARD CONTRATTI ===== */
 .contracts-stats .stat-value {
-  font-size: var(--text-2xl) !important;
+  font-size: 15px !important; /* più piccolo del 18px attuale */
   font-weight: 700 !important;
   margin-bottom: 4px !important;
   line-height: 1 !important;

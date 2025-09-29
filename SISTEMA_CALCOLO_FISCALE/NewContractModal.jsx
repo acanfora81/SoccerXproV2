@@ -1567,7 +1567,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
           {/* Sezione Rinnovo Ufficiale - Solo per modifiche */}
           {editingContract && (
             <div className="form-section">
-              <h3 className="form-section-title">🔄 Rinnovo Ufficiale</h3>
+              <h3 className="form-section-title">Rinnovo Ufficiale</h3>
               <div className="form-group">
                 <label htmlFor="isOfficialRenewal" className="checkbox-label">
                   <input

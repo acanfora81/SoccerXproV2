@@ -18,6 +18,7 @@ import {
   Eye,
   History
 } from 'lucide-react';
+import ContractsListKPI from '../../components/contracts/ContractsListKPI';
 import { apiFetch } from '../../utils/http';
 import PageLoader from '../../components/ui/PageLoader';
 import NewContractModal from '../../components/contracts/NewContractModal';
@@ -282,7 +283,7 @@ const ContractsList = () => {
     setIsModalOpen(false);
   };
 
-  // Filtra contratti
+  // Filtra contratti (l'ordinamento è ora gestito dal backend)
   const filteredContracts = contracts.filter(contract => {
     const matchesSearch = searchTerm === '' || 
       contract.players.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -401,65 +402,8 @@ const ContractsList = () => {
       </div>
       </div>
 
-      {/* Statistiche */}
-      <div className="contracts-stats">
-        <div className="stat-card">
-          <div className="stat-icon">
-            <FileText 
-              size={24} 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth={1.5}
-            />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{stats.total || 0}</div>
-            <div className="stat-label">Totale Contratti</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon active">
-            <CheckCircle 
-              size={24} 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth={1.5}
-            />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{stats.active || 0}</div>
-            <div className="stat-label">Attivi</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon warning">
-            <Clock 
-              size={24} 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth={1.5}
-            />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{stats.expiring || 0}</div>
-            <div className="stat-label">In Scadenza</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon success">
-            <Euro 
-              size={24} 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth={1.5}
-            />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{formatCurrency(stats.totalValue || 0)}</div>
-            <div className="stat-label">Valore Totale</div>
-          </div>
-        </div>
-      </div>
+      {/* Statistiche - KPI standard */}
+      <ContractsListKPI stats={stats} />
 
       {/* Filtri */}
       <div className="contracts-filters">

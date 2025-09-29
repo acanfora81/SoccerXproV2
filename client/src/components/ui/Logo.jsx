@@ -12,7 +12,8 @@ const Logo = ({
     small: { width: 24, height: 24 },
     medium: { width: 32, height: 32 },
     large: { width: 48, height: 48 },
-    xlarge: { width: 64, height: 64 }
+    xlarge: { width: 64, height: 64 },
+    fullwidth: { width: '100%', height: 'auto' }
   };
 
   const logoSize = sizeMap[size] || sizeMap.medium;

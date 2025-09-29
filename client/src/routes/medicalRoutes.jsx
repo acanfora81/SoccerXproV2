@@ -13,7 +13,8 @@ import AnalyticsPage from '../pages/medical/AnalyticsPage.placeholder';
 import AuditPage from '../pages/medical/AuditPage.placeholder';
 import SettingsPage from '../pages/medical/SettingsPage';
 
-export function medicalRoutes(base = '/medical') {
+// Usa percorsi RELATIVI rispetto a "/dashboard/*" in App.jsx
+export function medicalRoutes(base = 'medical') {
   return (
     <>
       <Route path={`${base}`} element={<Dashboard />} />

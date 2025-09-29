@@ -2,6 +2,9 @@
 /* Athlos Medical UI Styles */
 /* ======================== */
 
+/* Importa gli stili della timeline da contracts-dashboard */
+@import url('./contracts-dashboard.css');
+
 :root {
   --kpi-bg: var(--card-bg, #fff);
   --kpi-border: var(--border-color, #e5e7eb);
@@ -17,6 +20,29 @@
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* === Barra filtri/azioni coerente a contracts === */
+.medical-page .page-header .actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.medical-page .select,
+.medical-page .input {
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--color-text);
+}
+
+.medical-page .select:focus,
+.medical-page .input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 15%);
 }
 
 /* KPI Cards */
@@ -95,6 +121,46 @@
   text-align: center;
   color: var(--text-secondary);
   background: var(--kpi-bg);
+}
+
+/* === Modale stile standard === */
+.medical-page .modal {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.medical-page .modal__content {
+  width: min(720px, 94vw);
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 20%);
+}
+
+.medical-page .modal__content h3 {
+  margin: 0 0 12px 0;
+  color: var(--color-primary);
+}
+
+.medical-page .medical-grid .row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.medical-page .medical-grid textarea.input {
+  width: 100%;
+}
+
+.medical-page .modal__content .btn {
+  min-width: 110px;
 }
 
 .empty-state h3 {
@@ -417,4 +483,394 @@
 .btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* === Stili specifici per InjuryTimeline === */
+.severity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.severity-badge.severe {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.severity-badge.moderate {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fed7aa;
+}
+
+.severity-badge.minor {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.status-badge.recovering {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.status-badge.healed {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.status-badge.chronic {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.injury-type,
+.body-part {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.duration-days {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === Stili specifici per VisitsTimeline === */
+.visit-type {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.doctor-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.visit-notes {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.time-info {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.status-badge.completed {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.status-badge.scheduled {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.status-badge.pending {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.status-badge.cancelled {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* === Stili per VisitsCalendar === */
+.visits-calendar {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.calendar-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.calendar-title h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.nav-btn:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.current-month {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 200px;
+  text-align: center;
+}
+
+.calendar-grid {
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--color-primary);
+  padding: 0;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.weekday-header {
+  padding: 16px 12px;
+  text-align: center;
+  font-weight: 700;
+  color: white;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+
+.calendar-day {
+  min-height: 140px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.calendar-day:hover {
+  background: #f9fafb;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.calendar-day.other-month {
+  background: #f9fafb;
+  opacity: 0.5;
+}
+
+.calendar-day.other-month .day-number {
+  color: #9ca3af;
+}
+
+.calendar-day.today {
+  background: #eff6ff;
+  border: 3px solid #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.calendar-day.today .day-number {
+  background: #3b82f6;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.calendar-day.has-visits {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+
+.day-number {
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+.visits-indicators {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 100px;
+}
+
+.visit-indicator {
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.visit-indicator:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.visit-indicator.scheduled {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+}
+
+.visit-indicator.pending {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+}
+
+.visit-indicator.completed {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+}
+
+.visit-indicator.cancelled {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+}
+
+.visit-time {
+  font-weight: 700;
+  font-size: 11px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.visit-player {
+  font-size: 10px;
+  opacity: 0.95;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.more-visits {
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  text-align: center;
+  padding: 6px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-legend {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.legend-color.scheduled {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.legend-color.pending {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.legend-color.completed {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.legend-color.cancelled {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }

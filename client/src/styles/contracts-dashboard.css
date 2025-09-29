@@ -149,30 +149,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff !important;
 }
 
-.kpi-card__icon svg {
-  color: #ffffff !important;
-  fill: #ffffff !important;
-  stroke: #ffffff !important;
-}
-
+/* Icone coerenti con tema: blu in light, bianche in dark */
+.kpi-card__icon svg,
 .kpi-card__icon svg * {
-  color: #ffffff !important;
-  fill: #ffffff !important;
-  stroke: #ffffff !important;
+  color: var(--color-primary);
+  stroke: var(--color-primary);
+  fill: none;
 }
 
-/* CSS SEMPLIFICATO - le icone ora hanno style inline */
-.kpi-card__icon {
-  color: #ffffff !important;
-}
-
-.kpi-card__icon svg {
-  color: #ffffff !important;
-  fill: #ffffff !important;
-  stroke: #ffffff !important;
+[data-theme="dark"] .kpi-card__icon svg,
+[data-theme="dark"] .kpi-card__icon svg * {
+  color: var(--text-on-accent) !important;
+  stroke: var(--text-on-accent) !important;
+  fill: var(--text-on-accent) !important;
 }
 
 .kpi-card__trend {
@@ -187,6 +178,19 @@
   font-size: var(--text-xs);
   font-weight: 600;
   font-family: var(--font-sans);
+  color: var(--color-primary);
+}
+
+.kpi-card__trend svg,
+.kpi-card__trend svg * {
+  color: var(--color-primary);
+  stroke: var(--color-primary);
+}
+
+[data-theme="dark"] .kpi-card__trend svg,
+[data-theme="dark"] .kpi-card__trend svg * {
+  color: var(--text-on-accent);
+  stroke: var(--text-on-accent);
 }
 
 .kpi-card__content {
@@ -387,7 +391,7 @@
 /* ===== TABELLE ===== */
 .tables-container {
   background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-color);   /* unico bordo esterno */
   border-radius: 12px;
   padding: 24px;
 }
@@ -427,10 +431,11 @@
 }
 
 .table-container {
-  background: var(--bg-primary);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: transparent !important; /* evita doppio contorno */
+  border-radius: 0 !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .table-header {
@@ -438,9 +443,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-color);
+  background: transparent; /* evita rettangolo interno */
+  border-bottom: none;      /* allinea alla timeline senza bordo interno */
 }
+
+/* Forza allineamento stile timeline dentro il contenitore tabelle */
+.tables-container .table-header { background: transparent !important; border-bottom: 0 !important; }
+.tables-container .table-container { background: transparent !important; border: 0 !important; box-shadow: none !important; }
 
 .table-header h3 {
   display: flex;
@@ -463,6 +472,46 @@
 
 .table-wrapper {
   overflow-x: auto;
+}
+
+/* Scrollbar delicata per tabelle e contenitori scrollabili */
+.table-wrapper::-webkit-scrollbar,
+.tables-container::-webkit-scrollbar,
+.dashboard-table::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-track,
+.tables-container::-webkit-scrollbar-track,
+.dashboard-table::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb,
+.tables-container::-webkit-scrollbar-thumb,
+.dashboard-table::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12); /* delicata */
+  border-radius: 3px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover,
+.tables-container::-webkit-scrollbar-thumb:hover,
+.dashboard-table::-webkit-scrollbar-thumb:hover,
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.20);
+}
+
+/* Firefox */
+.table-wrapper,
+.tables-container,
+.dashboard-table,
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.20) transparent;
 }
 
 /* ===== ALLINEAMENTO PERFETTO TABELLA TIMELINE ===== */
@@ -782,6 +831,41 @@
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
+}
+
+.timeline-navigation .nav-btn {
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--primary-color) !important;
+  opacity: 1 !important;
+}
+
+.timeline-navigation .nav-btn:hover,
+.timeline-navigation .nav-btn:active,
+.timeline-navigation .nav-btn:focus {
+  background: var(--primary-color-light) !important;
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.timeline-navigation .nav-btn svg { color: currentColor !important; opacity: 1 !important; }
+
+.nav-btn:active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  opacity: 1;
+  transform: none;
+}
+
+.nav-btn:focus {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 .current-month {

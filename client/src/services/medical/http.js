@@ -25,16 +25,16 @@ async function handle(res) {
 
 export const http = {
   get: (url) => fetch(base + url, { credentials: 'include' }).then(handle),
-  post: (url, body) => fetch(base + url, { 
+  post: (url, body, headers = {}) => fetch(base + url, { 
     method: 'POST', 
     credentials: 'include', 
-    headers: { 'Content-Type': 'application/json' }, 
+    headers: { 'Content-Type': 'application/json', ...headers }, 
     body: JSON.stringify(body) 
   }).then(handle),
-  patch: (url, body) => fetch(base + url, { 
+  patch: (url, body, headers = {}) => fetch(base + url, { 
     method: 'PATCH', 
     credentials: 'include', 
-    headers: { 'Content-Type': 'application/json' }, 
+    headers: { 'Content-Type': 'application/json', ...headers }, 
     body: JSON.stringify(body) 
   }).then(handle),
   del: (url) => fetch(base + url, { 

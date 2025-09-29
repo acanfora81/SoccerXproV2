@@ -5,6 +5,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { authenticate } = require('../../middleware/auth');
 const { login, register, registerWithTeam, logout, refreshToken } = require('../../controllers/auth');
+const twoFactorAuthRoutes = require('./twoFactorAuth');
 
 const router = express.Router();
 
@@ -241,5 +242,8 @@ router.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Mount 2FA routes
+router.use('/2fa', twoFactorAuthRoutes);
 
 module.exports = router;
