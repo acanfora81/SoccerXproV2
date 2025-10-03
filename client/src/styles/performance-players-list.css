@@ -107,15 +107,15 @@
 }
 
 :root[data-theme="dark"] .compare-table th {
-  background: #1f2937 !important; /* scuro per sovrascrivere #f8fafc */
+  background: #000000 !important; /* nero puro */
   color: #e5e7eb !important; /* bianco per sovrascrivere #1e293b */
-  border-bottom: 1px solid #374151 !important; /* bordo scuro */
+  border-bottom: 1px solid var(--border-color) !important; /* bordo */
 }
 
 :root[data-theme="dark"] .compare-table td {
   background: #000000 !important; /* NERO PURO per sovrascrivere bianco implicito */
   color: #e5e7eb !important; /* bianco */
-  border-bottom: 1px solid #1f2937 !important; /* bordo scuro per sovrascrivere #f1f5f9 */
+  border-bottom: 1px solid var(--border-color) !important; /* bordo */
 }
 
 :root[data-theme="dark"] .compare-table .metric-label {
@@ -320,8 +320,8 @@
 /* DARK THEME overrides per Vista Giocatori */
 :root[data-theme="dark"] .compare-page-drawer .tab-btn { color: #e5e7eb !important; }
 :root[data-theme="dark"] .compare-page-drawer .tab-btn.active { background: #6d28d9 !important; border-color: #6d28d9 !important; color: #fff !important; }
-:root[data-theme="dark"] .compare-page-drawer .compare-header { background: #0b0b0f !important; border-color: #1f2937 !important; }
-:root[data-theme="dark"] .compare-page-drawer .chart-card { background: #0b0b0f !important; border-color: #1f2937 !important; }
+:root[data-theme="dark"] .compare-page-drawer .compare-header { background: #000000 !important; border-color: var(--border-color) !important; }
+:root[data-theme="dark"] .compare-page-drawer .chart-card { background: #000000 !important; border-color: var(--border-color) !important; }
 
 @media (max-width: 1200px) {
   .compare-page-drawer .drawer-tabs {
@@ -428,7 +428,7 @@
   overflow: hidden;
 }
 /* Dark theme override */
-:root[data-theme="dark"] .datepicker { background: #0b0b0f; border: 1px solid #1f2937; }
+:root[data-theme="dark"] .datepicker { background: #000000; border: 1px solid var(--border-color); }
 
 .datepicker-header {
   display: flex;
@@ -643,8 +643,8 @@
 }
 
 /* Dark theme overrides: header sezione ruoli nero, card centrali nere, tab viola attive */
-:root[data-theme="dark"] .role-header { background: #0b0b0f; border-color: #1f2937; }
-:root[data-theme="dark"] .role-section { background: #0b0b0f; border-color: #1f2937; }
+:root[data-theme="dark"] .role-header { background: #000000; border-color: var(--border-color); }
+:root[data-theme="dark"] .role-section { background: #000000; border-color: var(--border-color); }
 :root[data-theme="dark"] .players-list-container .player-tab-btn.active { background: #6d28d9 !important; color: #ffffff !important; border-color: #6d28d9 !important; }
 
 /* Dark mode per icone Users nelle card giocatori - VIOLA */
@@ -678,30 +678,48 @@
 
 /* Elimina completamente lo spazio superiore delle card */
 .players-list-container .player-card {
-  padding-top: 0.1rem !important;
+  padding-top: 1rem !important; /* spazio reale sopra avatar/nome */
 }
 
 .players-list-container .density-compact .player-card {
-  padding-top: 0.05rem !important;
+  padding-top: 0.8rem !important;
 }
 
 .players-list-container .density-medium .player-card {
-  padding-top: 0.1rem !important;
+  padding-top: 1rem !important;
 }
 
 .players-list-container .density-wide .player-card {
-  padding-top: 0.15rem !important;
+  padding-top: 1.2rem !important;
 }
 
-/* Elimina completamente lo spazio superiore - regola ultra-aggressiva */
+/* Spazio header card sopra la linea blu */
 .players-list-container .player-card .card-header {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+  margin-top: 0.25rem !important;
+  padding-top: 0.5rem !important;
+  overflow: visible !important;
 }
 
 .players-list-container .player-card .player-info {
-  margin-top: 0 !important;
+  margin-top: 0.25rem !important;
   padding-top: 0 !important;
+}
+
+/* Abbassa l'avatar dentro la card */
+.players-list-container .player-avatar {
+  margin-top: 3rem !important;
+}
+
+.players-list-container .density-compact .player-avatar {
+  margin-top: 2.5rem !important;
+}
+
+.players-list-container .density-medium .player-avatar {
+  margin-top: 3rem !important;
+}
+
+.players-list-container .density-wide .player-avatar {
+  margin-top: 3.5rem !important;
 }
 
 /* Elimina anche i margini del nome del giocatore */
@@ -722,6 +740,7 @@
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 4px !important;
+  margin-top: 0.75rem !important; /* spazio extra tra nome e riga blu/tab */
 }
 
 .players-list-container .player-tab-btn {
@@ -736,20 +755,27 @@
   height: 12px !important;
 }
 
-/* Regola ultra-aggressiva per eliminare TUTTO lo spazio superiore */
-.players-list-container .player-card {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
-
+/* Spazio superiore adeguato per l'avatar */
 .players-list-container .player-card > *:first-child {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+  margin-top: 0.5rem !important;
+  padding-top: 0.5rem !important;
 }
 
 .players-list-container .player-card .card-header:first-child {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
+  margin-top: 0.5rem !important;
+  padding-top: 0.5rem !important;
+}
+
+/* Aumenta lo spazio tra avatar/nome e la riga blu delle tab */
+.players-list-container .player-card .card-header {
+  margin-bottom: 1rem !important;
+  min-height: 160px !important; /* forza spazio sufficiente nella vista Performance */
+}
+
+/* Se in alcune card non c'è .card-header, agisci sul wrapper dei dettagli */
+.players-list-container .player-card .player-details {
+  margin-bottom: 1rem !important;
+  padding-bottom: 0.25rem !important;
 }
 
 /* Forza spacing tra dati KPI e pulsanti footer */
@@ -874,6 +900,7 @@
 .player-card {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color); /* Forza il bordo inferiore visibile */
   border-radius: 12px;
   padding: 0.75rem;
   display: flex;
@@ -885,26 +912,26 @@
   transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
-  min-height: 280px;
+  min-height: 320px; /* aumenta spazio verticale per non tagliare avatar e testi */
 }
 
 /* Density-specific card styling */
 .density-compact .player-card {
   padding: 0.6rem;
   border-radius: 8px;
-  min-height: 240px;
+  min-height: 280px; /* aggiunge spazio nella variante compatta */
 }
 
 .density-medium .player-card {
   padding: 0.75rem;
   border-radius: 12px;
-  min-height: 280px;
+  min-height: 320px; /* aggiunge spazio nella variante media */
 }
 
 .density-wide .player-card {
   padding: 0.9rem;
   border-radius: 16px;
-  min-height: 320px;
+  min-height: 360px; /* aggiunge spazio nella variante wide */
 }
 
 .player-card:hover {
@@ -947,19 +974,23 @@
   justify-content: center;
   margin-bottom: 0.4rem;
   width: 100%;
+  min-height: 76px !important; /* spazio verticale base per avatar + nome */
 }
 
 /* Density-specific header styling */
 .density-compact .card-header {
   margin-bottom: 0.25rem;
+  min-height: 68px !important; /* compatto ma abbastanza alto per non tagliare avatar */
 }
 
 .density-medium .card-header {
   margin-bottom: 0.4rem;
+  min-height: 72px !important;
 }
 
 .density-wide .card-header {
   margin-bottom: 0.5rem;
+  min-height: 80px !important;
 }
 
 .player-card .player-info {
@@ -968,6 +999,8 @@
   align-items: center;
   gap: 0.3rem;
   width: 100%;
+  padding-bottom: 0.5rem; /* meno spazio per evitare taglio avatar */
+  margin-bottom: 0.25rem; /* abbassa ma senza comprimere avatar */
 }
 
 .player-avatar {
@@ -989,21 +1022,21 @@
   width: 28px;
   height: 28px;
   font-size: 0.7rem;
-  margin-top: 6px;
+  margin-top: 18px;
 }
 
 .density-medium .player-avatar {
   width: 32px;
   height: 32px;
   font-size: 0.9rem;
-  margin-top: 8px;
+  margin-top: 20px;
 }
 
 .density-wide .player-avatar {
   width: 36px;
   height: 36px;
   font-size: 1rem;
-  margin-top: 10px;
+  margin-top: 22px;
 }
 
 .player-avatar img {
@@ -1474,6 +1507,19 @@
   background: var(--color-warning-hover);
   color: var(--text-on-accent);
   border-color: var(--color-warning-hover);
+}
+
+/* Pulsante Seleziona tutti (blu chiaro) */
+.role-actions .btn-secondary {
+  background: #60A5FA !important;
+  border: 2px solid #60A5FA !important;
+  color: #ffffff !important;
+}
+
+.role-actions .btn-secondary:hover {
+  background: #3B82F6 !important;
+  border-color: #3B82F6 !important;
+  color: #ffffff !important;
 }
 
 /* Override coerente per tutti i pulsanti secondari */
@@ -3187,7 +3233,7 @@
 
 /* Dark mode per Recharts tooltip */
 :root[data-theme="dark"] .recharts-tooltip-wrapper .recharts-default-tooltip {
-  background: rgba(0, 0, 0, 0.95) !important;
+  background: #000000 !important;
   border: 1px solid var(--border-color) !important;
   color: var(--text-primary) !important;
 }
@@ -3248,7 +3294,7 @@
 }
 
 :root[data-theme="dark"] .month-navigation .nav-btn:hover {
-  background: #1a1a1a !important;
+  background: #000000 !important;
 }
 
 :root[data-theme="dark"] .compare-kpi-row span:first-child {
@@ -3336,20 +3382,20 @@
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
 }
 
-/* Pulsante Confronta (arancione) - con massima specificità */
+/* Pulsante Confronta (verde) - con massima specificità */
 .player-card .card-footer button:last-child,
 .player-card .card-footer .btn-secondary {
-  background-color: #F59E0B !important;
-  border-color: #F59E0B !important;
+  background-color: #22C55E !important;
+  border-color: #22C55E !important;
   color: #ffffff !important;
 }
 
 .player-card .card-footer button:last-child:hover,
 .player-card .card-footer .btn-secondary:hover {
-  background-color: #D97706 !important;
-  border-color: #D97706 !important;
+  background-color: #16A34A !important;
+  border-color: #16A34A !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4) !important;
 }
 
 /* Icone uniformi */

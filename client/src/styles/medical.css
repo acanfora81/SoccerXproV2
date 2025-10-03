@@ -387,33 +387,38 @@
 
 /* Dark Mode Support */
 :root[data-theme="dark"] {
-  --kpi-bg: var(--card-bg, #1f2937);
-  --kpi-border: var(--border-color, #374151);
+  --kpi-bg: var(--card-bg, #000000);
+  --kpi-border: var(--border-color, #475569);
 }
 
 :root[data-theme="dark"] .badge-success {
-  background: #064e3b;
+  background: #000000;
   color: #a7f3d0;
+  border: 1px solid var(--color-success);
 }
 
 :root[data-theme="dark"] .badge-warning {
-  background: #78350f;
+  background: #000000;
   color: #fde68a;
+  border: 1px solid var(--color-warning);
 }
 
 :root[data-theme="dark"] .badge-danger {
-  background: #7f1d1d;
+  background: #000000;
   color: #fecaca;
+  border: 1px solid var(--color-danger);
 }
 
 :root[data-theme="dark"] .badge-info {
-  background: #164e63;
+  background: #000000;
   color: #a5f3fc;
+  border: 1px solid var(--color-primary);
 }
 
 :root[data-theme="dark"] .badge-neutral {
-  background: #374151;
+  background: #000000;
   color: #d1d5db;
+  border: 1px solid var(--color-border);
 }
 
 /* Responsive Design */

@@ -478,6 +478,7 @@ const PlayerFormModal = ({ isOpen, onClose, player = null, onSuccess }) => {
               className="btn btn-secondary"
               disabled={loading}
             >
+              <X size={20} />
               Annulla
             </button>
             <button

@@ -42,13 +42,13 @@
 
 /* Dark theme overrides for TeamDashboard tabs (Squadra/Giocatore) */
 [data-theme="dark"] .tabs-list {
-  background: #0b0b0f; /* nero sfondo */
+  background: #000000; /* nero puro */
 }
 [data-theme="dark"] .tabs-trigger {
   color: #e5e7eb; /* scritta bianca tenue */
 }
 [data-theme="dark"] .tabs-trigger:hover {
-  background: #11121a; /* leggero hover scuro */
+  background: #000000; /* nero puro */
   color: #ffffff;
 }
 [data-theme="dark"] .tabs-trigger.selected {
