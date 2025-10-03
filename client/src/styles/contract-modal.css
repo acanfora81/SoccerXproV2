@@ -482,6 +482,16 @@
   border-radius: 12px 12px 0 0;
 }
 
+/* Posiziona il bottone close nell'header dei contratti e definisce stile icona */
+.contract-modal .modal-header .modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+.contract-modal .modal-header .modal-close svg { color: currentColor; }
+
 .contract-modal .modal-header h2 {
   font-size: 28px;
   font-weight: 700;
@@ -496,11 +506,28 @@
   padding: 8px;
   border-radius: 8px;
   transition: all 0.2s ease;
+  background: transparent; /* evita riempimento che nasconde la X */
+  color: var(--text-primary); /* mantiene la X ben visibile */
 }
 
 .contract-modal .modal-close:hover {
-  background: var(--border-color);
-  transform: scale(1.05);
+  background: transparent; /* nessun riempimento pieno al passaggio */
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 2px var(--border-color); /* feedback leggero e accessibile */
+  transform: none;
+}
+
+/* Override esplicito contro regole generiche .modal-close:hover in altri stylesheet */
+.contract-modal .modal-header .modal-close {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.contract-modal .modal-header .modal-close:hover,
+.contract-modal .modal-header .modal-close:focus-visible {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  box-shadow: inset 0 0 0 2px var(--border-color);
 }
 
 .contract-form {
@@ -656,6 +683,8 @@
   gap: 8px;
   transition: all 0.2s ease;
   min-height: 44px;
+  min-width: 200px !important; /* larghezza uniforme bottoni azioni */
+  justify-content: center;
 }
 
 .contract-form .modal-actions .btn-primary {
@@ -671,13 +700,15 @@
 }
 
 .contract-form .modal-actions .btn-secondary {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
+  background: #EF4444 !important;
+  border-color: #EF4444 !important;
+  color: #ffffff !important;
 }
 
 .contract-form .modal-actions .btn-secondary:hover:not(:disabled) {
-  background: var(--border-color);
+  background: #DC2626 !important;
+  border-color: #DC2626 !important;
+  color: #ffffff !important;
   transform: translateY(-1px);
 }
 

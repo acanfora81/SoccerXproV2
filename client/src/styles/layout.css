@@ -556,7 +556,7 @@
 }
 
 :root[data-theme="dark"] .submenu-item:hover {
-  background: #1a1a1a !important;
+  background: #000000 !important;
   color: var(--text-primary) !important;
 }
 
@@ -571,6 +571,6 @@
 }
 
 :root[data-theme="dark"] .nested-submenu-item:hover {
-  background: #1a1a1a !important;
+  background: #000000 !important;
   color: var(--text-primary) !important;
 }

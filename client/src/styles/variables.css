@@ -75,8 +75,8 @@
   --color-danger: #F87171;
   --color-danger-hover: #DC2626;
 
-  --color-bg: #0f172a;
-  --color-surface: #1e293b;
+  --color-bg: #000000;                 /* nero puro */
+  --color-surface: #000000;            /* nero puro */
   --color-border: #475569;
 
   --color-text: #f8fafc;

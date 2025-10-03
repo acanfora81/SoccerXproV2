@@ -1706,6 +1706,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
               disabled={loading}
               className="btn btn-secondary"
             >
+              <X size={20} />
               Annulla
             </button>
             <button

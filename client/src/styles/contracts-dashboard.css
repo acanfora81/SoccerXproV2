@@ -1224,7 +1224,7 @@
 }
 
 :root[data-theme="dark"] .dashboard-table tr:hover {
-  background: #1a1a1a !important;
+  background: #000000 !important;
 }
 
 /* Dark mode per tutti i contenitori grafici */
