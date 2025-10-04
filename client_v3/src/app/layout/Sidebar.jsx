@@ -3,6 +3,7 @@ import {
   LayoutDashboard, Users, BarChart3, FileText, Stethoscope,
   TrendingUp, ShieldCheck, Lock, Settings
 } from "lucide-react";
+import { NavLink } from "react-router-dom";
 
 const items = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -16,7 +17,7 @@ const items = [
   { key: "system", label: "Utilità di Sistema", icon: Settings },
 ];
 
-export default function Sidebar({ active, onSelect }) {
+export default function Sidebar() {
   return (
     <aside className="w-64 bg-white/80 dark:bg-[#0f1424]/80 backdrop-blur-md border-r border-gray-200 dark:border-white/10 flex flex-col p-4">
       <div className="mb-8">
@@ -26,18 +27,20 @@ export default function Sidebar({ active, onSelect }) {
 
       <nav className="flex-1 space-y-1">
         {items.map(({ key, label, icon: Icon }) => (
-          <button
+          <NavLink
             key={key}
-            onClick={() => onSelect(key)}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all
-              ${active===key
-                ? "bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-wow"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
-              }`}
+            to={`/${key}`}
+            className={({ isActive }) =>
+              `w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                isActive
+                  ? "bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-wow"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
+              }`
+            }
           >
             <Icon className="w-5 h-5" />
             {label}
-          </button>
+          </NavLink>
         ))}
       </nav>
     </aside>
