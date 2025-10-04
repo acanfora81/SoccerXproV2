@@ -24,7 +24,7 @@ export default function MainLayout() {
                 </div>
                 <div>
                   <h1 className="text-lg font-bold tracking-tight text-text-strong dark:text-white">
-                    Athlos Suite Pro
+                    Soccer X Pro
                   </h1>
                   <p className="text-xs text-text-muted dark:text-gray-400">
                     Smart Club Management Platform
@@ -45,7 +45,7 @@ export default function MainLayout() {
           {/* === FOOTER === */}
           <footer className="bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-t border-border-light dark:border-border-dark text-xs text-text-muted dark:text-gray-400 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-              <span>© 2025 Athlos Suite Pro · v3.0</span>
+              <span>© 2025 Soccer X Pro · v3.0</span>
               <span className="italic">Developed by Alessandro Canfora</span>
             </div>
           </footer>

@@ -384,7 +384,7 @@ export default function Sidebar() {
       {/* Logo / Title */}
       <div className="px-4 mb-10">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-          Athlos Suite Pro
+          Soccer X Pro
         </h2>
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Soccer Management
