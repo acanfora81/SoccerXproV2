@@ -9,10 +9,7 @@ export default function DataTable({ data, columns, className }) {
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={cn(
-                  "px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400",
-                  column.align === 'left' ? 'text-left' : 'text-center'
-                )}
+                className="px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400"
               >
                 {column.header}
               </th>
