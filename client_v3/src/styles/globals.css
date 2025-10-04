@@ -171,6 +171,42 @@ h4 {
     font-size: 0.75rem;
   }
 
+  .btn-secondary {
+    background-color: #6b7280;
+    color: #fff;
+  }
+
+  .btn-secondary:hover {
+    background-color: #4b5563;
+  }
+
+  .btn-success {
+    background-color: #10b981;
+    color: #fff;
+  }
+
+  .btn-success:hover {
+    background-color: #059669;
+  }
+
+  .btn-warning {
+    background-color: #f59e0b;
+    color: #fff;
+  }
+
+  .btn-warning:hover {
+    background-color: #d97706;
+  }
+
+  .btn-info {
+    background-color: #3b82f6;
+    color: #fff;
+  }
+
+  .btn-info:hover {
+    background-color: #2563eb;
+  }
+
   /* === CARD === */
   .card {
     background-color: var(--bg-surface);

@@ -128,13 +128,13 @@ export default function PlayersList() {
           onChange={(e) => setSearch(e.target.value)}
           className="px-3 py-2 border rounded-lg w-64 dark:bg-[#0f1424] dark:border-white/10"
         />
-        <Button variant="secondary" onClick={handleFixEncoding}>
+        <Button variant="warning" onClick={handleFixEncoding}>
           <RefreshCw className="w-4 h-4 mr-2" /> Correggi Codifica
         </Button>
-        <Button variant="secondary" onClick={handleExport}>
+        <Button variant="info" onClick={handleExport}>
           <Download className="w-4 h-4 mr-2" /> Esporta Excel
         </Button>
-        <Button variant="secondary">
+        <Button variant="success">
           <Upload className="w-4 h-4 mr-2" /> Carica Excel
         </Button>
       </div>
@@ -168,10 +168,18 @@ export default function PlayersList() {
                   header: "Azioni",
                   accessor: (p) => (
                     <div className="flex gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => { setSelected(p); setFormOpen(true); }}>
+                      <Button
+                        size="sm"
+                        variant="info"
+                        onClick={() => { setSelected(p); setFormOpen(true); }}
+                      >
                         Modifica
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(p.id)}>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setConfirmDelete(p.id)}
+                      >
                         Elimina
                       </Button>
                     </div>
