@@ -6,6 +6,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 // Pagine
 import Dashboard from "@/features/dashboard/pages/Dashboard";
 import PlayersList from "@/features/players/pages/PlayersList";
+import PlayersStats from "@/features/players/pages/PlayersStats";
+import PlayersUpload from "@/features/players/pages/PlayersUpload";
 import LoginPage from "@/features/auth/pages/LoginPage";
 
 // Placeholder components per le altre pagine
@@ -36,10 +38,10 @@ const router = createBrowserRouter([
       // Dashboard
       { path: "dashboard", element: <Dashboard /> },
       
-      // Giocatori
-      { path: "dashboard/players", element: <PlayersList /> },
-      { path: "dashboard/players/stats", element: <PlaceholderPage title="Statistiche Giocatori" /> },
-      { path: "dashboard/players/upload", element: <PlaceholderPage title="Importa da File" /> },
+             // Giocatori
+             { path: "dashboard/players", element: <PlayersList /> },
+             { path: "dashboard/players/stats", element: <PlayersStats /> },
+             { path: "dashboard/players/upload", element: <PlayersUpload /> },
       
       // Performance
       { path: "dashboard/performance", element: <PlaceholderPage title="Performance" /> },

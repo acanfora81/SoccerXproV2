@@ -152,10 +152,41 @@ export const PlayersAPI = {
     return { data: blob };
   },
 
-  async fixEncoding() {
-    // Questa funzionalità non è implementata nel backend
-    // Potrebbe essere aggiunta in futuro
-    console.log("Fix encoding not implemented in backend yet");
-    return { success: true };
-  },
+         async fixEncoding() {
+           // Questa funzionalità non è implementata nel backend
+           // Potrebbe essere aggiunta in futuro
+           console.log("Fix encoding not implemented in backend yet");
+           return { success: true };
+         },
+
+         async uploadFile(file) {
+           const formData = new FormData();
+           formData.append('file', file);
+
+           const response = await apiCall('/players/upload', {
+             method: 'POST',
+             body: formData,
+             // Non impostare Content-Type per FormData, il browser lo farà automaticamente
+           });
+           
+           return response.data;
+         },
+
+         async downloadTemplate() {
+           const response = await fetch('http://localhost:3001/api/players/template', {
+             credentials: 'include'
+           });
+           
+           if (!response.ok) {
+             throw new Error(`Template download failed: ${response.statusText}`);
+           }
+
+           const blob = await response.blob();
+           return { data: blob };
+         },
+
+         async getStats() {
+           const response = await apiCall('/players/stats');
+           return response.data;
+         },
 };
