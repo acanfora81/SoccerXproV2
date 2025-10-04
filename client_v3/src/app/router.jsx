@@ -1,10 +1,12 @@
 import React from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import MainLayout from "./layout/MainLayout";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Pagine
 import Dashboard from "@/features/dashboard/pages/Dashboard";
 import PlayersList from "@/features/players/pages/PlayersList";
+import LoginPage from "@/features/auth/pages/LoginPage";
 
 // Placeholder components per le altre pagine
 function PlaceholderPage({ title }) {
@@ -20,8 +22,16 @@ function PlaceholderPage({ title }) {
 
 const router = createBrowserRouter([
   {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
     path: "/",
-    element: <MainLayout />,
+    element: (
+      <ProtectedRoute>
+        <MainLayout />
+      </ProtectedRoute>
+    ),
     children: [
       // Dashboard
       { path: "dashboard", element: <Dashboard /> },
@@ -92,6 +102,8 @@ const router = createBrowserRouter([
       { path: "dashboard/municipal-additionals/upload", element: <PlaceholderPage title="Upload Addizionali Comunali" /> },
       { path: "dashboard/tax-config", element: <PlaceholderPage title="Configurazioni Fiscali" /> },
       
+      // Redirect di default
+      { path: "", element: <Navigate to="/dashboard" replace /> },
       // Fallback
       { path: "*", element: <Dashboard /> },
     ],

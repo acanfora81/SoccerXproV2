@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Home, Users, BarChart3, FileText, Stethoscope,
   TrendingUp, ShieldCheck, Settings,
-  ChevronDown, ChevronRight, Calculator
+  ChevronDown, ChevronRight, Calculator, LogOut
 } from "lucide-react";
+import useAuthStore from "@/store/authStore";
 
 // Struttura completa del menu come nel client originale
 const ALL_MENU_ITEMS = [
@@ -321,9 +322,16 @@ const ALL_MENU_ITEMS = [
 
 export default function Sidebar() {
   const [openMenus, setOpenMenus] = useState(new Set());
+  const navigate = useNavigate();
+  const { logout, user } = useAuthStore();
 
   // Per ora mostriamo tutti i menu (senza controllo permessi)
   const menuItems = ALL_MENU_ITEMS;
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   const handleMenuToggle = (menuId) => {
     setOpenMenus(prev => {
@@ -395,6 +403,27 @@ export default function Sidebar() {
       <nav className="flex-1 flex flex-col gap-1">
         {menuItems.map(item => renderMenuItem(item))}
       </nav>
+
+      {/* User info e logout */}
+      <div className="mt-auto px-4 py-4 border-t border-gray-200 dark:border-white/10">
+        {user && (
+          <div className="mb-3">
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {user.first_name} {user.last_name}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {user.email}
+            </p>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
+      </div>
     </aside>
   );
 }

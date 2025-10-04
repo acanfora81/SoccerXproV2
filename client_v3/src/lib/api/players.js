@@ -1,26 +1,10 @@
 // API reale per Players - collegata al backend
-const API_BASE_URL = 'http://localhost:3001/api';
+import { apiFetch } from '../utils/apiFetch';
 
-// Helper per gestire le chiamate API
+// Helper per gestire le chiamate API con autenticazione
 const apiCall = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  };
-
   try {
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return await response.json();
+    return await apiFetch(endpoint, options);
   } catch (error) {
     console.error(`API Error [${endpoint}]:`, error);
     
@@ -156,7 +140,9 @@ export const PlayersAPI = {
   },
 
   async exportExcel() {
-    const response = await fetch(`${API_BASE_URL}/players/export-excel`);
+    const response = await fetch('http://localhost:3001/api/players/export-excel', {
+      credentials: 'include'
+    });
     
     if (!response.ok) {
       throw new Error(`Export failed: ${response.statusText}`);
