@@ -370,6 +370,7 @@ export default function Sidebar() {
           // Menu senza submenu
           <NavLink 
             to={item.path}
+            end
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             style={{ paddingLeft: `${paddingLeft}px` }}
           >
