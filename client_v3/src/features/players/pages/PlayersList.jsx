@@ -31,9 +31,12 @@ const translateContractType = (contracts) => {
   const latestContract = contracts[0];
   const contractMap = {
     'PERMANENT': 'Permanente',
+    'PROFESSIONAL': 'Professionale',
     'LOAN': 'Prestito',
     'TRIAL': 'Prova',
-    'YOUTH': 'Giovanile'
+    'YOUTH': 'Giovanile',
+    'AMATEUR': 'Dilettante',
+    'PART_TIME': 'Part-time'
   };
   return contractMap[latestContract.contractType] || latestContract.contractType || '-';
 };

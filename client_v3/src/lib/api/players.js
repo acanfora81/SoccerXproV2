@@ -32,7 +32,7 @@ const getMockData = (endpoint) => {
           nationality: "Italia",
           height: 185,
           weight: 80,
-          contracts: [{ contractType: "PERMANENT" }]
+          contracts: [{ contractType: "PROFESSIONAL" }]
         },
         {
           id: 2,
@@ -43,7 +43,7 @@ const getMockData = (endpoint) => {
           nationality: "Italia",
           height: 180,
           weight: 75,
-          contracts: [{ contractType: "PERMANENT" }]
+          contracts: [{ contractType: "PROFESSIONAL" }]
         },
         {
           id: 3,
