@@ -11,6 +11,8 @@ import PlayersUpload from "@/features/players/pages/PlayersUpload";
 import LoginPage from "@/features/auth/pages/LoginPage";
 import ContractsDashboard from "@/features/contracts/pages/ContractsDashboard";
 import ContractsList from "@/features/contracts/pages/ContractsList";
+import ExpiringContracts from "@/features/contracts/pages/ExpiringContracts";
+import ContractsSummary from "@/features/contracts/pages/ContractsSummary";
 
 // Placeholder components per le altre pagine
 function PlaceholderPage({ title }) {
@@ -56,8 +58,8 @@ const router = createBrowserRouter([
       // Contratti
       { path: "dashboard/contracts", element: <ContractsList /> },
       { path: "dashboard/contracts/dashboard", element: <ContractsDashboard /> },
-      { path: "dashboard/contracts/expiring", element: <PlaceholderPage title="Contratti in Scadenza" /> },
-      { path: "dashboard/contracts/summary", element: <PlaceholderPage title="Riepilogo Contratti" /> },
+      { path: "dashboard/contracts/expiring", element: <ExpiringContracts /> },
+      { path: "dashboard/contracts/summary", element: <ContractsSummary /> },
       
       // Aliquote
       { path: "dashboard/taxrates/list", element: <PlaceholderPage title="Aliquote Stipendi" /> },
