@@ -12,24 +12,43 @@ import PlayerFormModal from "../components/PlayerFormModal";
 import { PlayersAPI } from "@/lib/api/players";
 
 // Funzioni di traduzione
-const translateRole = (role) => {
+const translateRole = (position) => {
   const roleMap = {
     'GOALKEEPER': 'Portiere',
     'DEFENDER': 'Difensore',
     'MIDFIELDER': 'Centrocampista',
     'FORWARD': 'Attaccante'
   };
-  return roleMap[role] || role || '-';
+  return roleMap[position] || position || '-';
 };
 
-const translateContractType = (contractType) => {
+const translateContractType = (contracts) => {
+  if (!contracts || !Array.isArray(contracts) || contracts.length === 0) {
+    return '-';
+  }
+  
+  // Prendi il contratto più recente
+  const latestContract = contracts[0];
   const contractMap = {
     'PERMANENT': 'Permanente',
     'LOAN': 'Prestito',
     'TRIAL': 'Prova',
     'YOUTH': 'Giovanile'
   };
-  return contractMap[contractType] || contractType || '-';
+  return contractMap[latestContract.contractType] || latestContract.contractType || '-';
+};
+
+// Funzione per calcolare l'età dalla data di nascita
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return '-';
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
 };
 
 export default function PlayersList() {
@@ -160,9 +179,9 @@ export default function PlayersList() {
               data={filtered}
               columns={[
                 { header: "Nome", accessor: (p) => `${p.firstName} ${p.lastName}` },
-                { header: "Ruolo", accessor: (p) => translateRole(p.role) },
-                { header: "Contratto", accessor: (p) => translateContractType(p.contractType) },
-                { header: "Età", accessor: (p) => p.age || "-" },
+                { header: "Ruolo", accessor: (p) => translateRole(p.position) },
+                { header: "Contratto", accessor: (p) => translateContractType(p.contracts) },
+                { header: "Età", accessor: (p) => calculateAge(p.dateOfBirth) },
                 { header: "Nazionalità", accessor: (p) => p.nationality || "-" },
                 {
                   header: "Azioni",
