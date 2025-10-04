@@ -320,6 +320,22 @@ const ALL_MENU_ITEMS = [
   }
 ];
 
+// Funzione per tradurre i ruoli utente
+const translateUserRole = (role) => {
+  const roleMap = {
+    'ADMIN': 'Amministratore',
+    'MANAGER': 'Manager',
+    'COACH': 'Allenatore',
+    'PLAYER': 'Giocatore',
+    'USER': 'Utente',
+    'SUPER_ADMIN': 'Super Amministratore',
+    'TECHNICAL': 'Tecnico',
+    'MEDICAL': 'Medico',
+    'SCOUT': 'Osservatore'
+  };
+  return roleMap[role] || role || 'Utente';
+};
+
 export default function Sidebar() {
   const [openMenus, setOpenMenus] = useState(new Set());
   const navigate = useNavigate();
@@ -417,14 +433,14 @@ export default function Sidebar() {
             </p>
             {user.role && (
               <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                {user.role}
+                {translateUserRole(user.role)}
               </p>
             )}
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 rounded-lg transition-colors font-medium"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-white bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 rounded-lg transition-colors font-medium"
         >
           <LogOut size={16} />
           Logout
