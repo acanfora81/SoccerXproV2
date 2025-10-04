@@ -25,7 +25,7 @@ export default function DataTable({ data, columns, className }) {
               {columns.map((column, colIndex) => (
                 <td
                   key={colIndex}
-                  className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100"
+                  className="px-4 py-3 text-center text-sm text-gray-900 dark:text-gray-100"
                 >
                   {typeof column.accessor === 'function' 
                     ? column.accessor(row) 
