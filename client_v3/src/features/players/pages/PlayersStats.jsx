@@ -252,59 +252,64 @@ export default function PlayersStats() {
         </div>
       )}
 
-      {/* Grafici Intelligenti */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Altezza vs Peso per Ruolo */}
-        <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Altezza vs Peso per Ruolo
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Confronto profili fisici tra reparti
-            </p>
-          </CardHeader>
-          <CardContent>
-            <PhysicalStatsChart players={players} />
-          </CardContent>
-        </Card>
+      {/* Grafici Intelligenti - Solo nella vista Charts */}
+      {viewMode === 'charts' && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Altezza vs Peso per Ruolo */}
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Altezza vs Peso per Ruolo
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Confronto profili fisici tra reparti
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PhysicalStatsChart players={players} />
+              </CardContent>
+            </Card>
 
-        {/* Distribuzione Contratti */}
-        <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Distribuzione Contratti
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Tipi di contratto nella rosa
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ContractDistributionChart players={players} />
-          </CardContent>
-        </Card>
-      </div>
+            {/* Distribuzione Contratti */}
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Distribuzione Contratti
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Tipi di contratto nella rosa
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ContractDistributionChart players={players} />
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Mappa Altezza/Peso Singoli Giocatori */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Activity className="w-5 h-5" />
-            Mappa Altezza/Peso Giocatori
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Visualizzazione singoli giocatori per identificare outlier fisici
-          </p>
-        </CardHeader>
-        <CardContent>
-          <HeightWeightScatterChart players={players} />
-        </CardContent>
-      </Card>
+          {/* Mappa Altezza/Peso Singoli Giocatori */}
+          <Card>
+            <CardHeader>
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Mappa Altezza/Peso Giocatori
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Visualizzazione singoli giocatori per identificare outlier fisici
+              </p>
+            </CardHeader>
+            <CardContent>
+              <HeightWeightScatterChart players={players} />
+            </CardContent>
+          </Card>
+        </>
+      )}
 
-      {/* Statistiche Dettagliate */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Statistiche Dettagliate - Solo nella vista Cards */}
+      {viewMode === 'cards' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Distribuzione per Ruolo */}
         <Card>
           <CardHeader>
@@ -384,9 +389,11 @@ export default function PlayersStats() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
 
-      {/* Statistiche Fisiche */}
+      {/* Statistiche Fisiche - Solo nella vista Cards */}
+      {viewMode === 'cards' && (
       <Card>
         <CardHeader>
           <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -432,6 +439,7 @@ export default function PlayersStats() {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
