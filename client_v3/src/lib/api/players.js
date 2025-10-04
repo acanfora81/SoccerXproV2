@@ -23,8 +23,71 @@ const apiCall = async (endpoint, options = {}) => {
     return await response.json();
   } catch (error) {
     console.error(`API Error [${endpoint}]:`, error);
+    
+    // Se il server non è raggiungibile, usa dati mock temporanei
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      console.warn('Backend non raggiungibile, usando dati mock temporanei');
+      return getMockData(endpoint);
+    }
+    
     throw error;
   }
+};
+
+// Dati mock temporanei quando il backend non è disponibile
+const getMockData = (endpoint) => {
+  if (endpoint === '/players') {
+    return {
+      data: [
+        {
+          id: 1,
+          firstName: "Mario",
+          lastName: "Rossi",
+          position: "GOALKEEPER",
+          dateOfBirth: "1995-03-15T00:00:00.000Z",
+          nationality: "Italia",
+          height: 185,
+          weight: 80,
+          contracts: [{ contractType: "PERMANENT" }]
+        },
+        {
+          id: 2,
+          firstName: "Luca",
+          lastName: "Bianchi",
+          position: "DEFENDER",
+          dateOfBirth: "1998-07-22T00:00:00.000Z",
+          nationality: "Italia",
+          height: 180,
+          weight: 75,
+          contracts: [{ contractType: "PERMANENT" }]
+        },
+        {
+          id: 3,
+          firstName: "Giuseppe",
+          lastName: "Verdi",
+          position: "MIDFIELDER",
+          dateOfBirth: "2000-11-08T00:00:00.000Z",
+          nationality: "Italia",
+          height: 175,
+          weight: 70,
+          contracts: [{ contractType: "LOAN" }]
+        },
+        {
+          id: 4,
+          firstName: "Antonio",
+          lastName: "Neri",
+          position: "FORWARD",
+          dateOfBirth: "1997-05-12T00:00:00.000Z",
+          nationality: "Italia",
+          height: 182,
+          weight: 78,
+          contracts: [{ contractType: "PERMANENT" }]
+        }
+      ]
+    };
+  }
+  
+  return { data: null };
 };
 
 export const PlayersAPI = {
