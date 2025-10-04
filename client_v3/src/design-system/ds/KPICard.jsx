@@ -4,7 +4,7 @@ export default function KPICard({ icon: Icon, value, label, className }) {
   return (
     <div
       className={cn(
-        "bg-white dark:bg-[#0f1424] rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 p-6 flex flex-col items-start",
+        "bg-white dark:bg-[#0f1424] rounded-2xl shadow-wow border border-gray-200/50 dark:border-white/10 p-6 flex flex-col items-start",
         className
       )}
     >

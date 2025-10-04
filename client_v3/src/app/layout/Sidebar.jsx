@@ -18,7 +18,7 @@ const items = [
 
 export default function Sidebar({ active, onSelect }) {
   return (
-    <aside className="w-64 bg-white dark:bg-[#0f1424] border-r border-gray-200 dark:border-white/10 flex flex-col p-4">
+    <aside className="w-64 bg-white/80 dark:bg-[#0f1424]/80 backdrop-blur-md border-r border-gray-200 dark:border-white/10 flex flex-col p-4">
       <div className="mb-8">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">Athlos Suite Pro</h2>
         <p className="text-xs text-gray-500 dark:text-gray-400">Soccer Management</p>
@@ -29,9 +29,9 @@ export default function Sidebar({ active, onSelect }) {
           <button
             key={key}
             onClick={() => onSelect(key)}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all
               ${active===key
-                ? "bg-blue-600 text-white shadow"
+                ? "bg-gradient-to-tr from-blue-600 to-indigo-500 text-white shadow-wow"
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10"
               }`}
           >

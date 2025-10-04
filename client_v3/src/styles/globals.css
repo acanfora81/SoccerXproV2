@@ -10,8 +10,17 @@ html, body, #root {
   height: 100%; 
 }
 
-body { 
-  background: var(--color-bg); 
-  color: var(--color-text); 
-  font-family: 'Inter', sans-serif; 
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-light);
+  color: var(--text-primary);
+}
+
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.shadow-wow {
+  box-shadow: var(--shadow-wow);
 }
