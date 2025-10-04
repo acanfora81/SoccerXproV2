@@ -24,3 +24,55 @@ h1, h2, h3, h4 {
 .shadow-wow {
   box-shadow: var(--shadow-wow);
 }
+
+/* === AUTOMATION MAIL-LIKE LAYOUT ENHANCEMENTS === */
+@layer components {
+  /* === COLOR TOKENS === */
+  .bg-layout-light {
+    background: #f7f8fa;
+  }
+  .bg-layout-dark {
+    background: #0a0f1a;
+  }
+
+  .bg-surface-light {
+    background: #ffffff;
+  }
+  .bg-surface-dark {
+    background: #0b1120;
+  }
+
+  .text-text-strong {
+    color: #111827;
+  }
+  .text-text-muted {
+    color: #6b7280;
+  }
+
+  .border-border-light {
+    border-color: #e5e7eb;
+  }
+  .border-border-dark {
+    border-color: #1f2937;
+  }
+
+  /* === SHADOWS === */
+  .shadow-wow {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  .shadow-header {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  /* === TRANSITIONS === */
+  .transition-all {
+    transition: all 0.25s ease;
+  }
+
+  /* === RESPONSIVE HELPERS === */
+  @media (prefers-color-scheme: dark) {
+    .bg-layout-dark {
+      background: #080d17;
+    }
+  }
+}
