@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  Home, Users, BarChart3, FileText, Stethoscope, TrendingUp, 
-  Shield, ShieldCheck, Settings, ChevronDown, ChevronRight, Calculator
+  Home, Users, BarChart3, FileText, Stethoscope,
+  TrendingUp, ShieldCheck, Settings,
+  ChevronDown, ChevronRight, Calculator
 } from "lucide-react";
 
 // Struttura completa del menu come nel client originale
@@ -263,7 +264,7 @@ const ALL_MENU_ITEMS = [
   {
     id: 'administration',
     label: 'Amministrazione',
-    icon: Shield,
+    icon: ShieldCheck,
     path: '/dashboard/administration',
     requiredPermission: 'admin:read',
     submenu: [
@@ -351,7 +352,7 @@ export default function Sidebar() {
             onClick={() => handleMenuToggle(item.id)}
             style={{ paddingLeft: `${paddingLeft}px` }}
           >
-            <Icon size={20} />
+            {Icon && <Icon size={20} />}
             <span className="nav-label">{item.label}</span>
             <div className="menu-toggle-icon">
               {isMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -364,7 +365,7 @@ export default function Sidebar() {
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             style={{ paddingLeft: `${paddingLeft}px` }}
           >
-            <Icon size={20} />
+            {Icon && <Icon size={20} />}
             <span className="nav-label">{item.label}</span>
           </NavLink>
         )}
