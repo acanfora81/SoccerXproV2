@@ -8,7 +8,7 @@ import { Sparkles } from "lucide-react";
 
 export default function MainLayout() {
   return (
-    <ThemeProvider>
+    <ThemeProvider defaultTheme="light" enableSystem={false}>
       <div className="min-h-screen w-full flex bg-layout-light dark:bg-layout-dark text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {/* === SIDEBAR === */}
         <Sidebar />

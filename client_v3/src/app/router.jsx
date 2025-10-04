@@ -5,26 +5,17 @@ import MainLayout from "./layout/MainLayout";
 // Pagine
 import Dashboard from "@/features/dashboard/pages/Dashboard";
 import PlayersList from "@/features/players/pages/PlayersList";
-function Performance() {
-  return <h1 className="text-xl font-bold">Performance</h1>;
-}
-function Contracts() {
-  return <h1 className="text-xl font-bold">Contratti</h1>;
-}
-function Medical() {
-  return <h1 className="text-xl font-bold">Area Medica</h1>;
-}
-function Market() {
-  return <h1 className="text-xl font-bold">Mercato</h1>;
-}
-function Admin() {
-  return <h1 className="text-xl font-bold">Amministrazione</h1>;
-}
-function Security() {
-  return <h1 className="text-xl font-bold">Sicurezza 2FA</h1>;
-}
-function System() {
-  return <h1 className="text-xl font-bold">Utilità di Sistema</h1>;
+
+// Placeholder components per le altre pagine
+function PlaceholderPage({ title }) {
+  return (
+    <div className="space-y-6">
+      <div className="text-center py-20">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{title}</h1>
+        <p className="text-gray-600 dark:text-gray-400">Pagina in costruzione...</p>
+      </div>
+    </div>
+  );
 }
 
 const router = createBrowserRouter([
@@ -32,16 +23,77 @@ const router = createBrowserRouter([
     path: "/",
     element: <MainLayout />,
     children: [
+      // Dashboard
       { path: "dashboard", element: <Dashboard /> },
-      { path: "players", element: <PlayersList /> },
-      { path: "performance", element: <Performance /> },
-      { path: "contracts", element: <Contracts /> },
-      { path: "medical", element: <Medical /> },
-      { path: "market", element: <Market /> },
-      { path: "admin", element: <Admin /> },
-      { path: "security", element: <Security /> },
-      { path: "system", element: <System /> },
-      { path: "*", element: <Dashboard /> }, // fallback
+      
+      // Giocatori
+      { path: "dashboard/players", element: <PlayersList /> },
+      { path: "dashboard/players/stats", element: <PlaceholderPage title="Statistiche Giocatori" /> },
+      { path: "dashboard/players/upload", element: <PlaceholderPage title="Importa da File" /> },
+      
+      // Performance
+      { path: "dashboard/performance", element: <PlaceholderPage title="Performance" /> },
+      { path: "dashboard/performance/team", element: <PlaceholderPage title="Dashboard Squadra" /> },
+      { path: "dashboard/performance/players", element: <PlaceholderPage title="Vista Giocatori" /> },
+      { path: "dashboard/performance/analytics", element: <PlaceholderPage title="Analytics Avanzate" /> },
+      { path: "dashboard/performance/import", element: <PlaceholderPage title="Import Dati" /> },
+      { path: "dashboard/performance/reports", element: <PlaceholderPage title="Reports" /> },
+      
+      // Contratti
+      { path: "dashboard/contracts", element: <PlaceholderPage title="Lista Contratti" /> },
+      { path: "dashboard/contracts/dashboard", element: <PlaceholderPage title="Dashboard Contratti" /> },
+      { path: "dashboard/contracts/expiring", element: <PlaceholderPage title="Contratti in Scadenza" /> },
+      { path: "dashboard/contracts/summary", element: <PlaceholderPage title="Riepilogo Contratti" /> },
+      
+      // Aliquote
+      { path: "dashboard/taxrates/list", element: <PlaceholderPage title="Aliquote Stipendi" /> },
+      { path: "dashboard/bonustaxrates/list", element: <PlaceholderPage title="Aliquote Bonus" /> },
+      { path: "dashboard/tax/irpef-brackets", element: <PlaceholderPage title="Scaglioni IRPEF" /> },
+      { path: "dashboard/tax/regional-additionals", element: <PlaceholderPage title="Addizionali Regionali" /> },
+      { path: "dashboard/tax/municipal-additionals", element: <PlaceholderPage title="Addizionali Comunali" /> },
+      
+      // Sistema Fiscale
+      { path: "dashboard/tax/calculator", element: <PlaceholderPage title="Calcolatore Fiscale" /> },
+      
+      // Area Medica
+      { path: "dashboard/medical", element: <PlaceholderPage title="Area Medica" /> },
+      { path: "dashboard/medical/dashboard", element: <PlaceholderPage title="Dashboard Medica" /> },
+      { path: "dashboard/medical/injuries", element: <PlaceholderPage title="Infortuni" /> },
+      { path: "dashboard/medical/visits", element: <PlaceholderPage title="Visite Mediche" /> },
+      { path: "dashboard/medical/calendar", element: <PlaceholderPage title="Calendario Medico" /> },
+      { path: "dashboard/medical/cases", element: <PlaceholderPage title="Casi GDPR" /> },
+      { path: "dashboard/medical/documents", element: <PlaceholderPage title="Documenti Medici" /> },
+      { path: "dashboard/medical/consents", element: <PlaceholderPage title="Consensi" /> },
+      { path: "dashboard/medical/analytics", element: <PlaceholderPage title="Analytics Mediche" /> },
+      { path: "dashboard/medical/audit", element: <PlaceholderPage title="Audit Medico" /> },
+      { path: "dashboard/medical/settings", element: <PlaceholderPage title="Impostazioni Mediche" /> },
+      
+      // Mercato
+      { path: "dashboard/market", element: <PlaceholderPage title="Mercato" /> },
+      { path: "dashboard/market/transfers", element: <PlaceholderPage title="Trasferimenti" /> },
+      { path: "dashboard/market/scouting", element: <PlaceholderPage title="Scouting" /> },
+      { path: "dashboard/market/targets", element: <PlaceholderPage title="Obiettivi" /> },
+      
+      // Amministrazione
+      { path: "dashboard/administration", element: <PlaceholderPage title="Amministrazione" /> },
+      { path: "dashboard/administration/budget", element: <PlaceholderPage title="Budget" /> },
+      { path: "dashboard/administration/expenses", element: <PlaceholderPage title="Spese" /> },
+      { path: "dashboard/administration/users", element: <PlaceholderPage title="Utenti" /> },
+      
+      // Sicurezza
+      { path: "dashboard/security/2fa", element: <PlaceholderPage title="Sicurezza 2FA" /> },
+      
+      // Utilità
+      { path: "dashboard/utilities", element: <PlaceholderPage title="Utilità di Sistema" /> },
+      { path: "dashboard/taxrates/upload", element: <PlaceholderPage title="Upload Aliquote Stipendi" /> },
+      { path: "dashboard/bonustaxrates/upload", element: <PlaceholderPage title="Upload Aliquote Bonus" /> },
+      { path: "dashboard/tax/irpef-upload", element: <PlaceholderPage title="Upload Scaglioni IRPEF" /> },
+      { path: "dashboard/regional-additionals/upload", element: <PlaceholderPage title="Upload Addizionali Regionali" /> },
+      { path: "dashboard/municipal-additionals/upload", element: <PlaceholderPage title="Upload Addizionali Comunali" /> },
+      { path: "dashboard/tax-config", element: <PlaceholderPage title="Configurazioni Fiscali" /> },
+      
+      // Fallback
+      { path: "*", element: <Dashboard /> },
     ],
   },
 ]);

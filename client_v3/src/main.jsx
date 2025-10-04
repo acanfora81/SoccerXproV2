@@ -1,8 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import AppRouter from "./app/router";
-import "./styles/globals.css";
+
+// ✅ Import ordine corretto
 import "./styles/tokens.css";
+import "./styles/globals.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

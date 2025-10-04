@@ -1,26 +1,32 @@
 :root {
-  --brand: #3b82f6;
-  --brand-dark: #2563eb;
-
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-
-  --bg-light: #f9fafb;
-  --bg-surface: #ffffff;
-  --bg-dark: #0a0f1a;
-  --bg-dark-surface: #0f1424;
-
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-
-  --shadow-wow: 0 10px 30px rgba(59,130,246,0.15);
-}
-
-html.dark {
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-
-  --bg-light: #0a0f1a;
-  --bg-surface: #0f1424;
-}
+    /* === BRAND COLORS === */
+    --brand: #3b82f6;
+    --brand-dark: #2563eb;
+  
+    /* === TEXT COLORS === */
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+  
+    /* === BACKGROUND COLORS === */
+    --bg-light: #f9fafb;
+    --bg-surface: #ffffff;
+    --bg-dark: #0a0f1a;
+    --bg-dark-surface: #0f1424;
+  
+    /* === BORDER & RADIUS === */
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+  
+    /* === SHADOWS === */
+    --shadow-wow: 0 10px 30px rgba(59,130,246,0.15);
+  }
+  
+  html.dark {
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+  
+    --bg-light: #0a0f1a;
+    --bg-surface: #0f1424;
+  }
+  
