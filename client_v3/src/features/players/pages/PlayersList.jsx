@@ -212,7 +212,7 @@ export default function PlayersList() {
             <DataTable
               data={filtered}
               columns={[
-                { header: "Nome", accessor: (p) => `${p.firstName} ${p.lastName}` },
+                { header: "Nome", accessor: (p) => `${p.firstName} ${p.lastName}`, align: 'left' },
                 { header: "Ruolo", accessor: (p) => translateRole(p.position) },
                 { header: "Contratto", accessor: (p) => translateContractType(p.contracts) },
                 { header: "Età", accessor: (p) => calculateAge(p.dateOfBirth) },
