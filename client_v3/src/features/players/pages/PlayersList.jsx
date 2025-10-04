@@ -131,10 +131,10 @@ export default function PlayersList() {
         <Button variant="warning" onClick={handleFixEncoding}>
           <RefreshCw className="w-4 h-4 mr-2" /> Correggi Codifica
         </Button>
-        <Button variant="info" onClick={handleExport}>
+        <Button variant="success" onClick={handleExport}>
           <Download className="w-4 h-4 mr-2" /> Esporta Excel
         </Button>
-        <Button variant="success">
+        <Button variant="info">
           <Upload className="w-4 h-4 mr-2" /> Carica Excel
         </Button>
       </div>
