@@ -2269,8 +2269,7 @@ const getDashboardAll = async (req, res) => {
           startDate: { lte: currentDate },
           endDate: { gte: currentDate }
         },
-        select: {
-          salary: true,
+        include: {
           players: {
             select: {
               position: true

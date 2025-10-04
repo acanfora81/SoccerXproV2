@@ -9,6 +9,8 @@ import PlayersList from "@/features/players/pages/PlayersList";
 import PlayersStats from "@/features/players/pages/PlayersStats";
 import PlayersUpload from "@/features/players/pages/PlayersUpload";
 import LoginPage from "@/features/auth/pages/LoginPage";
+import ContractsDashboard from "@/features/contracts/pages/ContractsDashboard";
+import ContractsList from "@/features/contracts/pages/ContractsList";
 
 // Placeholder components per le altre pagine
 function PlaceholderPage({ title }) {
@@ -52,8 +54,8 @@ const router = createBrowserRouter([
       { path: "dashboard/performance/reports", element: <PlaceholderPage title="Reports" /> },
       
       // Contratti
-      { path: "dashboard/contracts", element: <PlaceholderPage title="Lista Contratti" /> },
-      { path: "dashboard/contracts/dashboard", element: <PlaceholderPage title="Dashboard Contratti" /> },
+      { path: "dashboard/contracts", element: <ContractsList /> },
+      { path: "dashboard/contracts/dashboard", element: <ContractsDashboard /> },
       { path: "dashboard/contracts/expiring", element: <PlaceholderPage title="Contratti in Scadenza" /> },
       { path: "dashboard/contracts/summary", element: <PlaceholderPage title="Riepilogo Contratti" /> },
       

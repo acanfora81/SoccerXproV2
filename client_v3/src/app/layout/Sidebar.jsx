@@ -153,7 +153,6 @@ const ALL_MENU_ITEMS = [
       {
         id: 'sistema-fiscale',
         label: 'Sistema Fiscale Parametrico',
-        icon: Calculator,
         requiredPermission: 'contracts:write',
         submenu: [
           {

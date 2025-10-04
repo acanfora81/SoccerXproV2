@@ -362,4 +362,60 @@ h4 {
   .btn-gray {
     @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
   }
+
+  /* === INPUT STYLES === */
+  .input-base {
+    @apply flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--bg-surface);
+    border-color: #e5e7eb;
+    color: var(--text-primary);
+  }
+
+  .dark .input-base {
+    border-color: #374151;
+  }
+
+  .input-base::placeholder {
+    color: #9ca3af;
+  }
+
+  .dark .input-base::placeholder {
+    color: #6b7280;
+  }
+
+  /* === DATE INPUT STYLES === */
+  input[type="date"].input-base {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border-color: #e5e7eb;
+  }
+
+  .dark input[type="date"].input-base {
+    border-color: #374151;
+    color-scheme: dark;
+    background: var(--bg-surface);
+  }
+
+  /* Stili per il calendario nativo del browser in dark mode */
+  html.dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) !important;
+    cursor: pointer;
+    opacity: 1 !important;
+  }
+
+  html.dark input[type="date"]::-webkit-datetime-edit {
+    color: #f9fafb !important;
+  }
+
+  html.dark input[type="date"]::-webkit-datetime-edit-text {
+    color: #f9fafb !important;
+    padding: 0 2px;
+  }
+
+  html.dark input[type="date"]::-webkit-datetime-edit-month-field,
+  html.dark input[type="date"]::-webkit-datetime-edit-day-field,
+  html.dark input[type="date"]::-webkit-datetime-edit-year-field {
+    color: #f9fafb !important;
+    background: transparent !important;
+  }
   

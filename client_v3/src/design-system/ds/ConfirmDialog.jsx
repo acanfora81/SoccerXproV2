@@ -8,6 +8,16 @@ import {
 } from "../ui/dialog";
 import Button from "./Button";
 
+// Re-export dei componenti Dialog per compatibilità
+export {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+};
+
 export default function ConfirmDialog({ open, onOpenChange, title, message, onConfirm }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

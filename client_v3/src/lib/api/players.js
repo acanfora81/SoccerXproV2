@@ -20,7 +20,7 @@ const apiCall = async (endpoint, options = {}) => {
 
 // Dati mock temporanei quando il backend non è disponibile
 const getMockData = (endpoint) => {
-  if (endpoint === '/players') {
+  if (endpoint === '/api/players') {
     return {
       data: [
         {
@@ -76,7 +76,7 @@ const getMockData = (endpoint) => {
 
 export const PlayersAPI = {
   async list() {
-    const response = await apiCall('/players');
+    const response = await apiCall('/api/players');
     return response.data || [];
   },
 
@@ -97,7 +97,7 @@ export const PlayersAPI = {
       passportNumber: player.passportNumber,
     };
 
-    const response = await apiCall('/players', {
+    const response = await apiCall('/api/players', {
       method: 'POST',
       body: JSON.stringify(playerData),
     });
@@ -123,7 +123,7 @@ export const PlayersAPI = {
       isActive: player.isActive !== false,
     };
 
-    const response = await apiCall(`/players/${id}`, {
+    const response = await apiCall(`/api/players/${id}`, {
       method: 'PUT',
       body: JSON.stringify(playerData),
     });
@@ -132,7 +132,7 @@ export const PlayersAPI = {
   },
 
   async remove(id) {
-    await apiCall(`/players/${id}`, {
+    await apiCall(`/api/players/${id}`, {
       method: 'DELETE',
     });
     
@@ -163,7 +163,7 @@ export const PlayersAPI = {
            const formData = new FormData();
            formData.append('file', file);
 
-           const response = await apiCall('/players/upload', {
+           const response = await apiCall('/api/players/upload', {
              method: 'POST',
              body: formData,
              // Non impostare Content-Type per FormData, il browser lo farà automaticamente
@@ -186,7 +186,7 @@ export const PlayersAPI = {
          },
 
          async getStats() {
-           const response = await apiCall('/players/stats');
+           const response = await apiCall('/api/players/stats');
            return response.data;
          },
 };

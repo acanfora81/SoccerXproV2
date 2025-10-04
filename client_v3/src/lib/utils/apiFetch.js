@@ -1,7 +1,7 @@
 // client_v3/src/lib/utils/apiFetch.js
 // Centralized fetch wrapper con gestione autenticazione
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3001';
 
 export async function apiFetch(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
