@@ -22,6 +22,8 @@ import ContractDistributionChart from "../components/ContractDistributionChart";
 import HeightWeightScatterChart from "../components/HeightWeightScatterChart";
 import AgeDistributionChart from "../components/AgeDistributionChart";
 import NationalityChart from "../components/NationalityChart";
+import AgeByRoleChart from "../components/AgeByRoleChart";
+import HeightDistributionChart from "../components/HeightDistributionChart";
 
 // Funzione per calcolare l'età dalla data di nascita
 const calculateAge = (dateOfBirth) => {
@@ -255,6 +257,42 @@ export default function PlayersStats() {
       {/* Grafici Intelligenti - Solo nella vista Charts */}
       {viewMode === 'charts' && (
         <>
+          {/* Prima riga: Grafici di distribuzione */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Età Media per Ruolo */}
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Età Media per Ruolo
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Confronto età tra reparti
+                </p>
+              </CardHeader>
+              <CardContent>
+                <AgeByRoleChart players={players} />
+              </CardContent>
+            </Card>
+
+            {/* Distribuzione Altezza */}
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Distribuzione Altezza
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Fasce di altezza nella rosa
+                </p>
+              </CardHeader>
+              <CardContent>
+                <HeightDistributionChart players={players} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Seconda riga: Grafici avanzati */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Altezza vs Peso per Ruolo */}
             <Card>
@@ -289,7 +327,7 @@ export default function PlayersStats() {
             </Card>
           </div>
 
-          {/* Mappa Altezza/Peso Singoli Giocatori */}
+          {/* Terza riga: Mappa Scatter */}
           <Card>
             <CardHeader>
               <h2 className="text-lg font-semibold flex items-center gap-2">
