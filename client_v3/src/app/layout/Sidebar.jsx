@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Home, Users, BarChart3, FileText, Stethoscope, TrendingUp, 
-  Shield, Settings, ChevronDown, ChevronRight, Calculator
+  Shield, ShieldCheck, Settings, ChevronDown, ChevronRight, Calculator
 } from "lucide-react";
 
 // Struttura completa del menu come nel client originale
@@ -290,7 +290,7 @@ const ALL_MENU_ITEMS = [
   {
     id: 'security',
     label: 'Sicurezza 2FA',
-    icon: Shield,
+    icon: ShieldCheck,
     path: '/dashboard/security/2fa',
     requiredPermission: null
   },
