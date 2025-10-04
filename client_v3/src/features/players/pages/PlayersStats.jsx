@@ -20,6 +20,8 @@ import { PlayersAPI } from "@/lib/api/players";
 import PhysicalStatsChart from "../components/PhysicalStatsChart";
 import ContractDistributionChart from "../components/ContractDistributionChart";
 import HeightWeightScatterChart from "../components/HeightWeightScatterChart";
+import AgeDistributionChart from "../components/AgeDistributionChart";
+import NationalityChart from "../components/NationalityChart";
 
 // Funzione per calcolare l'età dalla data di nascita
 const calculateAge = (dateOfBirth) => {
@@ -49,6 +51,10 @@ export default function PlayersStats() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
+  const [viewMode, setViewMode] = useState(() => {
+    // Carica preferenza da localStorage, default "cards"
+    return localStorage.getItem('playersStatsViewMode') || 'cards';
+  });
 
   const fetchPlayers = async () => {
     setLoading(true);
@@ -113,6 +119,11 @@ export default function PlayersStats() {
     }
   };
 
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('playersStatsViewMode', mode);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -131,6 +142,34 @@ export default function PlayersStats() {
           </div>
         }
       />
+
+      {/* Toggle Vista */}
+      <div className="flex items-center justify-center">
+        <div className="inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          <button
+            onClick={() => handleViewModeChange('cards')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+              viewMode === 'cards'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Vista Cards
+          </button>
+          <button
+            onClick={() => handleViewModeChange('charts')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+              viewMode === 'charts'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            Vista Grafici
+          </button>
+        </div>
+      </div>
 
       {/* Banner di avviso per dati mock */}
       {isUsingMockData && (
@@ -155,29 +194,63 @@ export default function PlayersStats() {
         </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard 
-          icon={Users} 
-          value={totalPlayers} 
-          label="Giocatori Totali" 
-        />
-        <KPICard 
-          icon={Calendar} 
-          value={`${avgAge} anni`} 
-          label="Età Media" 
-        />
-        <KPICard 
-          icon={Target} 
-          value={`${playersWithShirt}/${totalPlayers}`} 
-          label="Maglie Assegnate" 
-        />
-        <KPICard 
-          icon={Activity} 
-          value={`${avgHeight} cm`} 
-          label="Altezza Media" 
-        />
-      </div>
+      {/* KPI Cards o Grafici Rapidi */}
+      {viewMode === 'cards' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <KPICard 
+            icon={Users} 
+            value={totalPlayers} 
+            label="Giocatori Totali" 
+          />
+          <KPICard 
+            icon={Calendar} 
+            value={`${avgAge} anni`} 
+            label="Età Media" 
+          />
+          <KPICard 
+            icon={Target} 
+            value={`${playersWithShirt}/${totalPlayers}`} 
+            label="Maglie Assegnate" 
+          />
+          <KPICard 
+            icon={Activity} 
+            value={`${avgHeight} cm`} 
+            label="Altezza Media" 
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Distribuzione per Età
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Fasce d'età nella rosa
+              </p>
+            </CardHeader>
+            <CardContent>
+              <AgeDistributionChart players={players} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Top Nazionalità
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Mix culturale della squadra
+              </p>
+            </CardHeader>
+            <CardContent>
+              <NationalityChart players={players} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Grafici Intelligenti */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
