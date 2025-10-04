@@ -11,6 +11,27 @@ import { Users, Download, RefreshCw, Upload } from "lucide-react";
 import PlayerFormModal from "../components/PlayerFormModal";
 import { PlayersAPI } from "@/lib/api/players";
 
+// Funzioni di traduzione
+const translateRole = (role) => {
+  const roleMap = {
+    'GOALKEEPER': 'Portiere',
+    'DEFENDER': 'Difensore',
+    'MIDFIELDER': 'Centrocampista',
+    'FORWARD': 'Attaccante'
+  };
+  return roleMap[role] || role || '-';
+};
+
+const translateContractType = (contractType) => {
+  const contractMap = {
+    'PERMANENT': 'Permanente',
+    'LOAN': 'Prestito',
+    'TRIAL': 'Prova',
+    'YOUTH': 'Giovanile'
+  };
+  return contractMap[contractType] || contractType || '-';
+};
+
 export default function PlayersList() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -139,8 +160,8 @@ export default function PlayersList() {
               data={filtered}
               columns={[
                 { header: "Nome", accessor: (p) => `${p.firstName} ${p.lastName}` },
-                { header: "Ruolo", accessor: (p) => p.role || "-" },
-                { header: "Contratto", accessor: (p) => p.contractType || "-" },
+                { header: "Ruolo", accessor: (p) => translateRole(p.role) },
+                { header: "Contratto", accessor: (p) => translateContractType(p.contractType) },
                 { header: "Età", accessor: (p) => p.age || "-" },
                 { header: "Nazionalità", accessor: (p) => p.nationality || "-" },
                 {
