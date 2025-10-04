@@ -1,0 +1,1387 @@
+[
+  {
+    "name": "Pesaro",
+    "region": "Marche",
+    "province": "PU"
+  },
+  {
+    "name": "Ancona",
+    "region": "Marche",
+    "province": "AN"
+  },
+  {
+    "name": "Macerata",
+    "region": "Marche",
+    "province": "MC"
+  },
+  {
+    "name": "Fermo",
+    "region": "Marche",
+    "province": "FM"
+  },
+  {
+    "name": "Ascoli Piceno",
+    "region": "Marche",
+    "province": "AP"
+  },
+  {
+    "name": "Milano",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Bergamo",
+    "region": "Lombardia",
+    "province": "BG"
+  },
+  {
+    "name": "Brescia",
+    "region": "Lombardia",
+    "province": "BS"
+  },
+  {
+    "name": "Como",
+    "region": "Lombardia",
+    "province": "CO"
+  },
+  {
+    "name": "Cremona",
+    "region": "Lombardia",
+    "province": "CR"
+  },
+  {
+    "name": "Mantova",
+    "region": "Lombardia",
+    "province": "MN"
+  },
+  {
+    "name": "Pavia",
+    "region": "Lombardia",
+    "province": "PV"
+  },
+  {
+    "name": "Sondrio",
+    "region": "Lombardia",
+    "province": "SO"
+  },
+  {
+    "name": "Varese",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Lecco",
+    "region": "Lombardia",
+    "province": "LC"
+  },
+  {
+    "name": "Lodi",
+    "region": "Lombardia",
+    "province": "LO"
+  },
+  {
+    "name": "Monza",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Roma",
+    "region": "Lazio",
+    "province": "RM"
+  },
+  {
+    "name": "Viterbo",
+    "region": "Lazio",
+    "province": "VT"
+  },
+  {
+    "name": "Rieti",
+    "region": "Lazio",
+    "province": "RI"
+  },
+  {
+    "name": "Frosinone",
+    "region": "Lazio",
+    "province": "FR"
+  },
+  {
+    "name": "Latina",
+    "region": "Lazio",
+    "province": "LT"
+  },
+  {
+    "name": "Napoli",
+    "region": "Campania",
+    "province": "NA"
+  },
+  {
+    "name": "Salerno",
+    "region": "Campania",
+    "province": "SA"
+  },
+  {
+    "name": "Caserta",
+    "region": "Campania",
+    "province": "CE"
+  },
+  {
+    "name": "Benevento",
+    "region": "Campania",
+    "province": "BN"
+  },
+  {
+    "name": "Avellino",
+    "region": "Campania",
+    "province": "AV"
+  },
+  {
+    "name": "Torino",
+    "region": "Piemonte",
+    "province": "TO"
+  },
+  {
+    "name": "Alessandria",
+    "region": "Piemonte",
+    "province": "AL"
+  },
+  {
+    "name": "Asti",
+    "region": "Piemonte",
+    "province": "AT"
+  },
+  {
+    "name": "Biella",
+    "region": "Piemonte",
+    "province": "BI"
+  },
+  {
+    "name": "Cuneo",
+    "region": "Piemonte",
+    "province": "CN"
+  },
+  {
+    "name": "Novara",
+    "region": "Piemonte",
+    "province": "NO"
+  },
+  {
+    "name": "Verbania",
+    "region": "Piemonte",
+    "province": "VB"
+  },
+  {
+    "name": "Vercelli",
+    "region": "Piemonte",
+    "province": "VC"
+  },
+  {
+    "name": "Venezia",
+    "region": "Veneto",
+    "province": "VE"
+  },
+  {
+    "name": "Verona",
+    "region": "Veneto",
+    "province": "VR"
+  },
+  {
+    "name": "Vicenza",
+    "region": "Veneto",
+    "province": "VI"
+  },
+  {
+    "name": "Belluno",
+    "region": "Veneto",
+    "province": "BL"
+  },
+  {
+    "name": "Padova",
+    "region": "Veneto",
+    "province": "PD"
+  },
+  {
+    "name": "Rovigo",
+    "region": "Veneto",
+    "province": "RO"
+  },
+  {
+    "name": "Treviso",
+    "region": "Veneto",
+    "province": "TV"
+  },
+  {
+    "name": "Bologna",
+    "region": "Emilia-Romagna",
+    "province": "BO"
+  },
+  {
+    "name": "Modena",
+    "region": "Emilia-Romagna",
+    "province": "MO"
+  },
+  {
+    "name": "Parma",
+    "region": "Emilia-Romagna",
+    "province": "PR"
+  },
+  {
+    "name": "Reggio Emilia",
+    "region": "Emilia-Romagna",
+    "province": "RE"
+  },
+  {
+    "name": "Ferrara",
+    "region": "Emilia-Romagna",
+    "province": "FE"
+  },
+  {
+    "name": "Ravenna",
+    "region": "Emilia-Romagna",
+    "province": "RA"
+  },
+  {
+    "name": "Rimini",
+    "region": "Emilia-Romagna",
+    "province": "RN"
+  },
+  {
+    "name": "Forlì",
+    "region": "Emilia-Romagna",
+    "province": "FC"
+  },
+  {
+    "name": "Piacenza",
+    "region": "Emilia-Romagna",
+    "province": "PC"
+  },
+  {
+    "name": "Firenze",
+    "region": "Toscana",
+    "province": "FI"
+  },
+  {
+    "name": "Pisa",
+    "region": "Toscana",
+    "province": "PI"
+  },
+  {
+    "name": "Arezzo",
+    "region": "Toscana",
+    "province": "AR"
+  },
+  {
+    "name": "Siena",
+    "region": "Toscana",
+    "province": "SI"
+  },
+  {
+    "name": "Grosseto",
+    "region": "Toscana",
+    "province": "GR"
+  },
+  {
+    "name": "Livorno",
+    "region": "Toscana",
+    "province": "LI"
+  },
+  {
+    "name": "Lucca",
+    "region": "Toscana",
+    "province": "LU"
+  },
+  {
+    "name": "Massa",
+    "region": "Toscana",
+    "province": "MS"
+  },
+  {
+    "name": "Pistoia",
+    "region": "Toscana",
+    "province": "PT"
+  },
+  {
+    "name": "Prato",
+    "region": "Toscana",
+    "province": "PO"
+  },
+  {
+    "name": "Bari",
+    "region": "Puglia",
+    "province": "BA"
+  },
+  {
+    "name": "Lecce",
+    "region": "Puglia",
+    "province": "LE"
+  },
+  {
+    "name": "Foggia",
+    "region": "Puglia",
+    "province": "FG"
+  },
+  {
+    "name": "Taranto",
+    "region": "Puglia",
+    "province": "TA"
+  },
+  {
+    "name": "Brindisi",
+    "region": "Puglia",
+    "province": "BR"
+  },
+  {
+    "name": "Barletta",
+    "region": "Puglia",
+    "province": "BT"
+  },
+  {
+    "name": "Andria",
+    "region": "Puglia",
+    "province": "BT"
+  },
+  {
+    "name": "Trani",
+    "region": "Puglia",
+    "province": "BT"
+  },
+  {
+    "name": "Palermo",
+    "region": "Sicilia",
+    "province": "PA"
+  },
+  {
+    "name": "Catania",
+    "region": "Sicilia",
+    "province": "CT"
+  },
+  {
+    "name": "Messina",
+    "region": "Sicilia",
+    "province": "ME"
+  },
+  {
+    "name": "Siracusa",
+    "region": "Sicilia",
+    "province": "SR"
+  },
+  {
+    "name": "Trapani",
+    "region": "Sicilia",
+    "province": "TP"
+  },
+  {
+    "name": "Agrigento",
+    "region": "Sicilia",
+    "province": "AG"
+  },
+  {
+    "name": "Caltanissetta",
+    "region": "Sicilia",
+    "province": "CL"
+  },
+  {
+    "name": "Enna",
+    "region": "Sicilia",
+    "province": "EN"
+  },
+  {
+    "name": "Ragusa",
+    "region": "Sicilia",
+    "province": "RG"
+  },
+  {
+    "name": "Catanzaro",
+    "region": "Calabria",
+    "province": "CZ"
+  },
+  {
+    "name": "Cosenza",
+    "region": "Calabria",
+    "province": "CS"
+  },
+  {
+    "name": "Crotone",
+    "region": "Calabria",
+    "province": "KR"
+  },
+  {
+    "name": "Vibo Valentia",
+    "region": "Calabria",
+    "province": "VV"
+  },
+  {
+    "name": "Reggio Calabria",
+    "region": "Calabria",
+    "province": "RC"
+  },
+  {
+    "name": "Cagliari",
+    "region": "Sardegna",
+    "province": "CA"
+  },
+  {
+    "name": "Sassari",
+    "region": "Sardegna",
+    "province": "SS"
+  },
+  {
+    "name": "Nuoro",
+    "region": "Sardegna",
+    "province": "NU"
+  },
+  {
+    "name": "Oristano",
+    "region": "Sardegna",
+    "province": "OR"
+  },
+  {
+    "name": "Carbonia",
+    "region": "Sardegna",
+    "province": "CI"
+  },
+  {
+    "name": "Iglesias",
+    "region": "Sardegna",
+    "province": "CI"
+  },
+  {
+    "name": "Olbia",
+    "region": "Sardegna",
+    "province": "OT"
+  },
+  {
+    "name": "L'Aquila",
+    "region": "Abruzzo",
+    "province": "AQ"
+  },
+  {
+    "name": "Pescara",
+    "region": "Abruzzo",
+    "province": "PE"
+  },
+  {
+    "name": "Chieti",
+    "region": "Abruzzo",
+    "province": "CH"
+  },
+  {
+    "name": "Teramo",
+    "region": "Abruzzo",
+    "province": "TE"
+  },
+  {
+    "name": "Perugia",
+    "region": "Umbria",
+    "province": "PG"
+  },
+  {
+    "name": "Terni",
+    "region": "Umbria",
+    "province": "TR"
+  },
+  {
+    "name": "Potenza",
+    "region": "Basilicata",
+    "province": "PZ"
+  },
+  {
+    "name": "Matera",
+    "region": "Basilicata",
+    "province": "MT"
+  },
+  {
+    "name": "Campobasso",
+    "region": "Molise",
+    "province": "CB"
+  },
+  {
+    "name": "Isernia",
+    "region": "Molise",
+    "province": "IS"
+  },
+  {
+    "name": "Aosta",
+    "region": "Valle d'Aosta",
+    "province": "AO"
+  },
+  {
+    "name": "Trento",
+    "region": "Trentino-Alto Adige",
+    "province": "TN"
+  },
+  {
+    "name": "Bolzano",
+    "region": "Trentino-Alto Adige",
+    "province": "BZ"
+  },
+  {
+    "name": "Trieste",
+    "region": "Friuli-Venezia Giulia",
+    "province": "TS"
+  },
+  {
+    "name": "Udine",
+    "region": "Friuli-Venezia Giulia",
+    "province": "UD"
+  },
+  {
+    "name": "Gorizia",
+    "region": "Friuli-Venezia Giulia",
+    "province": "GO"
+  },
+  {
+    "name": "Pordenone",
+    "region": "Friuli-Venezia Giulia",
+    "province": "PN"
+  },
+  {
+    "name": "Genova",
+    "region": "Liguria",
+    "province": "GE"
+  },
+  {
+    "name": "La Spezia",
+    "region": "Liguria",
+    "province": "SP"
+  },
+  {
+    "name": "Imperia",
+    "region": "Liguria",
+    "province": "IM"
+  },
+  {
+    "name": "Savona",
+    "region": "Liguria",
+    "province": "SV"
+  },
+  {
+    "name": "Fano",
+    "region": "Marche",
+    "province": "PU"
+  },
+  {
+    "name": "Senigallia",
+    "region": "Marche",
+    "province": "AN"
+  },
+  {
+    "name": "Jesi",
+    "region": "Marche",
+    "province": "AN"
+  },
+  {
+    "name": "Civitanova Marche",
+    "region": "Marche",
+    "province": "MC"
+  },
+  {
+    "name": "Recanati",
+    "region": "Marche",
+    "province": "MC"
+  },
+  {
+    "name": "San Benedetto del Tronto",
+    "region": "Marche",
+    "province": "AP"
+  },
+  {
+    "name": "Monza",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Varese",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Sesto San Giovanni",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Cinisello Balsamo",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Legnano",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Rho",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Cologno Monzese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Paderno Dugnano",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Rozzano",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "San Giuliano Milanese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Desio",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Seregno",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Cesano Maderno",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Lissone",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Vimercate",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Carate Brianza",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Giussano",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Meda",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Seveso",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Brugherio",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Nova Milanese",
+    "region": "Lombardia",
+    "province": "MB"
+  },
+  {
+    "name": "Cernusco sul Naviglio",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Pioltello",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Segrate",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "San Donato Milanese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Corsico",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Cesano Boscone",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Trezzano sul Naviglio",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Garbagnate Milanese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Bollate",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Arese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Gorgonzola",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Cassano d'Adda",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Melzo",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Vimodrone",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Peschiera Borromeo",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "San Zenone al Lambro",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Melegnano",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "San Giuliano Milanese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Locate di Triulzi",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Opera",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Pieve Emanuele",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Vernate",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Buccinasco",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Zibido San Giacomo",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Basiglio",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Lacchiarella",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Settimo Milanese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Cusago",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Cisliano",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Vittuone",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Arluno",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Pogliano Milanese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Vanzago",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Pregnana Milanese",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Cornaredo",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Bareggio",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Sedriano",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Vittuone",
+    "region": "Lombardia",
+    "province": "MI"
+  },
+  {
+    "name": "Cislago",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gorla Maggiore",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Marnate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Olgiate Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Solbiate Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Fagnano Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cairate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Carnago",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Caronno Pertusella",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Castellanza",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Castelseprio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cavaria con Premezzo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cazzago Brabbia",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cislago",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cittiglio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Clivio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cocquio Trevisago",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Comabbio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Comerio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cremenaga",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Crosio della Valle",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cuasso al Monte",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cugliate-Fabiasco",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cunardo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Curiglia con Monteviasco",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cuveglio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Cuvio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Daverio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Dumenza",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Duno",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Fagnano Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Ferno",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Ferrera di Varese",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gallarate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Galliate Lombardo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gavirate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gazzada Schianno",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gemonio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gerenzano",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Germignaga",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Golasecca",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gorla Maggiore",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gorla Minore",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Gornate Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Grantola",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Inarzo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Induno Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Ispra",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Jerago con Orago",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Lavena Ponte Tresa",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Laveno-Mombello",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Leggiuno",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Lonate Ceppino",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Lonate Pozzolo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Lozza",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Luino",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Luvinate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Maccagno con Pino e Veddasca",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Malgesso",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Malnate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Marchirolo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Marnate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Marzio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Masciago Primo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Mercallo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Mesenzana",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Montegrino Valtravaglia",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Monvalle",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Morazzone",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Mornago",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Oggiona con Santo Stefano",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Olgiate Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Origgio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Orino",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Osmate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Porto Ceresio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Porto Valtravaglia",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Rancio Valcuvia",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Ranco",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Saltrio",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Samarate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Saronno",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Sesto Calende",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Solbiate Arno",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Solbiate Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Somma Lombardo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Sumirago",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Taino",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Ternate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Tradate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Travedona-Monate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Tronzano Lago Maggiore",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Uboldo",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Valganna",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Varano Borghi",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Vedano Olona",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Venegono Inferiore",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Venegono Superiore",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Vergiate",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Viggiù",
+    "region": "Lombardia",
+    "province": "VA"
+  },
+  {
+    "name": "Vizzola Ticino",
+    "region": "Lombardia",
+    "province": "VA"
+  }
+]

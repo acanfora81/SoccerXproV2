@@ -18,7 +18,17 @@ export {
   DialogFooter,
 };
 
-export default function ConfirmDialog({ open, onOpenChange, title, message, onConfirm }) {
+export default function ConfirmDialog({ 
+  open, 
+  onOpenChange, 
+  title, 
+  message, 
+  onConfirm,
+  confirmText = "Conferma",
+  cancelText = "Annulla",
+  showCancel = true,
+  type = "danger"
+}) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -27,11 +37,16 @@ export default function ConfirmDialog({ open, onOpenChange, title, message, onCo
           <DialogDescription>{message}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Annulla
-          </Button>
-          <Button variant="destructive" onClick={onConfirm}>
-            Conferma
+          {showCancel && (
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+              {cancelText}
+            </Button>
+          )}
+          <Button 
+            variant={type === "danger" ? "destructive" : "default"} 
+            onClick={onConfirm}
+          >
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

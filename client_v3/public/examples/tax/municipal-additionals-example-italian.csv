@@ -1,0 +1,4 @@
+anno;regione;comune;tipo;aliquota;min;max
+2025;Marche;Pesaro;fissa;0,80;;
+2025;Marche;Pesaro;progressiva;0,60;0;15000
+

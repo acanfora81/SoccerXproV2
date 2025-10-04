@@ -14,6 +14,14 @@ import ContractsList from "@/features/contracts/pages/ContractsList";
 import ExpiringContracts from "@/features/contracts/pages/ExpiringContracts";
 import ContractsSummary from "@/features/contracts/pages/ContractsSummary";
 
+// Tax Pages
+import TaxRatesList from "@/features/tax/pages/TaxRatesList";
+import BonusTaxRatesList from "@/features/tax/pages/BonusTaxRatesList";
+import IrpefBracketsPage from "@/features/tax/pages/IrpefBracketsPage";
+import RegionalAdditionalsPage from "@/features/tax/pages/RegionalAdditionalsPage";
+import MunicipalAdditionalsPage from "@/features/tax/pages/MunicipalAdditionalsPage";
+import TaxCalculator from "@/features/tax/pages/TaxCalculator";
+
 // Placeholder components per le altre pagine
 function PlaceholderPage({ title }) {
   return (
@@ -62,14 +70,12 @@ const router = createBrowserRouter([
       { path: "dashboard/contracts/summary", element: <ContractsSummary /> },
       
       // Aliquote
-      { path: "dashboard/taxrates/list", element: <PlaceholderPage title="Aliquote Stipendi" /> },
-      { path: "dashboard/bonustaxrates/list", element: <PlaceholderPage title="Aliquote Bonus" /> },
-      { path: "dashboard/tax/irpef-brackets", element: <PlaceholderPage title="Scaglioni IRPEF" /> },
-      { path: "dashboard/tax/regional-additionals", element: <PlaceholderPage title="Addizionali Regionali" /> },
-      { path: "dashboard/tax/municipal-additionals", element: <PlaceholderPage title="Addizionali Comunali" /> },
-      
-      // Sistema Fiscale
-      { path: "dashboard/tax/calculator", element: <PlaceholderPage title="Calcolatore Fiscale" /> },
+      { path: "dashboard/taxrates/list", element: <TaxRatesList /> },
+      { path: "dashboard/bonustaxrates/list", element: <BonusTaxRatesList /> },
+      { path: "dashboard/tax/irpef-brackets", element: <IrpefBracketsPage /> },
+      { path: "dashboard/tax/regional-additionals", element: <RegionalAdditionalsPage /> },
+      { path: "dashboard/tax/municipal-additionals", element: <MunicipalAdditionalsPage /> },
+      { path: "dashboard/tax/calculator", element: <TaxCalculator /> },
       
       // Area Medica
       { path: "dashboard/medical", element: <PlaceholderPage title="Area Medica" /> },

@@ -1,0 +1,5 @@
+anno;regione;tipo;aliquota;min;max
+2025;Marche;fissa;1,50;;
+2025;Marche;progressiva;1,00;0;15000
+2025;Marche;progressiva;1,20;15000;28000
+
