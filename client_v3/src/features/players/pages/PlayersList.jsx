@@ -6,7 +6,7 @@ import DataTable from "@/design-system/ds/DataTable";
 import EmptyState from "@/design-system/ds/EmptyState";
 import ConfirmDialog from "@/design-system/ds/ConfirmDialog";
 
-import { Users, Download, RefreshCw, Upload } from "lucide-react";
+import { Users, Download, RefreshCw, Upload, Edit, Trash2 } from "lucide-react";
 
 import PlayerFormModal from "../components/PlayerFormModal";
 import { PlayersAPI } from "@/lib/api/players";
@@ -167,20 +167,22 @@ export default function PlayersList() {
                 {
                   header: "Azioni",
                   accessor: (p) => (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 justify-center">
                       <Button
                         size="sm"
                         variant="info"
                         onClick={() => { setSelected(p); setFormOpen(true); }}
+                        title="Modifica giocatore"
                       >
-                        Modifica
+                        <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={() => setConfirmDelete(p.id)}
+                        title="Elimina giocatore"
                       >
-                        Elimina
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   ),
