@@ -156,6 +156,21 @@ h4 {
     background-color: #dc2626;
   }
 
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--text-primary);
+    border: 1px solid transparent;
+  }
+
+  .btn-ghost:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
   /* === CARD === */
   .card {
     background-color: var(--bg-surface);
@@ -230,3 +245,85 @@ h4 {
     border-left-color: rgba(255, 255, 255, 0.1);
   }
 }
+
+/* === ACTION BUTTONS (TABLES) === */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    color: #fff;
+  }
+  
+  .btn-view {
+    background-color: #22c55e; /* green-500 */
+  }
+  .btn-view:hover {
+    background-color: #16a34a; /* green-600 */
+  }
+  
+  .btn-history {
+    background-color: #8b5cf6; /* violet-500 */
+  }
+  .btn-history:hover {
+    background-color: #7c3aed; /* violet-600 */
+  }
+  
+  .btn-edit {
+    background-color: #f59e0b; /* amber-500 */
+  }
+  .btn-edit:hover {
+    background-color: #d97706; /* amber-600 */
+  }
+  
+  .btn-delete {
+    background-color: #ef4444; /* red-500 */
+  }
+  .btn-delete:hover {
+    background-color: #dc2626; /* red-600 */
+  }
+  
+  .btn-export {
+    background-color: #059669; /* emerald-600 */
+  }
+  .btn-export:hover {
+    background-color: #047857; /* emerald-700 */
+  }
+  
+  .btn-import {
+    background-color: #3b82f6; /* blue-500 */
+  }
+  .btn-import:hover {
+    background-color: #2563eb; /* blue-600 */
+  }
+
+  /* === LARGE ACTION BUTTONS === */
+.btn-lg {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg shadow-sm transition-colors;
+  }
+  
+  .btn-blue {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+  
+  .btn-green {
+    @apply bg-green-600 text-white hover:bg-green-700;
+  }
+  
+  .btn-yellow {
+    @apply bg-amber-500 text-white hover:bg-amber-600;
+  }
+  
+  .btn-red {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+  
+  .btn-gray {
+    @apply bg-gray-200 text-gray-700 hover:bg-gray-300;
+  }
+  

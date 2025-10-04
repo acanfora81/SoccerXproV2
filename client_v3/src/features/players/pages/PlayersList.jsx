@@ -129,13 +129,13 @@ export default function PlayersList() {
           className="px-3 py-2 border rounded-lg w-64 dark:bg-[#0f1424] dark:border-white/10"
         />
         <Button variant="secondary" onClick={handleFixEncoding}>
-          <RefreshCw className="w-4 h-4 mr-2" /> Fix Encoding
+          <RefreshCw className="w-4 h-4 mr-2" /> Correggi Codifica
         </Button>
         <Button variant="secondary" onClick={handleExport}>
-          <Download className="w-4 h-4 mr-2" /> Export Excel
+          <Download className="w-4 h-4 mr-2" /> Esporta Excel
         </Button>
         <Button variant="secondary">
-          <Upload className="w-4 h-4 mr-2" /> Upload Excel
+          <Upload className="w-4 h-4 mr-2" /> Carica Excel
         </Button>
       </div>
 
