@@ -5,11 +5,13 @@ import ThemeProvider from "../providers";
 import ThemeToggle from "@/design-system/ds/ThemeToggle";
 import StatusBar from "./StatusBar";
 import { Sparkles } from "lucide-react";
+import { FiltersProvider } from "@/modules/filters/index.js";
 
 export default function MainLayout() {
   return (
     <ThemeProvider defaultTheme="light" enableSystem={false}>
-      <div className="min-h-screen w-full flex bg-layout-light dark:bg-layout-dark text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      <FiltersProvider>
+        <div className="min-h-screen w-full flex bg-layout-light dark:bg-layout-dark text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {/* === SIDEBAR === */}
         <Sidebar />
 
@@ -54,6 +56,7 @@ export default function MainLayout() {
           <StatusBar />
         </div>
       </div>
+      </FiltersProvider>
     </ThemeProvider>
   );
 }

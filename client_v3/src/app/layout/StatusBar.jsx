@@ -7,7 +7,7 @@ export default function StatusBar() {
 
   const checkHealth = async () => {
     try {
-      const res = await fetch("/api/health");
+      const res = await fetch("/health");
       setStatus(res.ok ? "online" : "offline");
     } catch {
       setStatus("offline");

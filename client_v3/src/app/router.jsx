@@ -2,6 +2,7 @@ import React from "react";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import MainLayout from "./layout/MainLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { FiltersProvider } from "@/modules/filters/index.js";
 
 // Pagine
 import Dashboard from "@/features/dashboard/pages/Dashboard";
@@ -21,6 +22,12 @@ import IrpefBracketsPage from "@/features/tax/pages/IrpefBracketsPage";
 import RegionalAdditionalsPage from "@/features/tax/pages/RegionalAdditionalsPage";
 import MunicipalAdditionalsPage from "@/features/tax/pages/MunicipalAdditionalsPage";
 import TaxCalculator from "@/features/tax/pages/TaxCalculator";
+
+// Performance Pages
+import PerformanceDashboard from "@/features/performance/pages/PerformanceDashboard";
+import PerformancePlayers from "@/features/performance/pages/PerformancePlayers";
+import DossierPage from "@/features/performance/pages/DossierPage";
+import ComparePage from "@/features/performance/pages/ComparePage";
 
 // Placeholder components per le altre pagine
 function PlaceholderPage({ title }) {
@@ -56,9 +63,11 @@ const router = createBrowserRouter([
              { path: "dashboard/players/upload", element: <PlayersUpload /> },
       
       // Performance
-      { path: "dashboard/performance", element: <PlaceholderPage title="Performance" /> },
-      { path: "dashboard/performance/team", element: <PlaceholderPage title="Dashboard Squadra" /> },
-      { path: "dashboard/performance/players", element: <PlaceholderPage title="Vista Giocatori" /> },
+      { path: "dashboard/performance", element: <PerformanceDashboard /> },
+      { path: "dashboard/performance/team", element: <PerformanceDashboard /> },
+      { path: "dashboard/performance/players", element: <PerformancePlayers /> },
+      { path: "dashboard/performance/dossier/:playerId", element: <DossierPage /> },
+      { path: "dashboard/performance/compare", element: <ComparePage /> },
       { path: "dashboard/performance/analytics", element: <PlaceholderPage title="Analytics Avanzate" /> },
       { path: "dashboard/performance/import", element: <PlaceholderPage title="Import Dati" /> },
       { path: "dashboard/performance/reports", element: <PlaceholderPage title="Reports" /> },
