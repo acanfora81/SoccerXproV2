@@ -104,6 +104,15 @@ class SmartColumnMapper {
       /^(minuti|minutes|min|hours|ore)$/i
     ];
 
+    // 🏷️ SESSION TYPE / NAME PATTERNS
+    this.sessionTypePatterns = [
+      /^(session[\s_]*type|tipo[\s_]*sessione|type)$/i,
+      /^(allenamento|training|partita|match)$/i
+    ];
+    this.sessionNamePatterns = [
+      /^(session[\s_]*name|nome[\s_]*sessione|name)$/i
+    ];
+
     // ================= NUOVI PATTERN - DISTANZE E VELOCITÀ =================
     this.equivalentDistancePatterns = [
       /^(distanza[\s_]*equivalente|dist[\s_]*eq|equivalent[\s_]*distance)$/i,
@@ -390,6 +399,29 @@ class SmartColumnMapper {
 
   async analyzeHeader(header /*, teamId */) {
     const headerLower = header.toLowerCase().trim();
+    // Session Type
+    if (this.matchesPatterns(headerLower, this.sessionTypePatterns)) {
+      return {
+        dbField: 'session_type',
+        transform: 'normalizeSessionType',
+        required: false,
+        confidence: 92,
+        type: 'session_type',
+        description: 'Tipo sessione (Allenamento/Partita)'
+      };
+    }
+
+    // Session Name
+    if (this.matchesPatterns(headerLower, this.sessionNamePatterns)) {
+      return {
+        dbField: 'session_name',
+        transform: 'string',
+        required: false,
+        confidence: 85,
+        type: 'session_name',
+        description: 'Nome sessione (libero)'
+      };
+    }
 
     // Player
     if (this.matchesPatterns(headerLower, this.playerPatterns)) {
@@ -1029,6 +1061,8 @@ class SmartColumnMapper {
             return await this.resolvePlayer(stringValue, teamId);
           } else if (context.dbField === 'session_date') {
             return this.parseSmartDate(stringValue);
+          } else if (context.dbField === 'session_type') {
+            return this.normalizeSessionType(stringValue);
           } else if (this.isNumericField(context.dbField)) {
             return this.convertToAppropriateType(stringValue, context.dbField);
           } else {
@@ -1037,6 +1071,9 @@ class SmartColumnMapper {
 
         case 'smartDateParser':
           return this.parseSmartDate(stringValue);
+
+        case 'normalizeSessionType':
+          return this.normalizeSessionType(stringValue);
 
         case 'kmToMeters': {
           const kmValue = this.parseFloatValue(stringValue);
@@ -1092,6 +1129,14 @@ class SmartColumnMapper {
     if (intFields.includes(dbField)) return this.parseIntValue(value);
     if (floatFields.includes(dbField)) return this.parseFloatValue(value);
     return value;
+  }
+
+  normalizeSessionType(input) {
+    const v = String(input).trim().toLowerCase();
+    if (['allenamento', 'training', 'workout', 'practice'].includes(v)) return 'Allenamento';
+    if (['partita', 'match', 'game'].includes(v)) return 'Partita';
+    // Capitalize fallback
+    return v.charAt(0).toUpperCase() + v.slice(1);
   }
 
   normalizeRowForDB(row) {

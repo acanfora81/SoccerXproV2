@@ -33,6 +33,35 @@ dlog("🟢 [INFO] Caricamento route performance multi-tenant...");
 
 const router = express.Router();
 
+// 🟢 In-memory job store per progress import (semplice, per dev)
+const importJobs = new Map();
+
+function createJob(totalSteps = 100) {
+  const id = Math.random().toString(36).slice(2);
+  const job = { id, progress: 0, state: 'running', phase: 'init', totalSteps, startedAt: Date.now(), updatedAt: Date.now(), summary: null, error: null };
+  importJobs.set(id, job);
+  return job;
+}
+
+function updateJob(id, partial) {
+  const job = importJobs.get(id);
+  if (!job) return;
+  Object.assign(job, partial, { updatedAt: Date.now() });
+}
+
+router.get('/import/status/:jobId', (req, res) => {
+  const job = importJobs.get(req.params.jobId);
+  if (!job) return res.status(404).json({ error: 'JOB_NOT_FOUND' });
+  return res.json({
+    id: job.id,
+    progress: job.progress,
+    state: job.state,
+    phase: job.phase,
+    summary: job.summary,
+    error: job.error
+  });
+});
+
 // 🔧 FIX: Funzione per parsing sessionType con mapping frontend→database
 function parseSessionTypeFilterFixed(sessionType) {
   dlog('🔵 [DEBUG] parseSessionTypeFilter: input:', sessionType);
@@ -395,7 +424,8 @@ router.post("/import/preview-data", async (req, res) => {
       });
     }
 
-    const UPLOAD_DIR = path.join(__dirname, "../../uploads");
+    // Corretto: la cartella upload è a server/uploads (non server/src/uploads)
+    const UPLOAD_DIR = path.join(__dirname, "../../../uploads");
     const filePath = path.join(UPLOAD_DIR, fileId);
 
     if (!fs.existsSync(filePath)) {
@@ -417,7 +447,7 @@ router.post("/import/preview-data", async (req, res) => {
           .on("end", resolve)
           .on("error", reject);
       });
-    } else if (ext === ".xlsx") {
+    } else if (ext === ".xlsx" || ext === ".xls") {
       const workbook = xlsx.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
@@ -465,6 +495,7 @@ router.post("/import/preview-data", async (req, res) => {
     });
   } catch (error) {
     console.log("🔴 Errore preview-data:", error.message);
+    console.log("🔴 Stack trace:", error.stack);
     return res.status(500).json({
       error: "Errore interno preview",
       code: "PREVIEW_ERROR",
@@ -479,12 +510,20 @@ router.post("/import/preview-data", async (req, res) => {
  * Import finale usando fileId salvato (senza nuovo upload)
  */
 router.post("/import/import-data", async (req, res) => {
+  // 🚀 Avvio job asincrono e risposta immediata con jobId
+  const job = createJob(100);
+  const { fileId, mapping, originalExtension } = req.body;
+  const teamId = req.context.teamId;
+  const createdById = req.context.userId;
+  
+  // Risposta immediata al client
+  res.json({ jobId: job.id });
+  
+  // Processo import in background
   const startTime = Date.now();
 
   try {
-    const teamId = req.context.teamId;
-    const createdById = req.context.userId;
-    const { fileId, mapping, originalExtension } = req.body;
+    updateJob(job.id, { phase: 'validate-input', progress: 5 });
 
     // 🟡 === DEBUG IMPORT DATI RICEVUTI === (AGGIUNTO)
     console.log("🟡 [WARN] === IMPORT FINALE DATI RICEVUTI ===");
@@ -507,22 +546,21 @@ router.post("/import/import-data", async (req, res) => {
     console.log("🟡 [WARN] ================================");
 
     if (!fileId || !mapping) {
-      return res.status(400).json({
-        error: "fileId e mapping richiesti per import finale",
-        code: "MISSING_PARAMS",
-      });
+      updateJob(job.id, { state: 'error', error: 'MISSING_PARAMS', phase: 'validate-input' });
+      return;
     }
 
     // Trova il file usando fileId
-    const UPLOAD_DIR = path.join(__dirname, "../../uploads");
+    // Corretto: la cartella upload è a server/uploads (non server/src/uploads)
+    const UPLOAD_DIR = path.join(__dirname, "../../../uploads");
     const filePath = path.join(UPLOAD_DIR, fileId);
 
     if (!fs.existsSync(filePath)) {
-      return res
-        .status(404)
-        .json({ error: "File non trovato", code: "FILE_NOT_FOUND" });
+      updateJob(job.id, { state: 'error', error: 'FILE_NOT_FOUND', phase: 'read-file' });
+      return;
     }
 
+    updateJob(job.id, { phase: 'read-file', progress: 20 });
     const ext = originalExtension || ".csv";
     let allRows = [];
 
@@ -541,7 +579,7 @@ router.post("/import/import-data", async (req, res) => {
           .on("end", resolve)
           .on("error", reject);
       });
-    } else if (ext === ".xlsx") {
+    } else if (ext === ".xlsx" || ext === ".xls") {
       const workbook = xlsx.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       allRows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
@@ -552,6 +590,7 @@ router.post("/import/import-data", async (req, res) => {
       console.log("🟡 [WARN] Prima riga esempio:", Object.keys(allRows[0]));
     }
 
+    updateJob(job.id, { phase: 'normalize', progress: 40 });
     // Normalizza e applica mapping usando columnMapper
     const strip = (s) =>
       typeof s === "string" ? s.replace(/^\uFEFF/, "").trim() : s;
@@ -563,6 +602,7 @@ router.post("/import/import-data", async (req, res) => {
       return out;
     });
 
+    updateJob(job.id, { phase: 'validate-mapping', progress: 55 });
     const validated = validateMapping(mapping); // throws se non valido
     const normalizedMapping = {};
     Object.entries(validated).forEach(([csvHeader, desc]) => {
@@ -572,6 +612,7 @@ router.post("/import/import-data", async (req, res) => {
 
     console.log("🟡 [WARN] Mapping normalizzato:", Object.keys(normalizedMapping));
 
+    updateJob(job.id, { phase: 'transform', progress: 70 });
     const transformResult = await smartColumnMapper.applyMapping(
       normalizedRows,
       normalizedMapping,
@@ -586,10 +627,8 @@ router.post("/import/import-data", async (req, res) => {
 
     if (!transformResult.success || transformResult.data.length === 0) {
       console.log("🔴 Trasformazione fallita o nessun dato valido");
-      return res.status(400).json({
-        error: "Nessun dato valido per l'import",
-        code: "NO_VALID_DATA",
-      });
+      updateJob(job.id, { state: 'error', error: 'NO_VALID_DATA', phase: 'transform' });
+      return;
     }
 
     // 🟢 Auto-learn template se trasformazione andata bene
@@ -616,6 +655,7 @@ try {
       console.log("🟡 [WARN] Esempio valori prima riga:", transformResult.data[0]);
     }
 
+    updateJob(job.id, { phase: 'persist', progress: 80 });
     // Salva nel database usando la stessa logica dell'endpoint originale
     const prisma = getPrismaClient();
     const importResults = {
@@ -642,6 +682,10 @@ try {
 
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
+      
+      // Aggiorna progresso per ogni batch (da 80% a 95%)
+      const batchProgress = 80 + Math.floor((batchIndex / batches.length) * 15);
+      updateJob(job.id, { progress: batchProgress, phase: `persist-batch-${batchIndex + 1}/${batches.length}` });
       
       console.log(`🟡 [WARN] Processando batch ${batchIndex + 1}/${batches.length}`); // DEBUG - rimuovere in produzione
 
@@ -700,8 +744,8 @@ try {
               const performanceData = {
                 playerId: rowData.playerId,
                 session_date: rowData.session_date,
+                session_type: rowData.session_type || null,
                 session_name: rowData.session_name || null,
-                session_name: rowData.session_name || null, // 🟠 AGGIUNTO session_name
                 duration_minutes: completedRow.T,
                 total_distance_m: completedRow["Distanza (m)"],
                 equivalent_distance_m: completedRow["Dist Equivalente"],
@@ -818,6 +862,14 @@ try {
     importResults.summary.processingTime = processingTime;
 
     console.log("🟢 [INFO] Import completato:", importResults.summary);
+    
+    // Aggiorna job come completato
+    updateJob(job.id, { 
+      phase: 'done', 
+      state: 'done', 
+      progress: 100, 
+      summary: importResults.summary 
+    });
 
     // Cleanup file
     try { 
@@ -826,21 +878,12 @@ try {
       dwarn("Temp file cleanup failed:", e?.message); 
     }
 
-    return res.json({
-      message: "Import completato con successo",
-      data: {
-        summary: importResults.summary,
-        errors: importResults.failed.slice(0, 10),
-        successful: importResults.successful.slice(0, 5),
-        hasMoreErrors: importResults.failed.length > 10,
-      },
-    });
   } catch (error) {
     derr("Import error:", error?.message);
-
-    return res.status(500).json({
-      error: "Errore interno durante import finale",
-      code: "IMPORT_ERROR",
+    updateJob(job.id, { 
+      state: 'error', 
+      error: error.message, 
+      phase: 'error' 
     });
   }
 });
@@ -2450,13 +2493,10 @@ router.post("/import/import", upload.single("file"), async (req, res) => {
  * Dossier dettagliato giocatore - MULTI-TENANT
  */
 router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (req, res) => {
-  const logger = require("../utils/logger");
   try {
     // Helper per evitare crash con dati sporchi
     const safeNum = v => Number.isFinite(Number(v)) ? Number(v) : 0;
     const safeDate = v => (v instanceof Date ? v : new Date(v || Date.now()));
-
-    const { buildPeriodRange, parseSessionTypeFilter, computeHSR, computeSprintPer90, calculateACWR, round } = require("../utils/kpi");
     
     const playerId = Number(req.params.playerId);
     const { period = 'week', sessionType = 'all', sessionName = 'all', roles = '', startDate, endDate } = req.query;

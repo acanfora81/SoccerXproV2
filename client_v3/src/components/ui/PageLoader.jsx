@@ -14,3 +14,5 @@ const PageLoader = ({ message = "Caricamento dati...", minHeight = 220 }) => {
 };
 
 export default PageLoader;
+
+

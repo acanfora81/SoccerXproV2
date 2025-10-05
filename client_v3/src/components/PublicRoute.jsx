@@ -1,8 +1,8 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 
-export default function ProtectedRoute({ children }) {
+export default function PublicRoute() {
   const { isAuthenticated, isLoading } = useAuthStore();
 
   if (isLoading) {
@@ -16,11 +16,10 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!isAuthenticated) {
-    console.log('🟡 [ROUTE] Accesso negato - redirect a /login');
-    return <Navigate to="/login" replace />;
+  if (isAuthenticated) {
+    console.log('🟡 [ROUTE] Utente già autenticato - redirect a /app/dashboard');
+    return <Navigate to="/app/dashboard" replace />;
   }
 
-  console.log('🟢 [ROUTE] Accesso consentito');
-  return children;
+  return <Outlet />;
 }

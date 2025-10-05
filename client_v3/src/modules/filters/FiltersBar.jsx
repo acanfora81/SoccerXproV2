@@ -288,7 +288,7 @@ export function FiltersBar({
 
   return (
     <>
-      <div className="filters-container">
+      <div className={`filters-container ${mode === 'compact' ? 'filters-compact' : ''}`}>
         {/* 🎯 FILTRI UNIFORMI - Stile identico ai Contratti */}
         {/* 🔍 Ricerca */}
         {showSearch && (

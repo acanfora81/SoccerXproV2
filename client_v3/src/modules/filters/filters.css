@@ -9,6 +9,64 @@
   flex-wrap: wrap;
 }
 
+/* Modalità compatta per drawer - tutto su una riga */
+.filters-container.filters-compact {
+  gap: 8px;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.filters-container.filters-compact::-webkit-scrollbar {
+  height: 4px;
+}
+
+.filters-container.filters-compact::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 2px;
+}
+
+/* Scrollbar sottile per contenuto drawer */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+.filters-container.filters-compact .filter-box {
+  min-width: 140px;
+  padding: 6px 10px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.filters-container.filters-compact .filter-box svg {
+  width: 16px;
+  height: 16px;
+}
+
+.filters-container.filters-compact .filter-select {
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
 /* Box di ricerca e filtri - stile unificato */
 .search-box,
 .filter-box {
@@ -45,7 +103,23 @@
 
 .filter-box .filter-select {
   cursor: pointer;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 6px 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
+
+/* Dropdown nativo (lista opzioni) in tema scuro */
+@media (prefers-color-scheme: dark) {
+  select.filter-select option { background-color: #0b1220; color: #e5e7eb; }
+}
+
+/* Forza stile anche quando l'app usa classe .dark sul root */
+.dark select.filter-select { background-color: #0b1220; color: #e5e7eb; border-color: rgba(255,255,255,.18); }
+.dark select.filter-select option { background-color: #0b1220; color: #e5e7eb; }
 
 .filter-toggle {
   display: flex;
@@ -95,3 +169,26 @@
 .active-chip .remove-btn:hover {
   color: var(--error-color);
 }
+
+/* === DatePicker overlay & calendar grid (fix visual custom) === */
+.datepicker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:60}
+.datepicker{width:100%;max-width:420px;background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);border-radius:14px;color:var(--text-primary)}
+.datepicker-header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.12)}
+.datepicker-body{padding:14px 18px 6px}
+.month-navigation{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:var(--text-primary);padding:6px 10px;border-radius:8px;cursor:pointer}
+.month-title{font-weight:600}
+.calendar-grid{width:100%}
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:4px 0 6px;opacity:.8;font-size:12px}
+.weekday{text-align:center}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--text-primary);cursor:pointer}
+.day:hover{background:rgba(255,255,255,.08)}
+.day.selected{background:rgba(99,102,241,.35);border-color:rgba(99,102,241,.6)}
+.day.in-range{background:rgba(99,102,241,.18)}
+.day.empty{visibility:hidden}
+.datepicker-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 16px;border-top:1px solid rgba(255,255,255,.12)}
+.datepicker-actions{display:flex;gap:8px}
+.btn-secondary,.btn-primary{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:var(--text-primary);cursor:pointer;font-size:12px}
+.btn-primary{background:linear-gradient(90deg,rgba(59,130,246,.5),rgba(168,85,247,.5));border-color:rgba(168,85,247,.5)}
+.btn-secondary:hover,.btn-primary:hover{filter:brightness(1.1)}

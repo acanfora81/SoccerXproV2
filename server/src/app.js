@@ -120,6 +120,10 @@ app.use('/api/auth', authRoutes);
 const onboardingRoutes = require('./routes/onboarding');
 app.use('/api/onboarding', onboardingRoutes);
 
+// 📬 Test Mailer (pubblico - verifica configurazione invio email)
+const testMailRoute = require('./routes/testMail');
+app.use('/api', testMailRoute);
+
 // 👥 Users Management (solo ADMIN)
 const usersRoutes = require('./routes/users');
 app.use('/api/users', usersRoutes);

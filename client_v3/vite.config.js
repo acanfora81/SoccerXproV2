@@ -11,11 +11,18 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('🔵 [VITE PROXY] Forwarding:', req.method, req.url, '→ http://localhost:3001' + req.url);
+          });
+        },
       },
     },
   },

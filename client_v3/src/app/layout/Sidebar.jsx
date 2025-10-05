@@ -360,6 +360,13 @@ export default function Sidebar() {
     });
   };
 
+  const buildPath = (p) => {
+    if (!p) return '';
+    if (p.startsWith('/app/')) return p;
+    if (p.startsWith('/')) return `/app${p}`;
+    return `/app/${p}`;
+  };
+
   const renderMenuItem = (item, level = 0) => {
     const Icon = item.icon;
     const isMenuOpen = openMenus.has(item.id);
@@ -384,7 +391,7 @@ export default function Sidebar() {
         ) : (
           // Menu senza submenu
           <NavLink 
-            to={item.path}
+            to={buildPath(item.path)}
             end
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             style={{ paddingLeft: `${paddingLeft}px` }}

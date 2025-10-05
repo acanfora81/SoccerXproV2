@@ -1,5 +1,5 @@
 // src/pages/performance/ComparePage.jsx
-// 🏆 PAGINA CONFRONTO MULTI-GIOCATORE - Replica di CompareOverlay in formato pagina
+// 🏆 PAGINA CONFRONTO MULTI-GIOCATORE - Completamente Tailwind
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -31,7 +31,6 @@ import {
 import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters/index.js';
 import { apiFetch } from '@/utils/http';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import '@/modules/filters/filters.css';
 
 const ComparePage = () => {
   const navigate = useNavigate();
@@ -62,7 +61,7 @@ const ComparePage = () => {
   // Colori per i giocatori
   const playerColors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6'];
   
-  // Helper functions (identiche a CompareOverlay)
+  // Helper functions
   const safeDec = (value, decimals = 2) => {
     const num = Number(value);
     return Number.isFinite(num) ? num.toFixed(decimals) : '0.00';
@@ -73,7 +72,7 @@ const ComparePage = () => {
     return Number.isFinite(num) ? Math.round(num) : 0;
   };
 
-  // Fetch dei dati (identico a CompareOverlay)
+  // Fetch dei dati
   const fetchCompareData = async () => {
     if (playerIds.length === 0) {
       setError('Nessun giocatore selezionato');
@@ -81,9 +80,9 @@ const ComparePage = () => {
       return;
     }
 
-      try {
-        setIsLoading(true);
-        setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
       const query = buildPerformanceQuery(filters);
       const url = `/api/performance/compare?players=${playerIds.join(',')}&${query}`;
@@ -92,60 +91,53 @@ const ComparePage = () => {
 
       const response = await apiFetch(url);
         
-        if (!response.ok) {
+      if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Errore ${response.status}: ${errorText}`);
-        }
+      }
 
-        const data = await response.json();
+      const data = await response.json();
       console.log('🟢 ComparePage: dati ricevuti:', data);
-      console.log('🔍 ComparePage: struttura dati:', {
-        hasPlayers: !!data.players,
-        playersLength: data.players?.length || 0,
-        firstPlayer: data.players?.[0],
-        sampleDetailed: data.players?.[0]?.detailed,
-        firstPlayerKeys: data.players?.[0] ? Object.keys(data.players[0]) : []
-      });
       
       const playersData = data.players || data || [];
       setPlayers(playersData);
         
-      } catch (err) {
+    } catch (err) {
       console.error('🔴 ComparePage: errore fetch:', err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Effect per caricare i dati
   useEffect(() => {
     fetchCompareData();
   }, [playerIds.join(','), JSON.stringify(filters)]);
 
-  // Tabella comparativa dinamica (identica a CompareOverlay)
+  // Tabella comparativa dinamica
   const renderCompareTable = (metrics) => {
     if (!players.length) return <div>Nessun dato disponibile</div>;
 
     return (
-      <div className="tab-content compare-table-container">
-        <table className="compare-table">
-          <thead>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 dark:bg-[#0b1220] border-b border-gray-200 dark:border-white/10">
             <tr>
-              <th></th>
+              <th className="px-4 py-3 text-left text-gray-700 dark:text-gray-300 font-semibold"></th>
               {players.map((p, idx) => (
-                <th key={p.id} style={{ color: playerColors[idx % playerColors.length], textAlign: 'center' }}>
+                <th key={p.id} className="px-4 py-3 text-center font-semibold" style={{ color: playerColors[idx % playerColors.length] }}>
                   {p.firstName} {p.lastName}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-200 dark:divide-white/10">
             {metrics.map((m, i) => (
-              <tr key={i}>
-                <td className="metric-label">{m.label}</td>
+              <tr key={i} className="hover:bg-gray-50 dark:hover:bg-[#0b1220] transition-colors">
+                <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{m.label}</td>
                 {players.map((p, idx) => (
-                  <td key={p.id} style={{ textAlign: 'center' }}>
+                  <td key={p.id} className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">
                     {m.getValue(p)}
                   </td>
                 ))}
@@ -163,15 +155,15 @@ const ComparePage = () => {
   };
 
   const ChartCard = ({ title, data, color = '#3B82F6', unit }) => (
-    <div className="chart-card">
-      <div className="chart-header"><h4>{title}</h4></div>
+    <div className="bg-white dark:bg-[#1a2332] border border-gray-200 dark:border-white/10 rounded-lg p-4 shadow-sm">
+      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{title}</h4>
       <div style={{ width: '100%', height: 220 }}>
         <ResponsiveContainer>
           <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip formatter={(v) => `${v}${unit ? ' ' + unit : ''}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(156, 163, 175, 0.2)" />
+            <XAxis dataKey="name" stroke="#9CA3AF" style={{ fontSize: '12px' }} />
+            <YAxis stroke="#9CA3AF" style={{ fontSize: '12px' }} />
+            <Tooltip formatter={(v) => `${v}${unit ? ' ' + unit : ''}`} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px' }} />
             <Legend />
             <Bar dataKey="value" fill={color} radius={[6, 6, 0, 0]} />
           </BarChart>
@@ -182,112 +174,96 @@ const ComparePage = () => {
 
   // Render functions con grafici comparativi
   const renderSummaryTab = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
+    if (!players.length) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Nessun dato disponibile</div>;
 
     return (
-      <div className="tab-content">
-        <div className="charts-grid">
-          <ChartCard title="Sessioni totali" data={toChartData('Sessioni totali', (p) => safeInt(p.detailed?.totalSessions || 0))} />
-          <ChartCard title="Durata media sessione" data={toChartData('Durata media', (p) => Number(safeDec(p.detailed?.avgSessionDuration || 0, 1)))} unit="min" color="#10B981" />
-          <ChartCard title="Distanza totale" data={toChartData('Distanza totale', (p) => safeInt(p.detailed?.totalDistance || 0))} unit="m" color="#8B5CF6" />
-          <ChartCard title="Player load medio" data={toChartData('PL medio', (p) => Number(safeDec(p.detailed?.avgSessionLoad || 0, 1)))} color="#F59E0B" />
-          <ChartCard title="Velocità max" data={toChartData('Velocità max', (p) => Number(safeDec(p.detailed?.topSpeedMax || 0, 1)))} unit="km/h" color="#EF4444" />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ChartCard title="Sessioni totali" data={toChartData('Sessioni totali', (p) => safeInt(p.detailed?.totalSessions || 0))} />
+        <ChartCard title="Durata media sessione" data={toChartData('Durata media', (p) => Number(safeDec(p.detailed?.avgSessionDuration || 0, 1)))} unit="min" color="#10B981" />
+        <ChartCard title="Distanza totale" data={toChartData('Distanza totale', (p) => safeInt(p.detailed?.totalDistance || 0))} unit="m" color="#8B5CF6" />
+        <ChartCard title="Player load medio" data={toChartData('PL medio', (p) => Number(safeDec(p.detailed?.avgSessionLoad || 0, 1)))} color="#F59E0B" />
+        <ChartCard title="Velocità max" data={toChartData('Velocità max', (p) => Number(safeDec(p.detailed?.topSpeedMax || 0, 1)))} unit="km/h" color="#EF4444" />
       </div>
     );
   };
 
   const renderLoadTab = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
+    if (!players.length) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Nessun dato disponibile</div>;
 
-      return (
-      <div className="tab-content">
-        <div className="charts-grid">
-          <ChartCard title="Distanza totale" data={toChartData('Distanza', (p) => safeInt(p.detailed?.totalDistance || 0))} unit="m" />
-          <ChartCard title="Player load totale" data={toChartData('PL', (p) => safeInt(p.detailed?.totalPlayerLoad || 0))} color="#F59E0B" />
-          <ChartCard title="Durata totale" data={toChartData('Minuti', (p) => safeInt(p.detailed?.totalMinutes || 0))} unit="min" color="#10B981" />
-          <ChartCard title="Carico medio per sessione" data={toChartData('PL medio', (p) => Number(safeDec(p.detailed?.avgSessionLoad || 0, 1)))} color="#8B5CF6" />
-              </div>
-            </div>
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ChartCard title="Distanza totale" data={toChartData('Distanza', (p) => safeInt(p.detailed?.totalDistance || 0))} unit="m" />
+        <ChartCard title="Player load totale" data={toChartData('PL', (p) => safeInt(p.detailed?.totalPlayerLoad || 0))} color="#F59E0B" />
+        <ChartCard title="Durata totale" data={toChartData('Minuti', (p) => safeInt(p.detailed?.totalMinutes || 0))} unit="min" color="#10B981" />
+        <ChartCard title="Carico medio per sessione" data={toChartData('PL medio', (p) => Number(safeDec(p.detailed?.avgSessionLoad || 0, 1)))} color="#8B5CF6" />
+      </div>
     );
   };
 
   const renderIntensityTab = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
+    if (!players.length) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Nessun dato disponibile</div>;
 
     return (
-      <div className="tab-content">
-        <div className="charts-grid">
-          <ChartCard title="PL/min" data={toChartData('PL/min', (p) => Number(safeDec(p.detailed?.plPerMin || 0, 2)))} color="#F59E0B" />
-          <ChartCard title="Velocità media" data={toChartData('Velocità media', (p) => Number(safeDec(p.detailed?.avgSpeed || 0, 2)))} unit="km/h" />
-          <ChartCard title="Sprint per 90'" data={toChartData('Sprint90', (p) => Number(safeDec(p.summary?.sprintPer90 || 0, 2)))} color="#EF4444" />
-          </div>
-        </div>
-      );
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <ChartCard title="PL/min" data={toChartData('PL/min', (p) => Number(safeDec(p.detailed?.plPerMin || 0, 2)))} color="#F59E0B" />
+        <ChartCard title="Velocità media" data={toChartData('Velocità media', (p) => Number(safeDec(p.detailed?.avgSpeed || 0, 2)))} unit="km/h" />
+        <ChartCard title="Sprint per 90'" data={toChartData('Sprint90', (p) => Number(safeDec(p.summary?.sprintPer90 || 0, 2)))} color="#EF4444" />
+      </div>
+    );
   };
 
   const renderCardioTab = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
+    if (!players.length) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Nessun dato disponibile</div>;
 
     return (
-      <div className="tab-content">
-        <div className="charts-grid">
-          <ChartCard title="FC media" data={toChartData('FC media', (p) => Number(safeDec(p.detailed?.avgHeartRate || 0, 1)))} unit="bpm" />
-          <ChartCard title="FC max" data={toChartData('FC max', (p) => safeInt(p.detailed?.maxHeartRate || 0))} unit="bpm" color="#EF4444" />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ChartCard title="FC media" data={toChartData('FC media', (p) => Number(safeDec(p.detailed?.avgHeartRate || 0, 1)))} unit="bpm" />
+        <ChartCard title="FC max" data={toChartData('FC max', (p) => safeInt(p.detailed?.maxHeartRate || 0))} unit="bpm" color="#EF4444" />
       </div>
     );
   };
 
   const renderAccTab = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
+    if (!players.length) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Nessun dato disponibile</div>;
 
     return (
-      <div className="tab-content">
-        <div className="charts-grid">
-          <ChartCard title="Accelerazioni totali" data={toChartData('Acc', (p) => safeInt(p.detailed?.totalAccelerations || 0))} />
-          <ChartCard title="Decelerazioni totali" data={toChartData('Dec', (p) => safeInt(p.detailed?.totalDecelerations || 0))} />
-          <ChartCard title="Accel./min" data={toChartData('Acc/min', (p) => Number(safeDec(p.detailed?.accelPerMinute || 0, 2)))} />
-          <ChartCard title="Decel./min" data={toChartData('Dec/min', (p) => Number(safeDec(p.detailed?.decelPerMinute || 0, 2)))} />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ChartCard title="Accelerazioni totali" data={toChartData('Acc', (p) => safeInt(p.detailed?.totalAccelerations || 0))} />
+        <ChartCard title="Decelerazioni totali" data={toChartData('Dec', (p) => safeInt(p.detailed?.totalDecelerations || 0))} />
+        <ChartCard title="Accel./min" data={toChartData('Acc/min', (p) => Number(safeDec(p.detailed?.accelPerMinute || 0, 2)))} />
+        <ChartCard title="Decel./min" data={toChartData('Dec/min', (p) => Number(safeDec(p.detailed?.decelPerMinute || 0, 2)))} />
       </div>
     );
   };
 
   const renderSpeedTab = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
+    if (!players.length) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Nessun dato disponibile</div>;
 
-        return (
-      <div className="tab-content">
-        <div className="charts-grid">
-          <ChartCard title="HSR totale" data={toChartData('HSR', (p) => safeInt(p.detailed?.hsrTotal || 0))} unit="m" />
-          <ChartCard title="Sprint totali" data={toChartData('Sprint', (p) => safeInt(p.detailed?.sprintCount || 0))} color="#F59E0B" />
-          <ChartCard title="Top speed" data={toChartData('Top speed', (p) => Number(safeDec(p.detailed?.topSpeedMax || 0, 2)))} unit="km/h" color="#EF4444" />
-          <ChartCard title="Dist. 15-20 km/h" data={toChartData('15-20', (p) => safeInt(p.detailed?.distance15_20 || 0))} unit="m" />
-          <ChartCard title="Dist. 20-25 km/h" data={toChartData('20-25', (p) => safeInt(p.detailed?.distance20_25 || 0))} unit="m" />
-          <ChartCard title="Dist. > 25 km/h" data={toChartData('>25', (p) => safeInt(p.detailed?.distanceOver25 || 0))} unit="m" />
-                </div>
-              </div>
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ChartCard title="HSR totale" data={toChartData('HSR', (p) => safeInt(p.detailed?.hsrTotal || 0))} unit="m" />
+        <ChartCard title="Sprint totali" data={toChartData('Sprint', (p) => safeInt(p.detailed?.sprintCount || 0))} color="#F59E0B" />
+        <ChartCard title="Top speed" data={toChartData('Top speed', (p) => Number(safeDec(p.detailed?.topSpeedMax || 0, 2)))} unit="km/h" color="#EF4444" />
+        <ChartCard title="Dist. 15-20 km/h" data={toChartData('15-20', (p) => safeInt(p.detailed?.distance15_20 || 0))} unit="m" />
+        <ChartCard title="Dist. 20-25 km/h" data={toChartData('20-25', (p) => safeInt(p.detailed?.distance20_25 || 0))} unit="m" />
+        <ChartCard title="Dist. > 25 km/h" data={toChartData('>25', (p) => safeInt(p.detailed?.distanceOver25 || 0))} unit="m" />
+      </div>
     );
   };
 
   const renderReadinessTab = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
+    if (!players.length) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Nessun dato disponibile</div>;
 
     return (
-      <div className="tab-content">
-        <div className="charts-grid">
-          <ChartCard title="ACWR" data={toChartData('ACWR', (p) => Number(safeDec(p.detailed?.acwr || 0, 2)))} />
-          <ChartCard title="Strain" data={toChartData('Strain', (p) => Number(safeDec(p.detailed?.strain || 0, 1)))} color="#8B5CF6" />
-            </div>
-          </div>
-        );
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ChartCard title="ACWR" data={toChartData('ACWR', (p) => Number(safeDec(p.detailed?.acwr || 0, 2)))} />
+        <ChartCard title="Strain" data={toChartData('Strain', (p) => Number(safeDec(p.detailed?.strain || 0, 1)))} color="#8B5CF6" />
+      </div>
+    );
   };
 
   // Funzioni per le tabelle (quando non espanso)
   const renderSummaryTable = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
-
     const metrics = [
       { label: 'Sessioni totali', getValue: (p) => safeInt(p.detailed?.totalSessions || 0) },
       { label: 'Durata media sessione', getValue: (p) => `${safeDec(p.detailed?.avgSessionDuration || 0, 1)} min` },
@@ -299,8 +275,6 @@ const ComparePage = () => {
   };
 
   const renderLoadTable = () => {
-    if (!players.length) return <div>Nessun dato disponibile</div>;
-
     const metrics = [
       { label: 'Distanza totale', getValue: (p) => `${safeInt(p.detailed?.totalDistance || 0)} m` },
       { label: 'Player load totale', getValue: (p) => safeInt(p.detailed?.totalPlayerLoad || 0) },
@@ -403,22 +377,18 @@ const ComparePage = () => {
     }
   };
 
-
   // Loading state
   if (isLoading) {
     return (
-      <div className="compare-page-drawer">
-        <div className="compare-header">
-          <div className="loading-skeleton">
-            <div className="skeleton-avatar"></div>
-            <div className="skeleton-text"></div>
-          </div>
-        </div>
-        <div className="compare-content">
-          <div className="loading-skeleton">
-            <div className="skeleton-kpi"></div>
-            <div className="skeleton-kpi"></div>
-            <div className="skeleton-kpi"></div>
+      <div className="min-h-screen bg-white dark:bg-[#0f1424] p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-64 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-64 bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -428,105 +398,121 @@ const ComparePage = () => {
   // Error state
   if (error || !players || players.length === 0) {
     return (
-      <div className="compare-page-drawer">
-        <div className="compare-header">
-              <h3>Errore Confronto</h3>
-          <button className="close-btn" onClick={handleClose}>
-            <X size={20} />
-          </button>
-        </div>
-        <div className="compare-content">
-          <div className="error-state">
-            <p>Errore nel caricamento: {error}</p>
+      <div className="min-h-screen bg-white dark:bg-[#0f1424] p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Errore Confronto</h3>
+            <button 
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => navigate(-1)}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+            <p className="text-red-700 dark:text-red-300">{error || 'Nessun giocatore selezionato per il confronto'}</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const handleClose = () => {
-    navigate(-1); // Torna indietro nella cronologia
-  };
-
-
   return (
-    <div className={`compare-page-drawer ${isExpanded ? 'expanded' : ''}`}>
-      {/* Header identico a CompareOverlay */}
-      <div className="compare-header">
-        <div className="compare-title">
-          <GitCompare size={20} />
-          <h3>Confronto Multi-Giocatore</h3>
+    <div className="min-h-screen bg-white dark:bg-[#0f1424]">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-white dark:bg-[#0f1424] border-b border-gray-200 dark:border-white/10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <GitCompare size={24} className="text-blue-500" />
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Confronto Multi-Giocatore</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  {players.map((player, index) => (
+                    <React.Fragment key={player.id}>
+                      <span className="text-sm font-medium" style={{ color: playerColors[index] }}>
+                        {player.firstName} {player.lastName}
+                      </span>
+                      {index < players.length - 1 && <span className="text-gray-400">VS</span>}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => navigate(-1)}
+            >
+              <X size={20} />
+            </button>
           </div>
-        <div className="compare-players-names">
-          {players.map((player, index) => (
-            <React.Fragment key={player.id}>
-              <span className="player-name" style={{ color: playerColors[index] }}>
-                  {player.firstName} {player.lastName}
-                </span>
-              {index < players.length - 1 && <span className="vs">VS</span>}
-            </React.Fragment>
-              ))}
-        </div>
-        <div className="header-actions">
-          <button className="close-btn" onClick={handleClose}>
-            <X size={20} />
-          </button>
         </div>
       </div>
 
       {/* Filtri */}
-      <div className="compare-filters">
-        <FiltersBar />
+      <div className="bg-gray-50 dark:bg-[#0b1220] border-b border-gray-200 dark:border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <FiltersBar />
+        </div>
       </div>
 
       {/* Contenuto principale */}
-      <div className="compare-content">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Tab navigation */}
-        <div className="drawer-tabs">
+        <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-white/10 overflow-x-auto">
           {TABS.map((tab) => (
-        <button 
+            <button 
               key={tab.id}
-              className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+              className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === tab.id 
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400' 
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.icon}
               {tab.label}
-        </button>
-        ))}
-      </div>
+            </button>
+          ))}
+        </div>
       
         {/* Tab content */}
-        {renderTabContent()}
-      </div>
+        <div className="bg-white dark:bg-[#1a2332] border border-gray-200 dark:border-white/10 rounded-lg p-6">
+          {renderTabContent()}
+        </div>
 
-      {/* Footer del drawer */}
-      <div className="drawer-footer">
-        <div className="drawer-footer__left">
-          <button type="button" className="btn ghost" onClick={handleClose}>
+        {/* Footer con azioni */}
+        <div className="flex justify-between items-center mt-6">
+          <button 
+            type="button" 
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+            onClick={() => navigate(-1)}
+          >
             Chiudi
           </button>
-        </div>
-        <div className="drawer-footer__right">
-          {!isExpanded && (
-            <button 
-              type="button" 
-              className="btn primary"
-              onClick={() => setIsExpanded(true)}
-            >
-              <BarChart3 size={16} />
-              Dettagli Grafici
-            </button>
-          )}
-          {isExpanded && (
-            <button 
-              type="button" 
-              className="btn secondary"
-              onClick={() => setIsExpanded(false)}
-            >
-              <ArrowLeft size={16} />
-              Torna alla Tabella
-            </button>
-          )}
+          <div className="flex gap-3">
+            {!isExpanded && (
+              <button 
+                type="button" 
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => setIsExpanded(true)}
+              >
+                <BarChart3 size={16} />
+                Visualizza Grafici
+              </button>
+            )}
+            {isExpanded && (
+              <button 
+                type="button" 
+                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                onClick={() => setIsExpanded(false)}
+              >
+                <ArrowLeft size={16} />
+                Torna alle Tabelle
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

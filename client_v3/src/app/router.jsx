@@ -2,14 +2,23 @@ import React from "react";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import MainLayout from "./layout/MainLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FiltersProvider } from "@/modules/filters/index.js";
+import PublicRoute from "@/components/PublicRoute";
+import { AuthProvider } from "@/contexts/AuthContext";
 
-// Pagine
+// Onboarding Pages
+import LandingPage from "@/pages/LandingPage";
+import ChoosePlan from "@/pages/ChoosePlan";
+import CheckoutPage from "@/pages/CheckoutPage";
+import SetupTeam from "@/pages/SetupTeam";
+
+// Auth Pages
+import LoginPage from "@/pages/auth/LoginPage";
+
+// Dashboard Pages
 import Dashboard from "@/features/dashboard/pages/Dashboard";
 import PlayersList from "@/features/players/pages/PlayersList";
 import PlayersStats from "@/features/players/pages/PlayersStats";
 import PlayersUpload from "@/features/players/pages/PlayersUpload";
-import LoginPage from "@/features/auth/pages/LoginPage";
 import ContractsDashboard from "@/features/contracts/pages/ContractsDashboard";
 import ContractsList from "@/features/contracts/pages/ContractsList";
 import ExpiringContracts from "@/features/contracts/pages/ExpiringContracts";
@@ -28,6 +37,7 @@ import PerformanceDashboard from "@/features/performance/pages/PerformanceDashbo
 import PerformancePlayers from "@/features/performance/pages/PerformancePlayers";
 import DossierPage from "@/features/performance/pages/DossierPage";
 import ComparePage from "@/features/performance/pages/ComparePage";
+import ImportPage from "@/features/performance/pages/ImportPage";
 
 // Placeholder components per le altre pagine
 function PlaceholderPage({ title }) {
@@ -42,12 +52,30 @@ function PlaceholderPage({ title }) {
 }
 
 const router = createBrowserRouter([
+  // Public Routes (with redirect if authenticated)
   {
-    path: "/login",
-    element: <LoginPage />,
+    element: <PublicRoute />,
+    children: [
+      { path: "/", element: <LandingPage /> },
+      { path: "/login", element: <LoginPage /> },
+    ],
+  },
+  
+  // Onboarding Routes (pubbliche senza guard)
+  {
+    path: "/onboarding/choose-plan",
+    element: <ChoosePlan />,
   },
   {
-    path: "/",
+    path: "/onboarding/payment",
+    element: <CheckoutPage />,
+  },
+  {
+    path: "/onboarding/setup-team",
+    element: <SetupTeam />,
+  },
+  {
+    path: "/app",
     element: (
       <ProtectedRoute>
         <MainLayout />
@@ -69,7 +97,7 @@ const router = createBrowserRouter([
       { path: "dashboard/performance/dossier/:playerId", element: <DossierPage /> },
       { path: "dashboard/performance/compare", element: <ComparePage /> },
       { path: "dashboard/performance/analytics", element: <PlaceholderPage title="Analytics Avanzate" /> },
-      { path: "dashboard/performance/import", element: <PlaceholderPage title="Import Dati" /> },
+      { path: "dashboard/performance/import", element: <ImportPage /> },
       { path: "dashboard/performance/reports", element: <PlaceholderPage title="Reports" /> },
       
       // Contratti
@@ -124,13 +152,22 @@ const router = createBrowserRouter([
       { path: "dashboard/tax-config", element: <PlaceholderPage title="Configurazioni Fiscali" /> },
       
       // Redirect di default
-      { path: "", element: <Navigate to="/dashboard" replace /> },
+      { path: "", element: <Navigate to="/app/dashboard" replace /> },
       // Fallback
       { path: "*", element: <Dashboard /> },
     ],
   },
+  // Fallback route for unknown paths
+  {
+    path: "*",
+    element: <Navigate to="/" replace />,
+  },
 ]);
 
 export default function AppRouter() {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }

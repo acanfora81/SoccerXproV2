@@ -445,6 +445,69 @@ router.delete('/irpef-brackets/:year', async (req, res) => {
   }
 });
 
+// POST /api/taxrates/irpef-brackets/year - Crea solo un anno senza scaglioni
+router.post('/irpef-brackets/year', async (req, res) => {
+  try {
+    const { year } = req.body;
+    
+    if (!year) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'year obbligatorio' 
+      });
+    }
+    
+    console.log('🔵 IRPEF Year POST: Creazione anno', year, 'senza scaglioni');
+    
+    // Crea un record "dummy" per registrare l'anno (verrà eliminato quando si aggiungono scaglioni reali)
+    const dummyBracket = await prisma.tax_irpef_bracket.create({
+      data: {
+        year: parseInt(year),
+        min: -1, // Valore speciale per indicare "anno registrato ma senza scaglioni"
+        max: -1,
+        rate: 0
+      }
+    });
+    
+    console.log('🟢 IRPEF Year POST: Anno registrato con ID dummy:', dummyBracket.id);
+    
+    res.json({ 
+      success: true, 
+      message: `Anno ${year} registrato con successo`,
+      data: { year: parseInt(year) }
+    });
+  } catch (error) {
+    console.error('❌ Errore creazione anno IRPEF:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/taxrates/irpef-brackets/years - Recupera anni disponibili per scaglioni IRPEF
+router.get('/irpef-brackets/years', async (req, res) => {
+  try {
+    console.log('🔵 IRPEF Brackets Years GET: Recupero anni disponibili');
+    
+    // Recupera TUTTI gli anni (inclusi quelli con solo record dummy)
+    const allYears = await prisma.tax_irpef_bracket.findMany({
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' }
+    });
+    
+    const yearList = allYears.map(item => item.year);
+    
+    console.log('🟢 IRPEF Brackets Years GET: Trovati anni:', yearList);
+    
+    res.json({ 
+      success: true, 
+      data: yearList 
+    });
+  } catch (error) {
+    console.error('❌ Errore recupero anni IRPEF:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ➕ Route per caricare aliquote IRPEF da CSV
 router.post('/irpef-upload', upload.single('file'), async (req, res) => {
   try {
@@ -578,6 +641,69 @@ router.post('/irpef-upload', upload.single('file'), async (req, res) => {
 // ADDIZIONALI REGIONALI
 // ========================================
 
+// POST /api/taxrates/regional-additionals/year - Crea solo un anno senza addizionali
+router.post('/regional-additionals/year', async (req, res) => {
+  try {
+    const { year } = req.body;
+    
+    if (!year) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'year obbligatorio' 
+      });
+    }
+    
+    console.log('🔵 Regional Additionals Year POST: Creazione anno', year, 'senza addizionali');
+    
+    // Crea un record "dummy" per registrare l'anno (verrà eliminato quando si aggiungono addizionali reali)
+    const dummyScheme = await prisma.tax_regional_additional_scheme.create({
+      data: {
+        year: parseInt(year),
+        region: 'DUMMY', // Valore speciale per indicare "anno registrato ma senza addizionali"
+        is_progressive: false,
+        flat_rate: -1 // Valore speciale per indicare "anno registrato ma senza addizionali"
+      }
+    });
+    
+    console.log('🟢 Regional Additionals Year POST: Anno registrato con ID dummy:', dummyScheme.id);
+    
+    res.json({ 
+      success: true, 
+      message: `Anno ${year} registrato con successo`,
+      data: { year: parseInt(year) }
+    });
+  } catch (error) {
+    console.error('❌ Errore creazione anno addizionali regionali:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/taxrates/regional-additionals/years - Recupera anni disponibili per addizionali regionali
+router.get('/regional-additionals/years', async (req, res) => {
+  try {
+    console.log('🔵 Regional Additionals Years GET: Recupero anni disponibili');
+    
+    // Recupera TUTTI gli anni (inclusi quelli con solo record dummy)
+    const allYears = await prisma.tax_regional_additional_scheme.findMany({
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' }
+    });
+    
+    const yearList = allYears.map(item => item.year);
+    
+    console.log('🟢 Regional Additionals Years GET: Trovati anni:', yearList);
+    
+    res.json({ 
+      success: true, 
+      data: yearList 
+    });
+  } catch (error) {
+    console.error('❌ Errore recupero anni addizionali regionali:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET /api/taxrates/regional-additionals - Recupera addizionali regionali
 router.get('/regional-additionals', async (req, res) => {
   try {
@@ -597,9 +723,12 @@ router.get('/regional-additionals', async (req, res) => {
     //   ]
     // });
     
-    // Recupera addizionali progressive
+    // Recupera addizionali progressive (escludendo i record dummy)
     const progressiveAdditionals = await prisma.tax_regional_additional_scheme.findMany({
-      where: whereClause,
+      where: {
+        ...whereClause,
+        region: { not: 'DUMMY' } // Esclude i record dummy
+      },
       include: {
         tax_regional_additional_bracket: {
           orderBy: { min: 'asc' }
@@ -747,6 +876,30 @@ router.post('/regional-additionals', async (req, res) => {
   }
 });
 
+// DELETE /api/taxrates/regional-additionals/:year - Elimina tutti i record per un anno
+router.delete('/regional-additionals/:year', async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    console.log('🔵 Regional Additionals DELETE: Eliminazione tutti i record per anno', year);
+    
+    const deleted = await prisma.tax_regional_additional_scheme.deleteMany({
+      where: { year: parseInt(year) }
+    });
+    
+    console.log('🟢 Regional Additionals DELETE: Eliminati', deleted.count, 'record');
+    
+    res.json({ 
+      success: true, 
+      message: `Eliminati ${deleted.count} record per l'anno ${year}`,
+      data: deleted
+    });
+  } catch (error) {
+    console.error('❌ Errore eliminazione anno addizionali regionali:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // DELETE /api/taxrates/regional-additionals/:id - Elimina addizionale regionale
 router.delete('/regional-additionals/:id', async (req, res) => {
   try {
@@ -802,6 +955,70 @@ router.delete('/regional-additionals/:id', async (req, res) => {
 // ADDIZIONALI COMUNALI
 // ========================================
 
+// POST /api/taxrates/municipal-additionals/year - Crea solo un anno senza addizionali
+router.post('/municipal-additionals/year', async (req, res) => {
+  try {
+    const { year } = req.body;
+    
+    if (!year) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'year obbligatorio' 
+      });
+    }
+    
+    console.log('🔵 Municipal Additionals Year POST: Creazione anno', year, 'senza addizionali');
+    
+    // Crea un record "dummy" per registrare l'anno (verrà eliminato quando si aggiungono addizionali reali)
+    const dummyScheme = await prisma.tax_municipal_additional_rule.create({
+      data: {
+        year: parseInt(year),
+        region: 'DUMMY', // Valore speciale per indicare "anno registrato ma senza addizionali"
+        municipality: 'DUMMY', // Valore speciale per indicare "anno registrato ma senza addizionali"
+        is_progressive: false,
+        flat_rate: -1 // Valore speciale per indicare "anno registrato ma senza addizionali"
+      }
+    });
+    
+    console.log('🟢 Municipal Additionals Year POST: Anno registrato con ID dummy:', dummyScheme.id);
+    
+    res.json({ 
+      success: true, 
+      message: `Anno ${year} registrato con successo`,
+      data: { year: parseInt(year) }
+    });
+  } catch (error) {
+    console.error('❌ Errore creazione anno addizionali comunali:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/taxrates/municipal-additionals/years - Recupera anni disponibili per addizionali comunali
+router.get('/municipal-additionals/years', async (req, res) => {
+  try {
+    console.log('🔵 Municipal Additionals Years GET: Recupero anni disponibili');
+    
+    // Recupera TUTTI gli anni (inclusi quelli con solo record dummy)
+    const allYears = await prisma.tax_municipal_additional_rule.findMany({
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' }
+    });
+    
+    const yearList = allYears.map(item => item.year);
+    
+    console.log('🟢 Municipal Additionals Years GET: Trovati anni:', yearList);
+    
+    res.json({ 
+      success: true, 
+      data: yearList 
+    });
+  } catch (error) {
+    console.error('❌ Errore recupero anni addizionali comunali:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET /api/taxrates/municipal-additionals - Recupera addizionali comunali
 router.get('/municipal-additionals', async (req, res) => {
   try {
@@ -822,9 +1039,12 @@ router.get('/municipal-additionals', async (req, res) => {
     //   ]
     // });
     
-    // Recupera addizionali progressive
+    // Recupera addizionali progressive (escludendo i record dummy)
     const progressiveAdditionals = await prisma.tax_municipal_additional_rule.findMany({
-      where: whereClause,
+      where: {
+        ...whereClause,
+        municipality: { not: 'DUMMY' } // Esclude i record dummy
+      },
       include: {
         tax_municipal_additional_bracket: {
           orderBy: { min: 'asc' }
@@ -1100,6 +1320,30 @@ router.post('/municipal-additionals/upload', upload.single('file'), async (req, 
   } catch (error) {
     console.error('🔴 Municipal upload error:', error);
     res.status(500).json({ success: false, message: 'Errore upload comunali: ' + error.message });
+  }
+});
+
+// DELETE /api/taxrates/municipal-additionals/:year - Elimina tutti i record per un anno
+router.delete('/municipal-additionals/:year', async (req, res) => {
+  try {
+    const { year } = req.params;
+    
+    console.log('🔵 Municipal Additionals DELETE: Eliminazione tutti i record per anno', year);
+    
+    const deleted = await prisma.tax_municipal_additional_rule.deleteMany({
+      where: { year: parseInt(year) }
+    });
+    
+    console.log('🟢 Municipal Additionals DELETE: Eliminati', deleted.count, 'record');
+    
+    res.json({ 
+      success: true, 
+      message: `Eliminati ${deleted.count} record per l'anno ${year}`,
+      data: deleted
+    });
+  } catch (error) {
+    console.error('❌ Errore eliminazione anno addizionali comunali:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
