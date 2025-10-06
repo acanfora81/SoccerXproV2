@@ -219,8 +219,8 @@ const DossierDrawer = ({
       {/* Overlay */}
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       
-      {/* Drawer - Più alto e più largo */}
-      <div className="relative ml-auto w-full max-w-4xl bg-white dark:bg-[#0f1424] shadow-xl flex flex-col" style={{ maxHeight: '96vh', marginTop: '2vh' }}>
+      {/* Drawer - Più alto e più largo, avvicinato al bordo superiore */}
+      <div className="relative ml-auto w-full max-w-4xl bg-white dark:bg-[#0f1424] shadow-xl flex flex-col" style={{ maxHeight: '94vh', marginTop: '0' }}>
         {/* 🔧 Indicatore refresh discreto */}
         {isRefreshing && (
           <div className="absolute top-4 right-20 z-10 flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm">
@@ -291,7 +291,7 @@ const DossierDrawer = ({
         <div className="px-4 py-2 border-b border-gray-200/50 dark:border-white/10">
           <div className="grid grid-cols-4 gap-2">
             {/* KPI 1: PL/min */}
-            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-lg p-2.5">
+            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border border-yellow-200 dark:border-yellow-800/50 rounded-lg p-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Zap size={12} className="text-yellow-600 dark:text-yellow-400" />
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">PL/min</span>
@@ -308,7 +308,7 @@ const DossierDrawer = ({
             </div>
 
             {/* KPI 2: HSR */}
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/10 dark:to-cyan-900/10 border border-blue-200 dark:border-blue-800/30 rounded-lg p-2.5">
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 border border-blue-200 dark:border-blue-800/50 rounded-lg p-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Activity size={12} className="text-blue-600 dark:text-blue-400" />
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">HSR</span>
@@ -325,7 +325,7 @@ const DossierDrawer = ({
             </div>
 
             {/* KPI 3: Sprint/90 */}
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 border border-green-200 dark:border-green-800/30 rounded-lg p-2.5">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border border-green-200 dark:border-green-800/50 rounded-lg p-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <ArrowUpRight size={12} className="text-green-600 dark:text-green-400" />
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Sprint/90</span>
@@ -342,7 +342,7 @@ const DossierDrawer = ({
             </div>
 
             {/* KPI 4: Vel. max */}
-            <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/10 dark:to-pink-900/10 border border-red-200 dark:border-red-800/30 rounded-lg p-2.5">
+            <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border border-red-200 dark:border-red-800/50 rounded-lg p-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Target size={12} className="text-red-600 dark:text-red-400" />
                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Vel. max</span>
@@ -422,21 +422,21 @@ const DossierDrawer = ({
             <div>
               <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wider">Panoramica Periodo</h4>
               <div className="grid grid-cols-4 gap-2">
-                <div className="p-2 bg-gray-50 dark:bg-[#0f1424] rounded-lg border border-gray-200 dark:border-white/10">
+                <div className="p-2 rounded-lg border bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 border-blue-200 dark:border-blue-800/50">
                   <p className="text-[10px] text-gray-600 dark:text-gray-400 mb-0.5">Distanza tot</p>
                   <p className="text-base font-bold text-gray-900 dark:text-white">{safeInt(player.summary.distTot)} <span className="text-[10px] font-normal text-gray-500">m</span></p>
                 </div>
-                <div className="p-2 bg-gray-50 dark:bg-[#0f1424] rounded-lg border border-gray-200 dark:border-white/10">
+                <div className="p-2 rounded-lg border bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 border-yellow-200 dark:border-yellow-800/50">
                   <p className="text-[10px] text-gray-600 dark:text-gray-400 mb-0.5">Minuti tot</p>
                   <p className="text-base font-bold text-gray-900 dark:text-white">{safeInt(player.summary.minutesTot)}'</p>
                 </div>
                 {Number(player.summary?.stepsTot) > 0 && (
-                  <div className="p-2 bg-gray-50 dark:bg-[#0f1424] rounded-lg border border-gray-200 dark:border-white/10">
+                  <div className="p-2 rounded-lg border bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-900/30 dark:to-violet-900/30 border-indigo-200 dark:border-indigo-800/50">
                     <p className="text-[10px] text-gray-600 dark:text-gray-400 mb-0.5">Passi tot</p>
                     <p className="text-base font-bold text-gray-900 dark:text-white">{safeInt(player.summary.stepsTot)}</p>
                   </div>
                 )}
-                <div className="p-2 bg-gray-50 dark:bg-[#0f1424] rounded-lg border border-gray-200 dark:border-white/10">
+                <div className="p-2 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-green-200 dark:border-green-800/50">
                   <p className="text-[10px] text-gray-600 dark:text-gray-400 mb-0.5">ACWR</p>
                   <p className="text-base font-bold text-gray-900 dark:text-white">{safeDec(player.summary.acwr, 2)}</p>
                 </div>
@@ -474,19 +474,19 @@ const DossierDrawer = ({
             <div>
               <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wider">Zone di intensità</h4>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/30 dark:to-amber-900/30 border-yellow-200 dark:border-yellow-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Zona 15-20 km/h</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.intensity?.zone15_20)} m</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 border-orange-200 dark:border-orange-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Zona 20-25 km/h</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.intensity?.zone20_25)} m</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border-red-200 dark:border-red-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Zona 25+ km/h</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.intensity?.zone25plus)} m</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 border-blue-200 dark:border-blue-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">HSR Totale</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.intensity?.hsrTot)} m</p>
                 </div>
@@ -498,19 +498,19 @@ const DossierDrawer = ({
             <div>
               <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wider">Metriche cardiovascolari</h4>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/30 dark:to-pink-900/30 border-rose-200 dark:border-rose-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Freq. cardiaca media</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.cardio?.avgHR)} bpm</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border-red-200 dark:border-red-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Freq. cardiaca max</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.cardio?.maxHR)} bpm</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-900/30 dark:to-fuchsia-900/30 border-purple-200 dark:border-purple-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">RPE medio</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeDec(player.cardio?.rpeAvg, 1)}</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 border-indigo-200 dark:border-indigo-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">RPE sessione</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.cardio?.rpeSession)}</p>
                 </div>
@@ -522,15 +522,15 @@ const DossierDrawer = ({
             <div>
               <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wider">Accelerazioni e decelerazioni</h4>
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-emerald-200 dark:border-emerald-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Accelerazioni</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.accDec?.acc)}</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/30 dark:to-blue-900/30 border-sky-200 dark:border-sky-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Decelerazioni</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.accDec?.dec)}</p>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-[#0f1424] rounded-lg col-span-2">
+                <div className="p-4 rounded-lg border bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 border-violet-200 dark:border-violet-800/50 col-span-2">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Impatto stimato</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.accDec?.impact) || 'N/A'}</p>
                 </div>
@@ -552,7 +552,7 @@ const DossierDrawer = ({
           </button>
           <button
             onClick={() => {
-              navigate(`/app/performance/players/${playerId}/dossier?${buildPerformanceQuery(filters)}`);
+              navigate(`/app/dashboard/performance/dossier/${playerId}?${buildPerformanceQuery(filters)}`);
               onClose();
             }}
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"

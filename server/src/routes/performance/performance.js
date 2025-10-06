@@ -32,6 +32,16 @@ const upload = multer({ dest: "uploads/" });
 dlog("🟢 [INFO] Caricamento route performance multi-tenant...");
 
 const router = express.Router();
+// KPI service (import non invasivo)
+const {
+  calcDistancePerMin,
+  calcIntensityRatio,
+  calcEfficiencyIndex,
+  calcSprintHSRRatio,
+  calcAcwrAverage,
+  calcMetabolicEfficiency,
+  calcCardioEffortIndex
+} = require('../../services/kpiCalculationService.js');
 
 // 🟢 In-memory job store per progress import (semplice, per dev)
 const importJobs = new Map();
@@ -1340,6 +1350,7 @@ router.get(
         totalSessions,
         activePlayersCount,
         teamAverages,
+        performancesRaw,
         topPerformers,
         sessionTypeBreakdown,
         // 🔧 NUOVO: Dati per periodo precedente per trend
@@ -1366,6 +1377,21 @@ router.get(
             max_heart_rate: true,
             duration_minutes: true,
           },
+        }),
+
+        prisma.performanceData.findMany({
+          where,
+          orderBy: { session_date: 'asc' },
+          select: {
+            session_date: true,
+            total_distance_m: true,
+            sprint_distance_m: true,
+            player_load: true,
+            duration_minutes: true,
+            avg_heart_rate: true,
+            // HSR stimabile da distance_over_20_kmh_m
+            distance_over_20_kmh_m: true
+          }
         }),
 
         prisma.performanceData.findMany({
@@ -1432,6 +1458,23 @@ router.get(
       const prevAvgDuration = prevTeamAverages._avg.duration_minutes || 0;
       const durationTrend = calculateTrend(currentAvgDuration, prevAvgDuration);
 
+      const toNum = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
+      const roundOrNull = (v, d = 2) => {
+        const n = toNum(v);
+        return n == null ? 0 : Number(n.toFixed(d));
+      };
+
+      // Arricchimento KPI derivati (non distruttivo)
+      const performances = performancesRaw.map(p => ({
+        ...p,
+        distance_per_min: calcDistancePerMin(p.total_distance_m, p.duration_minutes),
+        intensity_ratio: calcIntensityRatio(p.distance_over_20_kmh_m, p.sprint_distance_m, p.total_distance_m),
+        efficiency_index: calcEfficiencyIndex(p.player_load, p.total_distance_m),
+        sprint_hsr_ratio: calcSprintHSRRatio(p.sprint_distance_m, p.distance_over_20_kmh_m),
+        metabolic_efficiency: calcMetabolicEfficiency(p.total_distance_m, p.player_load),
+        cardio_effort_index: calcCardioEffortIndex(p.avg_heart_rate, p.player_load)
+      }));
+
       const teamStats = {
         overview: {
           totalSessions,
@@ -1445,34 +1488,13 @@ router.get(
           period: periodValue,
         },
         teamAverages: {
-          totalDistance:
-            teamAverages._avg.total_distance_m != null
-              ? parseFloat(teamAverages._avg.total_distance_m.toFixed(2))
-              : null,
-          sprintDistance:
-            teamAverages._avg.sprint_distance_m != null
-              ? parseFloat(teamAverages._avg.sprint_distance_m.toFixed(2))
-              : null,
-          topSpeed:
-            teamAverages._avg.top_speed_kmh != null
-              ? parseFloat(teamAverages._avg.top_speed_kmh.toFixed(2))
-              : null,
-          avgSpeed:
-            teamAverages._avg.avg_speed_kmh != null
-              ? parseFloat(teamAverages._avg.avg_speed_kmh.toFixed(2))
-              : null,
-          playerLoad:
-            teamAverages._avg.player_load != null
-              ? parseFloat(teamAverages._avg.player_load.toFixed(2))
-              : null,
-          maxHeartRate:
-            teamAverages._avg.max_heart_rate != null
-              ? Math.round(teamAverages._avg.max_heart_rate)
-              : null,
-          duration:
-            teamAverages._avg.duration_minutes != null
-              ? Math.round(teamAverages._avg.duration_minutes)
-              : null,
+          totalDistance: roundOrNull(teamAverages._avg.total_distance_m, 2),
+          sprintDistance: roundOrNull(teamAverages._avg.sprint_distance_m, 2),
+          topSpeed: roundOrNull(teamAverages._avg.top_speed_kmh, 2),
+          avgSpeed: roundOrNull(teamAverages._avg.avg_speed_kmh, 2),
+          playerLoad: roundOrNull(teamAverages._avg.player_load, 2),
+          maxHeartRate: Math.round(toNum(teamAverages._avg.max_heart_rate) || 0),
+          duration: Math.round(toNum(teamAverages._avg.duration_minutes) || 0),
         },
         // 🔧 NUOVO: Trend percentuali per marcatori di variazione
         trends: {
@@ -1492,18 +1514,9 @@ router.get(
         sessionBreakdown: sessionTypeBreakdown.map((item) => ({
           sessionType: item.session_name,
           count: item._count.session_name,
-          avgDistance:
-            item._avg.total_distance_m != null
-              ? parseFloat(item._avg.total_distance_m.toFixed(2))
-              : null,
-          avgPlayerLoad:
-            item._avg.player_load != null
-              ? parseFloat(item._avg.player_load.toFixed(2))
-              : null,
-          avgTopSpeed:
-            item._avg.top_speed_kmh != null
-              ? parseFloat(item._avg.top_speed_kmh.toFixed(2))
-              : null,
+          avgDistance: roundOrNull(item._avg.total_distance_m, 2),
+          avgPlayerLoad: roundOrNull(item._avg.player_load, 2),
+          avgTopSpeed: roundOrNull(item._avg.top_speed_kmh, 2),
         })),
       };
 
@@ -1526,6 +1539,17 @@ router.get(
       res.json({
         message: "Statistiche team recuperate con successo",
         data: teamStats,
+        enrichedMetrics: {
+          series: performances,
+          summary: {
+            avgDistancePerMin: (performances.reduce((s, p) => s + (p.distance_per_min || 0), 0) / (performances.length || 1)) || 0,
+            avgIntensityRatio: (performances.reduce((s, p) => s + (p.intensity_ratio || 0), 0) / (performances.length || 1)) || 0,
+            avgEfficiencyIndex: (performances.reduce((s, p) => s + (p.efficiency_index || 0), 0) / (performances.length || 1)) || 0,
+            avgSprintHSRRatio: (performances.reduce((s, p) => s + (p.sprint_hsr_ratio || 0), 0) / (performances.length || 1)) || 0,
+            avgMetabolicEfficiency: (performances.reduce((s, p) => s + (p.metabolic_efficiency || 0), 0) / (performances.length || 1)) || 0,
+            avgCardioEffortIndex: (performances.reduce((s, p) => s + (p.cardio_effort_index || 0), 0) / (performances.length || 1)) || 0,
+          }
+        }
       });
     } catch (error) {
       console.log("🔴 Errore calcolo statistiche team:", error.message);
@@ -2565,9 +2589,17 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
         distance_15_20_kmh_m: true,
         distance_20_25_kmh_m: true,
         distance_over_25_kmh_m: true,
+        distance_over_20_kmh_m: true,
         total_distance_m: true,
+        // fallback utili per distanza
+        equivalent_distance_m: true,
+        distance_per_min: true,
         num_acc_over_3_ms2: true,
         num_dec_over_minus3_ms2: true,
+        acc_events_per_min_over_2_ms2: true,
+        dec_events_per_min_over_minus2_ms2: true,
+        distance_acc_over_3_ms2_m: true,
+        distance_dec_over_minus3_ms2_m: true,
         avg_heart_rate: true,
         max_heart_rate: true,
         extras: true,          // JSON con eventuali rpe/sRPE
@@ -2656,7 +2688,19 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
     };
 
     // Calcola statistiche aggiuntive per il frontend
-    const totalDistance = sessions.reduce((s, r) => s + safeNum(r.total_distance_m || 0), 0);
+    // Distanza totale robusta: usa total_distance_m, altrimenti equivalent_distance_m, altrimenti distance_per_min * minuti
+    function resolveRowDistanceMeters(row) {
+      const direct = safeNum(row.total_distance_m || 0);
+      if (direct > 0) return direct;
+      const equivalent = safeNum(row.equivalent_distance_m || 0);
+      if (equivalent > 0) return equivalent;
+      const distPerMin = safeNum(row.distance_per_min || 0);
+      const minutes = safeNum(row.duration_minutes || 0);
+      const prod = distPerMin > 0 && minutes > 0 ? distPerMin * minutes : 0;
+      return prod;
+    }
+
+    const totalDistance = sessions.reduce((s, r) => s + resolveRowDistanceMeters(r), 0);
     const totalMinutes = sessions.reduce((s, r) => s + safeNum(r.duration_minutes), 0);
     const totalSteps = sessions.reduce((s, r) => s + safeNum(r.steps || 0), 0);
 
@@ -2771,24 +2815,74 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
           const minutes = safeNum(s.duration_minutes || 0);
           const rpeVal = safeNum(rpeInfo.rpe || 0);
           const sRPEVal = rpeInfo.session_rpe > 0 ? rpeInfo.session_rpe : (rpeVal > 0 && minutes > 0 ? Math.round(rpeVal * minutes) : 0);
-          return {
+      return {
             id: s.id,
             date: safeDate(s.session_date).toLocaleDateString('it-IT'),
             type: s.session_name || 'Allenamento',
             minutes: safeNum(s.duration_minutes),
             PL: safeNum(s.player_load),
             notes: s.notes || null,
+        // Campi per grafici (con fallback robusto)
+        total_distance_m: (() => {
+          const direct = safeNum(s.total_distance_m || 0);
+          if (direct > 0) return direct;
+          const equivalent = safeNum(s.equivalent_distance_m || 0);
+          if (equivalent > 0) return equivalent;
+          const distPerMin = safeNum(s.distance_per_min || 0);
+          const minutes = safeNum(s.duration_minutes || 0);
+          return distPerMin > 0 && minutes > 0 ? distPerMin * minutes : 0;
+        })(),
+            sprint_distance_m: safeNum(s.sprint_distance_m || 0),
+            top_speed_kmh: safeNum(s.top_speed_kmh),
+            // Alias per compatibilità
             topSpeed: safeNum(s.top_speed_kmh),
-            hsr: safeNum(s.high_intensity_runs),
+        // HSR robusto: usa high_intensity_runs se presente, altrimenti stima con distanza >20 km/h
+        hsr: (() => {
+          const hir = safeNum(s.high_intensity_runs || 0);
+          if (hir > 0) return hir;
+          // fallback stimato in metri: usa distanza_over_20_kmh_m se disponibile, altrimenti somma zone alte
+          const over20 = safeNum(s.distance_over_20_kmh_m || 0);
+          if (over20 > 0) return over20;
+          const z20_25 = safeNum(s.distance_20_25_kmh_m || 0);
+          const z25p = safeNum(s.distance_over_25_kmh_m || 0);
+          return z20_25 + z25p;
+        })(),
             zone15_20: safeNum(s.distance_15_20_kmh_m || 0),
             zone20_25: safeNum(s.distance_20_25_kmh_m || 0),
             zone25plus: safeNum(s.distance_over_25_kmh_m || 0),
-            acc: safeNum(s.num_acc_over_3_ms2 || 0),
-            dec: safeNum(s.num_dec_over_minus3_ms2 || 0),
+        acc: (() => {
+          const n = safeNum(s.num_acc_over_3_ms2 || 0);
+          if (n > 0) return n;
+          // fallback da eventi/min su soglia 2 m/s^2
+          const perMin = safeNum(s.acc_events_per_min_over_2_ms2 || 0);
+          const mins = safeNum(s.duration_minutes || 0);
+          if (perMin > 0 && mins > 0) return Math.round(perMin * mins);
+          // ulteriore fallback: usa distanza su >3 m/s^2 come proxy, scala 10 m ≈ 1 evento
+          const distProxy = safeNum(s.distance_acc_over_3_ms2_m || 0);
+          return distProxy > 0 ? Math.max(1, Math.round(distProxy / 10)) : 0;
+        })(),
+        dec: (() => {
+          const n = safeNum(s.num_dec_over_minus3_ms2 || 0);
+          if (n > 0) return n;
+          const perMin = safeNum(s.dec_events_per_min_over_minus2_ms2 || 0);
+          const mins = safeNum(s.duration_minutes || 0);
+          if (perMin > 0 && mins > 0) return Math.round(perMin * mins);
+          const distProxy = safeNum(s.distance_dec_over_minus3_ms2_m || 0);
+          return distProxy > 0 ? Math.max(1, Math.round(distProxy / 10)) : 0;
+        })(),
             avgHR: safeNum(s.avg_heart_rate || 0),
             maxHR: safeNum(s.max_heart_rate || 0),
             rpe: rpeVal,
-            sRPE: sRPEVal
+            sRPE: sRPEVal,
+            // Nuovi KPI calcolati
+            metabolic_efficiency: calcMetabolicEfficiency(safeNum(s.total_distance_m || 0), safeNum(s.player_load || 0)),
+            distance_per_min: calcDistancePerMin(safeNum(s.total_distance_m || 0), safeNum(s.duration_minutes || 0)),
+            intensity_ratio: calcIntensityRatio(
+              safeNum(s.distance_over_20_kmh_m || 0) + safeNum(s.distance_20_25_kmh_m || 0) + safeNum(s.distance_over_25_kmh_m || 0),
+              safeNum(s.sprint_distance_m || 0),
+              safeNum(s.total_distance_m || 0)
+            ),
+            cardio_effort_index: calcCardioEffortIndex(safeNum(s.avg_heart_rate || 0), safeNum(s.player_load || 0))
           };
         })
       },

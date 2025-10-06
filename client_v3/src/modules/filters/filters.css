@@ -192,3 +192,22 @@
 .btn-secondary,.btn-primary{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:var(--text-primary);cursor:pointer;font-size:12px}
 .btn-primary{background:linear-gradient(90deg,rgba(59,130,246,.5),rgba(168,85,247,.5));border-color:rgba(168,85,247,.5)}
 .btn-secondary:hover,.btn-primary:hover{filter:brightness(1.1)}
+
+/* === Light theme overrides for DatePicker (più bianco, meno grigio) === */
+body:not(.dark) .datepicker-overlay{background:rgba(0,0,0,.35)}
+body:not(.dark) .datepicker{background:#ffffff;border:1px solid #e5e7eb;color:#111827;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+body:not(.dark) .datepicker-header{border-bottom:1px solid #e5e7eb}
+body:not(.dark) .datepicker-body{background:#ffffff}
+body:not(.dark) .nav-btn{background:#f3f4f6;border-color:#e5e7eb;color:#111827}
+body:not(.dark) .month-title{color:#111827}
+body:not(.dark) .weekdays{opacity:1;color:#374151}
+body:not(.dark) .day{background:#ffffff;border:1px solid #e5e7eb;color:#111827}
+body:not(.dark) .day:hover{background:#eff6ff;border-color:#bfdbfe}
+body:not(.dark) .day.selected{background:#93c5fd;border-color:#60a5fa;color:#0b1020}
+body:not(.dark) .day.in-range{background:#e0f2fe}
+body:not(.dark) .datepicker-footer{border-top:1px solid #e5e7eb}
+body:not(.dark) .btn-secondary, 
+body:not(.dark) .btn-primary{border:1px solid #bfdbfe;background:#e5f0ff;color:#0b1020}
+body:not(.dark) .btn-primary{background:#2563eb;color:#ffffff;border-color:#2563eb}
+body:not(.dark) .btn-secondary:hover{background:#e0e7ff}
+body:not(.dark) .btn-primary:hover{background:#1d4ed8}

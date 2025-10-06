@@ -172,8 +172,8 @@ export const PlayersAPI = {
            return response.data;
          },
 
-         async downloadTemplate() {
-           const response = await fetch('http://localhost:3001/api/players/template', {
+         async downloadTemplate(lang = 'en') {
+           const response = await fetch(`http://localhost:3001/api/players/template?lang=${encodeURIComponent(lang)}`, {
              credentials: 'include'
            });
            

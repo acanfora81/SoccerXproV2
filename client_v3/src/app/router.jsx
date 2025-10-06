@@ -38,6 +38,7 @@ import PerformancePlayers from "@/features/performance/pages/PerformancePlayers"
 import DossierPage from "@/features/performance/pages/DossierPage";
 import ComparePage from "@/features/performance/pages/ComparePage";
 import ImportPage from "@/features/performance/pages/ImportPage";
+import AnalyticsAdvanced from "@/features/performance/pages/AnalyticsAdvanced";
 
 // Placeholder components per le altre pagine
 function PlaceholderPage({ title }) {
@@ -52,14 +53,16 @@ function PlaceholderPage({ title }) {
 }
 
 const router = createBrowserRouter([
-  // Public Routes (with redirect if authenticated)
-  {
-    element: <PublicRoute />,
-    children: [
-      { path: "/", element: <LandingPage /> },
-      { path: "/login", element: <LoginPage /> },
-    ],
-  },
+// Landing sempre pubblica (anche se autenticato)
+{ path: "/", element: <LandingPage /> },
+
+// Public Routes che reindirizzano solo per login quando già autenticati
+{
+  element: <PublicRoute />,
+  children: [
+    { path: "/login", element: <LoginPage /> },
+  ],
+},
   
   // Onboarding Routes (pubbliche senza guard)
   {
@@ -96,7 +99,7 @@ const router = createBrowserRouter([
       { path: "dashboard/performance/players", element: <PerformancePlayers /> },
       { path: "dashboard/performance/dossier/:playerId", element: <DossierPage /> },
       { path: "dashboard/performance/compare", element: <ComparePage /> },
-      { path: "dashboard/performance/analytics", element: <PlaceholderPage title="Analytics Avanzate" /> },
+      { path: "dashboard/performance/analytics", element: <AnalyticsAdvanced /> },
       { path: "dashboard/performance/import", element: <ImportPage /> },
       { path: "dashboard/performance/reports", element: <PlaceholderPage title="Reports" /> },
       

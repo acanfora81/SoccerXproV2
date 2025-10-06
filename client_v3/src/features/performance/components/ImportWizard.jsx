@@ -108,7 +108,7 @@ export default function ImportWizard({ teamId }) {
 
         {step === 1 && (
           <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-xl p-6">
+            <div className="lg:col-span-2 bg-gray-50 border border-blue-200 rounded-xl p-6 dark:bg-white/5 dark:border-white/10">
               <div className="text-center">
                 <div className="flex justify-center mb-4">
                   <Upload className="w-12 h-12 text-blue-400" />
@@ -118,19 +118,19 @@ export default function ImportWizard({ teamId }) {
                 <input id="performance-file" type="file" accept=".csv,.xlsx,.xls" onChange={onSelectFile} className="hidden" />
                 <label htmlFor="performance-file" className="block cursor-pointer">
                   {!file ? (
-                    <div className="rounded-xl border border-dashed border-white/20 p-8 hover:border-white/40 transition-colors">
-                      <p className="text-white/70">Clicca per selezionare un file o trascinalo qui</p>
-                      <div className="mt-3 inline-flex items-center gap-2 text-sm text-white/60">
+                    <div className="rounded-xl border border-dashed border-blue-200 p-8 bg-gray-50 hover:border-blue-400 transition-colors dark:bg-transparent dark:border-white/20 dark:hover:border-white/40">
+                      <p className="text-gray-700 dark:text-white/70">Clicca per selezionare un file o trascinalo qui</p>
+                      <div className="mt-3 inline-flex items-center gap-2 text-sm text-gray-600 dark:text-white/60">
                         <FileText className="w-4 h-4" />
                         <span>CSV, Excel (.xlsx, .xls)</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between rounded-xl border border-white/10 p-4 bg-white/5">
+                    <div className="flex items-center justify-between rounded-xl border border-blue-200 p-4 bg-blue-50 dark:border-white/10 dark:bg-white/5">
                       {(() => { const Icon = getFileIcon(file.name); return <Icon className="w-6 h-6 text-blue-400" />; })()}
                       <div className="flex-1 px-4 text-left">
-                        <div className="font-medium">{file.name}</div>
-                        <div className="text-sm text-white/60">{formatFileSize(file.size)} • Pronto per analisi</div>
+                        <div className="font-medium text-gray-900 dark:text-white">{file.name}</div>
+                        <div className="text-sm text-gray-600 dark:text-white/60">{formatFileSize(file.size)} • Pronto per analisi</div>
                       </div>
                       <button type="button" onClick={(e)=>{e.preventDefault(); setFile(null); setError(null);}} className="p-2 rounded-lg hover:bg-white/10">
                         <X className="w-4 h-4" />
@@ -140,7 +140,7 @@ export default function ImportWizard({ teamId }) {
                 </label>
 
                 <div className="mt-6">
-                  <button onClick={readHeaders} disabled={!file || loading} className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 font-semibold disabled:opacity-50 transition-colors">
+                  <button onClick={readHeaders} disabled={!file || loading} className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-50 transition-colors">
                     {loading ? (<><RefreshCw className="w-4 h-4 animate-spin" />Analisi in corso...</>) : (<><Search className="w-4 h-4" />Analizza File</>)}
                   </button>
                 </div>
@@ -174,19 +174,19 @@ export default function ImportWizard({ teamId }) {
               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+            <div className="bg-gray-50 border border-blue-200 rounded-xl p-6 dark:bg-white/5 dark:border-white/10">
               <div className="flex items-center gap-2 mb-3"><Info className="w-5 h-5 text-blue-400" /><h3 className="font-semibold">Come importare</h3></div>
-              <div className="space-y-4 text-sm text-white/80">
+              <div className="space-y-4 text-sm text-gray-700 dark:text-white/80">
                 <div>
                   <div className="font-medium mb-1">Formati supportati</div>
-                  <ul className="list-disc pl-5 space-y-1 text-white/70">
+                  <ul className="list-disc pl-5 space-y-1 text-gray-600 dark:text-white/70">
                     <li>CSV: `,` o `;`</li>
                     <li>Excel: .xlsx o .xls</li>
                   </ul>
                 </div>
                 <div>
                   <div className="font-medium mb-1">Requisiti file</div>
-                  <ul className="list-disc pl-5 space-y-1 text-white/70">
+                  <ul className="list-disc pl-5 space-y-1 text-gray-600 dark:text-white/70">
                     <li>Prima riga = intestazioni</li>
                     <li>UTF-8 (CSV)</li>
                     <li>Giocatore e Data obbligatori</li>

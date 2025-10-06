@@ -27,135 +27,179 @@ const Accelerazioni = ({ data, players, filters, ...props }) => {
     handleExportCancel 
   } = useExport();
 
-  console.log('🟢 Accelerazioni component rendered con', data?.length || 0, 'records'); // INFO - rimuovere in produzione
+  console.log('🟢 Accelerazioni component - dati ricevuti:', data?.length || 0, 'records');
 
-  // 🎯 Modalità Compare: gestione multi-giocatore
-  const isCompareMode = props.mode === 'compare';
-  const comparePlayerIds = props.comparePlayerIds || [];
-  
-  console.log('🔵 Accelerazioni: modalità', isCompareMode ? 'COMPARE' : 'STANDARD'); // INFO DEV - rimuovere in produzione
-  
-  // 🔒 SICUREZZA: Se data non è un array, mostra errore
+  // SICUREZZA: Se data non è un array, mostra errore
   if (!Array.isArray(data)) {
     console.error('🔴 ERRORE: Accelerazioni riceve data non-array:', { 
       dataType: typeof data, 
       data: data 
     });
     return (
-      <div className="section-content active">
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">
-              <Gauge size={20} />
-              Accelerazioni & Decelerazioni
-            </h3>
-          </div>
-          <div className="chart-content">
-            <div className="chart-no-data">
-              <Gauge size={48} />
-              <h3>Errore Dati</h3>
-              <p>I dati ricevuti non sono nel formato corretto. Tipo: {typeof data}</p>
-            </div>
-          </div>
-        </div>
+      <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+        <Gauge size={48} className="mx-auto mb-2" />
+        <h3 className="text-lg font-semibold">Errore Dati</h3>
+        <p className="text-sm">I dati ricevuti non sono nel formato corretto. Tipo: {typeof data}</p>
       </div>
     );
   }
 
-  // 📊 DATA PROCESSING con supporto per dati aggregati dal backend
-  const accelerationData = useMemo(() => {
-    if (!data?.length) return [];
+  // 📊 GRAFICO 1: Trend Numero Acc/Dec Settimanale
+  const weeklyAccDecCount = useMemo(() => {
+    if (!data?.length) {
+      console.log('🔴 [Accelerazioni] Nessun dato disponibile');
+      return [];
+    }
     
-    console.log('🟡 Processing acceleration data...'); // WARNING - rimuovere in produzione
+    console.log('🟢 [Accelerazioni] Processing', data.length, 'records');
+    console.log('🔍 [Accelerazioni] Primo record:', data[0]);
     
-    // 🔧 FIX: I dati sono GIÀ aggregati dal backend - mappali al formato grafico
-    const result = data
-      .filter(day => day.dateFull || day.session_date)
-      .sort((a, b) => {
-        const dateA = new Date(a.dateFull || a.session_date);
-        const dateB = new Date(b.dateFull || b.session_date);
-        return dateA - dateB;
-      })
-      .map(day => ({
-        date: day.dateFormatted || new Date(day.dateFull || day.session_date).toLocaleDateString('it-IT'),
-        fullDate: day.dateFull || day.session_date,
-        // Usa campi aggregati dal backend (mappati dai nomi del controller)
-        totalAccOver3: day.totalAccOver3 || 0,
-        totalDecOver3: day.totalDecOver3 || 0,
-        totalDistanceAccOver2: day.totalDistanceAccOver2 || 0,
-        totalDistanceDecOver2: day.totalDistanceDecOver2 || 0,
-        totalMinutes: day.totalMinutes || 0,
-        // Calcoli derivati
-        accDecRatio: day.totalDecOver3 > 0 ? (day.totalAccOver3 || 0) / day.totalDecOver3 : 0,
-        accPerMin: day.totalMinutes > 0 ? (day.totalAccOver3 || 0) / day.totalMinutes : 0,
-        decPerMin: day.totalMinutes > 0 ? (day.totalDecOver3 || 0) / day.totalMinutes : 0,
-        totalActions: (day.totalAccOver3 || 0) + (day.totalDecOver3 || 0),
-        sessions_count: day.sessionsCount || day.sessions?.length || undefined
-      }));
+    const weekMap = new Map();
     
-    console.log('🟢 Acceleration data processed:', result.length, 'data points'); // INFO - rimuovere in produzione
-    return result;
-  }, [data]);
-
-  // Dati per giocatore (stress meccanico cumulativo)
-  const playerAccData = useMemo(() => {
-    if (!data?.length || !players?.length) return [];
-    
-    const playerMap = new Map();
-    
-    data.forEach(session => {
-      const playerId = session.playerId;
-      if (!playerMap.has(playerId)) {
-        const player = players.find(p => p.id === playerId);
-        playerMap.set(playerId, {
-          playerId,
-          playerName: player ? `${player.firstName} ${player.lastName}` : `Player ${playerId}`,
+    data.forEach((session, idx) => {
+      const dateStr = session.dateFull || session.date || (session.session_date ? session.session_date.split(' ')[0] : null);
+      if (!dateStr) {
+        if (idx < 3) console.warn('⚠️ [Accelerazioni] Record senza data:', session);
+        return;
+      }
+      
+      const parsedDate = new Date(dateStr);
+      if (isNaN(parsedDate.getTime())) {
+        if (idx < 3) console.warn('⚠️ [Accelerazioni] Data non valida:', dateStr);
+        return;
+      }
+      
+      // ISO-8601 week calculation
+      const isoDate = new Date(Date.UTC(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate()));
+      const dayNum = isoDate.getUTCDay() || 7;
+      if (dayNum !== 1) isoDate.setUTCDate(isoDate.getUTCDate() - dayNum + 1);
+      const yearStart = new Date(Date.UTC(isoDate.getUTCFullYear(), 0, 1));
+      const isoWeek = Math.ceil((((isoDate - yearStart) / 86400000) + 1) / 7);
+      const isoYear = isoDate.getUTCFullYear();
+      const weekKey = `${isoYear}-W${String(isoWeek).padStart(2, '0')}`;
+      
+      if (!weekMap.has(weekKey)) {
+        weekMap.set(weekKey, {
+          week: weekKey,
+          weekFormatted: `Set. ${String(isoWeek).padStart(2, '0')}/${String(isoYear).slice(2)}`,
           sessions: []
         });
       }
-      
-      playerMap.get(playerId).sessions.push(session);
+      weekMap.get(weekKey).sessions.push(session);
     });
     
-    return Array.from(playerMap.values()).map(player => {
-      const totalAcc = player.sessions.reduce((sum, s) => sum + (s.num_acc_over_3_ms2 || 0), 0);
-      const totalDec = player.sessions.reduce((sum, s) => sum + (s.num_dec_over_minus3_ms2 || 0), 0);
-      const totalDistanceAcc = player.sessions.reduce((sum, s) => sum + (s.distance_acc_over_2_ms2_m || 0), 0);
-      const totalMinutes = player.sessions.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+    const result = Array.from(weekMap.values()).map(week => {
+      const totalAcc = week.sessions.reduce((sum, s) => {
+        const acc = s.totalAccOver3 ?? s.num_acc_over_3_ms2 ?? 0;
+        return sum + (Number.isFinite(acc) ? acc : 0);
+      }, 0);
+      
+      const totalDec = week.sessions.reduce((sum, s) => {
+        const dec = s.totalDecOver3 ?? s.num_dec_over_minus3_ms2 ?? s['num_dec_over_-3_ms2'] ?? 0;
+        return sum + (Number.isFinite(dec) ? dec : 0);
+      }, 0);
+      
+      const totalMinutes = week.sessions.reduce((sum, s) => sum + (s.totalMinutes || s.duration_minutes || 0), 0);
       
       return {
-        player: player.playerName,
-        totalAcc,
-        totalDec,
-        totalDistanceAcc,
-        accDecRatio: totalDec > 0 ? (totalAcc / totalDec) : 0,
-        accPerMin: totalMinutes > 0 ? (totalAcc / totalMinutes) : 0,
-        sessionsCount: player.sessions.length
+        week: week.week,
+        weekFormatted: week.weekFormatted,
+        totalAcc: Math.round(totalAcc),
+        totalDec: Math.round(totalDec),
+        avgAccPerMin: totalMinutes > 0 ? parseFloat((totalAcc / totalMinutes).toFixed(2)) : 0,
+        avgDecPerMin: totalMinutes > 0 ? parseFloat((totalDec / totalMinutes).toFixed(2)) : 0,
+        sessionsCount: week.sessions.length
       };
-    }).sort((a, b) => b.totalAcc - a.totalAcc);
-  }, [data, players]);
+    }).sort((a, b) => a.week.localeCompare(b.week));
+    
+    console.log('✅ [Accelerazioni] Dati settimanali processati:', result.length, 'settimane');
+    console.log('🔍 [Accelerazioni] Prima settimana:', result[0]);
+    console.log('🔍 [Accelerazioni] Ultima settimana:', result[result.length - 1]);
+    
+    return result;
+  }, [data]);
+
+  // 📊 GRAFICO 2 & 3: Trend Rapporto e Distanze Settimanali
+  const weeklyAccDecMetrics = useMemo(() => {
+    if (!data?.length) return [];
+    
+    const weekMap = new Map();
+    
+    data.forEach(session => {
+      const dateStr = session.dateFull || session.date || (session.session_date ? session.session_date.split(' ')[0] : null);
+      if (!dateStr) return;
+      
+      const parsedDate = new Date(dateStr);
+      if (isNaN(parsedDate.getTime())) return;
+      
+      // ISO-8601 week
+      const isoDate = new Date(Date.UTC(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate()));
+      const dayNum = isoDate.getUTCDay() || 7;
+      if (dayNum !== 1) isoDate.setUTCDate(isoDate.getUTCDate() - dayNum + 1);
+      const yearStart = new Date(Date.UTC(isoDate.getUTCFullYear(), 0, 1));
+      const isoWeek = Math.ceil((((isoDate - yearStart) / 86400000) + 1) / 7);
+      const isoYear = isoDate.getUTCFullYear();
+      const weekKey = `${isoYear}-W${String(isoWeek).padStart(2, '0')}`;
+      
+      if (!weekMap.has(weekKey)) {
+        weekMap.set(weekKey, {
+          week: weekKey,
+          weekFormatted: `Set. ${String(isoWeek).padStart(2, '0')}/${String(isoYear).slice(2)}`,
+          sessions: []
+        });
+      }
+      weekMap.get(weekKey).sessions.push(session);
+    });
+    
+    const result = Array.from(weekMap.values()).map(week => {
+      const totalAcc = week.sessions.reduce((sum, s) => {
+        const acc = s.totalAccOver3 ?? s.num_acc_over_3_ms2 ?? 0;
+        return sum + (Number.isFinite(acc) ? acc : 0);
+      }, 0);
+      const totalDec = week.sessions.reduce((sum, s) => {
+        const dec = s.totalDecOver3 ?? s.num_dec_over_minus3_ms2 ?? s['num_dec_over_-3_ms2'] ?? 0;
+        return sum + (Number.isFinite(dec) ? dec : 0);
+      }, 0);
+      const totalDistAcc = week.sessions.reduce((sum, s) => {
+        const v = s.totalDistanceAccOver2 ?? s.distance_acc_over_2_ms2_m ?? 0;
+        return sum + (Number.isFinite(v) ? v : 0);
+      }, 0);
+      const totalDistDec = week.sessions.reduce((sum, s) => {
+        const v = s.totalDistanceDecOver2 ?? s.distance_dec_over_minus2_ms2_m ?? s['distance_dec_over_-2_ms2_m'] ?? 0;
+        return sum + (Number.isFinite(v) ? v : 0);
+      }, 0);
+      
+      return {
+        week: week.week,
+        weekFormatted: week.weekFormatted,
+        accDecRatio: totalDec > 0 ? parseFloat((totalAcc / totalDec).toFixed(2)) : 0,
+        totalDistAcc: Math.round(totalDistAcc),
+        totalDistDec: Math.round(totalDistDec),
+        sessionsCount: week.sessions.length
+      };
+    }).sort((a, b) => a.week.localeCompare(b.week));
+    
+    console.log('✅ [Accelerazioni] Metriche settimanali:', result.length, 'settimane');
+    if (result.length > 0) {
+      console.log('🔍 [Accelerazioni] Prima settimana metriche:', result[0]);
+    }
+    
+    return result;
+  }, [data]);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="custom-tooltip" style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.9)',
-          color: 'white',
-          padding: '12px',
-          borderRadius: '8px',
-          border: '1px solid #333'
-        }}>
-          <p className="tooltip-label" style={{ marginBottom: '8px', fontWeight: '600' }}>
-            {label}
-          </p>
+        <div className="bg-gray-900 dark:bg-gray-800 text-white border border-gray-700 rounded-lg p-3 shadow-xl">
+          <p className="font-semibold mb-2 text-sm">{label}</p>
           {payload.map((entry, index) => (
-            <p key={index} style={{ color: entry.color, margin: '4px 0' }}>
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
             </p>
           ))}
-          {payload[0]?.payload?.sessions_count && (
-            <p style={{ fontSize: '12px', color: '#ccc', marginTop: '8px', borderTop: '1px solid #555', paddingTop: '4px' }}>
-              {`${payload[0].payload.sessions_count} sessioni aggregate per questa giornata`}
+          {payload[0]?.payload?.sessionsCount && (
+            <p className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-700">
+              {payload[0].payload.sessionsCount} sessioni
             </p>
           )}
         </div>
@@ -166,251 +210,249 @@ const Accelerazioni = ({ data, players, filters, ...props }) => {
 
   return (
     <>
-    <div className="section-content active">
-      <div className="section-header">
-        <h2>
-          <Gauge size={24} />
-          Accelerazioni & Decelerazioni
-        </h2>
-        <p>Analisi di acc/dec, stress meccanico e densità azioni</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-cyan-500 flex items-center justify-center">
+            <Gauge className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Accelerazioni & Decelerazioni</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Analisi trend settimanali di acc/dec e stress meccanico</p>
+          </div>
+        </div>
       </div>
 
-      <div className="charts-grid">
-        {/* Grafico 1: Numero Acc/Dec >3 m/s² */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <div className="chart-title">
-              <Activity size={20} />
-              <h3>Numero Acc/Dec &gt;3 m/s²</h3>
-            </div>
-            <div className="chart-actions">
-              <button 
-                className="btn-secondary"
-                onClick={() => handleExport(accelerationData, 'numero_acc_dec_3ms2', players, filters)}
-              >
-                Esporta Dati
-              </button>
-            </div>
+      {/* Grafico 1: Trend Numero Acc/Dec Settimanale */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-green-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Trend Accelerazioni & Decelerazioni Settimanale</h3>
           </div>
-          <div className="chart-content">
-            {accelerationData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={accelerationData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Bar 
-                    dataKey="totalAccOver3" 
-                    fill="#10B981"
-                    name="Accelerazioni"
-                  />
-                  <Bar 
-                    dataKey="totalDecOver3" 
-                    fill="#EF4444"
-                    name="Decelerazioni"
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="chart-no-data">
-                <Activity size={48} />
-                <h3>Nessun dato disponibile</h3>
-                <p>Non ci sono dati di accelerazioni per il periodo selezionato</p>
-              </div>
-            )}
-          </div>
+          <button 
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+            onClick={() => handleExport(weeklyAccDecCount, 'trend-acc-dec', players, filters)}
+          >
+            Esporta Dati
+          </button>
         </div>
-
-        {/* Grafico 2: Rapporto Accelerazioni/Decelerazioni */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <div className="chart-title">
-              <TrendingUp size={20} />
-              <h3>Rapporto Acc/Dec</h3>
+        <div style={{ width: '100%', height: 350 }}>
+          {weeklyAccDecCount.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={weeklyAccDecCount}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis 
+                  dataKey="weekFormatted" 
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={{ stroke: '#4B5563' }}
+                />
+                <YAxis 
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={{ stroke: '#4B5563' }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Line 
+                  type="monotone"
+                  dataKey="totalAcc" 
+                  stroke="#10B981"
+                  strokeWidth={3}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Accelerazioni >3 m/s²"
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="totalDec" 
+                  stroke="#EF4444"
+                  strokeWidth={3}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Decelerazioni >3 m/s²"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <Activity className="w-12 h-12 mb-3 opacity-50" />
+              <h3 className="text-lg font-semibold mb-1">Nessun dato disponibile</h3>
+              <p className="text-sm">Non ci sono dati di accelerazioni per il periodo selezionato</p>
             </div>
-            <div className="chart-actions">
-              <button 
-                className="btn-secondary"
-                onClick={() => handleExport(accelerationData, 'rapporto_acc_dec', players, filters)}
-              >
-                Esporta Dati
-              </button>
-            </div>
-          </div>
-          <div className="chart-content">
-            {accelerationData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={accelerationData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accDecRatio" 
-                    stroke="#8B5CF6" 
-                    strokeWidth={2}
-                    name="Rapporto Acc/Dec"
-                  />
-                  <ReferenceLine y={1} stroke="#F59E0B" strokeDasharray="5 5" label="Equilibrio" />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="chart-no-data">
-                <TrendingUp size={48} />
-                <h3>Nessun dato disponibile</h3>
-                <p>Non ci sono dati di rapporto acc/dec per il periodo selezionato</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        {/* Grafico 3: Distanze in Acc/Dec */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <div className="chart-title">
-              <Gauge size={20} />
-              <h3>Distanze in Acc/Dec &gt;2 m/s²</h3>
-            </div>
-            <div className="chart-actions">
-              <button 
-                className="btn-secondary"
-                onClick={() => handleExport(accelerationData, 'distanze_acc_dec_2ms2', players, filters)}
-              >
-                Esporta Dati
-              </button>
-            </div>
+      {/* Grafico 2: Trend Rapporto Acc/Dec Settimanale */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-purple-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Trend Rapporto Acc/Dec Settimanale</h3>
           </div>
-          <div className="chart-content">
-            {accelerationData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={accelerationData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Bar 
-                    dataKey="totalDistanceAccOver2" 
-                    fill="#3B82F6"
-                    name="Distanza Acc (m)"
-                  />
-                  <Bar 
-                    dataKey="totalDistanceDecOver2" 
-                    fill="#F59E0B"
-                    name="Distanza Dec (m)"
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="chart-no-data">
-                <Gauge size={48} />
-                <h3>Nessun dato disponibile</h3>
-                <p>Non ci sono dati di distanze acc/dec per il periodo selezionato</p>
-              </div>
-            )}
-          </div>
+          <button 
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+            onClick={() => handleExport(weeklyAccDecMetrics, 'trend-rapporto', players, filters)}
+          >
+            Esporta Dati
+          </button>
         </div>
-
-        {/* Grafico 4: Acc/Dec per Minuto */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <div className="chart-title">
-              <Target size={20} />
-              <h3>Acc/Dec per Minuto</h3>
+        <div style={{ width: '100%', height: 350 }}>
+          {weeklyAccDecMetrics.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={weeklyAccDecMetrics}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis 
+                  dataKey="weekFormatted" 
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={{ stroke: '#4B5563' }}
+                />
+                <YAxis 
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={{ stroke: '#4B5563' }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Line 
+                  type="monotone" 
+                  dataKey="accDecRatio" 
+                  stroke="#8B5CF6" 
+                  strokeWidth={3}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Rapporto Acc/Dec"
+                />
+                <ReferenceLine y={1} stroke="#F59E0B" strokeDasharray="5 5" label={{ value: 'Equilibrio', fill: '#F59E0B', fontSize: 11 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <TrendingUp className="w-12 h-12 mb-3 opacity-50" />
+              <h3 className="text-lg font-semibold mb-1">Nessun dato disponibile</h3>
+              <p className="text-sm">Non ci sono dati di rapporto acc/dec per il periodo selezionato</p>
             </div>
-            <div className="chart-actions">
-              <button 
-                className="btn-secondary"
-                onClick={() => handleExport(accelerationData, 'acc_dec_per_minuto', players, filters)}
-              >
-                Esporta Dati
-              </button>
-            </div>
-          </div>
-          <div className="chart-content">
-            {accelerationData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={accelerationData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="accPerMin" 
-                    stroke="#10B981" 
-                    strokeWidth={2}
-                    name="Acc/Min"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="decPerMin" 
-                    stroke="#EF4444" 
-                    strokeWidth={2}
-                    name="Dec/Min"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="chart-no-data">
-                <Target size={48} />
-                <h3>Nessun dato disponibile</h3>
-                <p>Non ci sono dati di acc/dec per minuto per il periodo selezionato</p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        {/* Grafico 5: Stress Meccanico per Giocatore */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <div className="chart-title">
-              <Activity size={20} />
-              <h3>Stress Meccanico per Giocatore</h3>
-            </div>
-            <div className="chart-actions">
-              <button 
-                className="btn-secondary"
-                onClick={() => handleExport(playerAccData, 'stress_meccanico_per_giocatore', players, filters)}
-              >
-                Esporta Dati
-              </button>
-            </div>
+      {/* Grafico 3: Trend Distanze Acc/Dec Settimanale */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Gauge className="w-5 h-5 text-blue-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Trend Distanze Acc/Dec Settimanale</h3>
           </div>
-          <div className="chart-content">
-            {playerAccData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={playerAccData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="player" />
-                  <YAxis />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Bar 
-                    dataKey="totalAcc" 
-                    fill="#06B6D4"
-                    name="Totale Acc"
-                  />
-                  <Bar 
-                    dataKey="totalDec" 
-                    fill="#EC4899"
-                    name="Totale Dec"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="chart-no-data">
-                <Activity size={48} />
-                <h3>Nessun dato disponibile</h3>
-                <p>Non ci sono dati di stress meccanico per giocatore per il periodo selezionato</p>
-              </div>
-            )}
+          <button 
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+            onClick={() => handleExport(weeklyAccDecMetrics, 'trend-distanze', players, filters)}
+          >
+            Esporta Dati
+          </button>
+        </div>
+        <div style={{ width: '100%', height: 350 }}>
+          {weeklyAccDecMetrics.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={weeklyAccDecMetrics}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis 
+                  dataKey="weekFormatted" 
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={{ stroke: '#4B5563' }}
+                />
+                <YAxis 
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={{ stroke: '#4B5563' }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Line 
+                  type="monotone"
+                  dataKey="totalDistAcc" 
+                  stroke="#3B82F6"
+                  strokeWidth={3}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Distanza Acc (m)"
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="totalDistDec" 
+                  stroke="#F59E0B"
+                  strokeWidth={3}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Distanza Dec (m)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <Gauge className="w-12 h-12 mb-3 opacity-50" />
+              <h3 className="text-lg font-semibold mb-1">Nessun dato disponibile</h3>
+              <p className="text-sm">Non ci sono dati di distanze acc/dec per il periodo selezionato</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Grafico 4: Trend Densità Acc/Dec per Minuto */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-cyan-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Trend Densità Acc/Dec per Minuto</h3>
           </div>
+          <button 
+            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+            onClick={() => handleExport(weeklyAccDecCount, 'trend-densita', players, filters)}
+          >
+            Esporta Dati
+          </button>
+        </div>
+        <div style={{ width: '100%', height: 350 }}>
+          {weeklyAccDecCount.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={weeklyAccDecCount}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis 
+                  dataKey="weekFormatted" 
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={{ stroke: '#4B5563' }}
+                />
+                <YAxis 
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                  axisLine={{ stroke: '#4B5563' }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Line 
+                  type="monotone" 
+                  dataKey="avgAccPerMin" 
+                  stroke="#10B981" 
+                  strokeWidth={3}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Acc/Min"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="avgDecPerMin" 
+                  stroke="#EF4444" 
+                  strokeWidth={3}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                  name="Dec/Min"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+              <Target className="w-12 h-12 mb-3 opacity-50" />
+              <h3 className="text-lg font-semibold mb-1">Nessun dato disponibile</h3>
+              <p className="text-sm">Non ci sono dati di densità acc/dec per il periodo selezionato</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

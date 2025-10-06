@@ -227,8 +227,9 @@ export function buildPerformanceQuery(filters) {
   if (filters.sortBy) params.set('sortBy', filters.sortBy);
   if (filters.density) params.set('density', filters.density);
   
-  // 🔧 FIX: Forza aggregazione per Analytics Advanced
+  // 🔧 FIX: Forza aggregazione ESTESA per Analytics Advanced (include campi energetico/accelerazioni)
   params.set('aggregate', 'true');
+  params.set('aggregateExtended', 'true');
   
   const queryString = params.toString();
   console.log('🟢 Query finale per backend:', queryString); // INFO - rimuovere in produzione

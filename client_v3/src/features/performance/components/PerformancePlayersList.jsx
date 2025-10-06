@@ -10,7 +10,7 @@ import { apiFetch } from '@/utils/http';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters/index.js';
 import CompareBar from './CompareBar';
 import DossierDrawer from './DossierDrawer';
-import CompareOverlay from './CompareOverlay';
+import CompareDrawer from './CompareDrawer';
 import PageLoader from '@/components/ui/PageLoader';
 
 // --- Hook debounce ---
@@ -49,7 +49,7 @@ const PerformancePlayersList = () => {
   
   // Stati per Drawer e Overlay
   const [dossierDrawer, setDossierDrawer] = useState({ open: false, playerId: null });
-  const [compareOverlay, setCompareOverlay] = useState({ open: false });
+  const [compareDrawer, setCompareDrawer] = useState({ open: false, playerIds: [] });
 
   // Search debounced (per evitare chiamate a ogni tasto)
   const debouncedSearch = useDebounce(filters.search, 300);
@@ -281,17 +281,17 @@ const PerformancePlayersList = () => {
     if (filters.sessionType) params.set('sessionType', filters.sessionType);
     if (filters.sessionName && filters.sessionName !== 'all') params.set('sessionName', filters.sessionName);
     
-    navigate(`/performance/dossier/${playerId}?${params.toString()}`);
+    navigate(`/app/dashboard/performance/dossier/${playerId}?${params.toString()}`);
   }, [navigate, filters.period, filters.sessionType, filters.sessionName]);
 
   // Handler per Compare
   const handleOpenCompareQuick = useCallback(() => {
     console.log('🟢 PerformancePlayersList: handleOpenCompareQuick chiamato');
-    setCompareOverlay({ open: true });
-  }, []);
+    setCompareDrawer({ open: true, playerIds: Array.from(selectedPlayers) });
+  }, [selectedPlayers]);
 
-  const handleCloseCompareOverlay = useCallback(() => {
-    setCompareOverlay({ open: false });
+  const handleCloseCompareDrawer = useCallback(() => {
+    setCompareDrawer({ open: false, playerIds: [] });
   }, []);
 
   const handleOpenCompareExtended = useCallback(() => {
@@ -361,8 +361,8 @@ const PerformancePlayersList = () => {
     return (
     <div className={`bg-white dark:bg-[#0f1424] rounded-xl border transition-all duration-200 ${
       isSelected 
-        ? 'border-blue-500 dark:border-blue-400 shadow-lg ring-2 ring-blue-500/20' 
-        : 'border-gray-200/50 dark:border-white/10 hover:shadow-md'
+        ? 'border-2 border-blue-500 dark:border-blue-400 shadow-lg ring-2 ring-blue-500/20' 
+        : 'border-2 border-blue-300 dark:border-blue-500/60 hover:shadow-md ring-1 ring-blue-300/20 dark:ring-blue-500/20 hover:ring-blue-300/30 dark:hover:ring-blue-500/30'
     }`}>
       {/* Badge Selezionato */}
       {isSelected && (
@@ -713,6 +713,15 @@ const PerformancePlayersList = () => {
         />
       </div>
 
+      {/* CompareBar in alto */}
+      {selectedPlayers.size > 0 && (
+        <CompareBar
+          count={selectedPlayers.size}
+          onClear={clearSelection}
+          onOpenQuick={handleOpenCompareQuick}
+        />
+      )}
+
       {/* Contenuto Principale */}
       <div className="space-y-8">
         {Object.entries(playersByRole).map(([role, rolePlayers]) => {
@@ -772,12 +781,11 @@ const PerformancePlayersList = () => {
           />
         )}
 
-               {/* Compare Overlay */}
-        {compareOverlay.open && (
-          <CompareOverlay
-            playerIds={Array.from(selectedPlayers)}
-            filters={filters}
-            onClose={handleCloseCompareOverlay}
+      {/* Compare Drawer */}
+        {compareDrawer.open && (
+          <CompareDrawer
+            playerIds={compareDrawer.playerIds}
+            onClose={handleCloseCompareDrawer}
           />
         )}
      </div>

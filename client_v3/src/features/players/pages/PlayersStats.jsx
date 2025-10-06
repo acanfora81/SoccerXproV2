@@ -58,6 +58,18 @@ export default function PlayersStats() {
     return localStorage.getItem('playersStatsViewMode') || 'cards';
   });
 
+  // Selezione giocatore per Statistiche Biometriche (BMI)
+  const [selectedBmiPlayerId, setSelectedBmiPlayerId] = useState("");
+  const selectedBmiPlayer = React.useMemo(() => players.find(p => String(p.id) === String(selectedBmiPlayerId)), [players, selectedBmiPlayerId]);
+  const selectedBmiValue = React.useMemo(() => {
+    if (!selectedBmiPlayer) return null;
+    const h = Number(selectedBmiPlayer.height) || 0;
+    const w = Number(selectedBmiPlayer.weight) || 0;
+    if (h <= 0 || w <= 0) return null;
+    const bmi = w / Math.pow(h / 100, 2);
+    return Number(bmi.toFixed(1));
+  }, [selectedBmiPlayer]);
+
   const fetchPlayers = async () => {
     setLoading(true);
     try {
@@ -91,12 +103,130 @@ export default function PlayersStats() {
   const weights = players.map(p => p.weight).filter(w => w && w > 0);
   const avgWeight = weights.length ? (weights.reduce((s, w) => s + w, 0) / weights.length).toFixed(0) : 0;
 
+  // ---- BMI (Body Mass Index) ----
+  // Calcola BMI per ogni giocatore valido e aggregazioni richieste
+  const bmiValues = React.useMemo(() => {
+    return players
+      .map(p => {
+        const hCm = Number(p.height) || 0;
+        const wKg = Number(p.weight) || 0;
+        if (hCm <= 0 || wKg <= 0) return null;
+        const hM = hCm / 100;
+        const bmi = Number((wKg / (hM * hM)).toFixed(1));
+        const role = translateRole(p.position);
+        const age = calculateAge(p.dateOfBirth);
+        return { bmi, role, age };
+      })
+      .filter(Boolean);
+  }, [players]);
+
+  const avgBMI = React.useMemo(() => {
+    if (!bmiValues.length) return 0;
+    const sum = bmiValues.reduce((s, v) => s + v.bmi, 0);
+    return Number((sum / bmiValues.length).toFixed(1));
+  }, [bmiValues]);
+
+  const bmiByRole = React.useMemo(() => {
+    const roles = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
+    const acc = Object.fromEntries(roles.map(r => [r, { sum: 0, count: 0, avg: 0 }]));
+    bmiValues.forEach(v => {
+      if (!acc[v.role]) return;
+      acc[v.role].sum += v.bmi;
+      acc[v.role].count += 1;
+    });
+    roles.forEach(r => {
+      const { sum, count } = acc[r];
+      acc[r].avg = count > 0 ? Number((sum / count).toFixed(1)) : 0;
+    });
+    return acc;
+  }, [bmiValues]);
+
+  const bmiDistribution = React.useMemo(() => {
+    const inRange = bmiValues.filter(v => v.bmi >= 18.5 && v.bmi <= 25).length;
+    const above = bmiValues.filter(v => v.bmi > 25).length;
+    const below = bmiValues.filter(v => v.bmi > 0 && v.bmi < 18.5).length;
+    const total = bmiValues.length || 1;
+    return {
+      pctInRange: Math.round((inRange / total) * 100),
+      pctAbove: Math.round((above / total) * 100),
+      pctBelow: Math.round((below / total) * 100)
+    };
+  }, [bmiValues]);
+
   // Statistiche per ruolo
   const roleStats = players.reduce((acc, player) => {
     const role = translateRole(player.position);
     acc[role] = (acc[role] || 0) + 1;
     return acc;
   }, {});
+
+  // Statistiche fisiche per ruolo (altezza media, peso medio, età media)
+  const rolePhysicalStats = React.useMemo(() => {
+    const roles = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
+    const byRole = Object.fromEntries(roles.map(r => [r, { count: 0, sumHeight: 0, sumWeight: 0, sumAge: 0, avgHeight: 0, avgWeight: 0, avgAge: 0 }]));
+    players.forEach(p => {
+      const role = translateRole(p.position);
+      if (!byRole[role]) return;
+      const height = Number(p.height) || 0;
+      const weight = Number(p.weight) || 0;
+      const age = calculateAge(p.dateOfBirth);
+      if (height > 0) {
+        byRole[role].sumHeight += height;
+      }
+      if (weight > 0) {
+        byRole[role].sumWeight += weight;
+      }
+      if (Number.isFinite(age)) {
+        byRole[role].sumAge += age;
+      }
+      byRole[role].count += 1;
+    });
+    roles.forEach(r => {
+      const entry = byRole[r];
+      if (entry.count > 0) {
+        entry.avgHeight = entry.sumHeight > 0 ? Math.round(entry.sumHeight / entry.count) : 0;
+        entry.avgWeight = entry.sumWeight > 0 ? Math.round(entry.sumWeight / entry.count) : 0;
+        entry.avgAge = entry.sumAge > 0 ? (entry.sumAge / entry.count).toFixed(1) : 0;
+      }
+    });
+    return byRole;
+  }, [players]);
+
+  // Helper per micro-bar di confronto con media squadra
+  const clampPct = (v) => Math.max(0, Math.min(200, v));
+  const computeComparePct = (roleValue, teamValue) => {
+    const rv = Number(roleValue) || 0;
+    const tv = Number(teamValue) || 0;
+    if (rv <= 0 || tv <= 0) return 0;
+    return clampPct(Math.round((rv / tv) * 100));
+  };
+
+  // Scale massime dinamiche (cap) per dare movimento alle barre
+  const heightCap = React.useMemo(() => {
+    const maxH = heights.length ? Math.max(...heights) : 0;
+    const cap = Math.ceil(maxH * 1.05); // +5% buffer
+    // clamp su range realistico
+    return Math.min(210, Math.max(170, cap || 180));
+  }, [heights]);
+
+  const weightCap = React.useMemo(() => {
+    const maxW = weights.length ? Math.max(...weights) : 0;
+    const cap = Math.ceil(maxW * 1.05);
+    return Math.min(110, Math.max(55, cap || 75));
+  }, [weights]);
+
+  const ageCap = React.useMemo(() => {
+    const maxA = ages.length ? Math.max(...ages) : 0;
+    const cap = Math.ceil(maxA * 1.05);
+    return Math.min(45, Math.max(18, cap || 30));
+  }, [ages]);
+
+  const computePctOfCap = (value, cap) => {
+    const v = Number(value) || 0;
+    const c = Number(cap) || 0;
+    if (v <= 0 || c <= 0) return 0;
+    return Math.max(0, Math.min(100, Math.round((v / c) * 100)));
+  };
 
   // Giocatori con maglia assegnata
   const playersWithShirt = players.filter(p => p.shirtNumber && p.shirtNumber > 0).length;
@@ -475,6 +605,137 @@ export default function PlayersStats() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+      )}
+
+      {/* Profilo Fisico per Ruolo - Solo nella vista Cards */}
+      {viewMode === 'cards' && (
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Profilo Fisico per Ruolo
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Altezze medie, peso medio ed età media per reparto</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {['Portiere','Difensore','Centrocampista','Attaccante'].map((role) => {
+              const r = rolePhysicalStats[role] || { avgHeight: 0, avgWeight: 0, avgAge: 0, count: 0 };
+              // Barra principale: riempimento rispetto al cap fisso (non piena a fondo scala)
+              const pctHCap = computePctOfCap(r.avgHeight, heightCap);
+              const pctWCap = computePctOfCap(r.avgWeight, weightCap);
+              const pctACap = computePctOfCap(r.avgAge, ageCap);
+              return (
+                <div key={role} className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{role}</div>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{r.count} gioc.</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Altezza</span>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">{r.avgHeight || 0} cm</span>
+                    </div>
+                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="absolute inset-y-0 left-0 h-3 bg-blue-500 dark:bg-blue-400" style={{ width: `${pctHCap}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Peso</span>
+                      <span className="font-semibold text-green-600 dark:text-green-400">{r.avgWeight || 0} kg</span>
+                    </div>
+                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="absolute inset-y-0 left-0 h-3 bg-green-500 dark:bg-green-400" style={{ width: `${pctWCap}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Età</span>
+                      <span className="font-semibold text-purple-600 dark:text-purple-400">{r.avgAge || 0} anni</span>
+                    </div>
+                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="absolute inset-y-0 left-0 h-3 bg-purple-500 dark:bg-purple-400" style={{ width: `${pctACap}%` }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+      )}
+
+      {/* Statistiche Biometriche (BMI) - Solo nella vista Cards */}
+      {viewMode === 'cards' && (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Statistiche Biometriche (BMI)
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Indice di massa corporea della rosa e per ruolo</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-600 dark:text-gray-400">Vista</label>
+              <select
+                value={selectedBmiPlayerId}
+                onChange={(e) => setSelectedBmiPlayerId(e.target.value)}
+                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Media Squadra</option>
+                {players.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {(p.lastName || '').toUpperCase()} {p.firstName || ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* KPI inline */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="text-center rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+              <div className="text-xs text-gray-600 dark:text-gray-400">BMI medio</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{selectedBmiPlayer ? selectedBmiValue ?? 'N/A' : avgBMI}</div>
+            </div>
+            <div className="text-center rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+              <div className="text-xs text-gray-600 dark:text-gray-400">% nel range ideale</div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{selectedBmiPlayer ? (selectedBmiValue && selectedBmiValue >= 18.5 && selectedBmiValue <= 25 ? 100 : 0) : bmiDistribution.pctInRange}%</div>
+            </div>
+            <div className="text-center rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+              <div className="text-xs text-gray-600 dark:text-gray-400">% sopra il range</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{selectedBmiPlayer ? (selectedBmiValue && selectedBmiValue > 25 ? 100 : 0) : bmiDistribution.pctAbove}%</div>
+            </div>
+          </div>
+
+          {/* BMI medio per ruolo - mini barre */}
+          <div className="mb-6">
+            <div className="text-sm font-medium text-gray-900 dark:text-white mb-2">BMI medio per ruolo</div>
+            <div className="space-y-3">
+              {['Portiere','Difensore','Centrocampista','Attaccante'].map(role => {
+                const avg = selectedBmiPlayer 
+                  ? (translateRole(selectedBmiPlayer.position) === role ? (selectedBmiValue || 0) : 0)
+                  : (bmiByRole[role]?.avg || 0);
+                // cap ragionevole BMI per barra
+                const cap = 30; // sopra 30 è obeso (bar piena oltre 100% non necessario visivamente)
+                const pct = Math.max(0, Math.min(100, Math.round((avg / cap) * 100)));
+                const color = role === 'Portiere' ? 'bg-yellow-500' : role === 'Difensore' ? 'bg-blue-500' : role === 'Centrocampista' ? 'bg-green-500' : 'bg-purple-500';
+                return (
+                  <div key={role} className="flex items-center gap-3">
+                    <div className="w-28 text-xs text-gray-600 dark:text-gray-400">{role}</div>
+                    <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                      <div className={`h-2 ${color}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="w-12 text-right text-xs font-semibold text-gray-900 dark:text-white">{avg}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Scatter Età vs BMI rimosso su richiesta */}
         </CardContent>
       </Card>
       )}

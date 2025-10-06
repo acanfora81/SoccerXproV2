@@ -464,13 +464,16 @@ const getPerformanceData = async (req, res) => {
           return denominator > 0 ? (numerator / denominator) : 0;
         };
         
+        // 🚨 FIX: Protezione contro sessions undefined
+        const sessionsLength = entry.sessions?.length || 0;
+        
         const base = {
           ...entry,
           distancePerMin: safeDivision(entry.totalDistance, entry.totalMinutes),
-          avgMetPower: safeDivision(entry.avgMetPower, entry.sessions.length),
+          avgMetPower: safeDivision(entry.avgMetPower, sessionsLength),
           hsrTotal: entry.distance15_20 + entry.distance20_25 + entry.distance25plus,
           playerLoadPerMin: safeDivision(entry.playerLoad, entry.totalMinutes),
-          sessionsCount: entry.sessions.length,
+          sessionsCount: sessionsLength,
           // 🔧 FIX: Assicura che playerLoad sia sempre presente
           totalPlayerLoad: entry.playerLoad,
           totalTrainingLoad: entry.playerLoad

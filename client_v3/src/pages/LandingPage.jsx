@@ -17,12 +17,8 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      console.log('🟡 [LANDING] Utente già loggato - redirect a dashboard');
-      navigate('/app/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  // Non reindirizziamo automaticamente gli utenti autenticati dalla landing.
+  // Manteniamo la landing accessibile; i CTA portano a /login o onboarding.
 
   if (isLoading) {
     return (

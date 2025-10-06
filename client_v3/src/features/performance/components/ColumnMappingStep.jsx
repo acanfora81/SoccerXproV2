@@ -57,28 +57,34 @@ export default function ColumnMappingStep({ csvHeaders = [], onMappingComplete, 
 
   // Genera suggerimenti locali in base agli header
   const generateLocalSuggestions = useCallback(() => {
-    const out = {};
-    csvHeaders.forEach(h => {
-      if (mapping[h]) return;
-      const clean = h.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const direct = Object.keys(FIELD_DEFINITIONS).find(db => db.toLowerCase() === h.toLowerCase());
-      if (direct) {
-        out[h] = { suggestedField: direct, confidence: 95 };
-        return;
-      }
-      for (const rule of LOCAL_PATTERNS) {
-        if (rule.pattern.test(h) || rule.pattern.test(clean)) {
-          out[h] = { suggestedField: rule.field, confidence: rule.conf };
-          break;
+    // Partiamo dai suggerimenti esistenti ma solo per intestazioni NON mappate
+    setSuggestions(prev => {
+      const filteredPrev = Object.fromEntries(
+        Object.entries(prev || {}).filter(([header]) => !mapping[header])
+      );
+
+      const localOut = { ...filteredPrev };
+      csvHeaders.forEach(h => {
+        if (mapping[h]) return; // se già mappata, niente suggerimento
+        const clean = h.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const direct = Object.keys(FIELD_DEFINITIONS).find(db => db.toLowerCase() === h.toLowerCase());
+        if (direct) {
+          // per match esatto non serve suggerimento, verrà già mappato
+          return;
         }
-      }
+        for (const rule of LOCAL_PATTERNS) {
+          if (rule.pattern.test(h) || rule.pattern.test(clean)) {
+            if (!localOut[h]) localOut[h] = { suggestedField: rule.field, confidence: rule.conf };
+            break;
+          }
+        }
+      });
+      return localOut;
     });
-    if (Object.keys(out).length) {
-      setSuggestions(prev => ({ ...prev, ...out }));
-    }
   }, [csvHeaders, mapping, LOCAL_PATTERNS]);
 
-  useEffect(() => { if (csvHeaders.length) generateLocalSuggestions(); }, [csvHeaders, generateLocalSuggestions]);
+  // Rigenera i suggerimenti sia quando cambiano gli header che quando cambia il mapping
+  useEffect(() => { if (csvHeaders.length) generateLocalSuggestions(); }, [csvHeaders, mapping, generateLocalSuggestions]);
 
   // Pre-mapping basato su similarità semplice
   useEffect(() => {
@@ -111,14 +117,24 @@ export default function ColumnMappingStep({ csvHeaders = [], onMappingComplete, 
       });
       if (!res.ok) throw new Error(`Errore ${res.status}`);
       const data = await res.json();
-      const serverSuggs = (data?.data?.suggestions) || data?.suggestions || {};
-      setSuggestions(prev => ({ ...prev, ...serverSuggs }));
+      const rawServerSuggestions = (data?.data?.suggestions) || data?.suggestions || {};
+      // Normalizza i suggerimenti del backend al formato { suggestedField, confidence }
+      const normalizedServerSuggestions = Object.fromEntries(
+        Object.entries(rawServerSuggestions).map(([header, s]) => [
+          header,
+          {
+            suggestedField: s?.suggestedField || s?.dbField || s?.field || null,
+            confidence: typeof s?.confidence === 'number' ? s.confidence : (typeof s?.confidenceScore === 'number' ? s.confidenceScore : null)
+          }
+        ])
+      );
+      setSuggestions(prev => ({ ...prev, ...normalizedServerSuggestions }));
       // Applica auto mapping alta confidenza
       setMapping(prev => {
         const next = { ...prev };
-        Object.entries(serverSuggs || {}).forEach(([header, s]) => {
-          if (s?.confidence >= 85 && s?.dbField && next[header] === undefined) {
-            next[header] = s.dbField;
+        Object.entries(normalizedServerSuggestions || {}).forEach(([header, s]) => {
+          if (s?.confidence >= 85 && s?.suggestedField && next[header] === undefined) {
+            next[header] = s.suggestedField;
           }
         });
         return next;
@@ -223,16 +239,16 @@ export default function ColumnMappingStep({ csvHeaders = [], onMappingComplete, 
 
         {/* Suggerimenti intelligenti */}
         {Object.keys(suggestions).length > 0 && !suggestionsLoading && (
-          <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+          <div className="mb-4 rounded-lg border p-3 border-amber-200 bg-amber-50 text-gray-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-inherit">
             <div className="flex items-center justify-between">
               <div className="text-sm">
                 💡 Suggerimenti trovati: <strong>{Object.keys(suggestions).length}</strong>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => setSuggestions({})} className="px-3 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-sm text-red-200">
+                <button onClick={() => setSuggestions({})} className="px-3 py-1 rounded-md border text-sm bg-red-100 border-red-300 text-red-800 hover:bg-red-200 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-200 dark:hover:bg-red-500/20">
                   Rifiuta suggerimenti
                 </button>
-                <button onClick={applySuggestions} className="px-3 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-sm">
+                <button onClick={applySuggestions} className="px-3 py-1 rounded-md text-sm border bg-amber-100 border-amber-300 text-gray-900 hover:bg-amber-200 dark:bg-amber-500/20 dark:border-amber-500/40 dark:text-inherit dark:hover:bg-amber-500/30">
                   Applica suggerimenti
                 </button>
               </div>
@@ -247,9 +263,16 @@ export default function ColumnMappingStep({ csvHeaders = [], onMappingComplete, 
             {MINIMUM_REQUIRED_FIELDS.map((field) => {
               const mapped = Object.values(mapping).includes(field);
               return (
-                <div key={field} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${mapped ? 'border-green-500/40 bg-green-500/10' : 'border-white/10 bg-white/5'}`}>
+                <div
+                  key={field}
+                  className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
+                    mapped
+                      ? 'border-green-300 bg-green-50 text-green-700 dark:border-green-500/40 dark:bg-green-500/10 dark:text-inherit'
+                      : 'border-blue-200 bg-gray-50 text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-inherit'
+                  }`}
+                >
                   <span className="text-sm">{REQUIRED_LABELS[field] || field}</span>
-                  {mapped ? <CheckCircle className="w-4 h-4 text-green-400" /> : <XCircle className="w-4 h-4 text-red-400" />}
+                  {mapped ? <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" /> : <XCircle className="w-4 h-4 text-red-500 dark:text-red-400" />}
                 </div>
               );
             })}
@@ -263,8 +286,14 @@ export default function ColumnMappingStep({ csvHeaders = [], onMappingComplete, 
               const currentCsv = Object.entries(mapping).find(([, db]) => db === fieldKey)?.[0] || 'none';
               const hasSuggestedForField = Object.values(suggestions).some(s => s?.suggestedField === fieldKey);
               const suggestedHeader = Object.entries(suggestions).find(([, s]) => s?.suggestedField === fieldKey)?.[0];
+              const isMapped = currentCsv !== 'none';
+              const containerClasses = hasSuggestedForField
+                ? 'border-amber-300 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10'
+                : isMapped
+                  ? 'border-blue-200 bg-blue-50 text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-inherit'
+                  : 'border-gray-200 bg-gray-50 text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-inherit';
               return (
-                <div key={fieldKey} className={`rounded-lg p-3 border ${hasSuggestedForField ? 'border-amber-500/40 bg-amber-500/10' : 'border-white/10 bg-white/5'}`}>
+                <div key={fieldKey} className={`rounded-lg p-3 border ${containerClasses}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="font-medium">{def.label} {def.required && <span className="text-red-400">*</span>}</div>
@@ -272,7 +301,7 @@ export default function ColumnMappingStep({ csvHeaders = [], onMappingComplete, 
                     </div>
                     <div className="text-xs text-white/60 flex items-center gap-2">
                       {hasSuggestedForField && (
-                        <span className="px-2 py-0.5 rounded-md border border-amber-500/40 bg-amber-500/20 text-amber-200">Suggerito</span>
+                        <span className="px-2 py-0.5 rounded-md border bg-amber-100 border-amber-300 text-gray-900 dark:border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-200">Suggerito</span>
                       )}
                       <span>{currentCsv !== 'none' ? 'Mappato' : 'Non mappato'}</span>
                     </div>
