@@ -95,9 +95,7 @@ function App() {
         <Route path="/" element={
           isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
         } />
-        <Route path="/login" element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm onLoginSuccess={() => window.location.reload()} />
-        } />
+        <Route path="/login" element={<LoginForm onLoginSuccess={() => window.location.reload()} />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/checkout/:plan" element={<CheckoutPage />} />
         {/* Onboarding pubblico */}

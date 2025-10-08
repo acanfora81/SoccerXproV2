@@ -171,6 +171,14 @@ app.use('/api/taxes', taxesRoutes);
 const medicalRoutes = require('./routes/medical');
 app.use('/api/medical', medicalRoutes);
 
+// 🛒 Market Module (feature-flagged)
+try {
+  const marketRoutes = require('./routes/market');
+  app.use('/api/market', marketRoutes);
+} catch (e) {
+  console.log('🟡 [WARN] Market routes not mounted:', e?.message);
+}
+
 
 // Riepilogo route
 console.log('🔵 [DEBUG] Route caricate:');

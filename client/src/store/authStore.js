@@ -331,7 +331,11 @@ const useAuthStore = create(
             set({ user: data.user, isAuthenticated: true, isLoading: false, error: null });
             return true;
           }
-          // Prova un refresh una volta
+        } catch (e) {
+          console.log('🟡 AuthStore: errore checkAuth', e.message);
+        }
+        // Se /me fallisce, prova un refresh UNA sola volta, poi forza logout locale
+        try {
           const refreshed = await get().refreshAccessToken();
           if (refreshed) {
             const res2 = await apiFetch('/api/auth/me');
@@ -341,19 +345,18 @@ const useAuthStore = create(
               return true;
             }
           }
-        } catch (e) {
-          console.log('🟡 AuthStore: errore checkAuth', e.message);
-        }
-        set({ user: null, isAuthenticated: false, isLoading: false });
+        } catch (_) {}
+        // Forza reset stato locale per evitare false positive
+        set({ user: null, isAuthenticated: false, isLoading: false, error: null });
         return false;
       }
     }),
     {
       name: 'soccerxpro-auth', // nome per localStorage
       storage: createJSONStorage(() => localStorage),
+      // Non persistere isAuthenticated per evitare redirect errati prima della verifica /me
       partialize: (state) => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated
+        user: state.user
       })
     }
   )

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 
 export default function PublicRoute() {
   const { isAuthenticated, isLoading } = useAuthStore();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -16,7 +17,9 @@ export default function PublicRoute() {
     );
   }
 
-  if (isAuthenticated) {
+  // Permetti l'accesso alla pagina di login anche per utenti autenticati
+  // Questo permette di cambiare account o fare logout
+  if (isAuthenticated && location.pathname !== '/login') {
     console.log('🟡 [ROUTE] Utente già autenticato - redirect a /app/dashboard');
     return <Navigate to="/app/dashboard" replace />;
   }

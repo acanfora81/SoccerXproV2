@@ -236,16 +236,22 @@ const ALL_MENU_ITEMS = [
   },
   {
     id: 'market',
-    label: 'Mercato',
+    label: 'Mercato / Trasferimenti',
     icon: TrendingUp,
     path: '/dashboard/market',
     requiredPermission: 'market:read',
     submenu: [
-      { 
-        id: 'market-transfers', 
-        label: 'Trasferimenti', 
-        path: '/dashboard/market/transfers',
+      {
+        id: 'market-overview',
+        label: 'Panoramica',
+        path: '/dashboard/market',
         requiredPermission: 'market:read'
+      },
+      { 
+        id: 'market-budget', 
+        label: 'Budget',
+        path: '/dashboard/market/budget',
+        requiredPermission: 'market:write'
       },
       { 
         id: 'market-scouting', 
@@ -255,9 +261,27 @@ const ALL_MENU_ITEMS = [
       },
       { 
         id: 'market-targets', 
-        label: 'Obiettivi', 
-        path: '/dashboard/market/targets',
+        label: 'Obiettivi',
+        path: '/dashboard/market/obiettivi',
         requiredPermission: 'market:write'
+      },
+      {
+        id: 'market-agents',
+        label: 'Agenti',
+        path: '/dashboard/market/agenti',
+        requiredPermission: 'market:write'
+      },
+      {
+        id: 'market-negotiations-new',
+        label: 'Gestione Trattative',
+        path: '/dashboard/market/trattative-nuove',
+        requiredPermission: 'market:write'
+      },
+      {
+        id: 'market-offers',
+        label: 'Offerte',
+        path: '/dashboard/market/offerte',
+        requiredPermission: 'market:read'
       }
     ]
   },

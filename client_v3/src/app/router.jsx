@@ -34,6 +34,14 @@ import TaxCalculator from "@/features/tax/pages/TaxCalculator";
 
 // Performance Pages
 import PerformanceDashboard from "@/features/performance/pages/PerformanceDashboard";
+import MarketDashboard from "@/pages/market/MarketDashboard";
+import TrattativePage from "@/pages/market/TrattativePage";
+import OffersPage from "@/pages/market/OffersPage";
+import TargetsPage from "@/pages/market/TargetsPage";
+import ScoutingPage from "@/pages/market/ScoutingPage";
+import AgentiPage from "@/pages/market/AgentiPage";
+import NegotiationsPage from "@/pages/market/NegotiationsPage";
+import BudgetsPage from "@/pages/market/BudgetsPage";
 import PerformancePlayers from "@/features/performance/pages/PerformancePlayers";
 import DossierPage from "@/features/performance/pages/DossierPage";
 import ComparePage from "@/features/performance/pages/ComparePage";
@@ -131,10 +139,14 @@ const router = createBrowserRouter([
       { path: "dashboard/medical/settings", element: <PlaceholderPage title="Impostazioni Mediche" /> },
       
       // Mercato
-      { path: "dashboard/market", element: <PlaceholderPage title="Mercato" /> },
-      { path: "dashboard/market/transfers", element: <PlaceholderPage title="Trasferimenti" /> },
-      { path: "dashboard/market/scouting", element: <PlaceholderPage title="Scouting" /> },
-      { path: "dashboard/market/targets", element: <PlaceholderPage title="Obiettivi" /> },
+      { path: "dashboard/market", element: <MarketDashboard /> },
+      { path: "dashboard/market/trattative", element: <TrattativePage /> },
+      { path: "dashboard/market/offerte", element: <OffersPage /> },
+      { path: "dashboard/market/obiettivi", element: <TargetsPage /> },
+      { path: "dashboard/market/scouting", element: <ScoutingPage /> },
+      { path: "dashboard/market/agenti", element: <AgentiPage /> },
+      { path: "dashboard/market/trattative-nuove", element: <NegotiationsPage /> },
+      { path: "dashboard/market/budget", element: <BudgetsPage /> },
       
       // Amministrazione
       { path: "dashboard/administration", element: <PlaceholderPage title="Amministrazione" /> },
