@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { getPrismaClient } = require('../config/database');
 
 /**
  * Carica un media per un giocatore
@@ -8,6 +7,7 @@ const uploadPlayerMediaFile = async ({ playerId, userId, type, url, title }) => 
   // TODO: Implementare quando il modello PlayerMedia sarà aggiunto al schema Prisma
   
   /*
+  const prisma = getPrismaClient();
   return await prisma.playerMedia.create({
     data: {
       playerId: Number(playerId),
@@ -46,6 +46,7 @@ const getPlayerMediaList = async ({ playerId }) => {
   // TODO: Implementare quando il modello PlayerMedia sarà aggiunto al schema Prisma
   
   /*
+  const prisma = getPrismaClient();
   return await prisma.playerMedia.findMany({
     where: { playerId: Number(playerId) },
     orderBy: { uploadedAt: 'desc' },

@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { getPrismaClient } = require('../config/database');
 
 /**
  * Crea una nuova nota per un giocatore
@@ -9,6 +8,7 @@ const createPlayerNote = async ({ playerId, userId, teamId, title, content }) =>
   // Per ora restituisco un oggetto placeholder
   
   /* 
+  const prisma = getPrismaClient();
   return await prisma.playerNote.create({
     data: {
       playerId: Number(playerId),
@@ -39,6 +39,7 @@ const getNotesByPlayer = async ({ playerId, teamId }) => {
   // TODO: Implementare quando il modello PlayerNote sarà aggiunto al schema Prisma
   
   /*
+  const prisma = getPrismaClient();
   return await prisma.playerNote.findMany({
     where: {
       playerId: Number(playerId),
