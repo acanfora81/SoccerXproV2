@@ -34,6 +34,7 @@ import TaxCalculator from "@/features/tax/pages/TaxCalculator";
 
 // Performance Pages
 import PerformanceDashboard from "@/features/performance/pages/PerformanceDashboard";
+import PlayersModuleApp from "@/modules/players/PlayersModuleApp";
 import MarketDashboard from "@/pages/market/MarketDashboard";
 import TrattativePage from "@/pages/market/TrattativePage";
 import OffersPage from "@/pages/market/OffersPage";
@@ -98,6 +99,8 @@ const router = createBrowserRouter([
       
              // Giocatori
              { path: "dashboard/players", element: <PlayersList /> },
+             { path: "dashboard/players/module", element: <PlayersModuleApp /> },
+             { path: "dashboard/players/module/:playerId", element: <PlayersModuleApp /> },
              { path: "dashboard/players/stats", element: <PlayersStats /> },
              { path: "dashboard/players/upload", element: <PlayersUpload /> },
       

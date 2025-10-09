@@ -128,8 +128,8 @@ app.use('/api', testMailRoute);
 const usersRoutes = require('./routes/users');
 app.use('/api/users', usersRoutes);
 
-// 👥 Players
-const playersRoutes = require('./routes/players/players');
+// 👥 Players (modulo completo con notes e media)
+const playersRoutes = require('./routes/players');
 app.use('/api/players', playersRoutes);
 
 // 📊 Performance CRUD
@@ -155,10 +155,6 @@ app.use('/api/taxrates', taxRatesUpload);
 const bonusTaxRatesUpload = require('./routes/tax/bonusTaxRatesUpload');
 app.use('/api/bonustaxrates', bonusTaxRatesUpload);
 
-// 👥 Players Upload
-const playersUpload = require('./routes/players/playersUpload');
-app.use('/api/players', playersUpload);
-
 // 📊 Contracts Summary
 const contractsSummary = require('./routes/contracts/contractsSummary');
 app.use('/api/contracts-summary', contractsSummary);
@@ -177,6 +173,15 @@ try {
   app.use('/api/market', marketRoutes);
 } catch (e) {
   console.log('🟡 [WARN] Market routes not mounted:', e?.message);
+}
+
+// 🔍 Scouting Module (feature-flagged, Enterprise)
+try {
+  const scoutingRoutes = require('./modules/scouting/routes');
+  app.use('/api/scouting', scoutingRoutes);
+  console.log('🟢 [INFO] Scouting Module mounted at /api/scouting');
+} catch (e) {
+  console.log('🟡 [WARN] Scouting routes not mounted:', e?.message);
 }
 
 
