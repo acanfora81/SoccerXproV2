@@ -9,6 +9,7 @@ import ConfirmDialog from "@/design-system/ds/ConfirmDialog";
 import { Users, Download, RefreshCw, Upload, Edit, Trash2 } from "lucide-react";
 
 import PlayerFormModal from "../components/PlayerFormModal";
+import PlayerCreateDialog from "@/modules/players/components/PlayerCreateDialog";
 import { PlayersAPI } from "@/lib/api/players";
 
 // Funzioni di traduzione
@@ -142,9 +143,7 @@ export default function PlayersList() {
         title="Giocatori"
         subtitle="Gestione della rosa giocatori"
         actions={
-          <Button variant="primary" onClick={() => { setSelected(null); setFormOpen(true); }}>
-            + Aggiungi Giocatore
-          </Button>
+          <PlayerCreateDialog onCreated={() => fetchPlayers()} />
         }
       />
 
@@ -201,9 +200,7 @@ export default function PlayersList() {
           title="Nessun giocatore trovato"
           description="Inizia aggiungendo il primo giocatore alla tua rosa"
           action={
-            <Button variant="primary" onClick={() => setFormOpen(true)}>
-              Aggiungi Giocatore
-            </Button>
+            <PlayerCreateDialog onCreated={() => fetchPlayers()} />
           }
         />
       ) : (

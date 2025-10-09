@@ -13,7 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import apiFetch from '../../utils/apiFetch';
-import PlayerCreateDialog from './components/PlayerCreateDialog';
+import PlayerCreateDialog from "@/modules/players/components/PlayerCreateDialog";
 
 const PlayersModuleApp = () => {
   const { playerId } = useParams();

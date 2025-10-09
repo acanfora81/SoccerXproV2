@@ -1,0 +1,2538 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["soccerxpro"] // 👈 forza Prisma a generare per questo schema
+}
+
+model Team {
+  id                      String                      @id @default(uuid()) @db.Uuid
+  name                    String
+  slug                    String                      @unique
+  plan                    String                      @default("basic")
+  isActive                Boolean                     @default(true)
+  maxPlayers              Int                         @default(25)
+  maxUsers                Int                         @default(5)
+  email                   String?
+  phone                   String?
+  address                 String?
+  vatNumber               String?
+  subscriptionId          String?
+  subscriptionStatus      String                      @default("trial")
+  trialEndsAt             DateTime?
+  subscriptionEndsAt      DateTime?
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+  city                    String?
+  region                  String?
+  bonusTaxRates           BonusTaxRate[]              @relation("TeamBonusTaxRates")
+  budgets                 budgets[]                   @relation("TeamBudgets")
+  contractAmendments      contract_amendments[]       @relation("TeamContractAmendments")
+  contractClauses         contract_clauses[]          @relation("TeamContractClauses")
+  contractFiles           contract_files[]            @relation("TeamContractFiles")
+  contractPaymentSchedule contract_payment_schedule[] @relation("TeamPaymentSchedule")
+  contracts               contracts[]                 @relation("TeamContracts")
+  expenses                expenses[]                  @relation("TeamExpenses")
+  injuries                injuries[]                  @relation("TeamInjuries")
+  medicalVisits           medical_visits[]            @relation("TeamMedicalVisits")
+  performances            PerformanceData[]           @relation("TeamPerformances")
+  statistics              player_statistics[]         @relation("TeamStatistics")
+  players                 Player[]                    @relation("TeamPlayers")
+  taxRates                TaxRate[]                   @relation("TeamTaxRates")
+  transfers               transfers[]                 @relation("TeamTransfers")
+  users                   UserProfile[]               @relation("TeamUsers")
+  subscription            Subscription?               @relation("TeamSubscription")
+  invites                 TeamInvite[]                @relation("TeamInvites")
+  market_agent            market_agent[]
+  market_target           market_target[]
+  market_shortlist        market_shortlist[]
+  market_negotiation      market_negotiation[]
+  market_offer            market_offer[]
+  market_budget           market_budget[]
+  
+  // Scouting relations (v1)
+  scouting_scouts         scouting_scout[]
+  scouting_rubrics        scouting_rubric[]
+  scouting_matches        scouting_match[]
+  scouting_sessions       scouting_session[]
+  scouting_assignments    scouting_assignment[]
+  scouting_followups      scouting_followup[]
+  scouting_tags           scouting_tag[]
+  
+  // Scouting relations (Enterprise v2)
+  scoutingProspects       ScoutingProspect[]
+  scoutingReports         ScoutingReport[]
+  scoutingShortlists      ScoutingShortlist[]
+  scoutingEventLogs       ScoutingEventLog[]
+  agents                  Agent[]
+
+  @@map("teams")
+  @@schema("soccerxpro")
+}
+
+model UserProfile {
+  id                      Int               @id @default(autoincrement())
+  auth_user_id            String            @unique
+  email                   String            @unique
+  first_name              String
+  last_name               String
+  role                    UserRole          @default(SECRETARY)
+  theme_preference        String            @default("light")
+  language_preference     String            @default("it")
+  is_active               Boolean           @default(true)
+  last_login              DateTime?
+  created_at              DateTime          @default(now())
+  updated_at              DateTime          @updatedAt
+  teamId                  String?           @map("team_id") @db.Uuid
+  uploadedContractFiles   contract_files[]  @relation("ContractFilesUploadedBy")
+  contracts               contracts[]
+  responsibleForContracts contracts[]       @relation("ContractResponsible")
+  injuries                injuries[]
+  createdPerformanceData  PerformanceData[] @relation("PerformanceDataCreator")
+  createdPlayers          Player[]          @relation("PlayerCreator")
+  transfers               transfers[]
+  twoFactorAuth           TwoFactorAuth?    @relation("UserTwoFactorAuth")
+  team                    Team?             @relation("TeamUsers", fields: [teamId], references: [id])
+  createdInvites          TeamInvite[]      @relation("InvitesCreated")
+  usedInvites             TeamInvite[]      @relation("InvitesUsed")
+  
+  // Scouting relations (v1)
+  scouting_scouts         scouting_scout[]
+  scouting_rubrics        scouting_rubric[]
+  scouting_sessions_created scouting_session[] @relation("ScoutingSessionCreatedBy")
+  scouting_sessions_updated scouting_session[] @relation("ScoutingSessionUpdatedBy")
+  scouting_sessions_reviewer scouting_session[] @relation("ScoutingSessionReviewer")
+  scouting_reports        scouting_report[]
+  scouting_assignments    scouting_assignment[]
+  scouting_followups      scouting_followup[]
+  scouting_media          scouting_media[]
+  scouting_reviews        scouting_review[]
+  
+  // Scouting relations (Enterprise v2)
+  scoutingProspectsCreated ScoutingProspect[] @relation("ScoutingProspectCreatedBy")
+  scoutingReportsCreated   ScoutingReport[]   @relation("ScoutingReportCreatedBy")
+  scoutingShortlistsCreated ScoutingShortlist[] @relation("ScoutingShortlistCreatedBy")
+  scoutingEventLogs        ScoutingEventLog[] @relation("ScoutingEventLogUser")
+  agentsCreated            Agent[]            @relation("AgentCreatedBy")
+
+  @@map("user_profiles")
+  @@schema("soccerxpro")
+}
+
+model Player {
+  id                Int                 @id @default(autoincrement())
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime
+  nationality       String
+  position          Position
+  shirtNumber       Int?                @unique
+  height            Float?
+  weight            Float?
+  preferredFoot     FootType?
+  placeOfBirth      String?
+  taxCode           String?             @unique
+  passportNumber    String?             @unique
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  createdById       Int
+  teamId            String?             @map("team_id") @db.Uuid
+  contracts         contracts[]
+  injuries          injuries[]
+  medical_visits    medical_visits[]
+  performanceData   PerformanceData[]
+  player_statistics player_statistics[]
+  createdBy         UserProfile         @relation("PlayerCreator", fields: [createdById], references: [id])
+  team              Team?               @relation("TeamPlayers", fields: [teamId], references: [id])
+  transfers         transfers[]
+
+  // Trattative o interessamenti collegati al Player (relazione storica)
+  market_targets_historical market_target[] @relation("HistoricalTargetLink")
+
+  // Trattative firmate da questo Player (creato da una negotiation)
+  market_negotiations_signed market_negotiation[] @relation("PlayerToNegotiations")
+
+  // Target convertiti in Player (conversione 1-to-1)
+  market_target_converted market_target[] @relation("TargetToPlayerConversion")
+  
+  // Scouting relations
+  scouting_sessions       scouting_session[]
+
+  @@map("players")
+  @@schema("soccerxpro")
+}
+
+model PerformanceData {
+  id                                 Int          @id @default(autoincrement())
+  playerId                           Int
+  session_date                       DateTime
+  session_type                       String?
+  duration_minutes                   Int?
+  total_distance_m                   Float?
+  sprint_distance_m                  Float?
+  top_speed_kmh                      Float?
+  avg_speed_kmh                      Float?
+  player_load                        Float?
+  high_intensity_runs                Int?
+  max_heart_rate                     Int?
+  avg_heart_rate                     Int?
+  source_device                      String?
+  notes                              String?
+  created_at                         DateTime     @default(now())
+  updated_at                         DateTime     @updatedAt
+  createdById                        Int?
+  teamId                             String       @map("team_id") @db.Uuid
+  extras                             Json?
+  acc_events_per_min_over_2_ms2      Float?
+  avg_metabolic_power_wkg            Float?
+  dec_events_per_min_over_minus2_ms2 Float?
+  distance_15_20_kmh_m               Float?
+  distance_20_25_kmh_m               Float?
+  distance_acc_over_2_ms2_m          Float?
+  distance_acc_over_3_ms2_m          Float?
+  distance_dec_over_minus2_ms2_m     Float?
+  distance_dec_over_minus3_ms2_m     Float?
+  distance_over_15_kmh_m             Float?
+  distance_over_20_kmh_m             Float?
+  distance_over_20wkg_m              Float?
+  distance_over_25_kmh_m             Float?
+  distance_over_35wkg_m              Float?
+  distance_per_min                   Float?
+  drill_name                         String?
+  equivalent_distance_m              Float?
+  equivalent_distance_pct            Float?
+  is_match                           Boolean?
+  max_power_5s_wkg                   Float?
+  num_acc_over_3_ms2                 Int?
+  num_dec_over_minus3_ms2            Int?
+  pct_distance_acc_over_2_ms2        Float?
+  pct_distance_dec_over_minus2_ms2   Float?
+  rvp_index                          Float?
+  session_day                        String?
+  time_5_10_wkg_min                  Int?
+  time_under_5wkg_min                Int?
+  training_load                      Float?
+  session_name                       String?
+  created_by                         UserProfile? @relation("PerformanceDataCreator", fields: [createdById], references: [id])
+  player                             Player       @relation(fields: [playerId], references: [id])
+  team                               Team         @relation("TeamPerformances", fields: [teamId], references: [id])
+
+  @@map("performance_data")
+  @@schema("soccerxpro")
+}
+
+model budgets {
+  id           Int            @id @default(autoincrement())
+  year         Int
+  category     BudgetCategory
+  budgetAmount Decimal        @db.Decimal(12, 2)
+  spentAmount  Decimal        @default(0) @db.Decimal(12, 2)
+  currency     String         @default("EUR")
+  description  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  teamId       String         @map("team_id") @db.Uuid
+  team         Team           @relation("TeamBudgets", fields: [teamId], references: [id])
+  expenses     expenses[]
+
+  @@unique([year, category])
+  @@schema("soccerxpro")
+}
+
+model contract_clauses {
+  id          Int        @id @default(autoincrement())
+  clauseType  ClauseType
+  description String
+  amount      Decimal?   @db.Decimal(10, 2)
+  currency    String?    @default("EUR")
+  conditions  String?
+  contractId  Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  teamId      String     @map("team_id") @db.Uuid
+  percentage  Decimal?   @db.Decimal(5, 2)
+  contracts   contracts  @relation(fields: [contractId], references: [id])
+  team        Team       @relation("TeamContractClauses", fields: [teamId], references: [id])
+
+  @@schema("soccerxpro")
+}
+
+model contracts {
+  id                    Int                         @id @default(autoincrement())
+  startDate             DateTime
+  endDate               DateTime
+  salary                Decimal                     @db.Decimal(12, 2)
+  currency              String                      @default("EUR")
+  contractType          ContractType
+  status                ContractStatus              @default(ACTIVE)
+  signedDate            DateTime?
+  notes                 String?
+  playerId              Int
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  createdById           Int
+  teamId                String                      @map("team_id") @db.Uuid
+  agentContact          String?
+  buyOption             Boolean?                    @default(false)
+  buyPrice              Decimal?                    @db.Decimal(12, 2)
+  contractRole          ContractRole?
+  depositDate           DateTime?
+  loanFromClub          String?
+  loanToClub            String?
+  obligationToBuy       Boolean?                    @default(false)
+  paymentFrequency      PaymentFrequency?
+  protocolNumber        String?
+  responsibleUserId     Int?
+  netSalary             Decimal?                    @db.Decimal(12, 2)
+  contractNumber        String?
+  fifaId                String?
+  leagueRegistrationId  String?
+  imageRights           Decimal?                    @db.Decimal(10, 2)
+  loyaltyBonus          Decimal?                    @db.Decimal(10, 2)
+  signingBonus          Decimal?                    @db.Decimal(10, 2)
+  accommodationBonus    Decimal?                    @db.Decimal(8, 2)
+  carAllowance          Decimal?                    @db.Decimal(8, 2)
+  taxRegime             String?
+  taxRate               Decimal?                    @db.Decimal(5, 2)
+  socialContributions   Decimal?                    @db.Decimal(10, 2)
+  insuranceValue        Decimal?                    @db.Decimal(12, 2)
+  insuranceProvider     String?
+  renewalConditions     String?
+  renewalNoticeMonths   Int?
+  jurisdiction          String?
+  nonCompeteMonths      Int?
+  tutorName             String?
+  tutorContact          String?
+  languageRequirement   String?
+  performanceTargets    Json?
+  kpiTargets            Json?
+  workPermitStatus      String?
+  workPermitExpiry      DateTime?                   @db.Timestamp(6)
+  visaType              String?
+  relocationPackage     Decimal?                    @db.Decimal(10, 2)
+  mediaObligations      String?
+  socialMediaClause     String?
+  medicalExamDate       DateTime?                   @db.Timestamp(6)
+  medicalExamResult     String?
+  medicalRestrictions   String?
+  lastReviewDate        DateTime?                   @db.Timestamp(6)
+  nextReviewDate        DateTime?                   @db.Timestamp(6)
+  complianceNotes       String?
+  tags                  String[]
+  internalNotes         String?
+  complianceStatus      ComplianceStatus?           @default(PENDING)
+  priority              ContractPriority?           @default(NORMAL)
+  medicalInsurance      Boolean?
+  autoRenewal           Boolean?
+  arbitrationClause     Boolean?
+  confidentialityClause Boolean?
+  nonCompeteClause      Boolean?
+  isMinor               Boolean?
+  parentalConsent       Boolean?
+  educationClause       Boolean?
+  trainingObligation    Boolean?
+  workPermitRequired    Boolean?
+  visaRequired          Boolean?
+  familySupport         Boolean?
+  languageLessons       Boolean?
+  sponsorshipRights     Boolean?
+  dopingConsent         Boolean?
+  transferAllowance     Decimal?                    @db.Decimal(8, 2)
+  amendments            contract_amendments[]       @relation("ContractAmendmentsForContract")
+  contract_clauses      contract_clauses[]
+  files                 contract_files[]            @relation("ContractFilesForContract")
+  paymentSchedule       contract_payment_schedule[]
+  user_profiles         UserProfile                 @relation(fields: [createdById], references: [id])
+  players               Player                      @relation(fields: [playerId], references: [id])
+  responsible           UserProfile?                @relation("ContractResponsible", fields: [responsibleUserId], references: [id])
+  team                  Team                        @relation("TeamContracts", fields: [teamId], references: [id], onUpdate: NoAction, map: "contracts_team_fkey")
+
+  @@unique([teamId, contractNumber], map: "contracts_team_contractNumber_key")
+  @@index([teamId, complianceStatus], map: "contracts_team_compliance_idx")
+  @@index([teamId, endDate], map: "contracts_team_end_idx")
+  @@index([teamId, playerId, status], map: "contracts_team_player_status_idx")
+  @@index([teamId, startDate], map: "contracts_team_start_idx")
+  @@schema("soccerxpro")
+}
+
+model contract_files {
+  id           Int         @id @default(autoincrement())
+  contractId   Int
+  fileName     String
+  mimeType     String
+  size         Int
+  storagePath  String
+  url          String?
+  uploadedById Int
+  uploadedAt   DateTime    @default(now())
+  teamId       String      @map("team_id") @db.Uuid
+  contract     contracts   @relation("ContractFilesForContract", fields: [contractId], references: [id])
+  team         Team        @relation("TeamContractFiles", fields: [teamId], references: [id])
+  uploadedBy   UserProfile @relation("ContractFilesUploadedBy", fields: [uploadedById], references: [id])
+
+  @@schema("soccerxpro")
+}
+
+model contract_amendments {
+  id            Int           @id @default(autoincrement())
+  contractId    Int
+  type          AmendmentType
+  signedDate    DateTime?
+  effectiveFrom DateTime?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  teamId        String        @map("team_id") @db.Uuid
+  contract      contracts     @relation("ContractAmendmentsForContract", fields: [contractId], references: [id])
+  team          Team          @relation("TeamContractAmendments", fields: [teamId], references: [id])
+
+  @@schema("soccerxpro")
+}
+
+model expenses {
+  id          Int            @id @default(autoincrement())
+  amount      Decimal        @db.Decimal(10, 2)
+  currency    String         @default("EUR")
+  category    BudgetCategory
+  description String
+  expenseDate DateTime
+  budgetId    Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime
+  teamId      String         @map("team_id") @db.Uuid
+  budgets     budgets?       @relation(fields: [budgetId], references: [id])
+  team        Team           @relation("TeamExpenses", fields: [teamId], references: [id])
+
+  @@schema("soccerxpro")
+}
+
+model injuries {
+  id             Int              @id @default(autoincrement())
+  injuryType     InjuryType
+  bodyPart       BodyPart
+  severity       InjurySeverity
+  description    String
+  injuryDate     DateTime
+  expectedReturn DateTime?
+  actualReturn   DateTime?
+  status         InjuryStatus     @default(ACTIVE)
+  diagnosis      String?
+  treatment      String?
+  notes          String?
+  playerId       Int
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  createdById    Int
+  teamId         String           @map("team_id") @db.Uuid
+  user_profiles  UserProfile      @relation(fields: [createdById], references: [id])
+  players        Player           @relation(fields: [playerId], references: [id])
+  team           Team             @relation("TeamInjuries", fields: [teamId], references: [id])
+  medical_visits medical_visits[]
+
+  @@schema("soccerxpro")
+}
+
+model medical_visits {
+  id        Int       @id @default(autoincrement())
+  visitDate DateTime
+  visitType VisitType
+  doctor    String
+  diagnosis String?
+  treatment String?
+  notes     String?
+  followUp  DateTime?
+  playerId  Int
+  injuryId  Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  teamId    String    @map("team_id") @db.Uuid
+  injuries  injuries? @relation(fields: [injuryId], references: [id])
+  players   Player    @relation(fields: [playerId], references: [id])
+  team      Team      @relation("TeamMedicalVisits", fields: [teamId], references: [id])
+
+  @@schema("soccerxpro")
+}
+
+model player_statistics {
+  id            Int      @id @default(autoincrement())
+  season        String
+  games         Int      @default(0)
+  goals         Int      @default(0)
+  assists       Int      @default(0)
+  yellowCards   Int      @default(0)
+  redCards      Int      @default(0)
+  minutesPlayed Int      @default(0)
+  playerId      Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  teamId        String   @map("team_id") @db.Uuid
+  players       Player   @relation(fields: [playerId], references: [id])
+  team          Team     @relation("TeamStatistics", fields: [teamId], references: [id])
+
+  @@unique([playerId, season])
+  @@schema("soccerxpro")
+}
+
+model transfers {
+  id            Int            @id @default(autoincrement())
+  transferType  TransferType
+  transferDate  DateTime?
+  fee           Decimal?       @db.Decimal(12, 2)
+  currency      String?        @default("EUR")
+  status        TransferStatus @default(NEGOTIATING)
+  fromClub      String?
+  toClub        String?
+  agent         String?
+  notes         String?
+  playerId      Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  createdById   Int
+  teamId        String         @map("team_id") @db.Uuid
+  user_profiles UserProfile    @relation(fields: [createdById], references: [id])
+  players       Player         @relation(fields: [playerId], references: [id])
+  team          Team           @relation("TeamTransfers", fields: [teamId], references: [id])
+
+  @@schema("soccerxpro")
+}
+
+model contract_payment_schedule {
+  id                Int                 @id @default(autoincrement())
+  contractId        Int
+  installmentNumber Int
+  dueDate           DateTime            @db.Timestamp(6)
+  amount            Decimal             @db.Decimal(10, 2)
+  currency          String              @default("EUR")
+  description       String?
+  paymentType       PaymentScheduleType
+  status            PaymentStatus       @default(PENDING)
+  paidDate          DateTime?           @db.Timestamp(6)
+  paidAmount        Decimal?            @db.Decimal(10, 2)
+  createdAt         DateTime            @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime            @default(now()) @updatedAt @db.Timestamp(6)
+  teamId            String              @map("team_id") @db.Uuid
+  contract          contracts           @relation(fields: [contractId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  team              Team                @relation("TeamPaymentSchedule", fields: [teamId], references: [id], onUpdate: NoAction, map: "contract_payment_schedule_team_fkey")
+
+  @@index([teamId, contractId, status], map: "cps_team_contract_status_idx")
+  @@schema("soccerxpro")
+}
+
+model TaxRate {
+  id                 Int          @id @default(autoincrement())
+  year               Int
+  type               ContractType
+  // 👇 Nuove colonne separate
+  inpsWorker         Decimal      @default(9.19) @db.Decimal(5, 2) // quota contributiva a carico lavoratore (%)
+  inpsEmployer       Decimal      @default(30.0) @db.Decimal(5, 2) // quota contributiva a carico datore (%)
+  inailEmployer      Decimal?     @default(1.5) @db.Decimal(5, 2) // contributo INAIL (solo datore, %)
+  ffcWorker          Decimal      @default(6.25) @db.Decimal(5, 2) // quota FFC a carico lavoratore (%)
+  ffcEmployer        Decimal      @default(0.0) @db.Decimal(5, 2) // quota FFC a carico datore (%)
+  solidarityWorker   Decimal?     @default(0.0) @db.Decimal(5, 2) // eventuale 0.5% a carico giocatore
+  solidarityEmployer Decimal?     @default(0.5) @db.Decimal(5, 2) // eventuale quota società
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  teamId             String       @map("team_id") @db.Uuid
+  team               Team         @relation("TeamTaxRates", fields: [teamId], references: [id])
+
+  @@unique([year, type, teamId])
+  @@map("tax_rates")
+  @@schema("soccerxpro")
+}
+
+model BonusTaxRate {
+  id        Int       @id @default(autoincrement())
+  year      Int
+  type      BonusType
+  taxRate   Decimal   @db.Decimal(5, 2)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  teamId    String    @map("team_id") @db.Uuid
+  team      Team      @relation("TeamBonusTaxRates", fields: [teamId], references: [id])
+
+  @@unique([year, type, teamId])
+  @@map("bonus_tax_rates")
+  @@schema("soccerxpro")
+}
+
+model tax_config {
+  id                         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year                       Int      @unique(map: "uq_tax_config_year")
+  contributionrate           Float
+  solidarityrate             Float
+  detrazionifixed            Float    @default(0)
+  detrazionipercentonirpef   Float    @default(0)
+  ulterioredetrazionefixed   Float    @default(0)
+  ulterioredetrazionepercent Float    @default(0)
+  bonusl207fixed             Float    @default(0)
+  detrazioneFascia1          Float    @default(1955) // base fascia 0–15k
+  detrazioneMinimo           Float    @default(690) // minimo garantito
+  detrazioneFascia2          Float    @default(1910) // base fascia 15k–28k
+  detrazioneFascia2Max       Float    @default(1190) // quota aggiuntiva fascia 15k–28k
+  detrazioneFascia3          Float    @default(1910) // base fascia 28k–50k
+  createdat                  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@schema("soccerxpro")
+}
+
+model tax_irpef_bracket {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year      Int
+  min       Float
+  max       Float?
+  rate      Float
+  createdat DateTime @default(now()) @db.Timestamptz(6)
+
+  @@schema("soccerxpro")
+}
+
+model tax_municipal_additional_bracket {
+  id                            String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rule_id                       String                        @db.Uuid
+  min                           Float
+  max                           Float?
+  rate                          Float
+  createdat                     DateTime                      @default(now()) @db.Timestamptz(6)
+  tax_municipal_additional_rule tax_municipal_additional_rule @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([rule_id, min], map: "idx_municipal_bracket_rule")
+  @@schema("soccerxpro")
+}
+
+model tax_municipal_additional_rule {
+  id                               String                             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year                             Int
+  region                           String
+  municipality                     String
+  base                             TaxBase                            @default(IMPONIBILE_FISCALE)
+  exemption_threshold              Float?
+  is_progressive                   Boolean                            @default(false)
+  flat_rate                        Float?
+  flags                            Json?
+  notes                            String?
+  is_default                       Boolean                            @default(true)
+  createdat                        DateTime                           @default(now()) @db.Timestamptz(6)
+  tax_municipal_additional_bracket tax_municipal_additional_bracket[]
+
+  @@unique([year, region, municipality, is_default], map: "uq_municipal_rule")
+  @@index([year, region, municipality], map: "idx_municipal_rule_lookup")
+  @@schema("soccerxpro")
+}
+
+model tax_regional_additional_bracket {
+  id                             String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scheme_id                      String                         @db.Uuid
+  min                            Float
+  max                            Float?
+  rate                           Float
+  createdat                      DateTime                       @default(now()) @db.Timestamptz(6)
+  tax_regional_additional_scheme tax_regional_additional_scheme @relation(fields: [scheme_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([scheme_id, min], map: "idx_regional_bracket_scheme")
+  @@schema("soccerxpro")
+}
+
+model tax_regional_additional_scheme {
+  id                              String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year                            Int
+  region                          String
+  base                            TaxBase                           @default(IMPONIBILE_FISCALE)
+  exemption_threshold             Float?
+  is_progressive                  Boolean                           @default(true)
+  flat_rate                       Float?
+  flags                           Json?
+  notes                           String?
+  is_default                      Boolean                           @default(true)
+  createdat                       DateTime                          @default(now()) @db.Timestamptz(6)
+  tax_regional_additional_bracket tax_regional_additional_bracket[]
+
+  @@unique([year, region, is_default], map: "uq_regional_scheme")
+  @@index([year, region], map: "idx_regional_scheme_lookup")
+  @@schema("soccerxpro")
+}
+
+// Extra deduction rules (ulteriore detrazione) per anno a scaglioni
+model tax_extra_deduction_rule {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year      Int
+  min       Float
+  max       Float?
+  amount    Float // importo fisso (valore alla soglia "min")
+  slope     Float?   @default(0) // variazione lineare €/€ sopra min
+  createdat DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([year, min], map: "idx_extra_deduction_year_min")
+  @@schema("soccerxpro")
+}
+
+model tax_bonus_l207_rule {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year      Int
+  min       Float
+  max       Float?
+  amount    Float // importo iniziale alla soglia "min"
+  slope     Float?   @default(0) // €/€ di variazione lineare
+  createdat DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([year, min], map: "uq_bonus_l207_year_min")
+  @@index([year, min], map: "idx_bonus_l207_year_min")
+  @@schema("soccerxpro")
+}
+
+model Subscription {
+  id            String             @id @default(uuid()) @db.Uuid
+  teamId        String             @unique @map("team_id") @db.Uuid
+  plan          SubscriptionPlan   @default(BASIC)
+  status        SubscriptionStatus @default(ACTIVE)
+  startDate     DateTime           @default(now()) @map("start_date")
+  endDate       DateTime?          @map("end_date")
+  trialEndsAt   DateTime?          @map("trial_ends_at")
+  maxUsers      Int                @default(5) @map("max_users")
+  maxPlayers    Int                @default(25) @map("max_players")
+  features      Json?              @default("{}")
+  paymentMethod String?            @map("payment_method")
+  billingEmail  String?            @map("billing_email")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  team Team @relation("TeamSubscription", fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+  @@schema("soccerxpro")
+}
+
+model TeamInvite {
+  id           String    @id @default(uuid()) @db.Uuid
+  teamId       String    @map("team_id") @db.Uuid
+  email        String
+  role         UserRole  @default(SECRETARY)
+  token        String    @unique
+  createdById  Int
+  isUsed       Boolean   @default(false)
+  usedAt       DateTime?
+  usedByUserId Int?
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  team      Team         @relation("TeamInvites", fields: [teamId], references: [id])
+  createdBy UserProfile  @relation("InvitesCreated", fields: [createdById], references: [id])
+  usedBy    UserProfile? @relation("InvitesUsed", fields: [usedByUserId], references: [id])
+
+  @@index([teamId, isUsed])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("team_invites")
+  @@schema("soccerxpro")
+}
+
+enum BodyPart {
+  HEAD
+  NECK
+  SHOULDER
+  ARM
+  ELBOW
+  WRIST
+  HAND
+  CHEST
+  BACK
+  ABDOMEN
+  HIP
+  THIGH
+  KNEE
+  SHIN
+  CALF
+  ANKLE
+  FOOT
+
+  @@schema("soccerxpro")
+}
+
+enum BudgetCategory {
+  PLAYER_SALARIES
+  TRANSFER_FEES
+  MEDICAL_COSTS
+  INFRASTRUCTURE
+  STAFF_SALARIES
+  EQUIPMENT
+  TRAVEL
+  MARKETING
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+enum ClauseType {
+  RELEASE_CLAUSE
+  RENEWAL_OPTION
+  PERFORMANCE_BONUS
+  GOAL_BONUS
+  APPEARANCE_BONUS
+  RELEGATION_CLAUSE
+  PROMOTION_BONUS
+  INTERNATIONAL_BONUS
+  SELL_ON_PERCENTAGE
+  BUY_OPTION_FEE
+  OBLIGATION_FEE
+
+  @@schema("soccerxpro")
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWED
+  SUSPENDED
+  ON_LOAN
+
+  @@schema("soccerxpro")
+}
+
+enum ContractType {
+  PERMANENT
+  LOAN
+  TRIAL
+  YOUTH
+  PROFESSIONAL
+  AMATEUR
+  APPRENTICESHIP
+  TRAINING_AGREEMENT
+
+  @@schema("soccerxpro")
+}
+
+enum ContractRole {
+  PROFESSIONAL_PLAYER
+  AMATEUR_PLAYER
+  YOUTH_SERIES
+  APPRENTICESHIP
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+enum PaymentFrequency {
+  MONTHLY
+  BIMONTHLY
+  PER_APPEARANCE
+  QUARTERLY
+  ANNUAL
+
+  @@schema("soccerxpro")
+}
+
+enum AmendmentType {
+  RENEWAL
+  EXTENSION
+  MODIFICATION
+  TERMINATION
+
+  @@schema("soccerxpro")
+}
+
+enum FootType {
+  LEFT
+  RIGHT
+  BOTH
+
+  @@schema("soccerxpro")
+}
+
+enum InjurySeverity {
+  MINOR
+  MODERATE
+  MAJOR
+  SEVERE
+
+  @@schema("soccerxpro")
+}
+
+enum InjuryStatus {
+  ACTIVE
+  RECOVERING
+  HEALED
+  CHRONIC
+
+  @@schema("soccerxpro")
+}
+
+enum InjuryType {
+  MUSCLE_STRAIN
+  LIGAMENT_TEAR
+  BONE_FRACTURE
+  CONCUSSION
+  BRUISE
+  CUT
+  SPRAIN
+  OVERUSE
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+enum Position {
+  GOALKEEPER
+  DEFENDER
+  MIDFIELDER
+  FORWARD
+
+  @@schema("soccerxpro")
+}
+
+enum TransferStatus {
+  SCOUTING
+  NEGOTIATING
+  AGREED
+  MEDICAL_PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+
+  @@schema("soccerxpro")
+}
+
+enum TransferType {
+  INCOMING
+  OUTGOING
+  LOAN_IN
+  LOAN_OUT
+  FREE_TRANSFER
+  EXCHANGE
+
+  @@schema("soccerxpro")
+}
+
+enum UserRole {
+  ADMIN
+  DIRECTOR_SPORT
+  MEDICAL_STAFF
+  SECRETARY
+  SCOUT
+  PREPARATORE_ATLETICO
+
+  @@schema("soccerxpro")
+}
+
+enum VisitType {
+  ROUTINE_CHECKUP
+  INJURY_ASSESSMENT
+  REHABILITATION
+  FITNESS_TEST
+  SPECIALIST_CONSULTATION
+  EMERGENCY
+
+  @@schema("soccerxpro")
+}
+
+enum TaxRegime {
+  STANDARD
+  BECKHAM_LAW
+  IMPATRIATE
+  NON_RESIDENT
+  SPECIAL_REGIME
+
+  @@schema("soccerxpro")
+}
+
+enum WorkPermitStatus {
+  NOT_REQUIRED
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  RENEWAL_PENDING
+
+  @@schema("soccerxpro")
+}
+
+enum MedicalExamResult {
+  PENDING
+  PASSED
+  FAILED
+  CONDITIONAL
+  RETEST_REQUIRED
+
+  @@schema("soccerxpro")
+}
+
+enum ComplianceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVIEW
+  EXPIRED
+
+  @@schema("soccerxpro")
+}
+
+enum ContractPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+
+  @@schema("soccerxpro")
+}
+
+enum BonusType {
+  IMAGE_RIGHTS
+  LOYALTY_BONUS
+  SIGNING_BONUS
+  ACCOMMODATION_BONUS
+  CAR_ALLOWANCE
+  TRANSFER_ALLOWANCE
+
+  @@schema("soccerxpro")
+}
+
+enum PaymentScheduleType {
+  SALARY
+  BONUS
+  SIGNING_BONUS
+  LOYALTY_BONUS
+  IMAGE_RIGHTS
+  TRANSFER_FEE
+  AGENT_COMMISSION
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  PARTIAL
+  CANCELLED
+
+  @@schema("soccerxpro")
+}
+
+enum TaxBase {
+  IMPONIBILE_FISCALE
+  LORDO
+  NETTO
+
+  @@schema("soccerxpro")
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PROFESSIONAL
+  PREMIUM
+  ENTERPRISE
+
+  @@schema("soccerxpro")
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
+
+  @@schema("soccerxpro")
+}
+
+// ===================== MEDICAL/GDPR CORE (v1) =====================
+enum MedicalCaseType {
+  INJURY
+  ILLNESS
+  SURGERY
+  SCREENING
+  PREVENTIVE
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+enum InjuryMechanism {
+  CONTACT
+  NON_CONTACT
+  OVERUSE
+  RECURRENCE
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+// Se in futuro servirà la scala più granulare, usare MedicalInjurySeverity al posto di InjurySeverity
+enum MedicalInjurySeverity {
+  MINIMAL
+  MILD
+  MODERATE
+  SEVERE
+  CAREER_ENDING
+  UNKNOWN
+
+  @@schema("soccerxpro")
+}
+
+enum RehabStage {
+  ACUTE_PHASE
+  PROTECTED_MOBILITY
+  PROGRESSIVE_LOADING
+  SPORT_SPECIFIC
+  RETURN_TO_PLAY
+  MAINTENANCE
+
+  @@schema("soccerxpro")
+}
+
+enum ExamType {
+  MRI
+  XRAY
+  ULTRASOUND
+  CT
+  PET
+  BONE_SCAN
+  BLOOD_TEST
+  URINE_TEST
+  GENETIC_TEST
+  ECG
+  ECHO
+  STRESS_TEST
+  SPIROMETRY
+  ORTHO_VISIT
+  CARDIO_VISIT
+  NEURO_VISIT
+  PHYSIO_EVAL
+  DENTAL
+  VISION
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+enum TreatmentType {
+  PHYSIO
+  MEDICATION
+  INJECTION
+  SURGERY
+  REST
+  MANUAL_THERAPY
+  ELECTROTHERAPY
+  CRYOTHERAPY
+  HYPERBARIC
+  LASER
+  PRP
+  STEM_CELL
+  TAPING
+  BRACING
+  CUSTOM_ORTHOTICS
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+enum VisibilityLevel {
+  MEDICAL_ONLY
+  COACHING_STAFF
+  PLAYER_ACCESS
+  TEAM_WIDE
+
+  @@schema("soccerxpro")
+}
+
+enum DataClassification {
+  PUBLIC
+  SENSITIVE
+  HIGHLY_SENSITIVE
+  SPECIAL_CATEGORY
+
+  @@schema("soccerxpro")
+}
+
+enum ConsentStatus {
+  NOT_REQUESTED
+  PENDING
+  GRANTED
+  REFUSED
+  WITHDRAWN
+  EXPIRED
+
+  @@schema("soccerxpro")
+}
+
+enum LawfulBasis {
+  CONSENT
+  CONTRACT
+  LEGAL_OBLIGATION
+  VITAL_INTERESTS
+  LEGITIMATE_INTEREST
+  MEDICAL_PURPOSE
+
+  @@schema("soccerxpro")
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  ENCRYPT
+  DECRYPT
+  ANONYMIZE
+  EXPORT
+  CONSENT_GRANT
+  CONSENT_WITHDRAW
+  ACCESS_REQUEST
+  ERASURE_REQUEST
+  EMERGENCY_ACCESS
+  PRINT
+  SHARE
+
+  @@schema("soccerxpro")
+}
+
+enum DataRetentionReason {
+  ACTIVE_CONTRACT
+  LEGAL_REQUIREMENT
+  INSURANCE_CLAIM
+  LITIGATION_HOLD
+  HISTORICAL_STATISTICS
+
+  @@schema("soccerxpro")
+}
+
+model GDPRConfiguration {
+  id                     String    @id @default(uuid())
+  teamId                 String    @unique @db.Uuid
+  dpoName                String
+  dpoEmail               String
+  dpoPhone               String?
+  dataRetentionDays      Int       @default(2555)
+  autoAnonymizeAfterDays Int       @default(3650)
+  requireExplicitConsent Boolean   @default(true)
+  allowDataPortability   Boolean   @default(true)
+  encryptionEnabled      Boolean   @default(true)
+  encryptionAlgorithm    String    @default("AES-256-GCM")
+  keyRotationDays        Int       @default(90)
+  vaultEnabled           Boolean   @default(true)
+  vaultTimeoutMinutes    Int       @default(15)
+  vaultRequire2FA        Boolean   @default(true)
+  emergencyAccessEnabled Boolean   @default(true)
+  auditLogRetentionDays  Int       @default(5475)
+  anonymizeLogsAfterDays Int       @default(1095)
+  lastComplianceCheck    DateTime?
+  nextComplianceCheck    DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([teamId])
+  @@schema("soccerxpro")
+}
+
+model DataProcessingAgreement {
+  id             String    @id @default(uuid())
+  teamId         String    @db.Uuid
+  processorName  String
+  processorType  String
+  purpose        String
+  dataCategories Json
+  startDate      DateTime
+  endDate        DateTime?
+  signedDocument String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([teamId, isActive])
+  @@schema("soccerxpro")
+}
+
+model MedicalVault {
+  id                  String    @id @default(uuid())
+  teamId              String    @unique @db.Uuid
+  encryptedMasterKey  String
+  masterKeySalt       String
+  masterKeyIterations Int       @default(100000)
+  vaultPasswordHash   String
+  vaultPasswordSalt   String
+  vaultPasswordHint   String?
+  failedAttempts      Int       @default(0)
+  lockedUntil         DateTime?
+  lastAccessAt        DateTime?
+  keyVersion          Int       @default(1)
+  keyRotatedAt        DateTime  @default(now())
+  previousKeyHash     String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([teamId])
+  @@schema("soccerxpro")
+}
+
+model MedicalVaultAccess {
+  id               String    @id @default(uuid())
+  teamId           String    @db.Uuid
+  userId           Int
+  accessType       String
+  reason           String
+  grantedAt        DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  isEmergency      Boolean   @default(false)
+  approvedById     Int?
+  sessionTokenHash String?
+
+  @@index([teamId, userId, expiresAt])
+  @@index([sessionTokenHash])
+  @@schema("soccerxpro")
+}
+
+model MedicalConsent {
+  id                 String        @id @default(uuid())
+  teamId             String        @db.Uuid
+  playerId           Int
+  consentType        String
+  purpose            String
+  lawfulBasis        LawfulBasis
+  dataCategories     Json
+  status             ConsentStatus
+  grantedAt          DateTime?
+  withdrawnAt        DateTime?
+  expiresAt          DateTime?
+  version            Int           @default(1)
+  previousVersionId  String?
+  consentFormText    String        @db.Text
+  signedDocumentPath String?
+  ipAddress          String?
+  userAgent          String?
+  createdById        Int?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@unique([teamId, playerId, consentType, version])
+  @@index([teamId, playerId, status])
+  @@index([expiresAt])
+  @@schema("soccerxpro")
+}
+
+model MedicalCase {
+  id                String          @id @default(uuid())
+  teamId            String          @db.Uuid
+  playerId          Int
+  caseNumber        String
+  type              MedicalCaseType
+  status            String          @default("OPEN")
+  onsetDate         DateTime
+  isAvailable       Boolean         @default(false)
+  encryptedData     String          @db.Text
+  encryptionKeyId   String
+  bodyAreaHash      String?
+  severityCategory  String?
+  estimatedWeeksOut Int?
+  createdById       Int
+  updatedById       Int?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+  deletionReason    String?
+
+  diagnoses    MedicalDiagnosis[]
+  examinations MedicalExamination[]
+  treatments   MedicalTreatment[]
+  documents    MedicalDocument[]
+  accessLogs   MedicalAccessLog[]
+
+  @@index([teamId, playerId, status])
+  @@index([teamId, isAvailable])
+  @@index([caseNumber])
+  @@index([deletedAt])
+  @@schema("soccerxpro")
+}
+
+model MedicalDiagnosis {
+  id                 String   @id @default(uuid())
+  caseId             String
+  encryptedDiagnosis String   @db.Text
+  diagnosisDate      DateTime
+  isPrimary          Boolean  @default(false)
+  createdById        Int
+  createdAt          DateTime @default(now())
+
+  case MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, isPrimary])
+  @@schema("soccerxpro")
+}
+
+model MedicalExamination {
+  id               String   @id @default(uuid())
+  caseId           String
+  examType         ExamType
+  examDate         DateTime
+  isNormal         Boolean?
+  encryptedResults String   @db.Text
+  encryptedImages  Json?
+  facilityName     String?
+  performedById    Int?
+  createdById      Int
+  createdAt        DateTime @default(now())
+
+  case MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, examType, examDate])
+  @@schema("soccerxpro")
+}
+
+model MedicalTreatment {
+  id               String        @id @default(uuid())
+  caseId           String
+  treatmentType    TreatmentType
+  startDate        DateTime
+  endDate          DateTime?
+  isCompleted      Boolean       @default(false)
+  encryptedDetails String        @db.Text
+  prescribedById   Int?
+  administeredById Int?
+  createdAt        DateTime      @default(now())
+
+  case MedicalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, treatmentType, startDate])
+  @@schema("soccerxpro")
+}
+
+model MedicalDocument {
+  id              String              @id @default(uuid())
+  teamId          String              @db.Uuid
+  playerId        Int
+  caseId          String?
+  documentType    String
+  title           String?
+  mimeType        String
+  sizeBytes       Int
+  encryptedPath   String
+  encryptionKeyId String
+  checksumSHA256  String
+  classification  DataClassification
+  visibility      VisibilityLevel
+  retentionUntil  DateTime
+  retentionReason DataRetentionReason
+  uploadedById    Int
+  uploadedAt      DateTime            @default(now())
+  lastAccessedAt  DateTime?
+  accessCount     Int                 @default(0)
+  deletedAt       DateTime?
+  deletedById     Int?
+
+  case MedicalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([teamId, playerId, classification])
+  @@index([retentionUntil])
+  @@index([deletedAt])
+  @@schema("soccerxpro")
+}
+
+model MedicalAccessLog {
+  id              String       @id @default(uuid())
+  teamId          String       @db.Uuid
+  userId          Int
+  resourceType    String
+  resourceId      String
+  caseId          String?
+  playerId        Int?
+  action          AuditAction
+  accessReason    String?
+  lawfulBasis     LawfulBasis
+  ipAddressHash   String?
+  userAgent       String?
+  sessionId       String?
+  isEmergency     Boolean      @default(false)
+  emergencyReason String?
+  wasSuccessful   Boolean
+  errorMessage    String?
+  accessedAt      DateTime     @default(now())
+  case            MedicalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([teamId, userId, accessedAt])
+  @@index([teamId, resourceType, resourceId])
+  @@index([teamId, playerId, accessedAt])
+  @@index([isEmergency])
+  @@schema("soccerxpro")
+}
+
+model DataBreachRegister {
+  id                   String    @id @default(uuid())
+  teamId               String    @db.Uuid
+  breachDate           DateTime
+  discoveredDate       DateTime
+  reportedDate         DateTime?
+  description          String    @db.Text
+  dataCategories       Json
+  affectedRecords      Int
+  affectedPlayers      Json
+  riskLevel            String
+  possibleConsequences String    @db.Text
+  actionsTaken         String    @db.Text
+  notificationsSent    Json
+  notifiedDPA          Boolean   @default(false)
+  dpaReference         String?
+  createdById          Int
+  createdAt            DateTime  @default(now())
+
+  @@index([teamId, breachDate])
+  @@schema("soccerxpro")
+}
+
+model GDPRRequest {
+  id               String    @id @default(uuid())
+  teamId           String    @db.Uuid
+  playerId         Int
+  requestType      String
+  requestDetails   String    @db.Text
+  requestedAt      DateTime  @default(now())
+  requestedBy      String
+  identityVerified Boolean   @default(false)
+  verifiedAt       DateTime?
+  verifiedById     Int?
+  status           String
+  responseNotes    String?   @db.Text
+  completedAt      DateTime?
+  exportedDataPath String?
+  processedById    Int?
+
+  @@index([teamId, playerId, requestType])
+  @@index([status])
+  @@index([requestedAt])
+  @@schema("soccerxpro")
+}
+
+model AnonymizedMedicalData {
+  id                String   @id @default(uuid())
+  teamId            String   @db.Uuid
+  anonymousId       String   @unique
+  originalDeletedAt DateTime
+  yearOfBirth       Int?
+  position          String?
+  injuryType        String?
+  bodyArea          String?
+  recoveryDays      Int?
+  season            String?
+  ageGroup          String?
+  createdAt         DateTime @default(now())
+
+  @@index([teamId, season])
+  @@index([injuryType, bodyArea])
+  @@schema("soccerxpro")
+}
+
+model DataRetentionPolicy {
+  id            String   @id @default(uuid())
+  teamId        String   @db.Uuid
+  dataType      String
+  retentionDays Int
+  legalBasis    String
+  description   String   @db.Text
+  autoDelete    Boolean  @default(false)
+  autoAnonymize Boolean  @default(true)
+  exceptions    Json?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([teamId, dataType])
+  @@index([teamId, isActive])
+  @@schema("soccerxpro")
+}
+
+model PlayerHealthProfile {
+  id               String    @id @default(uuid())
+  teamId           String    @db.Uuid
+  playerId         Int       @unique
+  encryptedProfile String    @db.Text
+  emergencyContact String?
+  emergencyPhone   String?
+  hasAllergies     Boolean   @default(false)
+  hasConditions    Boolean   @default(false)
+  hasMedications   Boolean   @default(false)
+  lastReviewDate   DateTime?
+  nextReviewDate   DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([teamId, playerId])
+  @@schema("soccerxpro")
+}
+
+model TwoFactorAuth {
+  id          String      @id @default(uuid())
+  userId      Int         @unique @map("userId")
+  secret      String
+  isEnabled   Boolean     @default(false) @map("is_enabled")
+  backupCodes String[]    @map("backup_codes")
+  lastUsed    DateTime?   @map("last_used")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  user        UserProfile @relation("UserTwoFactorAuth", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("soccerxpro")
+}
+
+// ===================== MARKET AGENTS =====================
+// 🔹 Rappresenta un procuratore sportivo (agente o intermediario)
+// 🔹 Gli agenti possono essere collegati a target, trattative o offerte
+// 🔹 Il Direttore Sportivo può verificarli, disattivarli o riattivarli
+
+model market_agent {
+  id Int @id @default(autoincrement())
+
+  // === DATI ANAGRAFICI ===
+  first_name    String
+  last_name     String
+  nationality   String?
+  date_of_birth DateTime?
+
+  // === LICENZA E STATO ===
+  license_number           String?
+  license_expiry           DateTime?
+  is_certified             Boolean   @default(false)
+  is_verified              Boolean   @default(false)
+  verified_by              String?   @db.Uuid
+  verified_at              DateTime?
+  verification_badge_color String?
+  verification_note        String?
+
+  // === ATTIVAZIONE / DISATTIVAZIONE ===
+  active         Boolean   @default(true)
+  deactivated_by String?   @db.Uuid
+  deactivated_at DateTime?
+
+  // === CONTATTI & AGENZIA ===
+  agency          String?
+  agency_website  String?
+  agency_address  String?
+  email           String?
+  phone           String?
+  secondary_phone String?
+  linkedin_url    String?
+  instagram_url   String?
+
+  // === PROFILO PROFESSIONALE ===
+  languages      String?
+  specialization String?
+  notes          String?
+
+  // === RELAZIONI ===
+  teamId       String               @map("team_id") @db.Uuid
+  created_by   String?              @db.Uuid
+  targets      market_target[]
+  // negotiations market_negotiation[]
+  // offers       market_offer[]
+
+  // === AUDIT ===
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // === RELAZIONE CON TEAM ===
+  team Team @relation(fields: [teamId], references: [id])
+
+  @@map("market_agents")
+  @@schema("soccerxpro")
+}
+
+// ===================== MARKET TARGETS =====================
+// 🔹 Potenziale obiettivo di mercato (giocatore NON ancora tesserato)
+// 🔹 Include dati anagrafici, fisici, tecnici, scouting, economici e di contesto
+// 🔹 Può essere collegato a un agente o convertito in Player
+
+model market_target {
+  id Int @id @default(autoincrement())
+
+  // === DATI ANAGRAFICI DI BASE ===
+  first_name    String
+  last_name     String
+  nationality   String?
+  position      Position?
+  date_of_birth DateTime?
+  age           Int?
+  foot          String? // "Destro" | "Sinistro" | "Ambidestro"
+  height_cm     Int?
+  weight_kg     Int?
+
+  // === DATI TECNICI ===
+  preferred_role  String?
+  secondary_roles String?
+  player_style    String?
+
+  // === CLUB ATTUALE E CONTRATTO ===
+  current_club            String?
+  club_country            String?
+  contract_until          DateTime?
+  current_salary          Decimal?  @db.Decimal(12, 2)
+  market_value            Decimal?  @db.Decimal(12, 2)
+  previous_market_value   Decimal?  @db.Decimal(12, 2)
+  market_value_updated_at DateTime?
+
+  // === RELAZIONE STORICA CON PLAYER (FACOLTATIVA) ===
+  playerId Int? @map("player_id")
+  player   Player? @relation("HistoricalTargetLink", fields: [playerId], references: [id])
+
+  // === RELAZIONE CON AGENTE (OPZIONALE) ===
+  agentId             Int?
+  agent               market_agent? @relation(fields: [agentId], references: [id])
+  agent_contact_name  String?
+  agent_contact_phone String?
+
+  // === DATI DI SCOUTING E VALUTAZIONE ===
+  potential_rating     Decimal?  @db.Decimal(4, 2)
+  overall_rating       Decimal?  @db.Decimal(4, 2)
+  recommendation_level Int?      @default(3)
+  transfer_likelihood  Decimal?  @db.Decimal(5, 2)
+  scouting_report      String?
+  video_url            String?
+  profile_url          String?
+  discovery_method     String?
+  scouting_source      String?
+  report_confidence    Int?
+  last_scouted_at      DateTime?
+
+  // === STATO E METADATI ===
+  priority          Int?      @default(3)
+  status            String    @default("SCOUTING")
+  discovery_user_id String?   @db.Uuid
+  discovery_date    DateTime? @default(now())
+  notes             String?
+
+  // === CONVERSIONE IN PLAYER ===
+  converted_player_id Int?
+  converted_player    Player?   @relation("TargetToPlayerConversion", fields: [converted_player_id], references: [id])
+  converted_at        DateTime?
+  conversion_note     String?
+
+  // === RELAZIONE CON TEAM ===
+  teamId    String   @map("team_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  team      Team     @relation(fields: [teamId], references: [id])
+
+  // === RELAZIONI SECONDARIE ===
+  market_shortlist_item market_shortlist_item[]
+  market_negotiation    market_negotiation[]
+  
+  // Scouting relations
+  scouting_sessions     scouting_session[]
+  scouting_assignments  scouting_assignment[]
+  scouting_followups    scouting_followup[]
+  scouting_tag_links    scouting_tag_link[]
+
+  @@map("market_targets")
+  @@schema("soccerxpro")
+}
+
+// ===================== MARKET SHORTLISTS =====================
+model market_shortlist {
+  id                    Int                     @id @default(autoincrement())
+  name                  String
+  description           String?
+  color                 String?
+  teamId                String                  @map("team_id") @db.Uuid
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  team                  Team                    @relation(fields: [teamId], references: [id])
+  market_shortlist_item market_shortlist_item[]
+
+  @@map("market_shortlists")
+  @@schema("soccerxpro")
+}
+
+model market_shortlist_item {
+  id          Int              @id @default(autoincrement())
+  shortlistId Int
+  targetId    Int
+  note        String?
+  createdAt   DateTime         @default(now())
+  shortlist   market_shortlist @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  target      market_target    @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([shortlistId, targetId])
+  @@map("market_shortlist_items")
+  @@schema("soccerxpro")
+}
+
+// ===================== MARKET NEGOTIATIONS =====================
+// 🔹 Trattativa di mercato con simulatore economico e conversione in Player
+
+model market_negotiation {
+  id Int @id @default(autoincrement())
+
+  // === RELAZIONI PRINCIPALI ===
+  targetId Int           @map("target_id")
+  // agentId  Int?          @map("agent_id")
+  teamId   String        @map("team_id") @db.Uuid
+  target   market_target @relation(fields: [targetId], references: [id])
+  // agent    market_agent? @relation(fields: [agentId], references: [id])
+  team     Team          @relation(fields: [teamId], references: [id])
+
+  // === SNAPSHOT GIOCATORE ===
+  player_first_name String?
+  player_last_name  String?
+  player_snapshot   Json?
+
+  // === PIPELINE / STATO ===
+  stage            NegotiationStage @default(SCOUTING)
+  status           String           @default("OPEN")
+  outcome          String?
+  priority         Int?             @default(3)
+  next_action_date DateTime?
+  closed_by        String?          @db.Uuid
+  closed_date      DateTime?
+  created_by       String?          @db.Uuid
+
+  // === DATI ECONOMICI ===
+  requested_fee            Decimal? @db.Decimal(12, 2)
+  requested_salary_net     Decimal? @db.Decimal(12, 2)
+  requested_salary_gross   Decimal? @db.Decimal(12, 2)
+  requested_salary_company Decimal? @db.Decimal(12, 2)
+  requested_currency       String?  @default("EUR")
+  requested_contract_years Int?
+  tax_profile_id           Int?
+
+  // === COMMISSIONI E BONUS ===
+  agent_commission_fee   Decimal? @db.Decimal(12, 2)
+  agent_commission_type  String?  @default("PERCENTAGE")
+  agent_commission_notes String?
+  bonus_signing_fee      Decimal? @db.Decimal(12, 2)
+  bonus_performance      String?
+
+  // === CONTATTI / ALTRO ===
+  counterpart String?
+  notes       String?
+
+  // === IMPATTO BUDGET ===
+  budget_effect_transfer   Decimal? @db.Decimal(12, 2)
+  budget_effect_wage       Decimal? @db.Decimal(12, 2)
+  budget_effect_commission Decimal? @db.Decimal(12, 2)
+  budget_included          Boolean  @default(false)
+
+  // === CONVERSIONE IN PLAYER ===
+  signed_player_id        Int?
+  signed_player           Player?   @relation("PlayerToNegotiations", fields: [signed_player_id], references: [id])
+  conversion_prompt_at    DateTime?
+  conversion_confirmed_at DateTime?
+  auto_create_player      Boolean   @default(false)
+
+  // === AUDIT ===
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // === RELAZIONE CON OFFERTE ===
+  market_offer market_offer[]
+
+  @@index([teamId, stage, status], map: "negotiations_team_stage_status_idx")
+  @@map("market_negotiations")
+  @@schema("soccerxpro")
+}
+
+enum NegotiationStage {
+  SCOUTING
+  CONTACT
+  OFFER_SENT
+  COUNTEROFFER
+  AGREEMENT
+  CLOSED
+  REJECTED
+
+  @@schema("soccerxpro")
+}
+
+// ===================== MARKET OFFERS =====================
+model market_offer {
+  id             Int                @id @default(autoincrement())
+  negotiationId  Int                @map("negotiation_id")
+  // agentId        Int?               @map("agent_id")
+  type           String             @default("TRANSFER")
+  direction      String?            @default("IN") // "IN" (acquisto) o "OUT" (cessione)
+  fee            Decimal?           @db.Decimal(12, 2)
+  currency       String             @default("EUR")
+  salary_offer   Decimal?           @db.Decimal(12, 2)
+  contract_years Int?
+  status         String             @default("DRAFT")
+  sent_date      DateTime?
+  response_date  DateTime?
+  notes          String?
+  teamId         String             @map("team_id") @db.Uuid
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  negotiation    market_negotiation @relation(fields: [negotiationId], references: [id])
+  // agent          market_agent?      @relation(fields: [agentId], references: [id])
+  team           Team               @relation(fields: [teamId], references: [id])
+
+  @@map("market_offers")
+  @@schema("soccerxpro")
+}
+
+// ===================== MARKET BUDGETS =====================
+model market_budget {
+  id                    Int      @id @default(autoincrement())
+  season_label          String
+  type                  String   @default("PREVENTIVO") // PREVENTIVO | CONSUNTIVO
+  transfer_budget       Decimal  @db.Decimal(12, 2)
+  wage_budget           Decimal  @db.Decimal(12, 2)
+  commission_budget     Decimal  @default(0) @db.Decimal(12, 2)
+  committed_fees        Decimal  @default(0) @db.Decimal(12, 2)
+  committed_wages       Decimal  @default(0) @db.Decimal(12, 2)
+  committed_commissions Decimal  @default(0) @db.Decimal(12, 2)
+  currency              String   @default("EUR")
+  teamId                String   @map("team_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  team                  Team     @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, season_label, type])
+  @@map("market_budgets")
+  @@schema("soccerxpro")
+}
+
+// ===================== SCOUTING CORE (v1) =====================
+// Modulo completo e indipendente per gestione scouting
+// - Profili scout interni/esterni
+// - Sessioni di osservazione (live/video/allenamento/torneo)
+// - Report strutturati con rubriche personalizzabili per Team
+// - Punteggi granulari per criterio
+// - Assignment (pianificazione incarichi) e follow-up operativi
+// - Partite osservate, media allegati, regioni coperte, tagging
+// - Integrazione con market_target e Player
+
+// ---------- ENUMS DI SUPPORTO ----------
+enum ObservationType {
+  LIVE
+  VIDEO
+  TRAINING
+  TOURNAMENT
+  OTHER
+  @@schema("soccerxpro")
+}
+
+enum ScoutingSessionStatus {
+  OPEN
+  EVALUATED
+  APPROVED
+  REJECTED
+  CLOSED
+  @@schema("soccerxpro")
+}
+
+enum RecommendationLevel {
+  STRONG_BUY
+  BUY
+  FOLLOW_UP
+  NEUTRAL
+  REJECT
+  @@schema("soccerxpro")
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+  @@schema("soccerxpro")
+}
+
+enum AssignmentStatus {
+  DRAFT
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  REVIEWED
+  COMPLETED
+  CANCELLED
+  @@schema("soccerxpro")
+}
+
+enum MediaType {
+  VIDEO
+  IMAGE
+  DOCUMENT
+  LINK
+  OTHER
+  @@schema("soccerxpro")
+}
+
+// ---------- PROFILO SCOUT ----------
+model scouting_scout {
+  id              Int         @id @default(autoincrement())
+  // Anagrafica
+  first_name      String
+  last_name       String
+  nationality     String?
+  date_of_birth   DateTime?
+  gender          String?
+
+  // Contatti
+  email           String?
+  phone           String?
+  secondary_phone String?
+  linkedin_url    String?
+  website         String?
+  address         String?
+  city            String?
+  country         String?
+
+  // Profilo professionale
+  license_level    String?     // es. UEFA A, FIGC Scout License
+  license_expiry   DateTime?
+  experience_years Int?        @default(0)
+  specialization   String?     // es. "U17-Primavera", "Serie B"
+  preferred_roles  String?     // es. "ATT, CC"
+  scouting_regions String?     // libero o usi la join table sotto
+  languages        String?
+  notes            String?     @db.Text
+
+  // Relazioni tenancy/identity
+  teamId   String?      @map("team_id") @db.Uuid
+  userId   Int?         // collega a UserProfile se interno al club
+  team     Team?        @relation(fields: [teamId], references: [id])
+  user     UserProfile? @relation(fields: [userId], references: [id])
+
+  // Attività collegate
+  sessions     scouting_session[]
+  assignments  scouting_assignment[] @relation("ScoutAssignments")
+  reviews      scouting_review[]
+  followups    scouting_followup[]
+  regions      scouting_scout_region[]
+
+  // Audit
+  is_active   Boolean   @default(true)
+  is_verified Boolean   @default(false)
+  verified_by String?   @db.Uuid
+  verified_at DateTime?
+  created_by  String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([teamId, is_active])
+  @@map("scouting_scouts")
+  @@schema("soccerxpro")
+}
+
+// ---------- RUBRICHE (personalizzabili per Team) ----------
+model scouting_rubric {
+  id          Int       @id @default(autoincrement())
+  teamId      String    @map("team_id") @db.Uuid
+  name        String    // es. "Standard Prima Squadra 1-10"
+  description String?
+  scale_min   Int       @default(1)
+  scale_max   Int       @default(10)
+  is_default  Boolean   @default(false)
+  createdById Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  team       Team                      @relation(fields: [teamId], references: [id])
+  createdBy  UserProfile?              @relation(fields: [createdById], references: [id])
+  criteria   scouting_rubric_criterion[]
+  reports    scouting_report[]
+
+  @@unique([teamId, name])
+  @@index([teamId, is_default])
+  @@map("scouting_rubrics")
+  @@schema("soccerxpro")
+}
+
+model scouting_rubric_criterion {
+  id         Int      @id @default(autoincrement())
+  rubricId   Int
+  // Categoria e descrizione del criterio (p.es. Tecnica/Passaggio)
+  category   String   // TECHNICAL | TACTICAL | PHYSICAL | MENTAL | BEHAVIORAL | GK
+  name       String   // es. "Passaggio", "Decision Making"
+  weight     Decimal  @default(1.0) @db.Decimal(5,2) // peso relativo nel calcolo
+  orderIndex Int      @default(0)
+  helpText   String?
+
+  rubric scouting_rubric @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  scores scouting_report_score[]
+
+  @@unique([rubricId, name])
+  @@index([rubricId, category, orderIndex])
+  @@map("scouting_rubric_criteria")
+  @@schema("soccerxpro")
+}
+
+// ---------- PARTITA OSSERVATA (opzionale per contestualizzare la sessione) ----------
+model scouting_match {
+  id          Int       @id @default(autoincrement())
+  teamId      String    @map("team_id") @db.Uuid
+  competition String
+  season      String?   // es. "2025/26"
+  round       String?   // es. "Matchday 3", "Quarterfinal"
+  date        DateTime
+  stadium     String?
+  city        String?
+  homeTeam    String
+  awayTeam    String
+  result      String?   // es. "2-1"
+  notes       String?   @db.Text
+
+  team     Team              @relation(fields: [teamId], references: [id])
+  sessions scouting_session[]
+  assignments scouting_assignment[]
+  tag_links scouting_tag_link[]
+
+  @@index([teamId, date])
+  @@map("scouting_matches")
+  @@schema("soccerxpro")
+}
+
+// ---------- SESSIONE DI OSSERVAZIONE ----------
+model scouting_session {
+  id               Int                   @id @default(autoincrement())
+  teamId           String                @map("team_id") @db.Uuid
+  scoutId          Int                   @map("scout_id")
+  targetId         Int?                  @map("target_id") // market_target.id (opzionale)
+  playerId         Int?                  @map("player_id") // Player.id se già tesserato o noto
+  matchId          Int?                  @map("match_id")  // scouting_match.id
+  observationType  ObservationType       @default(LIVE)
+  status           ScoutingSessionStatus @default(OPEN)
+  priority         PriorityLevel         @default(MEDIUM)
+
+  // Contesto
+  dateObserved     DateTime?
+  location         String?
+  weather          String?
+  minutes_played   Int?
+  position_played  Position?             // riuso enum globale
+  shirt_number     Int?
+
+  // Snapshot dati giocatore (se target non formalizzato)
+  player_first_name String?
+  player_last_name  String?
+  player_nationality String?
+  player_age        Int?
+  player_club       String?
+
+  // Valutazioni sintetiche
+  overall_rating   Decimal? @db.Decimal(4,2)
+  potential_rating Decimal? @db.Decimal(4,2)
+  recommendation   RecommendationLevel @default(NEUTRAL)
+
+  // Operatività
+  follow_up_date   DateTime?
+  follow_up_note   String?
+  next_action      String?
+  ds_reviewer_id   Int?
+  notes            String?   @db.Text
+
+  // Audit
+  createdById Int?
+  updatedById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relazioni
+  team     Team           @relation(fields: [teamId], references: [id])
+  scout    scouting_scout @relation(fields: [scoutId], references: [id])
+  target   market_target? @relation(fields: [targetId], references: [id])
+  player   Player?        @relation(fields: [playerId], references: [id])
+  match    scouting_match? @relation(fields: [matchId], references: [id])
+  createdBy UserProfile?  @relation("ScoutingSessionCreatedBy", fields: [createdById], references: [id])
+  updatedBy UserProfile?  @relation("ScoutingSessionUpdatedBy", fields: [updatedById], references: [id])
+  reviewer  UserProfile?  @relation("ScoutingSessionReviewer", fields: [ds_reviewer_id], references: [id])
+
+  report    scouting_report?
+  media     scouting_media[]
+  followups scouting_followup[]
+  tags      scouting_tag_link[]
+  assignment scouting_assignment? @relation(fields: [id], references: [id])
+  reviews   scouting_review[]
+
+  @@index([teamId, scoutId, dateObserved])
+  @@index([teamId, status, priority])
+  @@index([teamId, targetId])
+  @@map("scouting_sessions")
+  @@schema("soccerxpro")
+}
+
+// ---------- REPORT STRUTTURATO (1:1 con sessione) ----------
+model scouting_report {
+  id             Int       @id @default(autoincrement())
+  sessionId      Int       @unique
+  rubricId       Int       // quale rubrica ha usato il team per questo report
+  summary        String?   @db.Text
+  strengths      String?   @db.Text
+  weaknesses     String?   @db.Text
+  playing_style  String?   // es. "Regista", "Box-to-Box", "Inverted Winger"
+  comparable_to  String?   // es. "somiglia a Barella"
+  medical_notes  String?
+  character_notes String?
+
+  // metriche aggregate (salvate per query veloci)
+  score_avg      Decimal?  @db.Decimal(5,2)
+  score_weighted Decimal?  @db.Decimal(5,2)
+
+  createdById    Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  session scouting_session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  rubric  scouting_rubric   @relation(fields: [rubricId], references: [id])
+  createdBy UserProfile?    @relation(fields: [createdById], references: [id])
+  scores  scouting_report_score[]
+
+  @@map("scouting_reports")
+  @@schema("soccerxpro")
+}
+
+model scouting_report_score {
+  id         Int      @id @default(autoincrement())
+  reportId   Int
+  criterionId Int
+  score      Decimal  @db.Decimal(5,2) // deve stare tra rubric.scale_min e scale_max
+  note       String?
+
+  report    scouting_report         @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  criterion scouting_rubric_criterion @relation(fields: [criterionId], references: [id])
+
+  @@unique([reportId, criterionId])
+  @@index([criterionId])
+  @@map("scouting_report_scores")
+  @@schema("soccerxpro")
+}
+
+// ---------- ASSIGNMENT (pianificazione incarichi scouting) ----------
+model scouting_assignment {
+  id            Int            @id @default(autoincrement())
+  teamId        String         @map("team_id") @db.Uuid
+  assignedToId  Int?           // scouting_scout.id
+  requestedById Int?           // UserProfile (DS)
+  targetId      Int?           // market_target da osservare
+  matchId       Int?           // partita specifica
+  priority      PriorityLevel  @default(MEDIUM)
+  status        AssignmentStatus @default(DRAFT)
+  due_date      DateTime?
+  title         String
+  description   String?
+  checklist     Json?          // voci operative opzionali
+  link_refs     Json?          // link utili (Wyscout, YT, TMkt, ecc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team        Team            @relation(fields: [teamId], references: [id])
+  assignedTo  scouting_scout? @relation("ScoutAssignments", fields: [assignedToId], references: [id])
+  requestedBy UserProfile?    @relation(fields: [requestedById], references: [id])
+  target      market_target?  @relation(fields: [targetId], references: [id])
+  match       scouting_match? @relation(fields: [matchId], references: [id])
+  session     scouting_session?
+
+  @@index([teamId, status, priority])
+  @@index([teamId, assignedToId])
+  @@map("scouting_assignments")
+  @@schema("soccerxpro")
+}
+
+// ---------- FOLLOW-UP operativi (su sessione o target) ----------
+model scouting_followup {
+  id            Int       @id @default(autoincrement())
+  teamId        String    @map("team_id") @db.Uuid
+  sessionId     Int?
+  targetId      Int?
+  assignedToId  Int?      // scouting_scout o utente
+  due_date      DateTime?
+  status        String    @default("OPEN")
+  note          String?
+  createdById   Int?
+  completedAt   DateTime?
+
+  team       Team            @relation(fields: [teamId], references: [id])
+  session    scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  target     market_target?  @relation(fields: [targetId], references: [id], onDelete: SetNull)
+  assignedTo scouting_scout? @relation(fields: [assignedToId], references: [id])
+  createdBy  UserProfile?    @relation(fields: [createdById], references: [id])
+
+  @@index([teamId, status, due_date])
+  @@map("scouting_followups")
+  @@schema("soccerxpro")
+}
+
+// ---------- MEDIA allegati alle sessioni ----------
+model scouting_media {
+  id          Int       @id @default(autoincrement())
+  sessionId   Int
+  type        MediaType @default(LINK)
+  title       String?
+  url         String?   // per LINK/VIDEO/IMG remoti
+  storagePath String?   // se caricato su bucket
+  mimeType    String?
+  sizeBytes   Int?
+  checksumSHA256 String?
+  tags        String?
+  uploadedById Int?
+  uploadedAt  DateTime  @default(now())
+
+  session   scouting_session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  uploadedBy UserProfile?    @relation(fields: [uploadedById], references: [id])
+
+  @@index([sessionId, type])
+  @@map("scouting_media")
+  @@schema("soccerxpro")
+}
+
+// ---------- REVIEW del DS sul lavoro dello scout ----------
+model scouting_review {
+  id           Int        @id @default(autoincrement())
+  scoutId      Int
+  sessionId    Int?
+  reviewerId   Int        // UserProfile (DS)
+  decision     RecommendationLevel
+  comment      String?    @db.Text
+  createdAt    DateTime   @default(now())
+
+  scout    scouting_scout  @relation(fields: [scoutId], references: [id])
+  session  scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  reviewer UserProfile      @relation(fields: [reviewerId], references: [id])
+
+  @@index([scoutId, reviewerId, createdAt])
+  @@map("scouting_reviews")
+  @@schema("soccerxpro")
+}
+
+// ---------- REGIONI e copertura (facoltativo; per analisi geografiche) ----------
+model scouting_region {
+  id        Int      @id @default(autoincrement())
+  code      String   // es. "IT-MAR", "ES", "LATAM"
+  name      String
+  level     String?  // es. "country", "region"
+  parentId  Int?
+  createdAt DateTime @default(now())
+
+  parent scouting_region? @relation("RegionParent", fields: [parentId], references: [id])
+  children scouting_region[] @relation("RegionParent")
+  scouts   scouting_scout_region[]
+
+  @@unique([code, name])
+  @@map("scouting_regions")
+  @@schema("soccerxpro")
+}
+
+model scouting_scout_region {
+  id        Int            @id @default(autoincrement())
+  scoutId   Int
+  regionId  Int
+  priority  PriorityLevel  @default(MEDIUM)
+  note      String?
+
+  scout   scouting_scout  @relation(fields: [scoutId], references: [id], onDelete: Cascade)
+  region  scouting_region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@unique([scoutId, regionId])
+  @@map("scouting_scout_regions")
+  @@schema("soccerxpro")
+}
+
+// ---------- TAGGING generico (sessioni, target, match) ----------
+model scouting_tag {
+  id        Int      @id @default(autoincrement())
+  teamId    String   @map("team_id") @db.Uuid
+  label     String
+  color     String?  // es. "#3b82f6"
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id])
+  links scouting_tag_link[]
+
+  @@unique([teamId, label])
+  @@map("scouting_tags")
+  @@schema("soccerxpro")
+}
+
+model scouting_tag_link {
+  id        Int      @id @default(autoincrement())
+  tagId     Int
+  // Polymorphic link: al momento supportiamo session/target/match
+  sessionId Int?
+  targetId  Int?
+  matchId   Int?
+  createdAt DateTime @default(now())
+
+  tag     scouting_tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  session scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  target  market_target? @relation(fields: [targetId], references: [id], onDelete: SetNull)
+  match   scouting_match? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([tagId])
+  @@index([sessionId])
+  @@index([targetId])
+  @@index([matchId])
+  @@map("scouting_tag_links")
+  @@schema("soccerxpro")
+}
+
+/// ===============================================================
+/// 🧩 SCOUTING MODULE – Enterprise Version (SoccerXPro)
+/// Schema: soccerxpro
+/// ===============================================================
+
+model ScoutingProspect {
+  id              String             @id @default(uuid()) @db.Uuid
+  teamId          String             @db.Uuid
+  createdById     Int
+  updatedById     Int?
+
+  firstName       String
+  lastName        String
+  fullName        String?
+  birthDate       DateTime?
+  nationality     String?
+  position        String?
+  secondaryPosition String?
+  preferredFoot   String?
+  heightCm        Int?
+  weightKg        Int?
+  currentClub     String?
+  contractUntil   DateTime?
+  agentId         String?            @db.Uuid
+  marketValue     Float?
+  potentialScore  Float?             @default(0)
+  scoutingStatus  ScoutingStatus     @default(DISCOVERY)
+  notes           String?
+
+  reports         ScoutingReport[]
+  shortlistItems  ScoutingShortlistItem[]
+  eventLogs       ScoutingEventLog[]
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  agent           Agent?             @relation(fields: [agentId], references: [id])
+  team            Team               @relation(fields: [teamId], references: [id])
+  createdBy       UserProfile        @relation("ScoutingProspectCreatedBy", fields: [createdById], references: [id])
+
+  @@map("market_scouting")
+  @@schema("soccerxpro")
+}
+
+model ScoutingReport {
+  id              String             @id @default(uuid()) @db.Uuid
+  prospectId      String             @db.Uuid
+  teamId          String             @db.Uuid
+  createdById     Int
+
+  matchDate       DateTime?
+  opponent        String?
+  competition     String?
+  rolePlayed      String?
+  minutesPlayed   Int?
+  techniqueScore  Float?
+  tacticsScore    Float?
+  physicalScore   Float?
+  mentalityScore  Float?
+  totalScore      Float?             @default(0)
+  summary         String?
+  videoLink       String?
+  attachmentUrl   String?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  prospect        ScoutingProspect   @relation(fields: [prospectId], references: [id])
+  team            Team               @relation(fields: [teamId], references: [id])
+  createdBy       UserProfile        @relation("ScoutingReportCreatedBy", fields: [createdById], references: [id])
+
+  @@map("market_scouting_report")
+  @@schema("soccerxpro")
+}
+
+model ScoutingShortlist {
+  id              String             @id @default(uuid()) @db.Uuid
+  teamId          String             @db.Uuid
+  createdById     Int
+
+  name            String
+  description     String?
+  category        String?            // e.g., "Under 23", "Defenders", "Summer Window"
+  isArchived      Boolean            @default(false)
+
+  items           ScoutingShortlistItem[]
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  team            Team               @relation(fields: [teamId], references: [id])
+  createdBy       UserProfile        @relation("ScoutingShortlistCreatedBy", fields: [createdById], references: [id])
+
+  @@map("market_scouting_shortlist")
+  @@schema("soccerxpro")
+}
+
+model ScoutingShortlistItem {
+  id              String             @id @default(uuid()) @db.Uuid
+  shortlistId     String             @db.Uuid
+  prospectId      String             @db.Uuid
+  priority        Int?               @default(0)
+  notes           String?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  shortlist       ScoutingShortlist  @relation(fields: [shortlistId], references: [id])
+  prospect        ScoutingProspect   @relation(fields: [prospectId], references: [id])
+
+  @@unique([shortlistId, prospectId])
+  @@map("market_scouting_shortlist_item")
+  @@schema("soccerxpro")
+}
+
+model ScoutingEventLog {
+  id              String             @id @default(uuid()) @db.Uuid
+  prospectId      String             @db.Uuid
+  teamId          String             @db.Uuid
+  userId          Int
+  action          String             // e.g., "CREATE", "UPDATE", "STATUS_CHANGE"
+  description     String?
+  fromStatus      ScoutingStatus?
+  toStatus        ScoutingStatus?
+  createdAt       DateTime           @default(now())
+
+  prospect        ScoutingProspect   @relation(fields: [prospectId], references: [id])
+  team            Team               @relation(fields: [teamId], references: [id])
+  user            UserProfile        @relation("ScoutingEventLogUser", fields: [userId], references: [id])
+
+  @@map("market_scouting_event_log")
+  @@schema("soccerxpro")
+}
+
+model Agent {
+  id              String             @id @default(uuid()) @db.Uuid
+  teamId          String             @db.Uuid
+  createdById     Int
+
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  company         String?
+  licenseNumber   String?
+  country         String?
+
+  prospects       ScoutingProspect[]
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  team            Team               @relation(fields: [teamId], references: [id])
+  createdBy       UserProfile        @relation("AgentCreatedBy", fields: [createdById], references: [id])
+
+  @@map("market_agent")
+  @@schema("soccerxpro")
+}
+
+/// Enum di stato per l'area scouting
+enum ScoutingStatus {
+  DISCOVERY
+  MONITORING
+  ANALYZED
+  TARGETED
+  ARCHIVED
+  
+  @@schema("soccerxpro")
+}
