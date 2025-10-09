@@ -1,3 +1,23 @@
+/// ===============================================================
+/// ⚽ SOCCER X PRO SUITE — PRISMA SCHEMA (Enterprise Edition)
+/// Schema: soccerxpro
+/// Autore: Alessandro Canfora
+/// Versione: 2025.10
+///
+/// Descrizione generale:
+/// Schema modulare multi-tenant della piattaforma Soccer X Pro Suite.
+/// Include moduli indipendenti ma interconnessi:
+/// - CORE: autenticazione, teams, utenti, inviti, abbonamenti.
+/// - GIOCATORI: anagrafiche e statistiche.
+/// - PERFORMANCE: metriche fisiche e GPS.
+/// - CONTRATTI & FINANZE: contratti, budget, tasse.
+/// - MEDICO & GDPR: casi clinici, infortuni, privacy.
+/// - MERCATO & SCOUTING: target, trattative, scouting.
+/// - ENUMS & SUPPORT TYPES: tipi condivisi per ogni modulo.
+///
+/// Tutti i moduli condividono chiave `teamId` per isolamento tenant.
+/// ===============================================================
+
 generator client {
   provider = "prisma-client-js"
   output   = "./generated/client"
@@ -9,6 +29,20 @@ datasource db {
   schemas  = ["soccerxpro"] // 👈 forza Prisma a generare per questo schema
 }
 
+/// ===============================================================
+/// 1️⃣ CORE / MULTI-TENANT BASE
+/// Sistema multi-tenant, autenticazione, abbonamenti e inviti
+/// ===============================================================
+
+/// -------------------- CORE ENTITIES --------------------
+/// Contiene i modelli di base comuni a tutto il sistema:
+/// - Team: entità principale multi-tenant.
+/// - UserProfile: profili utente.
+/// - Subscription: piani e abbonamenti.
+/// - TeamInvite: inviti.
+/// - TwoFactorAuth: autenticazione a due fattori.
+
+/// Modello principale per la gestione dei team multi-tenant
 model Team {
   id                      String                      @id @default(uuid()) @db.Uuid
   name                    String
@@ -54,10 +88,27 @@ model Team {
   market_offer            market_offer[]
   market_budget           market_budget[]
 
+  // Scouting relations (v1)
+  scouting_scouts      scouting_scout[]
+  scouting_rubrics     scouting_rubric[]
+  scouting_matches     scouting_match[]
+  scouting_sessions    scouting_session[]
+  scouting_assignments scouting_assignment[]
+  scouting_followups   scouting_followup[]
+  scouting_tags        scouting_tag[]
+
+  // Scouting relations (Enterprise v2)
+  scoutingProspects  ScoutingProspect[]
+  scoutingReports    ScoutingReport[]
+  scoutingShortlists ScoutingShortlist[]
+  scoutingEventLogs  ScoutingEventLog[]
+  agents             Agent[]
+
   @@map("teams")
   @@schema("soccerxpro")
 }
 
+/// Profilo utente, collegato a Supabase Auth
 model UserProfile {
   id                      Int               @id @default(autoincrement())
   auth_user_id            String            @unique
@@ -84,10 +135,39 @@ model UserProfile {
   createdInvites          TeamInvite[]      @relation("InvitesCreated")
   usedInvites             TeamInvite[]      @relation("InvitesUsed")
 
+  // Scouting relations (v1)
+  scouting_scouts            scouting_scout[]
+  scouting_rubrics           scouting_rubric[]
+  scouting_sessions_created  scouting_session[]    @relation("ScoutingSessionCreatedBy")
+  scouting_sessions_updated  scouting_session[]    @relation("ScoutingSessionUpdatedBy")
+  scouting_sessions_reviewer scouting_session[]    @relation("ScoutingSessionReviewer")
+  scouting_reports           scouting_report[]
+  scouting_assignments       scouting_assignment[]
+  scouting_followups         scouting_followup[]
+  scouting_media             scouting_media[]
+  scouting_reviews           scouting_review[]
+
+  // Scouting relations (Enterprise v2)
+  scoutingProspectsCreated  ScoutingProspect[]  @relation("ScoutingProspectCreatedBy")
+  scoutingReportsCreated    ScoutingReport[]    @relation("ScoutingReportCreatedBy")
+  scoutingShortlistsCreated ScoutingShortlist[] @relation("ScoutingShortlistCreatedBy")
+  scoutingEventLogs         ScoutingEventLog[]  @relation("ScoutingEventLogUser")
+  agentsCreated             Agent[]             @relation("AgentCreatedBy")
+
   @@map("user_profiles")
   @@schema("soccerxpro")
 }
 
+/// ===============================================================
+/// 2️⃣ MODULO GIOCATORI (Anagrafica sportiva)
+/// Gestione anagrafiche giocatori, statistiche e trasferimenti
+/// ===============================================================
+
+/// -------------------- GIOCATORI --------------------
+/// Gestione anagrafica giocatori, dati fisici e trasferimenti.
+/// Collegato ai moduli Contratti, Performance e Scouting.
+
+/// Anagrafica del giocatore (collegata a team e creator)
 model Player {
   id                Int                 @id @default(autoincrement())
   firstName         String
@@ -125,10 +205,23 @@ model Player {
   // Target convertiti in Player (conversione 1-to-1)
   market_target_converted market_target[] @relation("TargetToPlayerConversion")
 
+  // Scouting relations
+  scouting_sessions scouting_session[]
+
   @@map("players")
   @@schema("soccerxpro")
 }
 
+/// ===============================================================
+/// 3️⃣ MODULO PERFORMANCE (Analisi e GPS)
+/// Dati prestazionali, GPS e metriche fisiche
+/// ===============================================================
+
+/// -------------------- PERFORMANCE --------------------
+/// Dati di allenamento e partite, provenienti da GPS o analisi.
+/// Collegato a Player e Team.
+
+/// Dati prestazionali (allenamenti, partite, test fisici)
 model PerformanceData {
   id                                 Int          @id @default(autoincrement())
   playerId                           Int
@@ -188,6 +281,15 @@ model PerformanceData {
   @@schema("soccerxpro")
 }
 
+/// ===============================================================
+/// 4️⃣ MODULO CONTRATTI & FINANZE
+/// Contratti, pagamenti, budget, tasse e normativa fiscale
+/// ===============================================================
+
+/// -------------------- BUDGET --------------------
+/// Pianificazione e tracciamento dei budget annuali
+
+/// Budget di spesa per anno e categoria
 model budgets {
   id           Int            @id @default(autoincrement())
   year         Int
@@ -206,6 +308,10 @@ model budgets {
   @@schema("soccerxpro")
 }
 
+/// -------------------- CONTRATTI --------------------
+/// Gestione dei contratti economici e relativi allegati.
+
+/// Clausole contrattuali (bonus, opzioni, condizioni)
 model contract_clauses {
   id          Int        @id @default(autoincrement())
   clauseType  ClauseType
@@ -224,6 +330,7 @@ model contract_clauses {
   @@schema("soccerxpro")
 }
 
+/// Contratto economico di un giocatore o staff
 model contracts {
   id                    Int                         @id @default(autoincrement())
   startDate             DateTime
@@ -322,6 +429,7 @@ model contracts {
   @@schema("soccerxpro")
 }
 
+/// File allegati al contratto (PDF, scansioni, ecc.)
 model contract_files {
   id           Int         @id @default(autoincrement())
   contractId   Int
@@ -340,6 +448,7 @@ model contract_files {
   @@schema("soccerxpro")
 }
 
+/// Storico modifiche o rinnovi contrattuali
 model contract_amendments {
   id            Int           @id @default(autoincrement())
   contractId    Int
@@ -355,6 +464,7 @@ model contract_amendments {
   @@schema("soccerxpro")
 }
 
+/// Spese effettive registrate nei budget
 model expenses {
   id          Int            @id @default(autoincrement())
   amount      Decimal        @db.Decimal(10, 2)
@@ -372,6 +482,15 @@ model expenses {
   @@schema("soccerxpro")
 }
 
+/// ===============================================================
+/// 5️⃣ MODULO MEDICO & GDPR
+/// Gestione medica, infortuni, visite e conformità GDPR
+/// ===============================================================
+
+/// -------------------- MEDICAL CORE --------------------
+/// Gestione infortuni, visite e cartella clinica elettronica.
+
+/// Infortuni sportivi (tipologia, severità, ritorno)
 model injuries {
   id             Int              @id @default(autoincrement())
   injuryType     InjuryType
@@ -398,6 +517,7 @@ model injuries {
   @@schema("soccerxpro")
 }
 
+/// Visite mediche (periodiche o straordinarie)
 model medical_visits {
   id        Int       @id @default(autoincrement())
   visitDate DateTime
@@ -419,6 +539,7 @@ model medical_visits {
   @@schema("soccerxpro")
 }
 
+/// Statistiche stagionali base del giocatore
 model player_statistics {
   id            Int      @id @default(autoincrement())
   season        String
@@ -439,6 +560,7 @@ model player_statistics {
   @@schema("soccerxpro")
 }
 
+/// Storico trasferimenti e trattative
 model transfers {
   id            Int            @id @default(autoincrement())
   transferType  TransferType
@@ -462,6 +584,7 @@ model transfers {
   @@schema("soccerxpro")
 }
 
+/// Scadenziario pagamenti e rate contrattuali
 model contract_payment_schedule {
   id                Int                 @id @default(autoincrement())
   contractId        Int
@@ -484,6 +607,10 @@ model contract_payment_schedule {
   @@schema("soccerxpro")
 }
 
+/// -------------------- TAX CONFIGURATION --------------------
+/// Tabelle fiscali IRPEF, contributive e bonus
+
+/// Aliquote contributive e fiscali per tipologia di contratto
 model TaxRate {
   id                 Int          @id @default(autoincrement())
   year               Int
@@ -506,6 +633,7 @@ model TaxRate {
   @@schema("soccerxpro")
 }
 
+/// Aliquote bonus fiscali per tipologia
 model BonusTaxRate {
   id        Int       @id @default(autoincrement())
   year      Int
@@ -521,6 +649,7 @@ model BonusTaxRate {
   @@schema("soccerxpro")
 }
 
+/// Configurazione base anno fiscale
 model tax_config {
   id                         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   year                       Int      @unique(map: "uq_tax_config_year")
@@ -541,6 +670,7 @@ model tax_config {
   @@schema("soccerxpro")
 }
 
+/// Scaglioni IRPEF
 model tax_irpef_bracket {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   year      Int
@@ -552,6 +682,7 @@ model tax_irpef_bracket {
   @@schema("soccerxpro")
 }
 
+/// Addizionale comunale - scaglioni
 model tax_municipal_additional_bracket {
   id                            String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   rule_id                       String                        @db.Uuid
@@ -565,6 +696,7 @@ model tax_municipal_additional_bracket {
   @@schema("soccerxpro")
 }
 
+/// Addizionale comunale - regole
 model tax_municipal_additional_rule {
   id                               String                             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   year                             Int
@@ -585,6 +717,7 @@ model tax_municipal_additional_rule {
   @@schema("soccerxpro")
 }
 
+/// Addizionale regionale - scaglioni
 model tax_regional_additional_bracket {
   id                             String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   scheme_id                      String                         @db.Uuid
@@ -598,6 +731,7 @@ model tax_regional_additional_bracket {
   @@schema("soccerxpro")
 }
 
+/// Addizionale regionale - schemi
 model tax_regional_additional_scheme {
   id                              String                            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   year                            Int
@@ -618,6 +752,7 @@ model tax_regional_additional_scheme {
 }
 
 // Extra deduction rules (ulteriore detrazione) per anno a scaglioni
+/// Ulteriore detrazione fiscale
 model tax_extra_deduction_rule {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   year      Int
@@ -631,6 +766,7 @@ model tax_extra_deduction_rule {
   @@schema("soccerxpro")
 }
 
+/// Bonus L.207/2019
 model tax_bonus_l207_rule {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   year      Int
@@ -645,6 +781,7 @@ model tax_bonus_l207_rule {
   @@schema("soccerxpro")
 }
 
+/// Gestione piani e abbonamenti dei team
 model Subscription {
   id            String             @id @default(uuid()) @db.Uuid
   teamId        String             @unique @map("team_id") @db.Uuid
@@ -667,6 +804,7 @@ model Subscription {
   @@schema("soccerxpro")
 }
 
+/// Inviti di accesso ai team (con ruoli e scadenze)
 model TeamInvite {
   id           String    @id @default(uuid()) @db.Uuid
   teamId       String    @map("team_id") @db.Uuid
@@ -691,6 +829,16 @@ model TeamInvite {
   @@schema("soccerxpro")
 }
 
+/// ===============================================================
+/// 7️⃣ ENUMS & SUPPORT TYPES
+/// Tipi enumerati di supporto per tutti i moduli
+/// ===============================================================
+
+/// -------------------- ENUMS --------------------
+/// Tutti gli enumeratori condivisi.
+/// Organizzati per area funzionale.
+
+/// -------- ENUMS MEDICAL --------
 enum BodyPart {
   HEAD
   NECK
@@ -713,6 +861,7 @@ enum BodyPart {
   @@schema("soccerxpro")
 }
 
+/// -------- ENUMS CONTRATTI --------
 enum BudgetCategory {
   PLAYER_SALARIES
   TRANSFER_FEES
@@ -797,6 +946,7 @@ enum AmendmentType {
   @@schema("soccerxpro")
 }
 
+/// -------- ENUMS GIOCATORI --------
 enum FootType {
   LEFT
   RIGHT
@@ -805,6 +955,7 @@ enum FootType {
   @@schema("soccerxpro")
 }
 
+/// -------- ENUMS MEDICAL --------
 enum InjurySeverity {
   MINOR
   MODERATE
@@ -891,6 +1042,7 @@ enum VisitType {
   @@schema("soccerxpro")
 }
 
+/// -------- ENUMS GDPR --------
 enum TaxRegime {
   STANDARD
   BECKHAM_LAW
@@ -1163,6 +1315,10 @@ enum DataRetentionReason {
   @@schema("soccerxpro")
 }
 
+/// -------------------- GDPR CORE --------------------
+/// Gestione compliance, consensi e politiche dati.
+
+/// Configurazione GDPR e DPO per Team
 model GDPRConfiguration {
   id                     String    @id @default(uuid())
   teamId                 String    @unique @db.Uuid
@@ -1191,6 +1347,7 @@ model GDPRConfiguration {
   @@schema("soccerxpro")
 }
 
+/// Contratti di trattamento con fornitori esterni
 model DataProcessingAgreement {
   id             String    @id @default(uuid())
   teamId         String    @db.Uuid
@@ -1209,6 +1366,7 @@ model DataProcessingAgreement {
   @@schema("soccerxpro")
 }
 
+/// Vault crittografato per chiavi e password
 model MedicalVault {
   id                  String    @id @default(uuid())
   teamId              String    @unique @db.Uuid
@@ -1231,6 +1389,7 @@ model MedicalVault {
   @@schema("soccerxpro")
 }
 
+/// Accessi al vault medico
 model MedicalVaultAccess {
   id               String    @id @default(uuid())
   teamId           String    @db.Uuid
@@ -1249,6 +1408,7 @@ model MedicalVaultAccess {
   @@schema("soccerxpro")
 }
 
+/// Consensi al trattamento dati
 model MedicalConsent {
   id                 String        @id @default(uuid())
   teamId             String        @db.Uuid
@@ -1277,6 +1437,7 @@ model MedicalConsent {
   @@schema("soccerxpro")
 }
 
+/// Caso medico complesso (contenitore crittografato)
 model MedicalCase {
   id                String          @id @default(uuid())
   teamId            String          @db.Uuid
@@ -1311,6 +1472,7 @@ model MedicalCase {
   @@schema("soccerxpro")
 }
 
+/// Diagnosi collegate a un caso medico
 model MedicalDiagnosis {
   id                 String   @id @default(uuid())
   caseId             String
@@ -1326,6 +1488,7 @@ model MedicalDiagnosis {
   @@schema("soccerxpro")
 }
 
+/// Esami diagnostici con risultati cifrati
 model MedicalExamination {
   id               String   @id @default(uuid())
   caseId           String
@@ -1345,6 +1508,7 @@ model MedicalExamination {
   @@schema("soccerxpro")
 }
 
+/// Trattamenti e terapie collegate
 model MedicalTreatment {
   id               String        @id @default(uuid())
   caseId           String
@@ -1363,6 +1527,7 @@ model MedicalTreatment {
   @@schema("soccerxpro")
 }
 
+/// Documenti sanitari crittografati
 model MedicalDocument {
   id              String              @id @default(uuid())
   teamId          String              @db.Uuid
@@ -1394,6 +1559,7 @@ model MedicalDocument {
   @@schema("soccerxpro")
 }
 
+/// Log accessi ai dati sanitari (GDPR compliance)
 model MedicalAccessLog {
   id              String       @id @default(uuid())
   teamId          String       @db.Uuid
@@ -1422,6 +1588,7 @@ model MedicalAccessLog {
   @@schema("soccerxpro")
 }
 
+/// Registro Data Breach
 model DataBreachRegister {
   id                   String    @id @default(uuid())
   teamId               String    @db.Uuid
@@ -1445,6 +1612,7 @@ model DataBreachRegister {
   @@schema("soccerxpro")
 }
 
+/// Richieste GDPR (accesso, cancellazione, portabilità)
 model GDPRRequest {
   id               String    @id @default(uuid())
   teamId           String    @db.Uuid
@@ -1468,6 +1636,7 @@ model GDPRRequest {
   @@schema("soccerxpro")
 }
 
+/// Dati sanitari anonimizzati per analisi statistiche
 model AnonymizedMedicalData {
   id                String   @id @default(uuid())
   teamId            String   @db.Uuid
@@ -1487,6 +1656,7 @@ model AnonymizedMedicalData {
   @@schema("soccerxpro")
 }
 
+/// Politiche di conservazione e anonimizzazione dati
 model DataRetentionPolicy {
   id            String   @id @default(uuid())
   teamId        String   @db.Uuid
@@ -1506,6 +1676,7 @@ model DataRetentionPolicy {
   @@schema("soccerxpro")
 }
 
+/// Profilo sanitario sintetico del giocatore
 model PlayerHealthProfile {
   id               String    @id @default(uuid())
   teamId           String    @db.Uuid
@@ -1525,6 +1696,7 @@ model PlayerHealthProfile {
   @@schema("soccerxpro")
 }
 
+/// Configurazione 2FA utente
 model TwoFactorAuth {
   id          String      @id @default(uuid())
   userId      Int         @unique @map("userId")
@@ -1544,6 +1716,15 @@ model TwoFactorAuth {
 // 🔹 Gli agenti possono essere collegati a target, trattative o offerte
 // 🔹 Il Direttore Sportivo può verificarli, disattivarli o riattivarli
 
+/// ===============================================================
+/// 6️⃣ MODULO MERCATO & SCOUTING
+/// Gestione mercato, agenti, target, trattative, offerte e scouting
+/// ===============================================================
+
+/// -------------------- MARKET CORE --------------------
+/// Gestione mercato, shortlist, trattative e offerte.
+
+/// Agenti sportivi (procuratori)
 model market_agent {
   id Int @id @default(autoincrement())
 
@@ -1584,11 +1765,11 @@ model market_agent {
   notes          String?
 
   // === RELAZIONI ===
-  teamId       String               @map("team_id") @db.Uuid
-  created_by   String?              @db.Uuid
-  targets      market_target[]
-  negotiations market_negotiation[]
-  offers       market_offer[]
+  teamId     String          @map("team_id") @db.Uuid
+  created_by String?         @db.Uuid
+  targets    market_target[]
+  // negotiations market_negotiation[]
+  // offers       market_offer[]
 
   // === AUDIT ===
   createdAt DateTime @default(now()) @map("created_at")
@@ -1606,6 +1787,7 @@ model market_agent {
 // 🔹 Include dati anagrafici, fisici, tecnici, scouting, economici e di contesto
 // 🔹 Può essere collegato a un agente o convertito in Player
 
+/// Target di mercato (giocatori non tesserati)
 model market_target {
   id Int @id @default(autoincrement())
 
@@ -1635,7 +1817,7 @@ model market_target {
   market_value_updated_at DateTime?
 
   // === RELAZIONE STORICA CON PLAYER (FACOLTATIVA) ===
-  playerId Int?
+  playerId Int?    @map("player_id")
   player   Player? @relation("HistoricalTargetLink", fields: [playerId], references: [id])
 
   // === RELAZIONE CON AGENTE (OPZIONALE) ===
@@ -1680,11 +1862,18 @@ model market_target {
   market_shortlist_item market_shortlist_item[]
   market_negotiation    market_negotiation[]
 
+  // Scouting relations
+  scouting_sessions    scouting_session[]
+  scouting_assignments scouting_assignment[]
+  scouting_followups   scouting_followup[]
+  scouting_tag_links   scouting_tag_link[]
+
   @@map("market_targets")
   @@schema("soccerxpro")
 }
 
 // ===================== MARKET SHORTLISTS =====================
+/// Shortlist mercato e relativi item
 model market_shortlist {
   id                    Int                     @id @default(autoincrement())
   name                  String
@@ -1700,6 +1889,7 @@ model market_shortlist {
   @@schema("soccerxpro")
 }
 
+/// Item di shortlist mercato
 model market_shortlist_item {
   id          Int              @id @default(autoincrement())
   shortlistId Int
@@ -1717,15 +1907,16 @@ model market_shortlist_item {
 // ===================== MARKET NEGOTIATIONS =====================
 // 🔹 Trattativa di mercato con simulatore economico e conversione in Player
 
+/// Trattative economiche (negoziazioni)
 model market_negotiation {
   id Int @id @default(autoincrement())
 
   // === RELAZIONI PRINCIPALI ===
   targetId Int           @map("target_id")
-  agentId  Int?          @map("agent_id")
+  // agentId  Int?          @map("agent_id")
   teamId   String        @map("team_id") @db.Uuid
   target   market_target @relation(fields: [targetId], references: [id])
-  agent    market_agent? @relation(fields: [agentId], references: [id])
+  // agent    market_agent? @relation(fields: [agentId], references: [id])
   team     Team          @relation(fields: [teamId], references: [id])
 
   // === SNAPSHOT GIOCATORE ===
@@ -1801,10 +1992,11 @@ enum NegotiationStage {
 }
 
 // ===================== MARKET OFFERS =====================
+/// Offerte economiche
 model market_offer {
   id             Int                @id @default(autoincrement())
   negotiationId  Int                @map("negotiation_id")
-  agentId        Int?               @map("agent_id")
+  // agentId        Int?               @map("agent_id")
   type           String             @default("TRANSFER")
   direction      String?            @default("IN") // "IN" (acquisto) o "OUT" (cessione)
   fee            Decimal?           @db.Decimal(12, 2)
@@ -1819,7 +2011,7 @@ model market_offer {
   createdAt      DateTime           @default(now()) @map("created_at")
   updatedAt      DateTime           @updatedAt @map("updated_at")
   negotiation    market_negotiation @relation(fields: [negotiationId], references: [id])
-  agent          market_agent?      @relation(fields: [agentId], references: [id])
+  // agent          market_agent?      @relation(fields: [agentId], references: [id])
   team           Team               @relation(fields: [teamId], references: [id])
 
   @@map("market_offers")
@@ -1827,6 +2019,7 @@ model market_offer {
 }
 
 // ===================== MARKET BUDGETS =====================
+/// Budget di mercato stagionali
 model market_budget {
   id                    Int      @id @default(autoincrement())
   season_label          String
@@ -1845,5 +2038,684 @@ model market_budget {
 
   @@unique([teamId, season_label, type])
   @@map("market_budgets")
+  @@schema("soccerxpro")
+}
+
+// ===================== SCOUTING CORE (v1) =====================
+// Modulo completo e indipendente per gestione scouting
+// - Profili scout interni/esterni
+// - Sessioni di osservazione (live/video/allenamento/torneo)
+// - Report strutturati con rubriche personalizzabili per Team
+// - Punteggi granulari per criterio
+// - Assignment (pianificazione incarichi) e follow-up operativi
+// - Partite osservate, media allegati, regioni coperte, tagging
+// - Integrazione con market_target e Player
+
+// ---------- ENUMS DI SUPPORTO ----------
+/// -------- ENUMS SCOUTING --------
+enum ObservationType {
+  LIVE
+  VIDEO
+  TRAINING
+  TOURNAMENT
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+enum ScoutingSessionStatus {
+  OPEN
+  EVALUATED
+  APPROVED
+  REJECTED
+  CLOSED
+
+  @@schema("soccerxpro")
+}
+
+enum RecommendationLevel {
+  STRONG_BUY
+  BUY
+  FOLLOW_UP
+  NEUTRAL
+  REJECT
+
+  @@schema("soccerxpro")
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@schema("soccerxpro")
+}
+
+enum AssignmentStatus {
+  DRAFT
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  REVIEWED
+  COMPLETED
+  CANCELLED
+
+  @@schema("soccerxpro")
+}
+
+enum MediaType {
+  VIDEO
+  IMAGE
+  DOCUMENT
+  LINK
+  OTHER
+
+  @@schema("soccerxpro")
+}
+
+// ---------- PROFILO SCOUT ----------
+/// -------------------- SCOUTING CORE (v1) --------------------
+/// Gestione scouting classico con rubriche, sessioni e report.
+
+/// Profilo dello scout
+model scouting_scout {
+  id            Int       @id @default(autoincrement())
+  // Anagrafica
+  first_name    String
+  last_name     String
+  nationality   String?
+  date_of_birth DateTime?
+  gender        String?
+
+  // Contatti
+  email           String?
+  phone           String?
+  secondary_phone String?
+  linkedin_url    String?
+  website         String?
+  address         String?
+  city            String?
+  country         String?
+
+  // Profilo professionale
+  license_level    String? // es. UEFA A, FIGC Scout License
+  license_expiry   DateTime?
+  experience_years Int?      @default(0)
+  specialization   String? // es. "U17-Primavera", "Serie B"
+  preferred_roles  String? // es. "ATT, CC"
+  scouting_regions String? // libero o usi la join table sotto
+  languages        String?
+  notes            String?   @db.Text
+
+  // Relazioni tenancy/identity
+  teamId String?      @map("team_id") @db.Uuid
+  userId Int? // collega a UserProfile se interno al club
+  team   Team?        @relation(fields: [teamId], references: [id])
+  user   UserProfile? @relation(fields: [userId], references: [id])
+
+  // Attività collegate
+  sessions    scouting_session[]
+  assignments scouting_assignment[]   @relation("ScoutAssignments")
+  reviews     scouting_review[]
+  followups   scouting_followup[]
+  regions     scouting_scout_region[]
+
+  // Audit
+  is_active   Boolean   @default(true)
+  is_verified Boolean   @default(false)
+  verified_by String?   @db.Uuid
+  verified_at DateTime?
+  created_by  String?   @db.Uuid
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([teamId, is_active])
+  @@map("scouting_scouts")
+  @@schema("soccerxpro")
+}
+
+// ---------- RUBRICHE (personalizzabili per Team) ----------
+/// Rubriche di valutazione (criteri)
+model scouting_rubric {
+  id          Int      @id @default(autoincrement())
+  teamId      String   @map("team_id") @db.Uuid
+  name        String // es. "Standard Prima Squadra 1-10"
+  description String?
+  scale_min   Int      @default(1)
+  scale_max   Int      @default(10)
+  is_default  Boolean  @default(false)
+  createdById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team      Team                        @relation(fields: [teamId], references: [id])
+  createdBy UserProfile?                @relation(fields: [createdById], references: [id])
+  criteria  scouting_rubric_criterion[]
+  reports   scouting_report[]
+
+  @@unique([teamId, name])
+  @@index([teamId, is_default])
+  @@map("scouting_rubrics")
+  @@schema("soccerxpro")
+}
+
+/// Criteri di valutazione per rubrica
+model scouting_rubric_criterion {
+  id         Int     @id @default(autoincrement())
+  rubricId   Int
+  // Categoria e descrizione del criterio (p.es. Tecnica/Passaggio)
+  category   String // TECHNICAL | TACTICAL | PHYSICAL | MENTAL | BEHAVIORAL | GK
+  name       String // es. "Passaggio", "Decision Making"
+  weight     Decimal @default(1.0) @db.Decimal(5, 2) // peso relativo nel calcolo
+  orderIndex Int     @default(0)
+  helpText   String?
+
+  rubric scouting_rubric         @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  scores scouting_report_score[]
+
+  @@unique([rubricId, name])
+  @@index([rubricId, category, orderIndex])
+  @@map("scouting_rubric_criteria")
+  @@schema("soccerxpro")
+}
+
+// ---------- PARTITA OSSERVATA (opzionale per contestualizzare la sessione) ----------
+/// Partite osservate
+model scouting_match {
+  id          Int      @id @default(autoincrement())
+  teamId      String   @map("team_id") @db.Uuid
+  competition String
+  season      String? // es. "2025/26"
+  round       String? // es. "Matchday 3", "Quarterfinal"
+  date        DateTime
+  stadium     String?
+  city        String?
+  homeTeam    String
+  awayTeam    String
+  result      String? // es. "2-1"
+  notes       String?  @db.Text
+
+  team        Team                  @relation(fields: [teamId], references: [id])
+  sessions    scouting_session[]
+  assignments scouting_assignment[]
+  tag_links   scouting_tag_link[]
+
+  @@index([teamId, date])
+  @@map("scouting_matches")
+  @@schema("soccerxpro")
+}
+
+// ---------- SESSIONE DI OSSERVAZIONE ----------
+/// Sessioni di osservazione
+model scouting_session {
+  id              Int                   @id @default(autoincrement())
+  teamId          String                @map("team_id") @db.Uuid
+  scoutId         Int                   @map("scout_id")
+  targetId        Int?                  @map("target_id") // market_target.id (opzionale)
+  playerId        Int?                  @map("player_id") // Player.id se già tesserato o noto
+  matchId         Int?                  @map("match_id") // scouting_match.id
+  observationType ObservationType       @default(LIVE)
+  status          ScoutingSessionStatus @default(OPEN)
+  priority        PriorityLevel         @default(MEDIUM)
+
+  // Contesto
+  dateObserved    DateTime?
+  location        String?
+  weather         String?
+  minutes_played  Int?
+  position_played Position? // riuso enum globale
+  shirt_number    Int?
+
+  // Snapshot dati giocatore (se target non formalizzato)
+  player_first_name  String?
+  player_last_name   String?
+  player_nationality String?
+  player_age         Int?
+  player_club        String?
+
+  // Valutazioni sintetiche
+  overall_rating   Decimal?            @db.Decimal(4, 2)
+  potential_rating Decimal?            @db.Decimal(4, 2)
+  recommendation   RecommendationLevel @default(NEUTRAL)
+
+  // Operatività
+  follow_up_date DateTime?
+  follow_up_note String?
+  next_action    String?
+  ds_reviewer_id Int?
+  notes          String?   @db.Text
+
+  // Audit
+  createdById Int?
+  updatedById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relazioni
+  team      Team            @relation(fields: [teamId], references: [id])
+  scout     scouting_scout  @relation(fields: [scoutId], references: [id])
+  target    market_target?  @relation(fields: [targetId], references: [id])
+  player    Player?         @relation(fields: [playerId], references: [id])
+  match     scouting_match? @relation(fields: [matchId], references: [id])
+  createdBy UserProfile?    @relation("ScoutingSessionCreatedBy", fields: [createdById], references: [id])
+  updatedBy UserProfile?    @relation("ScoutingSessionUpdatedBy", fields: [updatedById], references: [id])
+  reviewer  UserProfile?    @relation("ScoutingSessionReviewer", fields: [ds_reviewer_id], references: [id])
+
+  report     scouting_report?
+  media      scouting_media[]
+  followups  scouting_followup[]
+  tags       scouting_tag_link[]
+  assignment scouting_assignment? @relation(fields: [id], references: [id])
+  reviews    scouting_review[]
+
+  @@index([teamId, scoutId, dateObserved])
+  @@index([teamId, status, priority])
+  @@index([teamId, targetId])
+  @@map("scouting_sessions")
+  @@schema("soccerxpro")
+}
+
+// ---------- REPORT STRUTTURATO (1:1 con sessione) ----------
+/// Report di osservazione con punteggi
+model scouting_report {
+  id              Int     @id @default(autoincrement())
+  sessionId       Int     @unique
+  rubricId        Int // quale rubrica ha usato il team per questo report
+  summary         String? @db.Text
+  strengths       String? @db.Text
+  weaknesses      String? @db.Text
+  playing_style   String? // es. "Regista", "Box-to-Box", "Inverted Winger"
+  comparable_to   String? // es. "somiglia a Barella"
+  medical_notes   String?
+  character_notes String?
+
+  // metriche aggregate (salvate per query veloci)
+  score_avg      Decimal? @db.Decimal(5, 2)
+  score_weighted Decimal? @db.Decimal(5, 2)
+
+  createdById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  session   scouting_session        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  rubric    scouting_rubric         @relation(fields: [rubricId], references: [id])
+  createdBy UserProfile?            @relation(fields: [createdById], references: [id])
+  scores    scouting_report_score[]
+
+  @@map("scouting_reports")
+  @@schema("soccerxpro")
+}
+
+/// Punteggi per criterio nel report
+model scouting_report_score {
+  id          Int     @id @default(autoincrement())
+  reportId    Int
+  criterionId Int
+  score       Decimal @db.Decimal(5, 2) // deve stare tra rubric.scale_min e scale_max
+  note        String?
+
+  report    scouting_report           @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  criterion scouting_rubric_criterion @relation(fields: [criterionId], references: [id])
+
+  @@unique([reportId, criterionId])
+  @@index([criterionId])
+  @@map("scouting_report_scores")
+  @@schema("soccerxpro")
+}
+
+// ---------- ASSIGNMENT (pianificazione incarichi scouting) ----------
+/// Incarichi assegnati agli scout
+model scouting_assignment {
+  id            Int              @id @default(autoincrement())
+  teamId        String           @map("team_id") @db.Uuid
+  assignedToId  Int? // scouting_scout.id
+  requestedById Int? // UserProfile (DS)
+  targetId      Int? // market_target da osservare
+  matchId       Int? // partita specifica
+  priority      PriorityLevel    @default(MEDIUM)
+  status        AssignmentStatus @default(DRAFT)
+  due_date      DateTime?
+  title         String
+  description   String?
+  checklist     Json? // voci operative opzionali
+  link_refs     Json? // link utili (Wyscout, YT, TMkt, ecc.)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team        Team              @relation(fields: [teamId], references: [id])
+  assignedTo  scouting_scout?   @relation("ScoutAssignments", fields: [assignedToId], references: [id])
+  requestedBy UserProfile?      @relation(fields: [requestedById], references: [id])
+  target      market_target?    @relation(fields: [targetId], references: [id])
+  match       scouting_match?   @relation(fields: [matchId], references: [id])
+  session     scouting_session?
+
+  @@index([teamId, status, priority])
+  @@index([teamId, assignedToId])
+  @@map("scouting_assignments")
+  @@schema("soccerxpro")
+}
+
+// ---------- FOLLOW-UP operativi (su sessione o target) ----------
+/// Follow-up operativi su sessioni o target
+model scouting_followup {
+  id           Int       @id @default(autoincrement())
+  teamId       String    @map("team_id") @db.Uuid
+  sessionId    Int?
+  targetId     Int?
+  assignedToId Int? // scouting_scout o utente
+  due_date     DateTime?
+  status       String    @default("OPEN")
+  note         String?
+  createdById  Int?
+  completedAt  DateTime?
+
+  team       Team              @relation(fields: [teamId], references: [id])
+  session    scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  target     market_target?    @relation(fields: [targetId], references: [id], onDelete: SetNull)
+  assignedTo scouting_scout?   @relation(fields: [assignedToId], references: [id])
+  createdBy  UserProfile?      @relation(fields: [createdById], references: [id])
+
+  @@index([teamId, status, due_date])
+  @@map("scouting_followups")
+  @@schema("soccerxpro")
+}
+
+// ---------- MEDIA allegati alle sessioni ----------
+/// Media allegati (video, immagini, link)
+model scouting_media {
+  id             Int       @id @default(autoincrement())
+  sessionId      Int
+  type           MediaType @default(LINK)
+  title          String?
+  url            String? // per LINK/VIDEO/IMG remoti
+  storagePath    String? // se caricato su bucket
+  mimeType       String?
+  sizeBytes      Int?
+  checksumSHA256 String?
+  tags           String?
+  uploadedById   Int?
+  uploadedAt     DateTime  @default(now())
+
+  session    scouting_session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  uploadedBy UserProfile?     @relation(fields: [uploadedById], references: [id])
+
+  @@index([sessionId, type])
+  @@map("scouting_media")
+  @@schema("soccerxpro")
+}
+
+// ---------- REVIEW del DS sul lavoro dello scout ----------
+/// Review del DS sul lavoro scout
+model scouting_review {
+  id         Int                 @id @default(autoincrement())
+  scoutId    Int
+  sessionId  Int?
+  reviewerId Int // UserProfile (DS)
+  decision   RecommendationLevel
+  comment    String?             @db.Text
+  createdAt  DateTime            @default(now())
+
+  scout    scouting_scout    @relation(fields: [scoutId], references: [id])
+  session  scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  reviewer UserProfile       @relation(fields: [reviewerId], references: [id])
+
+  @@index([scoutId, reviewerId, createdAt])
+  @@map("scouting_reviews")
+  @@schema("soccerxpro")
+}
+
+// ---------- REGIONI e copertura (facoltativo; per analisi geografiche) ----------
+/// Regioni e copertura scouting
+model scouting_region {
+  id        Int      @id @default(autoincrement())
+  code      String // es. "IT-MAR", "ES", "LATAM"
+  name      String
+  level     String? // es. "country", "region"
+  parentId  Int?
+  createdAt DateTime @default(now())
+
+  parent   scouting_region?        @relation("RegionParent", fields: [parentId], references: [id])
+  children scouting_region[]       @relation("RegionParent")
+  scouts   scouting_scout_region[]
+
+  @@unique([code, name])
+  @@map("scouting_regions")
+  @@schema("soccerxpro")
+}
+
+/// Relazione scout-regione
+model scouting_scout_region {
+  id       Int           @id @default(autoincrement())
+  scoutId  Int
+  regionId Int
+  priority PriorityLevel @default(MEDIUM)
+  note     String?
+
+  scout  scouting_scout  @relation(fields: [scoutId], references: [id], onDelete: Cascade)
+  region scouting_region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@unique([scoutId, regionId])
+  @@map("scouting_scout_regions")
+  @@schema("soccerxpro")
+}
+
+// ---------- TAGGING generico (sessioni, target, match) ----------
+/// Tagging generico (sessioni, match, target)
+model scouting_tag {
+  id        Int      @id @default(autoincrement())
+  teamId    String   @map("team_id") @db.Uuid
+  label     String
+  color     String? // es. "#3b82f6"
+  createdAt DateTime @default(now())
+
+  team  Team                @relation(fields: [teamId], references: [id])
+  links scouting_tag_link[]
+
+  @@unique([teamId, label])
+  @@map("scouting_tags")
+  @@schema("soccerxpro")
+}
+
+/// Link tag a entità (sessioni, target, match)
+model scouting_tag_link {
+  id        Int      @id @default(autoincrement())
+  tagId     Int
+  // Polymorphic link: al momento supportiamo session/target/match
+  sessionId Int?
+  targetId  Int?
+  matchId   Int?
+  createdAt DateTime @default(now())
+
+  tag     scouting_tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  session scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  target  market_target?    @relation(fields: [targetId], references: [id], onDelete: SetNull)
+  match   scouting_match?   @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([tagId])
+  @@index([sessionId])
+  @@index([targetId])
+  @@index([matchId])
+  @@map("scouting_tag_links")
+  @@schema("soccerxpro")
+}
+
+/// ===============================================================
+/// 🧩 SCOUTING MODULE – Enterprise Version (SoccerXPro)
+/// Schema: soccerxpro
+/// ===============================================================
+
+/// -------------------- SCOUTING ENTERPRISE (v2) --------------------
+/// Sistema avanzato di scouting per analisi multi-criterio e tracciamento.
+
+/// Prospect scouting (giocatore osservato)
+model ScoutingProspect {
+  id          String @id @default(uuid()) @db.Uuid
+  teamId      String @db.Uuid
+  createdById Int
+  updatedById Int?
+
+  firstName         String
+  lastName          String
+  fullName          String?
+  birthDate         DateTime?
+  nationality       String?
+  position          String?
+  secondaryPosition String?
+  preferredFoot     String?
+  heightCm          Int?
+  weightKg          Int?
+  currentClub       String?
+  contractUntil     DateTime?
+  agentId           String?        @db.Uuid
+  marketValue       Float?
+  potentialScore    Float?         @default(0)
+  scoutingStatus    ScoutingStatus @default(DISCOVERY)
+  notes             String?
+
+  reports        ScoutingReport[]
+  shortlistItems ScoutingShortlistItem[]
+  eventLogs      ScoutingEventLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent     Agent?      @relation(fields: [agentId], references: [id])
+  team      Team        @relation(fields: [teamId], references: [id])
+  createdBy UserProfile @relation("ScoutingProspectCreatedBy", fields: [createdById], references: [id])
+
+  @@map("market_scouting")
+  @@schema("soccerxpro")
+}
+
+/// Report dettagliato di un prospect
+model ScoutingReport {
+  id          String @id @default(uuid()) @db.Uuid
+  prospectId  String @db.Uuid
+  teamId      String @db.Uuid
+  createdById Int
+
+  matchDate      DateTime?
+  opponent       String?
+  competition    String?
+  rolePlayed     String?
+  minutesPlayed  Int?
+  techniqueScore Float?
+  tacticsScore   Float?
+  physicalScore  Float?
+  mentalityScore Float?
+  totalScore     Float?    @default(0)
+  summary        String?
+  videoLink      String?
+  attachmentUrl  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prospect  ScoutingProspect @relation(fields: [prospectId], references: [id])
+  team      Team             @relation(fields: [teamId], references: [id])
+  createdBy UserProfile      @relation("ScoutingReportCreatedBy", fields: [createdById], references: [id])
+
+  @@map("market_scouting_report")
+  @@schema("soccerxpro")
+}
+
+/// Shortlist personalizzate
+model ScoutingShortlist {
+  id          String @id @default(uuid()) @db.Uuid
+  teamId      String @db.Uuid
+  createdById Int
+
+  name        String
+  description String?
+  category    String? // e.g., "Under 23", "Defenders", "Summer Window"
+  isArchived  Boolean @default(false)
+
+  items ScoutingShortlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team      Team        @relation(fields: [teamId], references: [id])
+  createdBy UserProfile @relation("ScoutingShortlistCreatedBy", fields: [createdById], references: [id])
+
+  @@map("market_scouting_shortlist")
+  @@schema("soccerxpro")
+}
+
+/// Item di shortlist personalizzate
+model ScoutingShortlistItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  shortlistId String  @db.Uuid
+  prospectId  String  @db.Uuid
+  priority    Int?    @default(0)
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shortlist ScoutingShortlist @relation(fields: [shortlistId], references: [id])
+  prospect  ScoutingProspect  @relation(fields: [prospectId], references: [id])
+
+  @@unique([shortlistId, prospectId])
+  @@map("market_scouting_shortlist_item")
+  @@schema("soccerxpro")
+}
+
+/// Log eventi e cambi di stato
+model ScoutingEventLog {
+  id          String          @id @default(uuid()) @db.Uuid
+  prospectId  String          @db.Uuid
+  teamId      String          @db.Uuid
+  userId      Int
+  action      String // e.g., "CREATE", "UPDATE", "STATUS_CHANGE"
+  description String?
+  fromStatus  ScoutingStatus?
+  toStatus    ScoutingStatus?
+  createdAt   DateTime        @default(now())
+
+  prospect ScoutingProspect @relation(fields: [prospectId], references: [id])
+  team     Team             @relation(fields: [teamId], references: [id])
+  user     UserProfile      @relation("ScoutingEventLogUser", fields: [userId], references: [id])
+
+  @@map("market_scouting_event_log")
+  @@schema("soccerxpro")
+}
+
+/// Anagrafica agente (v2)
+model Agent {
+  id          String @id @default(uuid()) @db.Uuid
+  teamId      String @db.Uuid
+  createdById Int
+
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String?
+  company       String?
+  licenseNumber String?
+  country       String?
+
+  prospects ScoutingProspect[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team      Team        @relation(fields: [teamId], references: [id])
+  createdBy UserProfile @relation("AgentCreatedBy", fields: [createdById], references: [id])
+
+  @@map("market_agent")
+  @@schema("soccerxpro")
+}
+
+/// Enum di stato per l'area scouting
+enum ScoutingStatus {
+  DISCOVERY
+  MONITORING
+  ANALYZED
+  TARGETED
+  ARCHIVED
+
   @@schema("soccerxpro")
 }
