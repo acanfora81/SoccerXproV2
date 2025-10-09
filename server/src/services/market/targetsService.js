@@ -15,7 +15,7 @@ const getAll = async (teamId, filters = {}) => {
     ...(status && { status }),
     ...(priority && { priority: Number(priority) }),
     ...(position && { position }),
-    ...(agentId && { agentId: Number(agentId) }),
+    // ...(agentId && { agentId: Number(agentId) }),
     ...(search && {
       OR: [
         { first_name: { contains: search, mode: 'insensitive' } },
@@ -28,14 +28,14 @@ const getAll = async (teamId, filters = {}) => {
   return prisma.market_target.findMany({
     where,
     include: {
-      agent: {
-        select: {
-          id: true,
-          first_name: true,
-          last_name: true,
-          agency: true,
-        },
-      },
+      // agent: {
+      //   select: {
+      //     id: true,
+      //     first_name: true,
+      //     last_name: true,
+      //     agency: true,
+      //   },
+      // },
       _count: {
         select: {
           market_negotiation: true,
@@ -114,7 +114,7 @@ const create = async (teamId, userId, data) => {
       market_value: data.market_value || null,
       previous_market_value: data.previous_market_value || null,
       playerId: data.playerId ? Number(data.playerId) : null,
-      agentId: data.agentId ? Number(data.agentId) : null,
+      // agentId: data.agentId ? Number(data.agentId) : null,
       agent_contact_name: data.agent_contact_name || null,
       agent_contact_phone: data.agent_contact_phone || null,
       priority: data.priority || 3,
@@ -185,7 +185,7 @@ const update = async (id, teamId, data) => {
 
   // Relazioni
   if ('playerId' in data) updateData.playerId = data.playerId ? Number(data.playerId) : null;
-  if ('agentId' in data) updateData.agentId = data.agentId ? Number(data.agentId) : null;
+  // if ('agentId' in data) updateData.agentId = data.agentId ? Number(data.agentId) : null;
   if ('agent_contact_name' in data) updateData.agent_contact_name = data.agent_contact_name || null;
   if ('agent_contact_phone' in data) updateData.agent_contact_phone = data.agent_contact_phone || null;
 
