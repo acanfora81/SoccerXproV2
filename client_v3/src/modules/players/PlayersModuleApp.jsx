@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import apiFetch from '../../utils/apiFetch';
+import PlayerCreateDialog from './components/PlayerCreateDialog';
 
 const PlayersModuleApp = () => {
   const { playerId } = useParams();
@@ -172,7 +173,10 @@ const PlayersModuleApp = () => {
       {/* Players List Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
         <div className="p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">Giocatori</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold text-gray-800">Giocatori</h2>
+            <PlayerCreateDialog onCreated={loadPlayers} />
+          </div>
           <p className="text-sm text-gray-500">{players.length} giocatori</p>
         </div>
         
