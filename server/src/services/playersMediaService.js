@@ -4,18 +4,37 @@ const prisma = new PrismaClient();
 /**
  * Carica un media per un giocatore
  */
-const uploadMedia = async ({ playerId, userId, type, url, title, description }) => {
-  // TODO: Implementare la logica di caricamento media
-  // Questo è un placeholder - il modello player_media dovrebbe essere aggiunto al schema Prisma
+const uploadPlayerMediaFile = async ({ playerId, userId, type, url, title }) => {
+  // TODO: Implementare quando il modello PlayerMedia sarà aggiunto al schema Prisma
   
+  /*
+  return await prisma.playerMedia.create({
+    data: {
+      playerId: Number(playerId),
+      type: type || 'IMAGE',
+      url,
+      title,
+      uploadedById: userId,
+    },
+    include: {
+      uploadedBy: {
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true
+        }
+      }
+    }
+  });
+  */
+
   return {
-    id: Date.now(), // Placeholder
-    playerId,
-    userId,
+    id: Date.now(),
+    playerId: Number(playerId),
     type: type || 'IMAGE',
     url,
     title,
-    description,
+    uploadedById: userId,
     uploadedAt: new Date()
   };
 };
@@ -23,14 +42,29 @@ const uploadMedia = async ({ playerId, userId, type, url, title, description }) 
 /**
  * Ottieni tutti i media di un giocatore
  */
-const getMediaByPlayer = async ({ playerId }) => {
-  // TODO: Implementare la logica di recupero media
+const getPlayerMediaList = async ({ playerId }) => {
+  // TODO: Implementare quando il modello PlayerMedia sarà aggiunto al schema Prisma
   
+  /*
+  return await prisma.playerMedia.findMany({
+    where: { playerId: Number(playerId) },
+    orderBy: { uploadedAt: 'desc' },
+    include: {
+      uploadedBy: {
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true
+        }
+      }
+    }
+  });
+  */
+
   return [];
 };
 
 module.exports = {
-  uploadMedia,
-  getMediaByPlayer
+  uploadPlayerMediaFile,
+  getPlayerMediaList
 };
-

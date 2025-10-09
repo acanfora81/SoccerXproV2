@@ -4,33 +4,63 @@ const prisma = new PrismaClient();
 /**
  * Crea una nuova nota per un giocatore
  */
-const createNote = async ({ playerId, userId, content, type, visibility }) => {
-  // TODO: Implementare la logica di creazione nota
-  // Questo è un placeholder - il modello player_notes dovrebbe essere aggiunto al schema Prisma
+const createPlayerNote = async ({ playerId, userId, teamId, title, content }) => {
+  // TODO: Implementare quando il modello PlayerNote sarà aggiunto al schema Prisma
+  // Per ora restituisco un oggetto placeholder
   
+  /* 
+  return await prisma.playerNote.create({
+    data: {
+      playerId: Number(playerId),
+      userId,
+      title,
+      content,
+      player: { connect: { id: Number(playerId) } },
+      author: { connect: { id: userId } },
+    },
+  });
+  */
+
   return {
-    id: Date.now(), // Placeholder
-    playerId,
+    id: Date.now(),
+    playerId: Number(playerId),
     userId,
+    title,
     content,
-    type: type || 'GENERAL',
-    visibility: visibility || 'PRIVATE',
-    createdAt: new Date()
+    createdAt: new Date(),
+    updatedAt: new Date()
   };
 };
 
 /**
  * Ottieni tutte le note di un giocatore
  */
-const getNotesByPlayer = async ({ playerId, userId, userRole }) => {
-  // TODO: Implementare la logica di recupero note
-  // Filtrare per visibility in base al ruolo dell'utente
+const getNotesByPlayer = async ({ playerId, teamId }) => {
+  // TODO: Implementare quando il modello PlayerNote sarà aggiunto al schema Prisma
   
+  /*
+  return await prisma.playerNote.findMany({
+    where: {
+      playerId: Number(playerId),
+      player: { teamId },
+    },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      author: {
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true
+        }
+      }
+    }
+  });
+  */
+
   return [];
 };
 
 module.exports = {
-  createNote,
+  createPlayerNote,
   getNotesByPlayer
 };
-

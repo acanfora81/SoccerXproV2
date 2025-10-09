@@ -10,7 +10,8 @@ const {
   createPlayer,
   updatePlayer,
   deletePlayer,
-  exportPlayersToExcel
+  exportPlayersToExcel,
+  updatePlayerStatus
 } = require('../../controllers/players');
 
 const router = express.Router();
@@ -104,6 +105,22 @@ router.delete('/:id', ensureNumericId('id'), (req, res, next) => {
   }
   next();
 }, deletePlayer);
+
+/**
+ * 🔄 PUT /api/players/:id/status
+ * Aggiorna stato giocatore (ADMIN, DIRECTOR_SPORT, SECRETARY)
+ */
+router.put('/:id/status', ensureNumericId('id'), (req, res, next) => {
+  const allowedRoles = ['ADMIN', 'DIRECTOR_SPORT', 'SECRETARY'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({
+      error: 'Non autorizzato a modificare lo stato dei giocatori',
+      code: 'INSUFFICIENT_PERMISSIONS',
+      requiredRoles: allowedRoles
+    });
+  }
+  next();
+}, updatePlayerStatus);
 
 // ============================================================================
 // Players Performance API - Schede Giocatori

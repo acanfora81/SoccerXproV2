@@ -1,4 +1,4 @@
-const playersNotesService = require('../services/playersNotesService');
+const { createPlayerNote, getNotesByPlayer } = require('../services/playersNotesService');
 
 /**
  * Crea una nuova nota per un giocatore
@@ -7,27 +7,15 @@ const playersNotesService = require('../services/playersNotesService');
 const createNote = async (req, res) => {
   try {
     const { playerId } = req.params;
-    const { content, type, visibility } = req.body;
-    const userId = req.user.id;
+    const { title, content } = req.body;
+    const userId = req.user?.id;
+    const teamId = req.user?.teamId;
 
-    const note = await playersNotesService.createNote({
-      playerId: parseInt(playerId),
-      userId,
-      content,
-      type,
-      visibility
-    });
-
-    res.status(201).json({
-      success: true,
-      data: note
-    });
-  } catch (error) {
-    console.error('[playersNotesController] Error creating note:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Errore durante la creazione della nota'
-    });
+    const note = await createPlayerNote({ playerId, userId, teamId, title, content });
+    res.status(201).json(note);
+  } catch (err) {
+    console.error('[createNote]', err);
+    res.status(500).json({ error: 'Errore nella creazione della nota' });
   }
 };
 
@@ -35,33 +23,19 @@ const createNote = async (req, res) => {
  * Ottieni tutte le note di un giocatore
  * GET /api/players/notes/:playerId
  */
-const getNotesByPlayer = async (req, res) => {
+const getNotesByPlayerHandler = async (req, res) => {
   try {
     const { playerId } = req.params;
-    const userId = req.user.id;
-    const userRole = req.user.role;
-
-    const notes = await playersNotesService.getNotesByPlayer({
-      playerId: parseInt(playerId),
-      userId,
-      userRole
-    });
-
-    res.status(200).json({
-      success: true,
-      data: notes
-    });
-  } catch (error) {
-    console.error('[playersNotesController] Error getting notes:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Errore durante il recupero delle note'
-    });
+    const teamId = req.user?.teamId;
+    const notes = await getNotesByPlayer({ playerId, teamId });
+    res.json(notes);
+  } catch (err) {
+    console.error('[getNotesByPlayer]', err);
+    res.status(500).json({ error: 'Errore nel recupero note giocatore' });
   }
 };
 
 module.exports = {
   createNote,
-  getNotesByPlayer
+  getNotesByPlayer: getNotesByPlayerHandler
 };
-

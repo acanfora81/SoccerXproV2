@@ -705,11 +705,61 @@ const exportPlayersToExcel = async (req, res) => {
   }
 };
 
+/**
+ * 🔄 Aggiorna stato del giocatore
+ * PUT /api/players/:id/status
+ */
+const updatePlayerStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const teamId = req?.context?.teamId;
+
+    if (!teamId) {
+      const errorResponse = createErrorResponse(API_ERRORS.FORBIDDEN, 'Contesto team non disponibile');
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    const playerId = parseInt(id, 10);
+    if (Number.isNaN(playerId)) {
+      const errorResponse = createErrorResponse(API_ERRORS.INVALID_VALUE, 'ID giocatore non valido');
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    const prisma = getPrismaClient();
+
+    // Aggiorna lo stato
+    const result = await prisma.player.updateMany({
+      where: { id: playerId, teamId },
+      data: { isActive: status === 'active' }
+    });
+
+    if (result.count === 0) {
+      const errorResponse = createErrorResponse(API_ERRORS.RESOURCE_NOT_FOUND, 'Giocatore non trovato');
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    const updated = await prisma.player.findFirst({
+      where: { id: playerId, teamId }
+    });
+
+    res.json({
+      message: 'Stato giocatore aggiornato con successo',
+      data: updated
+    });
+  } catch (err) {
+    console.error('[updatePlayerStatus]', err);
+    const errorResponse = createErrorResponse(API_ERRORS.DATABASE_ERROR);
+    res.status(errorResponse.status).json(errorResponse.body);
+  }
+};
+
 module.exports = {
   getPlayers,
   getPlayerById,
   createPlayer,
   updatePlayer,
   deletePlayer,
-  exportPlayersToExcel
+  exportPlayersToExcel,
+  updatePlayerStatus
 };

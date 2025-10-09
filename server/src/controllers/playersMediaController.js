@@ -1,4 +1,4 @@
-const playersMediaService = require('../services/playersMediaService');
+const { uploadPlayerMediaFile, getPlayerMediaList } = require('../services/playersMediaService');
 
 /**
  * Carica media per un giocatore
@@ -7,28 +7,14 @@ const playersMediaService = require('../services/playersMediaService');
 const uploadPlayerMedia = async (req, res) => {
   try {
     const { playerId } = req.params;
-    const { type, url, title, description } = req.body;
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    const { type, url, title } = req.body;
 
-    const media = await playersMediaService.uploadMedia({
-      playerId: parseInt(playerId),
-      userId,
-      type,
-      url,
-      title,
-      description
-    });
-
-    res.status(201).json({
-      success: true,
-      data: media
-    });
-  } catch (error) {
-    console.error('[playersMediaController] Error uploading media:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Errore durante il caricamento del media'
-    });
+    const media = await uploadPlayerMediaFile({ playerId, userId, type, url, title });
+    res.status(201).json(media);
+  } catch (err) {
+    console.error('[uploadPlayerMedia]', err);
+    res.status(500).json({ error: 'Errore nel caricamento del media' });
   }
 };
 
@@ -39,21 +25,11 @@ const uploadPlayerMedia = async (req, res) => {
 const getPlayerMedia = async (req, res) => {
   try {
     const { playerId } = req.params;
-
-    const media = await playersMediaService.getMediaByPlayer({
-      playerId: parseInt(playerId)
-    });
-
-    res.status(200).json({
-      success: true,
-      data: media
-    });
-  } catch (error) {
-    console.error('[playersMediaController] Error getting media:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Errore durante il recupero dei media'
-    });
+    const media = await getPlayerMediaList({ playerId });
+    res.json(media);
+  } catch (err) {
+    console.error('[getPlayerMedia]', err);
+    res.status(500).json({ error: 'Errore nel recupero media' });
   }
 };
 
@@ -61,4 +37,3 @@ module.exports = {
   uploadPlayerMedia,
   getPlayerMedia
 };
-
