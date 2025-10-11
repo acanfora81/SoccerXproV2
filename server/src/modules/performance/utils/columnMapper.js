@@ -4,6 +4,7 @@
 const crypto = require('crypto');
 const { getPrismaClient } = require('../../../config/database');
 const redisClient = require('../../../config/redis');
+const { completeRow } = require('../../../utils/gpsDeriver');
 
 console.log('🟢 [INFO] Inizializzazione Smart Column Mapper (full auto)…');
 
@@ -976,6 +977,48 @@ class SmartColumnMapper {
         if (rowErrors.length === 0 && hasPlayerId && hasSessionDate) {
           // Rete di sicurezza cast tipi
           const normalized = this.normalizeRowForDB(transformedRow);
+
+          // 🔧 NUOVO: derivazioni robuste per colmare campi mancanti
+          try {
+            // Adattiamo l'input per il deriver
+            const inputForDeriver = {
+              Player: `${normalized.playerId}`,
+              Position: normalized.position,
+              Day: normalized.session_date,
+              Match: normalized.session_type,
+              T: normalized.duration_minutes,
+              'Distanza (m)': normalized.total_distance_m,
+              'Dist/min': normalized.distance_per_min,
+              'Pot. met. media': normalized.avg_metabolic_power_wkg,
+              'D > 20 W/Kg': normalized.distance_over_20wkg_m,
+              'D>35 W': normalized.distance_over_35wkg_m,
+              'D 15-20 km/h': normalized.distance_15_20_kmh_m,
+              'D 20-25 km/h': normalized.distance_20_25_kmh_m,
+              'D > 25 km/h': normalized.distance_over_25_kmh_m,
+              'D > 15 Km/h': normalized.distance_over_15_kmh_m,
+              'Num Acc > 3 m/s2': normalized.num_acc_over_3_ms2,
+              'Num Dec <-3 m/s2': normalized.num_dec_over_minus3_ms2,
+              'Training Load': normalized.training_load,
+            };
+            const { row: derived } = completeRow(inputForDeriver);
+
+            // Merge back su normalized
+            const kmh = (derived['Dist/min'] && normalized.duration_minutes)
+              ? (normalized.total_distance_m * 60) / (1000 * normalized.duration_minutes)
+              : undefined;
+
+            normalized.distance_per_min = Number.isFinite(derived['Dist/min']) ? derived['Dist/min'] : normalized.distance_per_min;
+            normalized.avg_speed_kmh = Number.isFinite(kmh) ? Number(kmh.toFixed(2)) : (normalized.avg_speed_kmh || 0);
+            normalized.training_load = Number.isFinite(derived['Training Load']) ? derived['Training Load'] : (normalized.training_load || normalized.player_load || 0);
+            normalized.distance_over_15_kmh_m = derived['D > 15 Km/h'] ?? normalized.distance_over_15_kmh_m;
+            normalized.distance_15_20_kmh_m = derived['D 15-20 km/h'] ?? normalized.distance_15_20_kmh_m;
+            normalized.distance_20_25_kmh_m = derived['D 20-25 km/h'] ?? normalized.distance_20_25_kmh_m;
+            normalized.distance_over_25_kmh_m = derived['D > 25 km/h'] ?? normalized.distance_over_25_kmh_m;
+
+          } catch (e) {
+            console.log('🟡 [WARN] Derivazione GPS non applicata alla riga', i + 1, '-', e.message);
+          }
+
           transformedData.push(normalized);
           console.log('🟢 [INFO] Riga', i + 1, 'trasformata con successo');
         } else {

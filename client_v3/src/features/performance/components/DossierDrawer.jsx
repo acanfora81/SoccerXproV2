@@ -250,6 +250,27 @@ const DossierDrawer = ({
         
         {/* Contenuto */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
+          {/* Alert Rischio Infortunio */}
+          {Array.isArray(player?.alerts) && player.alerts.length > 0 && (() => {
+            const injury = player.alerts.find(a => a?.type === 'injury_risk' || a?.category === 'injury' || /infortun/i.test(a?.message || ''));
+            if (!injury) return null;
+            const level = (injury.level || '').toLowerCase();
+            const isLow = level === 'info' || level === 'low' || /basso/i.test(injury.message || '');
+            const isModerate = level === 'warning' || level === 'moderate' || /moderat/i.test(injury.message || '');
+            const isHigh = level === 'danger' || level === 'high' || /alto|elevat/i.test(injury.message || '');
+            const cls = isHigh
+              ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700'
+              : isModerate
+              ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700'
+              : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700';
+            return (
+              <div className="px-4 pt-4">
+                <div className={`w-full text-xs px-3 py-2 rounded-lg text-center ${cls}`}>
+                  {injury.message}
+                </div>
+              </div>
+            );
+          })()}
           {/* 🔵 FilterBar compatta - su una riga */}
           <div className="sticky top-0 z-10 px-3 py-2 border-b border-gray-200/50 dark:border-white/10 bg-gray-50 dark:bg-[#0b1220]">
             <div className="text-[10px] text-gray-600 dark:text-gray-400 mb-1.5 font-medium uppercase tracking-wide">Filtri</div>
@@ -407,6 +428,26 @@ const DossierDrawer = ({
             >
               <ArrowUpRight size={14} /> Acc/Dec
             </button>
+          <button 
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              activeTab === 'sprint' 
+                ? 'bg-blue-500 text-white shadow-sm' 
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            onClick={() => setActiveTab('sprint')}
+          >
+            <Target size={14} /> Sprint
+          </button>
+          <button 
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              activeTab === 'readiness' 
+                ? 'bg-blue-500 text-white shadow-sm' 
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            onClick={() => setActiveTab('readiness')}
+          >
+            <Gauge size={14} /> Readiness
+          </button>
           </div>
         </div>
 
@@ -531,6 +572,42 @@ const DossierDrawer = ({
               </div>
             </div>
           )}
+
+        {activeTab === 'sprint' && (
+          <div>
+            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wider">Sprint</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-lg border bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/30 dark:to-yellow-900/30 border-amber-200 dark:border-amber-800/50">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Sprint/90</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{safeDec(player.summary?.sprintPer90, 2)}</p>
+              </div>
+              <div className="p-4 rounded-lg border bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border-red-200 dark:border-red-800/50">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Velocità max</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{safeDec(player.summary?.topSpeedMax, 2)} <span className="text-sm font-normal text-gray-500">km/h</span></p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'readiness' && (
+          <div>
+            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wider">Readiness</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-green-200 dark:border-green-800/50">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ACWR</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{safeDec(player.summary?.acwr ?? player.readiness?.acwr, 2)}</p>
+              </div>
+              <div className="p-4 rounded-lg border bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-900/30 dark:to-yellow-900/30 border-orange-200 dark:border-orange-800/50">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monotony</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{safeDec(player.readiness?.monotony, 2) || 'N/A'}</p>
+              </div>
+              <div className="p-4 rounded-lg border bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/30 dark:to-blue-900/30 border-sky-200 dark:border-sky-800/50">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Freshness</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{safeDec(player.readiness?.freshness, 2) || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
 
         </div> {/* Fine contenuto scrollabile */}

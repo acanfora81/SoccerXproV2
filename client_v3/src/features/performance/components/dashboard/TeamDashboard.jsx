@@ -34,6 +34,8 @@ import {
 
 // STEP 5: Import UI components per toggle Team/Player
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import OverviewSection from "@/features/performance/components/dashboard/sections/OverviewSection";
+import AlertPanel from "@/features/performance/components/dashboard/AlertPanel";
 import useAuthStore from '@/store/authStore';
 import { apiFetch } from '@/utils/apiClient';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters/index.js';
@@ -445,311 +447,59 @@ const TeamDashboard = () => {
           )}
         </div>
 
-      {/* Panoramica Generale */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Panoramica Generale
-        </h3>
+      {/* Sezioni persistenti, stile coerente con Panoramica Generale */}
+
+      <OverviewSection data={data} players={players} filters={filters} />
+
+      <div className="rounded-md border dark:border-white/10 p-4 bg-gray-50 dark:bg-[#0f1424]">
+        <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">Carico & Volumi</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Sessioni Totali"
-              value={fmtInt(data.summary?.totalSessions || 0)}
-              trend={dashboardData.trends?.totalSessions}
-              icon={Activity}
-            />
-            <MetricCard
-              title="Allenamenti Totali"
-              value={(() => {
-                const value = fmtInt(dashboardData.eventsSummary?.numeroAllenamenti || 0);
-                console.log('🔍 Card Allenamenti Totali:', {
-                  dashboardDataEventsSummary: dashboardData.eventsSummary,
-                  numeroAllenamenti: dashboardData.eventsSummary?.numeroAllenamenti,
-                  finalValue: value
-                });
-                return value;
-              })()}
-              unit="giorni"
-              icon={Users}
-            />
-            <MetricCard
-              title="Partite Disputate"
-              value={(() => {
-                const value = fmtInt(dashboardData.eventsSummary?.numeroPartite || 0);
-                console.log('🔍 Card Partite Disputate:', {
-                  dashboardDataEventsSummary: dashboardData.eventsSummary,
-                  numeroPartite: dashboardData.eventsSummary?.numeroPartite,
-                  finalValue: value
-                });
-                return value;
-              })()}
-              unit="giorni"
-              icon={Target}
-            />
-            <MetricCard
-              title="Durata Media Sessione"
-              value={fmtDec(data.summary?.avgSessionDuration || 0)}
-              unit="min"
-              trend={dashboardData.trends?.avgSessionDuration}
-              icon={Clock}
-            />
-            <MetricCard
-              title={viewMode === 'player' ? 'Distanza Media Giocatore' : 'Distanza Media Squadra'}
-              value={fmtDec(data.summary?.avgTeamDistance || 0)}
-              unit="m"
-              trend={dashboardData.trends?.avgTeamDistance}
-              icon={MapPin}
-            />
-            <MetricCard
-              title="Player Load Medio"
-              value={fmtDec(data.summary?.avgPlayerLoad || 0)}
-              unit="load"
-              trend={dashboardData.trends?.avgPlayerLoad}
-              icon={Gauge}
-            />
-            <MetricCard
-              title="Velocità Max Media"
-              value={fmtDec(data.summary?.avgMaxSpeed || 0)}
-              unit="km/h"
-              trend={dashboardData.trends?.avgMaxSpeed}
-              icon={Zap}
-            />
-        </div>
-        
-        {/* Highlight Card per Best Performer */}
-        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800">
-          <div className="flex items-center gap-3 mb-3">
-            <Crown size={24} className="text-yellow-600 dark:text-yellow-400" />
-            <span className="text-sm font-semibold text-yellow-900 dark:text-yellow-200">
-              Best Performer Settimanale
-            </span>
-          </div>
-          <div className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
-            {data.summary?.speedPB?.player || 'N/A'} - {fmtDec(data.summary?.speedPB?.value || 0)} km/h
-          </div>
+          <MetricCard title="Distanza Totale" value={fmtInt(data.load?.totalDistance || 0)} unit="m" trend={dashboardData.trends?.totalDistance} icon={Layers} />
+          <MetricCard title="Sprint Totali" value={fmtInt(data.load?.totalSprints || 0)} unit="sprint" trend={dashboardData.trends?.totalSprints} icon={Target} />
+          <MetricCard title="Passi Totali" value={fmtInt(data.load?.totalSteps || 0)} unit="passi" trend={dashboardData.trends?.totalSteps} icon={BarChart3} />
         </div>
       </div>
 
-      {/* Carico & Volumi */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Carico & Volumi
-        </h3>
+      <div className="rounded-md border dark:border-white/10 p-4 bg-gray-50 dark:bg-[#0f1424]">
+        <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">Intensità</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Distanza Totale"
-              value={fmtInt(data.load?.totalDistance || 0)}
-              unit="m"
-              trend={dashboardData.trends?.totalDistance}
-              icon={Layers}
-            />
-            <MetricCard
-              title="Sprint Totali"
-              value={fmtInt(data.load?.totalSprints || 0)}
-              unit="sprint"
-              trend={dashboardData.trends?.totalSprints}
-              icon={Target}
-            />
-            <MetricCard
-              title="Passi Totali"
-              value={fmtInt(data.load?.totalSteps || 0)}
-              unit="passi"
-              trend={dashboardData.trends?.totalSteps}
-              icon={BarChart3}
-            />
-          </div>
+          <MetricCard title="Distanza/min" value={fmtDec(data.intensity?.avgDistancePerMin || 0)} unit="m/min" trend={dashboardData.trends?.avgDistancePerMin} icon={Flame} />
+          <MetricCard title="Player Load/min" value={fmtDec(data.intensity?.avgPlayerLoadPerMin || 0)} unit="load/min" trend={dashboardData.trends?.avgPlayerLoadPerMin} icon={Zap} />
+          <MetricCard title="Sprint per Sessione" value={fmtDec(data.intensity?.avgSprintsPerSession || 0)} unit="sprint/sess." trend={dashboardData.trends?.avgSprintsPerSession} icon={Target} />
         </div>
+      </div>
 
-        {/* Intensità */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Intensità</h3>
+      <div className="rounded-md border dark:border-white/10 p-4 bg-gray-50 dark:bg-[#0f1424]">
+        <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">Energetico & Metabolico</h3>
+        {/* Aggiungere qui eventuali metriche energetiche quando disponibili */}
+      </div>
+
+      <div className="rounded-md border dark:border-white/10 p-4 bg-gray-50 dark:bg-[#0f1424]">
+        <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">Alta Velocità & Sprint</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Distanza/min"
-              value={fmtDec(data.intensity?.avgDistancePerMin || 0)}
-              unit="m/min"
-              trend={dashboardData.trends?.avgDistancePerMin}
-              icon={Flame}
-            />
-            <MetricCard
-              title="Player Load/min"
-              value={fmtDec(data.intensity?.avgPlayerLoadPerMin || 0)}
-              unit="load/min"
-              trend={dashboardData.trends?.avgPlayerLoadPerMin}
-              icon={Zap}
-            />
-            <MetricCard
-              title="Sprint per Sessione"
-              value={fmtDec(data.intensity?.avgSprintsPerSession || 0)}
-              unit="sprint/sess."
-              trend={dashboardData.trends?.avgSprintsPerSession}
-              icon={Target}
-            />
-          </div>
+          <MetricCard title="HSR Totale" value={fmtInt(data.speed?.totalHSR || 0)} unit="m" trend={dashboardData.trends?.totalHSR} icon={Wind} />
+          <MetricCard title="Sprint Distance Media" value={fmtDec(data.speed?.avgSprintDistance || 0)} unit="m" trend={dashboardData.trends?.avgSprintDistance} icon={ArrowUpRight} />
         </div>
+      </div>
 
-        {/* Alta Velocità & Sprint */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alta Velocità & Sprint</h3>
+      <div className="rounded-md border dark:border-white/10 p-4 bg-gray-50 dark:bg-[#0f1424]">
+        <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">Accelerazioni & Decelerazioni</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="HSR Totale"
-              value={fmtInt(data.speed?.totalHSR || 0)}
-              unit="m"
-              trend={dashboardData.trends?.totalHSR}
-              icon={Wind}
-            />
-            <MetricCard
-              title="Sprint Distance Media"
-              value={fmtDec(data.speed?.avgSprintDistance || 0)}
-              unit="m"
-              trend={dashboardData.trends?.avgSprintDistance}
-              icon={ArrowUpRight}
-            />
-          </div>
+          <MetricCard title="Acc+Dec per Sessione" value={fmtDec(data.accelerations?.avgAccDecPerSession || 0)} unit="per sess." trend={dashboardData.trends?.avgAccDecPerSession} icon={ArrowLeftRight} />
+          <MetricCard title="Impatti Stimati" value={fmtInt(data.accelerations?.totalImpacts || 0)} unit="impatti" trend={dashboardData.trends?.totalImpacts} icon={TrendingDown} />
         </div>
+      </div>
 
-        {/* Accelerazioni & Decelerazioni */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Accelerazioni & Decelerazioni</h3>
+      <div className="rounded-md border dark:border-white/10 p-4 bg-gray-50 dark:bg-[#0f1424]">
+        <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">Cardio & Recupero</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title="Acc+Dec per Sessione"
-              value={fmtDec(data.accelerations?.avgAccDecPerSession || 0)}
-              unit="per sess."
-              trend={dashboardData.trends?.avgAccDecPerSession}
-              icon={ArrowLeftRight}
-            />
-            <MetricCard
-              title="Impatti Stimati"
-              value={fmtInt(data.accelerations?.totalImpacts || 0)}
-              unit="impatti"
-              trend={dashboardData.trends?.totalImpacts}
-              icon={TrendingDown}
-            />
-          </div>
+          <MetricCard title={viewMode === 'player' ? 'HR Medio Giocatore' : 'HR Medio Squadra'} value={fmtDec(data.cardio?.avgHR || 0)} unit="bpm" trend={dashboardData.trends?.avgHR} icon={HeartPulse} />
+          <MetricCard title={viewMode === 'player' ? 'HR Max Giocatore' : 'HR Max Squadra'} value={fmtDec(data.cardio?.maxHR || 0)} unit="bpm" trend={dashboardData.trends?.maxHR} icon={HeartPulse} />
+          <MetricCard title="RPE Medio" value={data.cardio?.avgRPE !== null ? fmtDec(data.cardio.avgRPE) : 'N/A'} trend={dashboardData.trends?.avgRPE} icon={ShieldCheck} isEstimated={data.cardio?.isRPEEstimated} />
+          <MetricCard title="Session-RPE Totale" value={data.cardio?.totalSessionRPE !== null ? fmtInt(data.cardio.totalSessionRPE) : 'N/A'} trend={dashboardData.trends?.totalSessionRPE} icon={Dumbbell} isEstimated={data.cardio?.isRPEEstimated} />
         </div>
-
-        {/* Cardio & Percezione */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cardio & Percezione</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              title={viewMode === 'player' ? 'HR Medio Giocatore' : 'HR Medio Squadra'}
-              value={fmtDec(data.cardio?.avgHR || 0)}
-              unit="bpm"
-              trend={dashboardData.trends?.avgHR}
-              icon={HeartPulse}
-            />
-            <MetricCard
-              title={viewMode === 'player' ? 'HR Max Giocatore' : 'HR Max Squadra'}
-              value={fmtDec(data.cardio?.maxHR || 0)}
-              unit="bpm"
-              trend={dashboardData.trends?.maxHR}
-              icon={HeartPulse}
-            />
-            <MetricCard
-              title="RPE Medio"
-              value={data.cardio?.avgRPE !== null ? fmtDec(data.cardio.avgRPE) : 'N/A'}
-              trend={dashboardData.trends?.avgRPE}
-              icon={ShieldCheck}
-              isEstimated={data.cardio?.isRPEEstimated}
-            />
-            <MetricCard
-              title="Session-RPE Totale"
-              value={data.cardio?.totalSessionRPE !== null ? fmtInt(data.cardio.totalSessionRPE) : 'N/A'}
-              trend={dashboardData.trends?.totalSessionRPE}
-              icon={Dumbbell}
-              isEstimated={data.cardio?.isRPEEstimated}
-            />
-          </div>
-        </div>
-
-        {/* Alert Giocatori Critici */}
-        {dashboardData.alerts && dashboardData.alerts.length > 0 && (
-          <div className="space-y-4">
-            <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 border border-red-200 dark:border-red-800">
-              <div className="flex items-center gap-3 mb-4">
-                <AlertCircle size={24} className="text-red-600 dark:text-red-400" />
-                <h3 className="text-lg font-semibold text-red-900 dark:text-red-200">Alert Giocatori Critici</h3>
-              </div>
-              <div className="space-y-2">
-                {dashboardData.alerts.map((alert, index) => (
-                  <div 
-                    key={index} 
-                    className={`p-3 rounded-lg ${
-                      alert.type === 'danger' 
-                        ? 'bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-200 border border-red-300 dark:border-red-700' 
-                        : alert.type === 'warning'
-                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-200 border border-yellow-300 dark:border-yellow-700'
-                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-700'
-                    }`}
-                  >
-                    {alert.message}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Readiness Board */}
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-[#0f1424] rounded-xl p-6 border border-gray-200/50 dark:border-white/10">
-            <div className="flex items-center gap-3 mb-6">
-              <Users size={24} className="text-blue-600 dark:text-blue-400" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {viewMode === 'player' ? 'Readiness Giocatore (ACWR)' : 'Readiness Squadra (ACWR)'}
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* ACWR Medio con ranges */}
-              <div className="space-y-3">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">ACWR Medio</span>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {Number.isFinite(Number(data.readiness?.avgACWR)) ? fmtDec(data.readiness.avgACWR) : 'N/A'}
-                </div>
-                <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-white/10">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-600 dark:text-gray-400">Basso</span>
-                    <span className="text-red-600 dark:text-red-400 font-medium">&lt; 0.8</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
-                    <span className="text-green-700 dark:text-green-400 font-medium">Ottimale</span>
-                    <span className="text-green-700 dark:text-green-400 font-medium">0.8 - 1.3</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-600 dark:text-gray-400">Alto</span>
-                    <span className="text-orange-600 dark:text-orange-400 font-medium">&gt; 1.3</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Giocatori a Rischio */}
-              <div className="space-y-3">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Giocatori a Rischio</span>
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-                  {data.readiness?.playersAtRisk || 0}/{data.readiness?.totalPlayers || 0}
-                </div>
-              </div>
-              
-              {/* Giocatori Ottimali */}
-              <div className="space-y-3">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Giocatori Ottimali</span>
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {data.readiness?.playersOptimal || 0}/{data.readiness?.totalPlayers || 0}
-                </div>
-              </div>
-              
-              {/* % Rischio */}
-              <div className="space-y-3">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">% Rischio</span>
-                <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                  {data.readiness?.riskPercentage || 0}%
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AlertPanel alerts={dashboardData.alerts} />
+      </div>
     </div>
   );
 };

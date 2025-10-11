@@ -212,6 +212,25 @@ export default function DossierPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Alert Rischio Infortunio */}
+        {Array.isArray(player?.alerts) && player.alerts.length > 0 && (() => {
+          const injury = player.alerts.find(a => a?.type === 'injury_risk' || a?.category === 'injury' || /infortun/i.test(a?.message || ''));
+          if (!injury) return null;
+          const level = (injury.level || '').toLowerCase();
+          const isLow = level === 'info' || level === 'low' || /basso/i.test(injury.message || '');
+          const isModerate = level === 'warning' || level === 'moderate' || /moderat/i.test(injury.message || '');
+          const isHigh = level === 'danger' || level === 'high' || /alto|elevat/i.test(injury.message || '');
+          const cls = isHigh
+            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700'
+            : isModerate
+            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700'
+            : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700';
+          return (
+            <div className={`w-full text-xs px-3 py-2 rounded-lg text-center mb-4 ${cls}`}>
+              {injury.message}
+            </div>
+          );
+        })()}
         {/* Toggle Vista */}
       <div className="flex items-center justify-center mb-6">
         <div className="inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
@@ -368,6 +387,26 @@ export default function DossierPage() {
           >
             <ArrowUpRight size={16} /> Acc/Dec
           </button>
+          <button 
+            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'sprint' 
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400' 
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+            onClick={() => setActiveTab('sprint')}
+          >
+            <ArrowUpRight size={16} /> Sprint
+          </button>
+          <button 
+            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === 'readiness' 
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400' 
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+            onClick={() => setActiveTab('readiness')}
+          >
+            <Gauge size={16} /> Readiness
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -491,6 +530,48 @@ export default function DossierPage() {
                 <div className="p-4 rounded-lg border bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 border-violet-200 dark:border-violet-800/50">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Impatto stimato</p>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">{safeInt(player.accDec?.impact) || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'sprint' && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sprint</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg p-4 shadow-sm border bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/30 dark:to-yellow-900/30 border-amber-200 dark:border-amber-800/50">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm mb-2">
+                    <ArrowUpRight size={14} className="text-amber-600" />
+                    <span>Sprint/90</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{safeDec(player.summary?.sprintPer90, 2)}</div>
+                </div>
+                <div className="rounded-lg p-4 shadow-sm border bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 border-red-200 dark:border-red-800/50">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm mb-2">
+                    <Target size={14} className="text-red-600" />
+                    <span>Velocità max</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{safeDec(player.summary?.topSpeedMax, 2)} <span className="text-sm font-normal text-gray-500">km/h</span></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'readiness' && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Readiness</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-lg p-4 shadow-sm border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 border-green-200 dark:border-green-800/50">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">ACWR</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{safeDec(player.readiness?.acwr ?? player.summary?.acwr, 2)}</div>
+                </div>
+                <div className="rounded-lg p-4 shadow-sm border bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-orange-900/30 dark:to-yellow-900/30 border-orange-200 dark:border-orange-800/50">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Monotony</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{player.readiness?.monotony != null ? safeDec(player.readiness?.monotony, 2) : 'N/A'}</div>
+                </div>
+                <div className="rounded-lg p-4 shadow-sm border bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/30 dark:to-blue-900/30 border-sky-200 dark:border-sky-800/50">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Freshness</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{player.readiness?.freshness != null ? safeDec(player.readiness?.freshness, 2) : 'N/A'}</div>
                 </div>
               </div>
             </div>

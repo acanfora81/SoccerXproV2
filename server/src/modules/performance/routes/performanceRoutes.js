@@ -1352,6 +1352,41 @@ router.get(
   }
 );
 
+// 🔧 NUOVO: Funzione per calcolare ACWR medio del team
+async function calculateTeamACWR(teamId, startDate, endDate) {
+  try {
+    const prisma = getPrismaClient();
+    
+    // Ottieni tutti i giocatori del team
+    const players = await prisma.player.findMany({
+      where: { teamId },
+      select: { id: true }
+    });
+    
+    if (players.length === 0) return 1.0;
+    
+    // Calcola ACWR per ogni giocatore e fai la media
+    const acwrValues = await Promise.all(
+      players.map(async (player) => {
+        try {
+          const acwr = await calculateACWR(player.id, startDate, endDate);
+          return Number.isFinite(acwr) ? acwr : 1.0;
+        } catch (err) {
+          console.warn(`⚠️ Errore calcolo ACWR per giocatore ${player.id}:`, err.message);
+          return 1.0;
+        }
+      })
+    );
+    
+    // Media degli ACWR
+    const avgACWR = acwrValues.reduce((sum, val) => sum + val, 0) / acwrValues.length;
+    return Number.isFinite(avgACWR) ? avgACWR : 1.0;
+  } catch (err) {
+    console.error('❌ Errore calcolo ACWR team:', err.message);
+    return 1.0;
+  }
+}
+
 /**
  * 📊 GET /api/performance/stats/team
  * Statistiche performance aggregate del team - MULTI-TENANT
@@ -1443,7 +1478,11 @@ router.get(
             avg_speed_kmh: true,
             player_load: true,
             max_heart_rate: true,
+            avg_heart_rate: true,
             duration_minutes: true,
+            num_acc_over_3_ms2: true,
+            num_dec_over_minus3_ms2: true,
+            distance_over_20_kmh_m: true,
           },
         }),
 
@@ -1455,10 +1494,12 @@ router.get(
             total_distance_m: true,
             sprint_distance_m: true,
             player_load: true,
+            training_load: true,
             duration_minutes: true,
             avg_heart_rate: true,
             // HSR stimabile da distance_over_20_kmh_m
-            distance_over_20_kmh_m: true
+            distance_over_20_kmh_m: true,
+            distance_per_min: true
           }
         }),
 
@@ -1532,6 +1573,35 @@ router.get(
         return n == null ? 0 : Number(n.toFixed(d));
       };
 
+      // 🔧 NUOVO: Calcolo velocità media corretta
+      const computeAvgSpeed = (total_distance_m, duration_minutes) => {
+        if (!total_distance_m || !duration_minutes || duration_minutes === 0) return 0;
+        return (total_distance_m / 1000) / (duration_minutes / 60); // km/h
+      };
+
+      // 🔧 NUOVO: Calcolo metriche avanzate
+      const { calculateMonotony, calculateFreshness } = require('../../../utils/advancedMetrics');
+      
+      // Calcola ACWR medio del team
+      const teamACWR = await calculateTeamACWR(teamId, periodStart, periodEnd);
+      
+      // Calcola Monotony e Freshness (con fallback training_load)
+      // Aggrega per giorno: somma carichi per data (evita molti zeri/duplicati)
+      const loadByDate = new Map();
+      for (const rec of performancesRaw) {
+        const d = rec.session_date ? new Date(rec.session_date).toISOString().slice(0,10) : null;
+        if (!d) continue;
+        const loadVal = Number(rec.training_load ?? rec.player_load ?? 0) || 0;
+        if (loadVal <= 0) continue;
+        loadByDate.set(d, (loadByDate.get(d) || 0) + loadVal);
+      }
+      const dailyLoads = Array.from(loadByDate.values());
+      const monotony = calculateMonotony(dailyLoads);
+      // Freshness team: proxy robusto quando non abbiamo acute/chronic serie
+      const freshness = (monotony && teamACWR)
+        ? Math.max(0, Number((1 / (monotony * teamACWR)).toFixed(2)))
+        : 0;
+
       // Arricchimento KPI derivati (non distruttivo)
       const performances = performancesRaw.map(p => ({
         ...p,
@@ -1542,6 +1612,15 @@ router.get(
         metabolic_efficiency: calcMetabolicEfficiency(p.total_distance_m, p.player_load),
         cardio_effort_index: calcCardioEffortIndex(p.avg_heart_rate, p.player_load)
       }));
+
+      // Sums per calcoli medi robusti
+      const sum = (arr, sel) => arr.reduce((s, it) => s + (Number(it?.[sel]) || 0), 0);
+      const totalDistanceSum = sum(performancesRaw, 'total_distance_m');
+      const totalDurationSum = sum(performancesRaw, 'duration_minutes');
+      const totalHSRSum = sum(performancesRaw, 'distance_over_20_kmh_m');
+      const loadsArray = performancesRaw.map(p => (p.training_load ?? p.player_load ?? 0)).filter(n => Number.isFinite(n) && n > 0);
+      const avgLoadSafe = loadsArray.length ? (loadsArray.reduce((a,b)=>a+b,0) / loadsArray.length) : 0;
+      const avgSpeedOverall = computeAvgSpeed(totalDistanceSum, totalDurationSum);
 
       const teamStats = {
         overview: {
@@ -1559,7 +1638,7 @@ router.get(
           totalDistance: roundOrNull(teamAverages._avg.total_distance_m, 2),
           sprintDistance: roundOrNull(teamAverages._avg.sprint_distance_m, 2),
           topSpeed: roundOrNull(teamAverages._avg.top_speed_kmh, 2),
-          avgSpeed: roundOrNull(teamAverages._avg.avg_speed_kmh, 2),
+          avgSpeed: roundOrNull(computeAvgSpeed(teamAverages._avg.total_distance_m, teamAverages._avg.duration_minutes), 2),
           playerLoad: roundOrNull(teamAverages._avg.player_load, 2),
           maxHeartRate: Math.round(toNum(teamAverages._avg.max_heart_rate) || 0),
           duration: Math.round(toNum(teamAverages._avg.duration_minutes) || 0),
@@ -1586,6 +1665,16 @@ router.get(
           avgPlayerLoad: roundOrNull(item._avg.player_load, 2),
           avgTopSpeed: roundOrNull(item._avg.top_speed_kmh, 2),
         })),
+        // 🔧 NUOVO: Sezione readiness con metriche avanzate
+        readiness: {
+          avgACWR: roundOrNull(teamACWR, 2),
+          avgMonotony: roundOrNull(monotony, 2),
+          avgFreshness: roundOrNull(freshness, 2),
+          playersAtRisk: 0, // TODO: calcolare da ACWR individuali
+          playersOptimal: 0, // TODO: calcolare da ACWR individuali
+          totalPlayers: activePlayersCount,
+          riskPercentage: 0, // TODO: calcolare percentuale rischio
+        },
       };
 
       console.log(
@@ -1604,9 +1693,60 @@ router.get(
         "Durata:", teamStats.trends.durationTrend + "%"
       );
 
+      // 🔧 NUOVO: Struttura dati compatibile con il frontend
+      const dashboardData = {
+        summary: {
+          totalSessions,
+          totalDistance: totalDistanceSum,
+          avgSpeed: avgSpeedOverall,
+          avgPlayerLoad: avgLoadSafe,
+          avgMaxSpeed: teamAverages._avg.top_speed_kmh || 0,
+          avgSessionDuration: teamAverages._avg.duration_minutes || 0,
+          avgTeamDistance: teamAverages._avg.total_distance_m || 0,
+        },
+        load: {
+          totalDistance: totalDistanceSum,
+          totalSprints: teamAverages._avg.sprint_distance_m || 0,
+          totalSteps: 0, // TODO: calcolare se disponibile
+          avgPlayerLoad: avgLoadSafe,
+        },
+        intensity: {
+          avgDistancePerMin: (performances.reduce((s, p) => s + (p.distance_per_min || 0), 0) / (performances.length || 1)) || 0,
+          avgPlayerLoadPerMin: avgLoadSafe / (teamAverages._avg.duration_minutes || 1),
+          avgSprintsPerSession: (teamAverages._avg.sprint_distance_m || 0) / (totalSessions || 1),
+          avgSpeed: avgSpeedOverall,
+        },
+        speed: {
+          totalHSR: totalHSRSum,
+          avgSprintDistance: teamAverages._avg.sprint_distance_m || 0,
+        },
+        accelerations: {
+          avgAccDecPerSession: roundOrNull((teamAverages._avg.num_acc_over_3_ms2 || 0) + (teamAverages._avg.num_dec_over_minus3_ms2 || 0), 0),
+          totalImpacts: roundOrNull((teamAverages._avg.num_acc_over_3_ms2 || 0) + (teamAverages._avg.num_dec_over_minus3_ms2 || 0), 0),
+        },
+        cardio: {
+          avgHR: teamAverages._avg.avg_heart_rate || 0,
+          maxHR: teamAverages._avg.max_heart_rate || 0,
+          avgRPE: null, // TODO: calcolare se disponibile
+          totalSessionRPE: null, // TODO: calcolare se disponibile
+          isRPEEstimated: false,
+        },
+        readiness: {
+          avgACWR: roundOrNull(teamACWR, 2),
+          avgMonotony: roundOrNull(monotony, 2),
+          avgFreshness: roundOrNull(freshness, 2),
+          playersAtRisk: 0,
+          playersOptimal: 0,
+          totalPlayers: activePlayersCount,
+          riskPercentage: 0,
+        },
+        alerts: [], // TODO: generare alert dal sistema avanzato
+      };
+
       res.json({
         message: "Statistiche team recuperate con successo",
-        data: teamStats,
+        data: dashboardData,
+        trends: teamStats.trends,
         enrichedMetrics: {
           series: performances,
           summary: {
@@ -2838,6 +2978,7 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
         session_name: true,
         duration_minutes: true,
         player_load: true,
+        training_load: true,
         top_speed_kmh: true,
         high_intensity_runs: true,
         sprint_distance_m: true,
@@ -2912,7 +3053,7 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
     }, 0);
 
     // pl/min nel periodo (media semplice o 0)
-    const totalPL = sessions.reduce((s, r) => s + safeNum(r.player_load), 0);
+    const totalPL = sessions.reduce((s, r) => s + (safeNum(r.training_load) || safeNum(r.player_load)), 0);
     const totalMin = sessions.reduce((s, r) => s + safeNum(r.duration_minutes), 0);
     const plPerMin = totalMin > 0 ? totalPL / totalMin : 0;
 
@@ -2958,7 +3099,23 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
 
     const totalDistance = sessions.reduce((s, r) => s + resolveRowDistanceMeters(r), 0);
     const totalMinutes = sessions.reduce((s, r) => s + safeNum(r.duration_minutes), 0);
-    const totalSteps = sessions.reduce((s, r) => s + safeNum(r.steps || 0), 0);
+    // Tot passi: alias da extras + fallback stima da distanza come in dashboard (STEPS_PER_M)
+    const STEPS_PER_M = 1.28;
+    const totalSteps = sessions.reduce((s, r) => {
+      let stepsVal = 0;
+      try {
+        const raw = r?.extras;
+        const ex = typeof raw === 'string' ? JSON.parse(raw) : raw || {};
+        const direct = Number(ex?.steps_count ?? ex?.steps ?? 0);
+        if (Number.isFinite(direct) && direct > 0) stepsVal = direct;
+      } catch (_) {}
+
+      if (!stepsVal) {
+        const dist = resolveRowDistanceMeters(r);
+        stepsVal = dist > 0 ? Math.round(dist * STEPS_PER_M) : 0;
+      }
+      return s + stepsVal;
+    }, 0);
 
     // --- Riepilogo Intensità (zone velocità) ---
     const zone15_20 = sessions.reduce((s, r) => s + safeNum(r.distance_15_20_kmh_m || 0), 0);
@@ -3020,6 +3177,19 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
     const accTotal = sessions.reduce((s, r) => s + safeNum(r.num_acc_over_3_ms2 || 0), 0);
     const decTotal = sessions.reduce((s, r) => s + safeNum(r.num_dec_over_minus3_ms2 || 0), 0);
 
+    // Readiness: monotony & freshness
+    const { calculateMonotony } = require('../../../utils/advancedMetrics');
+    const loadByDate = new Map();
+    for (const s of sessions) {
+      const d = safeDate(s.session_date).toISOString().slice(0,10);
+      const tl = safeNum(s.training_load) || safeNum(s.player_load) || 0;
+      if (tl <= 0) continue;
+      loadByDate.set(d, (loadByDate.get(d) || 0) + tl);
+    }
+    const dailyLoads = Array.from(loadByDate.values());
+    const monotonyVal = dailyLoads.length ? calculateMonotony(dailyLoads) : 0;
+    const freshnessVal = (monotonyVal && acwr) ? Number((1 / (monotonyVal * acwr)).toFixed(2)) : null;
+
     return res.json({
       player: {
         id: player.id,
@@ -3043,6 +3213,11 @@ router.get("/player/:playerId/dossier", ensureNumericParam("playerId"), async (r
           sprintPer90: 0,
           topSpeedMax: 0
         }
+      },
+      readiness: {
+        acwr: round(acwr, 2),
+        monotony: monotonyVal ? Number(monotonyVal.toFixed(2)) : null,
+        freshness: freshnessVal
       },
       // 🔵 Nuova sezione per il tab "Intensità"
       intensity: {

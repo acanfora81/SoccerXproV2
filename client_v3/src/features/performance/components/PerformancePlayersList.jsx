@@ -645,26 +645,33 @@ const PerformancePlayersList = () => {
           <ICONS.compare size={ICON_SIZES.sm} />
           Confronta
         </button>
-        {/* Alert/PB come chip nel footer */}
-        {Array.isArray(player.alerts) && player.alerts.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {player.alerts.map((alert, index) => (
-              <span 
-                key={index} 
-                className={`text-xs px-2 py-1 rounded-full ${
-                  alert.type === 'danger' 
-                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' 
-                    : alert.type === 'warning'
-                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
-                    : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                }`}
-              >
-                {alert.message}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
+      {/* Alert rischio infortunio spostato sotto i pulsanti, a tutta larghezza */}
+      {(() => {
+        const alerts = Array.isArray(player.alerts) ? player.alerts : [];
+        const injury = alerts.find(a => a?.type === 'injury_risk' || a?.category === 'injury' || /infortun/i.test(a?.message || ''));
+        if (!injury) return null;
+
+        // Mappa livelli → colori: basso=verde, moderato=arancione, alto=rosso
+        const level = (injury.level || '').toLowerCase();
+        const isLow = level === 'info' || level === 'low' || /basso/i.test(injury.message || '');
+        const isModerate = level === 'warning' || level === 'moderate' || /moderat/i.test(injury.message || '');
+        const isHigh = level === 'danger' || level === 'high' || /alto|elevat/i.test(injury.message || '');
+
+        const cls = isHigh
+          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700'
+          : isModerate
+          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700'
+          : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700';
+
+        return (
+          <div className="px-4 pb-4">
+            <div className={`w-full text-xs px-3 py-2 rounded-lg text-center ${cls}`}>
+              {injury.message}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
   }, [cardTabById, fmtDec, fmtInt, getTrendIcon, getACWRColor, selectedPlayers.size]);

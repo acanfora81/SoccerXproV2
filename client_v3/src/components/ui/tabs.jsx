@@ -7,7 +7,7 @@ export const Tabs = ({ children, value, onValueChange, className = '' }) => {
         if (!React.isValidElement(child)) return child;
         // Evita di iniettare props custom in elementi DOM (div, span, ecc.)
         if (typeof child.type === 'string') return child;
-        return React.cloneElement(child, { value, onValueChange });
+        return React.cloneElement(child, { value, onValueChange, currentValue: value });
       })}
     </div>
   );
@@ -45,5 +45,14 @@ export const TabsTrigger = ({ children, value: tabValue, currentValue, onValueCh
     >
       {children}
     </button>
+  );
+};
+
+export const TabsContent = ({ children, value: tabValue, currentValue, className = '' }) => {
+  if (currentValue !== tabValue) return null;
+  return (
+    <div className={className}>
+      {children}
+    </div>
   );
 };

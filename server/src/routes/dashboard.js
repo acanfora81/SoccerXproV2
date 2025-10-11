@@ -8,6 +8,7 @@ const express = require('express');
 const router = express.Router();
 const { getPrismaClient } = require('../config/database');
 const { parseSessionTypeFilter, parseSessionTypeFilterSimple, computeHSR } = require('../utils/kpi');
+const { calculateMonotony } = require('../utils/advancedMetrics');
 
 // 🔧 FIX: Aggiorna parsing dei filtri in dashboard.js per allineamento
 function parseFiltersForDashboard(req) {
@@ -130,6 +131,15 @@ const parseSessionDate = (sessionDateStr) => {
     return new Date();
   }
 };
+
+// 🔧 Helper: km/h robusto da somme periodo
+function computeAvgSpeedFromRows(rows) {
+  const totalDist = rows.reduce((s, r) => s + toNum(r.total_distance_m), 0);
+  const totalMin = rows.reduce((s, r) => s + toNum(r.duration_minutes), 0);
+  if (!totalDist || !totalMin) return 0;
+  // km/h = (m/1000) / (min/60)
+  return (totalDist / 1000) / (totalMin / 60);
+}
 
 // 🔧 FIX: Funzioni per gestione unità coerente
 const formatDistance = (meters) => ({
@@ -424,6 +434,7 @@ async function loadRows(prisma, teamId, startDate, endDate, sessionTypeFilter, s
           // Somma tutti i valori numerici
           total_distance_m: playerSessions.reduce((sum, s) => sum + (Number(s.total_distance_m) || 0), 0),
           player_load: playerSessions.reduce((sum, s) => sum + (Number(s.player_load) || 0), 0),
+          training_load: playerSessions.reduce((sum, s) => sum + (Number(s.training_load) || 0), 0),
           duration_minutes: playerSessions.reduce((sum, s) => sum + (Number(s.duration_minutes) || 0), 0),
           top_speed_kmh: Math.max(...playerSessions.map(s => Number(s.top_speed_kmh) || 0)),
           high_intensity_runs: playerSessions.reduce((sum, s) => sum + (Number(s.high_intensity_runs) || 0), 0),
@@ -560,7 +571,8 @@ function buildOverview(rows) {
   return {
     totalSessions: validCount,
     totalDistance: sum(validRows.map(r => toNum(r.total_distance_m))),
-    avgSpeed: mean(validRows.map(r => toNum(r.avg_speed_kmh))),
+    // 🔧 Calcolo robusto: usa somme periodo per km/h
+    avgSpeed: computeAvgSpeedFromRows(validRows),
     playerLoad: sum(validRows.map(r => toNum(r.player_load))),
     avgSessionDuration,
     avgTeamDistance, // Ora in metri
@@ -664,8 +676,36 @@ function buildCardio(rows) {
   const rpeValues = validRows.map(r => toNum(r.rpe)).filter(v => v > 0);
   const sessionRpeValues = validRows.map(r => toNum(r.session_rpe)).filter(v => v > 0);
   
-  const avgRPE = rpeValues.length > 0 ? mean(rpeValues) : null;
-  const totalSessionRPE = sessionRpeValues.length > 0 ? sum(sessionRpeValues) : null;
+  // Fallback: se RPE assente, stima da training_load / duration (clamp 1-10)
+  let avgRPE = rpeValues.length > 0 ? mean(rpeValues) : null;
+  if (avgRPE == null) {
+    const estimated = validRows
+      .map(r => {
+        const tl = toNum(r.training_load);
+        const dur = toNum(r.duration_minutes);
+        if (!tl || !dur) return 0;
+        const est = tl / dur; // RPE ≈ TL / min
+        if (!Number.isFinite(est)) return 0;
+        return Math.max(1, Math.min(10, est));
+      })
+      .filter(v => v > 0);
+    if (estimated.length > 0) avgRPE = mean(estimated);
+  }
+
+  // Fallback: Session-RPE totale = Σ (rpe*durata) o Σ training_load
+  let totalSessionRPE = sessionRpeValues.length > 0 ? sum(sessionRpeValues) : null;
+  if (totalSessionRPE == null) {
+    const fromRpe = validRows
+      .map(r => {
+        const rpe = toNum(r.rpe);
+        const dur = toNum(r.duration_minutes);
+        return rpe > 0 && dur > 0 ? rpe * dur : 0;
+      })
+      .filter(v => v > 0);
+    const sumFromRpe = fromRpe.length > 0 ? sum(fromRpe) : 0;
+    const sumTrainingLoad = sum(validRows.map(r => toNum(r.training_load)));
+    totalSessionRPE = (sumFromRpe || sumTrainingLoad) || null;
+  }
   
   return {
     avgHR: mean(validRows.map(r => toNum(r.avg_heart_rate))),
@@ -673,7 +713,7 @@ function buildCardio(rows) {
     avgRPE: avgRPE,
     totalSessionRPE: totalSessionRPE,
     // 🔧 FIX: Flag per indicare se i valori sono stimati
-    isRPEEstimated: validRows.some(r => r._est?.rpe || r._est?.session_rpe),
+    isRPEEstimated: validRows.some(r => r._est?.rpe || r._est?.session_rpe) || (rpeValues.length === 0),
   };
 }
 
@@ -683,6 +723,18 @@ function buildReadiness(rows, windowEnd) {
   // 🔧 FIX: Filtra record vuoti (giorni senza sessioni)
   const validRows = rows.filter(r => r.playerId && r.player);
   
+  // 🔧 NUOVO: Monotony team dal training load giornaliero aggregato
+  const loadByDate = new Map();
+  for (const r of validRows) {
+    const d = r.session_date && new Date(r.session_date).toISOString().slice(0,10);
+    if (!d) continue;
+    const tl = toNum(r.training_load) || toNum(r.player_load) || 0;
+    if (tl <= 0) continue;
+    loadByDate.set(d, (loadByDate.get(d) || 0) + tl);
+  }
+  const dailyLoads = Array.from(loadByDate.values());
+  const avgMonotony = dailyLoads.length ? calculateMonotony(dailyLoads) : 0;
+
   const players = [...new Set(validRows.map(r => r.playerId))];
   const ratios = [];
   
@@ -694,7 +746,7 @@ function buildReadiness(rows, windowEnd) {
     const sessions = playerRows.map(r => ({
       playerId: pid,
       session_date: r.session_date,
-      training_load: r.player_load || 0
+      training_load: toNum(r.training_load) || toNum(r.player_load) || 0
     }));
     
     const acwrResults = calculateACWR(sessions);
@@ -714,6 +766,8 @@ function buildReadiness(rows, windowEnd) {
   }
 
   const avgACWR = ratios.length ? mean(ratios.map(r => r.acwr)) : 0;
+  // 🔧 Freshness proxy: 1/(Monotony*ACWR)
+  const avgFreshness = (avgMonotony && avgACWR) ? round(1 / (avgMonotony * avgACWR), 2) : 0;
 
   // Soglie classiche: 0.8–1.3 ottimale
   const playersOptimal = ratios.filter(r => r.acwr >= 0.8 && r.acwr <= 1.3).length;
@@ -721,7 +775,7 @@ function buildReadiness(rows, windowEnd) {
   const totalPlayers = ratios.length;
   const riskPercentage = totalPlayers ? round((playersAtRisk / totalPlayers) * 100, 0) : 0;
 
-  return { avgACWR, playersAtRisk, playersOptimal, totalPlayers, riskPercentage };
+  return { avgACWR, playersAtRisk, playersOptimal, totalPlayers, riskPercentage, avgMonotony, avgFreshness };
 }
 
 function buildEventsSummary(rows) {
