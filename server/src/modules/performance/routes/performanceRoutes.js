@@ -28,6 +28,35 @@ const fs = require("fs");
 const path = require("path");
 const { completeRow } = require("../../../utils/gpsDeriver.js");
 
+// === 📦 IMPORT NUOVI MODULI ADVANCED PERFORMANCE ===
+const {
+  calculateMonotony,
+  calculateTrainingStrain,
+  calculateFreshness,
+  calculateMechanicalLoad,
+  calculateAccelDensity,
+  calculateEDI,
+  calculateSprintEfficiency,
+  calculateTRIMP,
+  calculateCardiacEfficiency,
+  calculateTechnicalLoad,
+  calculatePowerWeight,
+  calculateInjuryRisk,
+  getInjuryRiskAlert,
+  calculateReadiness,
+  getReadinessLevel,
+} = require("../../../utils/advancedMetrics");
+
+const {
+  generateAlerts,
+  generateTeamAlerts,
+} = require("../../../utils/alertSystem");
+
+const {
+  calculateAllTrends,
+  calculateRolePercentiles,
+} = require("../../../utils/kpi");
+
 const upload = multer({ dest: "uploads/" });
 
 dlog("🟢 [INFO] Caricamento route performance multi-tenant...");
@@ -1768,7 +1797,7 @@ router.get("/stats/players", async (req, res) => {
     // ================= CALCOLA KPI PER OGNI GIOCATORE =================
     // 🔧 FIX: Usa la stessa logica che funziona nell'endpoint singolo giocatore
     
-    const playersWithStats = await Promise.all(filteredPlayers.map(async (player) => {
+    const playersWithStats = (await Promise.all(filteredPlayers.map(async (player) => {
       const playerId = player.id;
       
       // Inizializza variabili KPI
@@ -1805,6 +1834,44 @@ router.get("/stats/players", async (req, res) => {
           },
           orderBy: { session_date: 'desc' }
         });
+
+        // ✅ Placeholder coerente se nessuna sessione trovata
+        if (!playerPerformanceData || playerPerformanceData.length === 0) {
+          const roleMap = {
+            'GOALKEEPER': 'POR',
+            'DEFENDER': 'DIF',
+            'MIDFIELDER': 'CEN',
+            'FORWARD': 'ATT'
+          };
+          const statusMap = { true: 'active', false: 'inactive' };
+          const availabilityMap = { true: 'green', false: 'red' };
+          const round = (v, d = 2) => Number.isFinite(v) ? Number(v.toFixed(d)) : 0;
+
+          return {
+            id: player.id,
+            name: `${player.firstName} ${player.lastName}`,
+            role: roleMap[player.position] || player.position,
+            number: player.shirtNumber,
+            status: statusMap[player.isActive],
+            availability: availabilityMap[player.isActive],
+            avatar: null,
+            plMin: 0,
+            plMinTrend: 0,
+            plMinPercentile: 50,
+            hsr: 0,
+            hsrTrend: 0,
+            hsrPercentile: 50,
+            sprintPer90: 0,
+            sprintTrend: 0,
+            sprintPercentile: 50,
+            topSpeed: round(0, 2),
+            speedTrend: 0,
+            speedPercentile: 50,
+            acwr: 0,
+            lastSession: null,
+            alerts: []
+          };
+        }
         
         // Deriva campi mancanti (stessa logica di deriveRow)
         const rowsD = playerPerformanceData.map(r => {
@@ -1948,7 +2015,9 @@ router.get("/stats/players", async (req, res) => {
 
       return {
         id: player.id,
-        name: `${player.firstName} ${player.lastName}`,
+        firstName: player.firstName || null,
+        lastName: player.lastName || null,
+        name: [player.firstName, player.lastName].filter(Boolean).join(' ') || player.name || `Giocatore #${player.id}`,
         role: roleMap[player.position] || player.position,
         number: player.shirtNumber,
         status: statusMap[player.isActive],
@@ -1970,7 +2039,7 @@ router.get("/stats/players", async (req, res) => {
         lastSession: null, // 🔧 FIX: Per ora null, poi lo aggiungeremo se necessario
         alerts: alerts
       };
-    }));
+    }))).filter(Boolean);
 
     // ================= APPLICA ORDINAMENTO =================
     
@@ -2009,14 +2078,162 @@ router.get("/stats/players", async (req, res) => {
       percentilesValid: sortedPlayers.filter(p => p.hsrPercentile > 0 && p.hsrPercentile < 100).length
     }); // INFO - rimuovere in produzione
 
+    // ======================================================
+    // 🔥 PATCH – METRICHE AVANZATE + ALERT SYSTEM
+    // ======================================================
+
+    // Allinea playersStats alla lista ordinata corrente
+    let playersStats = sortedPlayers;
+    let extraStats;
+
+    // ======================================================
+    // 🔧 PATCH CORRETTA – GESTIONE SICURA DEI VALORI MANCANTI
+    // ======================================================
+    // ======================================================
+    // ✅ PATCH FINALE — Protezione completa contro undefined
+    // ======================================================
+
+    if (!Array.isArray(playersStats)) {
+      console.error("❌ playersStats non è un array:", typeof playersStats);
+      playersStats = [];
+    }
+
+    // 🔒 Filtra tutto ciò che non è oggetto
+    playersStats = playersStats.filter(p => {
+      const valid = p && typeof p === "object" && p.hasOwnProperty("acwr");
+      if (!valid) {
+        console.warn("⚠️ Record scartato (undefined o senza acwr):", p);
+      }
+      return valid;
+    });
+
+    console.log("✅ Giocatori validi per metriche:", playersStats.length);
+
+    // 🔄 Se array vuoto → evita errore e termina qui
+    if (playersStats.length === 0) {
+      console.warn("⚠️ Nessun giocatore valido per calcolo metriche. Risposta placeholder.");
+      return res.json({
+        teamId,
+        players: [],
+        message: "Nessun dato disponibile per il periodo selezionato"
+      });
+    }
+
+    // 🧮 Ora calcola in totale sicurezza
+    playersStats = playersStats.map((p) => {
+      if (!p || typeof p !== "object") {
+        console.warn("⚠️ Giocatore saltato perché record non valido:", p);
+        return null;
+      }
+
+      const safe = (v, def = 0) => (typeof v === "number" && !isNaN(v) ? v : def);
+      const acwrValue = safe(p.acwr, 1.0);
+      const m = {};
+      
+      // --- Calcoli metriche ---
+      m.monotony = calculateMonotony(p.dailyLoads || []);
+      m.trainingStrain = calculateTrainingStrain(safe(p.weeklyLoad), m.monotony);
+      m.freshness = calculateFreshness(safe(p.chronicLoad), safe(p.acuteLoad));
+      m.mechLoad = calculateMechanicalLoad(safe(p.accelerations), safe(p.decelerations), safe(p.playerLoad));
+      m.accelDensity = calculateAccelDensity(safe(p.totalAccelerations), safe(p.durationMinutes, 1));
+      m.edi = calculateEDI(safe(p.sprintDistance), safe(p.totalDistance, 1));
+      m.sprintEfficiency = calculateSprintEfficiency(safe(p.sprints), safe(p.sprintDistance));
+      m.trimp = calculateTRIMP(safe(p.durationMinutes), safe(p.avgHR));
+      m.cardiacEff = calculateCardiacEfficiency(safe(p.totalDistance), safe(p.avgHR), safe(p.durationMinutes, 1));
+      m.techLoad = calculateTechnicalLoad(safe(p.sprints), safe(p.highSpeedRuns), safe(p.playerLoad));
+      m.powerWeight = calculatePowerWeight(safe(p.metabolicPower), safe(p.weight, 1));
+      m.injuryRisk = calculateInjuryRisk({ acwr: acwrValue, monotony: m.monotony, mechLoad: m.mechLoad, freshness: m.freshness });
+      m.injuryAlert = getInjuryRiskAlert(m.injuryRisk);
+      m.readiness = calculateReadiness(p.wellness || {}, { rpe: safe(p.rpe, 5), acwr: acwrValue, freshness: m.freshness });
+      m.readinessLevel = getReadinessLevel(m.readiness);
+      
+      const alerts = generateAlerts(p, {
+        acwr: acwrValue,
+        monotony: m.monotony,
+        freshness: m.freshness,
+        mechLoad: m.mechLoad,
+        injuryRisk: m.injuryRisk,
+        readiness: m.readiness,
+      });
+
+      return { ...p, advancedMetrics: m, alerts };
+    }).filter(Boolean);
+
+    // 8️⃣ Trend e Percentili
+    const previousPeriodStats = []; // placeholder, se necessario caricare periodo precedente
+    // Riepilogo team corrente e precedente (placeholders sicuri)
+    const teamSummary = {
+      plPerMin: Number((playersStats.reduce((s, p) => s + (p.plMin || 0), 0) / (playersStats.length || 1)).toFixed(2)),
+      acwr: Number((playersStats.reduce((s, p) => s + (p.acwr || 0), 0) / (playersStats.length || 1)).toFixed(2)),
+      totalDistance: 0,
+    };
+    const teamSummaryPrev = null;
+
+    const trends = calculateAllTrends(
+      { plPerMin: teamSummary.plPerMin, acwr: teamSummary.acwr, totalDistance: teamSummary.totalDistance },
+      { plPerMin: teamSummaryPrev?.plPerMin || 0, acwr: teamSummaryPrev?.acwr || 0, totalDistance: teamSummaryPrev?.totalDistance || 0 }
+    );
+
+    const percentiles = await Promise.all(playersStats.map(async (p) => ({
+      playerId: p.id,
+      ...(await calculateRolePercentiles(
+        { position: p.role, stats: { plPerMin: p.plMin || 0, hsrTot: p.hsr || 0, sprintPer90: p.sprintPer90 || 0, topSpeedMax: p.topSpeed || 0, acwr: p.acwr || 0, mechLoad: p.advancedMetrics?.mechLoad || 0, edi: p.advancedMetrics?.edi || 0 } },
+        playersStats.map(sp => ({ position: sp.role, stats: { plPerMin: sp.plMin || 0, hsrTot: sp.hsr || 0, sprintPer90: sp.sprintPer90 || 0, topSpeedMax: sp.topSpeed || 0, acwr: sp.acwr || 0, mechLoad: sp.advancedMetrics?.mechLoad || 0, edi: sp.advancedMetrics?.edi || 0 } }))
+      )),
+    })));
+
+    // 9️⃣ Alert di squadra
+    let teamAlerts = generateTeamAlerts(playersStats.map(p => ({
+      id: p.id,
+      name: p.name,
+      firstName: p.firstName,
+      lastName: p.lastName,
+      alerts: p.alerts || []
+    })));
+
+    // 🔧 Fix definitivo: forza playerName a partire dalla mappa id->name
+    const idToName = new Map(playersStats.map(p => [p.id, p.name]));
+    const fixNames = (arr = []) => arr.map(a => ({
+      ...a,
+      playerName: (typeof a.playerName === 'string' && a.playerName.trim() && !a.playerName.includes('undefined'))
+        ? a.playerName
+        : (idToName.get(a.playerId) || `Giocatore #${a.playerId}`)
+    }));
+    teamAlerts = {
+      ...teamAlerts,
+      critical: fixNames(teamAlerts.critical),
+      warnings: fixNames(teamAlerts.warnings),
+      info: fixNames(teamAlerts.info),
+    };
+
+    // 1️⃣0️⃣ Allegare nuove sezioni all’output finale
+    extraStats = {
+      injuryPrevention: {
+        avgInjuryRisk: Number((playersStats.reduce((s, p) => s + (p.advancedMetrics.injuryRisk, 0), 0) / (playersStats.length || 1)).toFixed(1)),
+        highRiskPlayers: playersStats.filter((p) => (p.advancedMetrics.injuryRisk || 0) > 60).length,
+      },
+      loadManagement: {
+        avgMonotony: Number((playersStats.reduce((s, p) => s + (p.advancedMetrics.monotony || 0), 0) / (playersStats.length || 1)).toFixed(2)),
+        avgTrainingStrain: Number((playersStats.reduce((s, p) => s + (p.advancedMetrics.trainingStrain || 0), 0) / (playersStats.length || 1)).toFixed(0)),
+      },
+      readiness: {
+        avgReadiness: Number((playersStats.reduce((s, p) => s + (p.advancedMetrics.readiness || 0), 0) / (playersStats.length || 1)).toFixed(1)),
+        lowReadinessPlayers: playersStats.filter((p) => (p.advancedMetrics.readiness || 0) < 40).length,
+      },
+      trends,
+      percentiles,
+      teamAlerts,
+    };
+
     // j) DEBUG: includi nel JSON un piccolo echo dei filtri applicati
     res.json({
-      players: sortedPlayers,
-      total: sortedPlayers.length,
+      players: playersStats,
+      total: playersStats.length,
       timestamp: new Date().toISOString(),
       meta: { 
         applied: { period, sessionType, roles, status, startDate, endDate, search, sortBy } 
-      }
+      },
+      extraStats,
     });
 
   } catch (error) {

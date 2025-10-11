@@ -341,6 +341,111 @@ function validateSessionData(session) {
   return issues;
 }
 
+// ============================================================
+// 📈 FUNZIONI AGGIUNTIVE - TREND, PERCENTILI, PERFORMANCE LEVEL
+// ============================================================
+
+/**
+ * Calcola il trend percentuale tra due valori
+ * @returns {number} variazione in %
+ */
+function calculateTrend(currentValue, previousValue) {
+  if (!previousValue || previousValue === 0) return 0;
+  const change = ((currentValue - previousValue) / previousValue) * 100;
+  return Math.max(-100, Math.min(100, Number(change.toFixed(1))));
+}
+
+/**
+ * Calcola i trend per tutti i KPI principali
+ */
+function calculateAllTrends(currentPeriod, previousPeriod) {
+  return {
+    plPerMin: calculateTrend(currentPeriod.plPerMin, previousPeriod.plPerMin),
+    hsrTot: calculateTrend(currentPeriod.hsrTot, previousPeriod.hsrTot),
+    sprintPer90: calculateTrend(currentPeriod.sprintPer90, previousPeriod.sprintPer90),
+    topSpeedMax: calculateTrend(currentPeriod.topSpeedMax, previousPeriod.topSpeedMax),
+    acwr: calculateTrend(currentPeriod.acwr, previousPeriod.acwr),
+    totalDistance: calculateTrend(currentPeriod.totalDistance, previousPeriod.totalDistance),
+    monotony: calculateTrend(currentPeriod.monotony, previousPeriod.monotony),
+    freshness: calculateTrend(currentPeriod.freshness, previousPeriod.freshness),
+    mechLoad: calculateTrend(currentPeriod.mechLoad, previousPeriod.mechLoad),
+    injuryRisk: calculateTrend(currentPeriod.injuryRisk, previousPeriod.injuryRisk),
+  };
+}
+
+/**
+ * Restituisce direzione e colore del trend
+ */
+function getTrendIndicator(trendValue, higherIsBetter = true) {
+  const abs = Math.abs(trendValue);
+  const isPositive = trendValue > 0;
+  const isGood = higherIsBetter ? isPositive : !isPositive;
+
+  if (abs < 5) {
+    return { direction: "neutral", color: "text-gray-400", icon: "minus", message: "Stabile" };
+  }
+  return {
+    direction: isPositive ? "up" : "down",
+    color: isGood ? "text-green-500" : "text-red-500",
+    icon: isPositive ? "arrowUp" : "arrowDown",
+    message: `${isPositive ? "+" : ""}${trendValue.toFixed(1)}%`,
+  };
+}
+
+/**
+ * Calcola percentile di un giocatore rispetto ai valori del suo ruolo
+ */
+function calculatePercentile(playerValue, roleValues) {
+  if (!roleValues || roleValues.length === 0) return 50;
+  const sorted = [...roleValues].sort((a, b) => a - b);
+  const countBelow = sorted.filter((v) => v < playerValue).length;
+  const countEqual = sorted.filter((v) => v === playerValue).length;
+  return Math.round(((countBelow + 0.5 * countEqual) / sorted.length) * 100);
+}
+
+/**
+ * Calcola i percentili di ruolo per un giocatore
+ */
+async function calculateRolePercentiles(player, allPlayers) {
+  const sameRole = allPlayers.filter((p) => p.position === player.position);
+  if (sameRole.length < 2) {
+    return {
+      plPerMin: 50,
+      hsrTot: 50,
+      sprintPer90: 50,
+      topSpeedMax: 50,
+      acwr: 50,
+      mechLoad: 50,
+      edi: 50,
+    };
+  }
+
+  return {
+    plPerMin: calculatePercentile(player.stats.plPerMin, sameRole.map((p) => p.stats.plPerMin)),
+    hsrTot: calculatePercentile(player.stats.hsrTot, sameRole.map((p) => p.stats.hsrTot)),
+    sprintPer90: calculatePercentile(player.stats.sprintPer90, sameRole.map((p) => p.stats.sprintPer90)),
+    topSpeedMax: calculatePercentile(player.stats.topSpeedMax, sameRole.map((p) => p.stats.topSpeedMax)),
+    acwr: calculatePercentile(player.stats.acwr, sameRole.map((p) => p.stats.acwr)),
+    mechLoad: calculatePercentile(player.stats.mechLoad, sameRole.map((p) => p.stats.mechLoad)),
+    edi: calculatePercentile(player.stats.edi, sameRole.map((p) => p.stats.edi)),
+  };
+}
+
+/**
+ * Determina il livello qualitativo in base al percentile
+ */
+function getPerformanceLevel(percentile) {
+  if (percentile >= 90)
+    return { level: "excellent", color: "text-green-600", bgColor: "bg-green-100", message: "Eccellente", icon: "trendUp" };
+  if (percentile >= 75)
+    return { level: "good", color: "text-green-500", bgColor: "bg-green-50", message: "Buono", icon: "arrowUp" };
+  if (percentile >= 50)
+    return { level: "average", color: "text-blue-500", bgColor: "bg-blue-50", message: "Nella media", icon: "minus" };
+  if (percentile >= 25)
+    return { level: "below", color: "text-orange-500", bgColor: "bg-orange-50", message: "Sotto media", icon: "arrowDown" };
+  return { level: "poor", color: "text-red-500", bgColor: "bg-red-50", message: "Critico", icon: "trendDown" };
+}
+
 // =====================
 // Export API
 // =====================
@@ -368,4 +473,11 @@ module.exports = {
   // statistiche e validazione
   calculateStats,
   validateSessionData,
+  // trend e percentili
+  calculateTrend,
+  calculateAllTrends,
+  getTrendIndicator,
+  calculatePercentile,
+  calculateRolePercentiles,
+  getPerformanceLevel,
 };
