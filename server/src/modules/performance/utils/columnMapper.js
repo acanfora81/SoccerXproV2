@@ -1,9 +1,9 @@
-// server/src/utils/columnMapper.js
+// Percorso: server/src/modules/performance/utils/columnMapper.js
 // 🤖 Smart Column Mapping Engine per Performance Import - SoccerXpro V2 (FULL AUTO)
 
 const crypto = require('crypto');
-const { getPrismaClient } = require('../config/database');
-const redisClient = require('../config/redis');
+const { getPrismaClient } = require('../../../config/database');
+const redisClient = require('../../../config/redis');
 
 console.log('🟢 [INFO] Inizializzazione Smart Column Mapper (full auto)…');
 

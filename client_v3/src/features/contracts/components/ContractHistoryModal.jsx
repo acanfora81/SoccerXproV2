@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Euro, FileText, Clock, TrendingUp, User, CheckCircle, XCircle } from 'lucide-react';
-import { apiFetch } from '@/lib/utils/apiFetch';
+import { apiFetch } from '@/utils/apiClient';
 import { formatItalianCurrency } from '@/lib/utils/italianNumbers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system/ds/ConfirmDialog";
 import Button from "@/design-system/ds/Button";

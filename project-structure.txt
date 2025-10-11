@@ -1,4 +1,4 @@
-# Struttura progetto aggiornata: 04/10/2025, 09:12:46
+# Struttura progetto aggiornata: 10/10/2025, 13:33:16
 
 ├── client
 │   ├── public
@@ -282,6 +282,256 @@
 │   ├── package.json
 │   ├── tailwind.config.js
 │   └── vite.config.js
+├── client_v3
+│   ├── public
+│   │   ├── examples
+│   │   │   ├── players
+│   │   │   │   ├── players-example-italian.csv
+│   │   │   │   └── players-example.csv
+│   │   │   ├── tax
+│   │   │   │   ├── bonus-l207-2025-completo.csv
+│   │   │   │   ├── bonus-l207-rules-example-italian.csv
+│   │   │   │   ├── bonus-taxrates-example-italian.csv
+│   │   │   │   ├── calcolatore.csv
+│   │   │   │   ├── extra-deduction-rules-example-italian.csv
+│   │   │   │   ├── municipal-additionals-example-italian.csv
+│   │   │   │   ├── regional-additionals-example-italian.csv
+│   │   │   │   ├── tax-config-2025-completo.csv
+│   │   │   │   ├── tax-config-example-italian.csv
+│   │   │   │   ├── taxrates-example-italian.csv
+│   │   │   │   └── ulteriore-detrazione-2025-completo.csv
+│   │   │   └── tax-regions
+│   │   │       ├── Serie-B-PRO-Abruzzo-Bolzano-Calabria-Emilia_Romagna-Lombardia-Marche-Puglia-Trento-Umbria.csv
+│   │   │       ├── Serie-B-PRO-Basilicata-Friuli_Venezia_Giulia-Sardegna-Sicilia-Valle_Aosta-Veneto.csv
+│   │   │       └── Serie-B-PRO-Campania-Lazio-Liguria-Molise-Piemonte-Toscana.csv
+│   │   └── vite.svg
+│   ├── src
+│   │   ├── app
+│   │   │   ├── layout
+│   │   │   │   ├── MainLayout.jsx
+│   │   │   │   ├── Sidebar.jsx
+│   │   │   │   └── StatusBar.jsx
+│   │   │   ├── providers.jsx
+│   │   │   └── router.jsx
+│   │   ├── assets
+│   │   │   └── react.svg
+│   │   ├── components
+│   │   │   ├── common
+│   │   │   │   └── ExportModal.jsx
+│   │   │   ├── market
+│   │   │   │   ├── AgentModal.jsx
+│   │   │   │   ├── BudgetModal.jsx
+│   │   │   │   ├── NegotiationDetailsModal.jsx
+│   │   │   │   ├── NegotiationModal.jsx
+│   │   │   │   ├── OfferModal.jsx
+│   │   │   │   ├── ScoutingModal.jsx
+│   │   │   │   └── TargetModal.jsx
+│   │   │   ├── ui
+│   │   │   │   ├── PageLoader.jsx
+│   │   │   │   ├── Segmented.jsx
+│   │   │   │   └── tabs.jsx
+│   │   │   ├── ProtectedRoute.jsx
+│   │   │   └── PublicRoute.jsx
+│   │   ├── config
+│   │   │   └── icons-map.js
+│   │   ├── contexts
+│   │   │   └── AuthContext.jsx
+│   │   ├── data
+│   │   │   └── municipalities.json
+│   │   ├── design-system
+│   │   │   ├── ds
+│   │   │   │   ├── Button.jsx
+│   │   │   │   ├── Card.jsx
+│   │   │   │   ├── ConfirmDialog.jsx
+│   │   │   │   ├── DataTable.jsx
+│   │   │   │   ├── Dialog.jsx
+│   │   │   │   ├── EmptyState.jsx
+│   │   │   │   ├── KPICard.jsx
+│   │   │   │   ├── PageHeader.jsx
+│   │   │   │   └── ThemeToggle.jsx
+│   │   │   └── ui
+│   │   │       └── dialog.jsx
+│   │   ├── features
+│   │   │   ├── admin
+│   │   │   │   ├── components
+│   │   │   │   └── pages
+│   │   │   ├── auth
+│   │   │   │   └── pages
+│   │   │   │       └── LoginPage.jsx
+│   │   │   ├── contracts
+│   │   │   │   ├── api
+│   │   │   │   │   └── contractsApi.js
+│   │   │   │   ├── components
+│   │   │   │   │   ├── dashboard
+│   │   │   │   │   │   ├── ContractCharts.jsx
+│   │   │   │   │   │   ├── ContractKPICards.jsx
+│   │   │   │   │   │   ├── ContractTables.jsx
+│   │   │   │   │   │   └── ContractTimeline.jsx
+│   │   │   │   │   ├── BonusCalculationDisplay.jsx
+│   │   │   │   │   ├── BonusField.jsx
+│   │   │   │   │   ├── ContractDetailsModal.jsx
+│   │   │   │   │   ├── ContractHistoryModal.jsx
+│   │   │   │   │   ├── ContractMiniForm.jsx
+│   │   │   │   │   ├── ContractPicker.jsx
+│   │   │   │   │   ├── ContractsListKPI.jsx
+│   │   │   │   │   ├── ContractSummaryKPI.jsx
+│   │   │   │   │   ├── CountTooltip.jsx
+│   │   │   │   │   ├── CustomTooltip.jsx
+│   │   │   │   │   ├── MunicipalAdditionalsPage.jsx
+│   │   │   │   │   ├── NewContractModal.jsx
+│   │   │   │   │   ├── RegionalAdditionalsPage.jsx
+│   │   │   │   │   ├── SalaryCalculationDisplay.jsx
+│   │   │   │   │   └── ValueTooltip.jsx
+│   │   │   │   └── pages
+│   │   │   │       ├── ContractsDashboard.jsx
+│   │   │   │       ├── ContractsList.jsx
+│   │   │   │       ├── ContractsSummary.jsx
+│   │   │   │       └── ExpiringContracts.jsx
+│   │   │   ├── dashboard
+│   │   │   │   └── pages
+│   │   │   │       └── Dashboard.jsx
+│   │   │   ├── market
+│   │   │   │   ├── components
+│   │   │   │   └── pages
+│   │   │   ├── medical
+│   │   │   │   ├── components
+│   │   │   │   └── pages
+│   │   │   ├── performance
+│   │   │   │   ├── api
+│   │   │   │   │   └── performanceApi.js
+│   │   │   │   ├── components
+│   │   │   │   │   ├── dashboard
+│   │   │   │   │   │   └── TeamDashboard.jsx
+│   │   │   │   │   ├── sections
+│   │   │   │   │   │   ├── Accelerazioni.jsx
+│   │   │   │   │   │   ├── AltaVelocita.jsx
+│   │   │   │   │   │   ├── CaricoVolumi.jsx
+│   │   │   │   │   │   ├── Comparazioni.jsx
+│   │   │   │   │   │   ├── Energetico.jsx
+│   │   │   │   │   │   ├── Intensita.jsx
+│   │   │   │   │   │   ├── ReportCoach.jsx
+│   │   │   │   │   │   └── RischioRecupero.jsx
+│   │   │   │   │   ├── ColumnMappingStep.jsx
+│   │   │   │   │   ├── CompareBar.jsx
+│   │   │   │   │   ├── CompareDrawer.jsx
+│   │   │   │   │   ├── CompareOverlay.jsx
+│   │   │   │   │   ├── DataPreviewStep.jsx
+│   │   │   │   │   ├── DossierDrawer.jsx
+│   │   │   │   │   ├── ImportWizard.jsx
+│   │   │   │   │   ├── PerformancePlayersList.jsx
+│   │   │   │   │   └── PerformanceQuickPanel.jsx
+│   │   │   │   └── pages
+│   │   │   │       ├── AnalyticsAdvanced.jsx
+│   │   │   │       ├── ComparePage.jsx
+│   │   │   │       ├── DossierPage.jsx
+│   │   │   │       ├── ImportPage.jsx
+│   │   │   │       ├── PerformanceDashboard.jsx
+│   │   │   │       └── PerformancePlayers.jsx
+│   │   │   ├── players
+│   │   │   │   ├── components
+│   │   │   │   │   ├── AgeByRoleChart.jsx
+│   │   │   │   │   ├── AgeDistributionChart.jsx
+│   │   │   │   │   ├── ContractDistributionChart.jsx
+│   │   │   │   │   ├── HeightDistributionChart.jsx
+│   │   │   │   │   ├── HeightWeightScatterChart.jsx
+│   │   │   │   │   ├── NationalityChart.jsx
+│   │   │   │   │   ├── PhysicalStatsChart.jsx
+│   │   │   │   │   └── PlayerFormModal.jsx
+│   │   │   │   └── pages
+│   │   │   │       ├── PlayersList.jsx
+│   │   │   │       ├── PlayersStats.jsx
+│   │   │   │       └── PlayersUpload.jsx
+│   │   │   ├── security
+│   │   │   │   ├── components
+│   │   │   │   └── pages
+│   │   │   ├── system
+│   │   │   │   ├── components
+│   │   │   │   └── pages
+│   │   │   └── tax
+│   │   │       ├── components
+│   │   │       └── pages
+│   │   │           ├── BonusTaxRatesList.jsx
+│   │   │           ├── IrpefBracketsPage.jsx
+│   │   │           ├── MunicipalAdditionalsPage.jsx
+│   │   │           ├── RegionalAdditionalsPage.jsx
+│   │   │           ├── TaxCalculator.jsx
+│   │   │           └── TaxRatesList.jsx
+│   │   ├── hooks
+│   │   │   ├── useAuth.js
+│   │   │   └── useExport.js
+│   │   ├── lib
+│   │   │   ├── api
+│   │   │   │   ├── performance.js
+│   │   │   │   └── players.js
+│   │   │   ├── hooks
+│   │   │   │   └── useUnifiedFiscalCalculation.js
+│   │   │   └── utils
+│   │   │       ├── apiFetch.js
+│   │   │       ├── cn.js
+│   │   │       └── italianNumbers.js
+│   │   ├── modules
+│   │   │   ├── filters
+│   │   │   │   ├── filters.css
+│   │   │   │   ├── FiltersBar.jsx
+│   │   │   │   ├── filtersConfig.js
+│   │   │   │   ├── FiltersProvider.jsx
+│   │   │   │   ├── filtersUtils.js
+│   │   │   │   └── index.js
+│   │   │   └── players
+│   │   │       ├── components
+│   │   │       │   └── PlayerCreateDialog.jsx
+│   │   │       └── PlayersModuleApp.jsx
+│   │   ├── pages
+│   │   │   ├── auth
+│   │   │   │   └── LoginPage.jsx
+│   │   │   ├── market
+│   │   │   │   ├── components
+│   │   │   │   │   ├── MarketKPI.jsx
+│   │   │   │   │   ├── NegotiationsTable.jsx
+│   │   │   │   │   └── OffersTable.jsx
+│   │   │   │   ├── AgentiPage.jsx
+│   │   │   │   ├── BudgetsPage.jsx
+│   │   │   │   ├── MarketDashboard.jsx
+│   │   │   │   ├── NegotiationsPage.jsx
+│   │   │   │   ├── ObiettiviPage.jsx
+│   │   │   │   ├── OffersPage.jsx
+│   │   │   │   ├── OffertePage.jsx
+│   │   │   │   ├── ScoutingPage.jsx
+│   │   │   │   ├── TargetsPage.jsx
+│   │   │   │   └── TrattativePage.jsx
+│   │   │   ├── CheckoutPage.jsx
+│   │   │   ├── ChoosePlan.jsx
+│   │   │   ├── LandingPage.jsx
+│   │   │   └── SetupTeam.jsx
+│   │   ├── services
+│   │   │   └── authService.js
+│   │   ├── store
+│   │   │   └── authStore.js
+│   │   ├── styles
+│   │   │   ├── globals.css
+│   │   │   └── tokens.css
+│   │   ├── utils
+│   │   │   ├── apiFetch.js
+│   │   │   ├── http.js
+│   │   │   └── italianNumbers.js
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── AUTH_IMPLEMENTATION_COMPLETE.md
+│   ├── DEBUG_ANALYTICS.md
+│   ├── DEBUG_GRAFICI_DOSSIER.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── jsconfig.json
+│   ├── ONBOARDING_FLOW.md
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── README.md
+│   ├── STRUCTURE.md
+│   ├── tailwind.config.js
+│   ├── TEST_ONBOARDING.md
+│   └── vite.config.js
 ├── docs
 │   ├── api
 │   │   └── gpsDeriver.md
@@ -297,10 +547,13 @@
 │   ├── GESTIONE_ALIQUOTE_IRPEF_COMPLETATA.md
 │   ├── INTEGRAZIONE_COMPLETATA.md
 │   ├── INTEGRAZIONE_FRONTEND_API.md
+│   ├── IRPEF_BRACKETS_ANALYSIS.md
 │   ├── ISTRUZIONI_TEST_CALCOLO.md
 │   ├── MEDICAL_DATABASE_STRUCTURE.md
 │   ├── MODIFICHE_CHIRURGICHE_APPLICATE.md
 │   ├── NUOVO_SISTEMA_CALCOLO_CORRETTO.md
+│   ├── ONBOARDING_SYSTEM_IMPLEMENTATION.md
+│   ├── PERFORMANCE_MIGRATION_ANALYSIS.md
 │   ├── PROBLEMA_TAXCALCULATOR_RISOLTO.md
 │   ├── project-structure.txt
 │   ├── README.md
@@ -309,6 +562,7 @@
 │   ├── SOLUZIONE-FILTRO-SESSIONTYPE-DASHBOARD.md
 │   └── TAX_RATES_UPDATE_2025.md
 ├── scripts
+│   ├── createClientV3Structure.cjs
 │   ├── seed-first-team.cjs
 │   ├── seed-first-team.js
 │   └── tree.js
@@ -365,10 +619,15 @@
 │   │   │   │   └── migration.sql
 │   │   │   ├── 20250125140000_add_slope_field
 │   │   │   │   └── migration.sql
-│   │   │   └── 20250925092121_init
-│   │   │       └── migration.sql
-│   │   └── schema.prisma
+│   │   │   ├── 20250925092121_init
+│   │   │   │   └── migration.sql
+│   │   │   └── manual_supabase_subscription_schema.sql
+│   │   ├── SCHEMA_DOCUMENTATION.md
+│   │   ├── SCHEMA_REORGANIZATION.md
+│   │   ├── schema.prisma
+│   │   └── schema.prisma.backup
 │   ├── scripts
+│   │   ├── check-performance-data.js
 │   │   ├── checkTaxData.js
 │   │   ├── checkTaxRates.js
 │   │   ├── drop-tax-scenarios-tables.js
@@ -387,10 +646,16 @@
 │   │   ├── constants
 │   │   │   └── errors.js
 │   │   ├── controllers
+│   │   │   ├── market
+│   │   │   │   ├── budgetsController.js
+│   │   │   │   ├── negotiationsController.js
+│   │   │   │   ├── offersController.js
+│   │   │   │   └── targetsController.js
 │   │   │   ├── auth.js
 │   │   │   ├── contracts.js
 │   │   │   ├── performance.js
-│   │   │   ├── players.js
+│   │   │   ├── playersMediaController.js
+│   │   │   ├── playersNotesController.js
 │   │   │   └── twoFactorAuth.js
 │   │   ├── lib
 │   │   │   └── tax
@@ -402,16 +667,95 @@
 │   │   │   ├── requireMedicalRole.js
 │   │   │   ├── requireVaultUnlock.js
 │   │   │   └── tenantContext.js
+│   │   ├── modules
+│   │   │   ├── administration
+│   │   │   ├── contracts
+│   │   │   │   ├── controllers
+│   │   │   │   │   └── contractsController.js
+│   │   │   │   ├── routes
+│   │   │   │   │   └── contractsRoutes.js
+│   │   │   │   ├── validators
+│   │   │   │   │   └── contractsValidator.js
+│   │   │   │   └── index.js
+│   │   │   ├── market
+│   │   │   ├── medical
+│   │   │   ├── performance
+│   │   │   │   ├── controllers
+│   │   │   │   │   └── performanceController.js
+│   │   │   │   ├── routes
+│   │   │   │   │   ├── compare.js
+│   │   │   │   │   └── performanceRoutes.js
+│   │   │   │   ├── services
+│   │   │   │   ├── utils
+│   │   │   │   │   └── columnMapper.js
+│   │   │   │   ├── validators
+│   │   │   │   └── index.js
+│   │   │   ├── players
+│   │   │   │   ├── controllers
+│   │   │   │   │   └── playersController.js
+│   │   │   │   ├── routes
+│   │   │   │   │   └── playersRoutes.js
+│   │   │   │   ├── services
+│   │   │   │   │   └── playersService.js
+│   │   │   │   ├── validators
+│   │   │   │   │   └── playersValidator.js
+│   │   │   │   └── index.js
+│   │   │   └── scouting
+│   │   │       ├── controllers
+│   │   │       │   ├── eventLog.controller.js
+│   │   │       │   ├── prospect.controller.js
+│   │   │       │   ├── report.controller.js
+│   │   │       │   └── shortlist.controller.js
+│   │   │       ├── routes
+│   │   │       │   ├── index.js
+│   │   │       │   ├── prospects.routes.js
+│   │   │       │   ├── reports.routes.js
+│   │   │       │   └── shortlists.routes.js
+│   │   │       ├── services
+│   │   │       │   ├── eventLog.service.js
+│   │   │       │   ├── promote.service.js
+│   │   │       │   ├── prospect.service.js
+│   │   │       │   ├── report.service.js
+│   │   │       │   └── shortlist.service.js
+│   │   │       ├── validators
+│   │   │       │   ├── common.js
+│   │   │       │   ├── index.js
+│   │   │       │   ├── prospect.schema.js
+│   │   │       │   ├── README.md
+│   │   │       │   ├── report.schema.js
+│   │   │       │   └── shortlist.schema.js
+│   │   │       ├── ACTIVATION_COMPLETE.md
+│   │   │       ├── ADD_ENV_FLAG.md
+│   │   │       ├── CONVERSION_COMPLETE.md
+│   │   │       ├── DEPLOYMENT_CHECKLIST.md
+│   │   │       ├── ENV_CONFIG.md
+│   │   │       ├── IMPLEMENTATION_COMPLETE.md
+│   │   │       ├── INDEX.md
+│   │   │       ├── modelRefs.js
+│   │   │       ├── PROGRESS.md
+│   │   │       ├── QUICK_START.md
+│   │   │       ├── README.md
+│   │   │       ├── SCHEMA_VERIFICATION.md
+│   │   │       └── SUMMARY.md
 │   │   ├── routes
 │   │   │   ├── auth
 │   │   │   │   ├── auth.js
 │   │   │   │   ├── test-auth.js
 │   │   │   │   └── twoFactorAuth.js
 │   │   │   ├── contracts
-│   │   │   │   ├── contracts.js
 │   │   │   │   └── contractsSummary.js
 │   │   │   ├── dashboard
 │   │   │   │   └── index.js
+│   │   │   ├── market
+│   │   │   │   ├── agents.js
+│   │   │   │   ├── budgets.js
+│   │   │   │   ├── index.js
+│   │   │   │   ├── negotiations.js
+│   │   │   │   ├── offers.js
+│   │   │   │   ├── overview.js
+│   │   │   │   ├── README.md
+│   │   │   │   ├── targets.js
+│   │   │   │   └── TEST_API.md
 │   │   │   ├── medical
 │   │   │   │   ├── cases.js
 │   │   │   │   ├── consents.js
@@ -425,23 +769,38 @@
 │   │   │   │   ├── compare.js
 │   │   │   │   └── performance.js
 │   │   │   ├── players
-│   │   │   │   ├── players.js
-│   │   │   │   └── playersUpload.js
+│   │   │   │   ├── IMPLEMENTATION_COMPLETE.md
+│   │   │   │   ├── index.js
+│   │   │   │   ├── media.js
+│   │   │   │   ├── notes.js
+│   │   │   │   ├── playersUpload.js
+│   │   │   │   └── README.md
 │   │   │   ├── session-types
 │   │   │   │   └── index.js
 │   │   │   ├── tax
 │   │   │   │   ├── bonusTaxRatesUpload.js
 │   │   │   │   └── taxratesUpload.js
+│   │   │   ├── contracts.js
 │   │   │   ├── dashboard.js
 │   │   │   ├── onboarding.js
+│   │   │   ├── ROUTES_REORGANIZATION.md
 │   │   │   ├── session-types.js
 │   │   │   ├── taxes.js
+│   │   │   ├── testMail.js
 │   │   │   └── users.js
 │   │   ├── security
 │   │   │   └── medicalCrypto.js
 │   │   ├── services
+│   │   │   ├── market
+│   │   │   │   ├── budgetsService.js
+│   │   │   │   ├── negotiationsService.js
+│   │   │   │   ├── offersService.js
+│   │   │   │   └── targetsService.js
+│   │   │   ├── kpiCalculationService.js
 │   │   │   ├── medicalKeyService.js
 │   │   │   ├── MultiTenantAuthService.js
+│   │   │   ├── playersMediaService.js
+│   │   │   ├── playersNotesService.js
 │   │   │   └── twoFactorAuthService.js
 │   │   ├── utils
 │   │   │   ├── columnMapper.js
@@ -450,13 +809,16 @@
 │   │   │   ├── gpsDeriver.js
 │   │   │   ├── kpi.js
 │   │   │   ├── logger.js
+│   │   │   ├── mailer.js
 │   │   │   ├── permissions.js
 │   │   │   ├── playerLookup.js
 │   │   │   ├── README.md
 │   │   │   ├── taxCalculator.js
 │   │   │   └── tokenBlacklist.js
 │   │   ├── validation
-│   │   │   └── mappingSchema.js
+│   │   │   ├── mappingSchema.js
+│   │   │   ├── playersMediaValidator.js
+│   │   │   └── playersNotesValidator.js
 │   │   └── app.js
 │   ├── supabase
 │   │   └── medical_rls.sql
@@ -479,11 +841,42 @@
 │   │   │   └── prisma-test.js
 │   │   └── README.md
 │   ├── uploads
+│   │   ├── 0b57cfac5667fbbafd80d5f98af75529
+│   │   ├── 1097da300b39115879f848ccb8e7c9db
+│   │   ├── 1862b0794d7fc13fc9c39fb127ef9492
+│   │   ├── 24ef8b85fd9356ffe907f701b6b3b77a
+│   │   ├── 26e7e50bf180d289d33b91b7f7d33100
+│   │   ├── 2f0898f4fcd422a998f01cae0be9076f
+│   │   ├── 3393a02837097d179d8bc30b76bd6ce5
+│   │   ├── 372aaf665bd8950111f01a4b4954c972
+│   │   ├── 4d3a8f8fac77e45494879e68ce79e362
+│   │   ├── 5367343882e5fe73880917507bcba2f9
+│   │   ├── 566cc5294f93ced0cf782ad2c41c407f
+│   │   ├── 62f8611be483f38d61a5797029c701ee
+│   │   ├── 755e8adfb4fababf53ed17dd7bf302c6
+│   │   ├── 76e20b2a927b3b0cd8164c41c4963cbe
+│   │   ├── 775ab8dc2a83873860ca8de7b3724798
+│   │   ├── 83d96d9ec2ed023d7c601a8a4c505d94
+│   │   ├── 843d8d8e712749bbe86c55c10d10a0e4
+│   │   ├── 88e6b92a6680b6ae809a3bc27e6c0990
+│   │   ├── 95bdb097f9c61acf3930d3c95bc014d5
+│   │   ├── a3697fed34ec7a18e54d63159f9d8339
+│   │   ├── a6e8bd9505d68aa65705b8d52ac12887
+│   │   ├── ae0f9271d028f82b5687277529db65e3
+│   │   ├── b82689c18598b672e9f7ddb8d1d9e22f
+│   │   ├── d2bd3cada91febe891e6a00e50d07dc9
+│   │   ├── d7e138cdfe263e2a406bfbe28b1c47da
+│   │   ├── da183fa5b75f00d67bd6f4f76ecffc81
+│   │   ├── da6f284ff963290a494e593224615c4c
+│   │   ├── e6e60a5c9e809f115a2e0b8799536083
+│   │   ├── e76ca24981bfd0a4ef324deaf7e87a38
+│   │   └── f0d6adb55a47d7df4d07927a6b4a920c
 │   ├── CHANGELOG_TABLE_CLEANUP.md
 │   ├── jest.config.js
 │   ├── package.json
 │   ├── populate_irpef_brackets.js
 │   ├── populate_new_tax_columns.js
+│   ├── reorganize_schema.py
 │   ├── SLOPE_FIELD_DOCUMENTATION.md
 │   ├── test-db-slope.js
 │   ├── test-env.js
@@ -562,4 +955,7 @@
 ├── env.template
 ├── package-lock.json
 ├── package.json
+├── PLAYERS_MODULE_INTEGRATION.md
+├── project-structure.txt
+├── QUICK_START_ONBOARDING.md
 └── README.md

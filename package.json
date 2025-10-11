@@ -28,7 +28,7 @@
     "setup": "npm install && cd server && npm install",
     "clean": "rm -rf node_modules package-lock.json && cd server && rm -rf node_modules package-lock.json",
     "build:full": "npm run build && cd server && npm run build",
-    "update:tree": "node tree.js"
+    "update:tree": "node scripts/tree.js"
   },
   "keywords": [
     "soccer",

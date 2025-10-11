@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/utils/apiFetch';
+import { apiFetch } from '@/utils/apiClient';
 import useAuthStore from '@/store/authStore';
 import { Plus, Trash2, Edit3, XCircle, Clock, CheckCircle, Save } from 'lucide-react';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
@@ -7,6 +7,7 @@ import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
 import PageHeader from '@/design-system/ds/PageHeader';
+import PageLoading from '@/design-system/ds/PageLoading';
 import municipalitiesData from '@/data/municipalities.json';
 
 const MunicipalAdditionalsPage = () => {
@@ -500,19 +501,12 @@ const MunicipalAdditionalsPage = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Gestione Addizionali Comunali"
-          subtitle="Visualizza e gestisci le addizionali comunali per i calcoli fiscali"
-          icon={CheckCircle}
-        />
-        <EmptyState
-          icon={Clock}
-          title="Caricamento in corso..."
-          description="Caricamento addizionali comunali..."
-          loading={true}
-        />
-      </div>
+      <PageLoading
+        title="Gestione Addizionali Comunali"
+        description="Visualizza e gestisci le addizionali comunali per i calcoli fiscali"
+        showText={true}
+        text="Caricamento addizionali comunali..."
+      />
     );
   }
 

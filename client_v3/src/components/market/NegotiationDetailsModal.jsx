@@ -18,7 +18,7 @@ import {
   UserCheck,
   Plus
 } from 'lucide-react';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 
 const NegotiationDetailsModal = ({ 
   open, 

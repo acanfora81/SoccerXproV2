@@ -17,7 +17,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import { useFilters, buildPerformanceQuery } from '@/modules/filters/index.js';
 import { FiltersBar } from '@/modules/filters/index.js';
 
@@ -77,17 +77,11 @@ const DossierDrawer = ({
             sessionName: filters.sessionName,
             normalize: filters.normalize,
             sortBy: filters.sortBy,
-            url: `/api/performance/player/${playerId}/dossier?${params}`
+            url: `/performance/player/${playerId}/dossier?${params}`
           });
         }
 
-        const response = await apiFetch(`/api/performance/player/${playerId}/dossier?${params}`);
-        
-        if (!response.ok) {
-          throw new Error(`Errore ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        const data = await apiFetch(`/performance/player/${playerId}/dossier?${params}`);
         console.log('🟢 DossierDrawer: dati ricevuti:', data);
         setPlayer(data);
       } catch (err) {

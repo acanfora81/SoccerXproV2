@@ -129,12 +129,17 @@ const usersRoutes = require('./routes/users');
 app.use('/api/users', usersRoutes);
 
 // 👥 Players (modulo completo con notes e media)
-const playersRoutes = require('./routes/players');
-app.use('/api/players', playersRoutes);
+try {
+  const playersModule = require('./modules/players');
+  app.use('/api', playersModule);
+  console.log('🟢 [INFO] Players Module mounted at /api/players');
+} catch (e) {
+  console.log('🟡 [WARN] Players module not mounted:', e?.message);
+}
 
-// 📊 Performance CRUD
-const performanceRoutes = require('./routes/performance/performance');
-app.use('/api/performance', performanceRoutes);
+// 📊 Performance Module
+const performanceModule = require('./modules/performance');
+app.use('/api', performanceModule);
 
 // 📈 Dashboard
 const dashboardRoutes = require('./routes/dashboard');
@@ -144,9 +149,14 @@ app.use('/api/dashboard', dashboardRoutes);
 const sessionTypesRoutes = require('./routes/session-types');
 app.use('/api/session-types', sessionTypesRoutes);
 
-// 📋 Contracts
-const contractsRoutes = require('./routes/contracts/contracts');
-app.use('/api/contracts', contractsRoutes);
+// 📋 Contracts (modulo)
+try {
+  const contractsModule = require('./modules/contracts');
+  app.use('/api', contractsModule);
+  console.log('🟢 [INFO] Contracts Module mounted at /api/contracts');
+} catch (e) {
+  console.log('🟡 [WARN] Contracts module not mounted:', e?.message);
+}
 
 // 💰 Tax Rates Upload
 const taxRatesUpload = require('./routes/tax/taxratesUpload');

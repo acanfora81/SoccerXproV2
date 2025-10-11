@@ -1,3 +1,4 @@
+// Percorso: client_v3/src/features/performance/components/DataPreviewStep.jsx
 // client_v3 version - copied logic, Tailwind-compatible container wrappers
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +14,7 @@ import {
   RotateCcw
 } from "lucide-react";
 
-const API_BASE = "/api/performance/import";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api"}/performance/import`;
 
 export default function DataPreviewStep({ fileId, mappingResult, originalExtension, onBack, onReset }) {
   const navigate = useNavigate();
@@ -135,29 +136,39 @@ export default function DataPreviewStep({ fileId, mappingResult, originalExtensi
       // Polling dello stato
       const pollInterval = setInterval(async () => {
         try {
+          console.log('🔍 [Polling] Richiesta status per jobId:', jobId);
           const statusRes = await fetch(`${API_BASE}/status/${jobId}`, {
             credentials: "include",
           });
           
+          console.log('🔍 [Polling] Response status:', statusRes.status, statusRes.statusText);
+          
           if (!statusRes.ok) {
+            console.error('❌ [Polling] Response non OK:', statusRes.status);
+            const errorText = await statusRes.text();
+            console.error('❌ [Polling] Error body:', errorText);
             clearInterval(pollInterval);
-            throw new Error('Errore recupero stato import');
+            throw new Error(`Errore recupero stato import: ${statusRes.status}`);
           }
           
           const status = await statusRes.json();
+          console.log('✅ [Polling] Status ricevuto:', status);
           setImportProgress(status.progress);
           setImportPhase(translatePhase(status.phase || ''));
           
           if (status.state === 'done') {
+            console.log('🎉 [Polling] Import completato, fermo il polling');
             clearInterval(pollInterval);
             setImportResult({ summary: status.summary });
             setImportSuccess(true);
             setImporting(false);
           } else if (status.state === 'error') {
+            console.error('❌ [Polling] Import fallito');
             clearInterval(pollInterval);
             throw new Error(status.error || 'Import fallito');
           }
         } catch (pollErr) {
+          console.error('🔴 [Polling] Errore durante polling:', pollErr);
           clearInterval(pollInterval);
           setImportError(pollErr.message);
           setImporting(false);

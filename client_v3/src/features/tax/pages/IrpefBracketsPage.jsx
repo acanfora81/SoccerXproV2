@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '@/store/authStore';
-import { apiFetch } from '@/lib/utils/apiFetch';
+import { apiFetch } from '@/utils/apiClient';
 import { Plus, Trash2, Save, Clock, XCircle, BarChart3 } from 'lucide-react';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
 import Button from '@/design-system/ds/Button';

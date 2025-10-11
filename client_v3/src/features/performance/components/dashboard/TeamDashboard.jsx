@@ -1,3 +1,5 @@
+// Percorso: client_v3/src/features/performance/components/dashboard/TeamDashboard.jsx
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Activity, 
@@ -33,7 +35,7 @@ import {
 // STEP 5: Import UI components per toggle Team/Player
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useAuthStore from '@/store/authStore';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters/index.js';
 import PageLoader from '@/components/ui/PageLoader';
 import Segmented from '@/components/ui/Segmented';
@@ -92,7 +94,7 @@ const TeamDashboard = () => {
 
   // Funzione per caricare i dati del team dal backend con cache
   const fetchDashboardData = useCallback(async (forceRefresh = false) => {
-    const cacheKey = `${user?.teamId}-${filters.period}-${filters.sessionType}-${filters.sessionName}-${filters.roles?.join(',') || 'all'}`;
+    const cacheKey = `${user?.teamId}-${filters.period}-${filters.startDate || ''}-${filters.endDate || ''}-${filters.sessionType}-${filters.sessionName}-${filters.roles?.join(',') || 'all'}`;
     
     // Se non è un refresh forzato e abbiamo dati validi in cache, usali
     if (!forceRefresh && isCacheValid(cacheKey)) {
@@ -120,18 +122,12 @@ const TeamDashboard = () => {
 
       const query = buildPerformanceQuery(filters);
       console.log('🔵 TeamDashboard: chiamata API team con query:', query); // DEBUG
-      const response = await apiFetch(`/api/dashboard/stats/team?${query}`, {
+      const responseData = await apiFetch(`/dashboard/stats/team?${query}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`Errore ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       
       // DEBUG: Log della risposta per verificare i filtri
       console.log('🟢 TeamDashboard: risposta API team ricevuta:', {
@@ -189,18 +185,12 @@ const TeamDashboard = () => {
 
       const query = buildPerformanceQuery(filters);
       console.log('🔵 TeamDashboard: chiamata API player con query:', query); // DEBUG
-      const response = await apiFetch(`/api/dashboard/stats/player/${selectedPlayer}?${query}`, {
+      const responseData = await apiFetch(`/dashboard/stats/player/${selectedPlayer}?${query}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`Errore ${response.status}: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
       
       console.log('🟢 TeamDashboard: risposta API player ricevuta:', {
         player: responseData.player,
@@ -232,19 +222,13 @@ const TeamDashboard = () => {
       
       try {
         console.log('🟢 TeamDashboard: caricamento giocatori per teamId:', user.teamId);
-        const response = await apiFetch('/api/players');
-        if (response.ok) {
-          const data = await response.json();
-          console.log('🟢 TeamDashboard: risposta API giocatori:', data);
-          
-          // 🔧 FIX: Gestisce entrambi i formati di risposta (come AnalyticsAdvanced)
-          const playersData = data.data || data.players || data || [];
-          console.log('🟢 TeamDashboard: giocatori estratti:', playersData.length);
-          setPlayers(playersData);
-        } else {
-          console.error('🔴 TeamDashboard: errore API giocatori:', response.status);
-          setPlayers([]); // Array vuoto se l'API fallisce
-        }
+        const data = await apiFetch('/players');
+        console.log('🟢 TeamDashboard: risposta API giocatori:', data);
+        
+        // 🔧 FIX: Gestisce entrambi i formati di risposta (come AnalyticsAdvanced)
+        const playersData = data.data || data.players || data || [];
+        console.log('🟢 TeamDashboard: giocatori estratti:', playersData.length);
+        setPlayers(playersData);
       } catch (err) {
         console.error('🔴 TeamDashboard: errore nel caricamento giocatori:', err);
         setPlayers([]); // Array vuoto se l'API fallisce

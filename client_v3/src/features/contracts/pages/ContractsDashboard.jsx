@@ -3,9 +3,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, FileText, TrendingUp, Users, Euro, Calendar, AlertTriangle, BarChart3, PieChart, LineChart } from 'lucide-react';
-import { apiFetch } from '@/lib/utils/apiFetch';
+import { apiFetch } from '@/utils/apiClient';
 import useAuthStore from '@/store/authStore';
 import PageHeader from '@/design-system/ds/PageHeader';
+import PageLoading from '@/design-system/ds/PageLoading';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
@@ -157,18 +158,12 @@ const ContractsDashboard = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Dashboard Contratti"
-          description="Panoramica completa della gestione contratti"
-        />
-        <EmptyState
-          icon={FileText}
-          title="Caricamento in corso..."
-          description="Recupero dei dati della dashboard contratti..."
-          loading={true}
-        />
-      </div>
+      <PageLoading
+        title="Dashboard Contratti"
+        description="Panoramica completa della gestione contratti"
+        showText={true}
+        text="Recupero dei dati della dashboard contratti..."
+      />
     );
   }
 

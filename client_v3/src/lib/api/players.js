@@ -1,5 +1,5 @@
 // API reale per Players - collegata al backend
-import { apiFetch } from '../utils/apiFetch';
+import { apiFetch } from '@/utils/apiClient';
 
 // Helper per gestire le chiamate API con autenticazione
 const apiCall = async (endpoint, options = {}) => {
@@ -76,7 +76,7 @@ const getMockData = (endpoint) => {
 
 export const PlayersAPI = {
   async list() {
-    const response = await apiCall('/api/players');
+    const response = await apiCall('/players');
     return response.data || [];
   },
 
@@ -97,7 +97,7 @@ export const PlayersAPI = {
       passportNumber: player.passportNumber,
     };
 
-    const response = await apiCall('/api/players', {
+    const response = await apiCall('/players', {
       method: 'POST',
       body: JSON.stringify(playerData),
     });
@@ -123,7 +123,7 @@ export const PlayersAPI = {
       isActive: player.isActive !== false,
     };
 
-    const response = await apiCall(`/api/players/${id}`, {
+    const response = await apiCall(`/players/${id}`, {
       method: 'PUT',
       body: JSON.stringify(playerData),
     });
@@ -132,7 +132,7 @@ export const PlayersAPI = {
   },
 
   async remove(id) {
-    await apiCall(`/api/players/${id}`, {
+    await apiCall(`/players/${id}`, {
       method: 'DELETE',
     });
     
@@ -163,7 +163,7 @@ export const PlayersAPI = {
            const formData = new FormData();
            formData.append('file', file);
 
-           const response = await apiCall('/api/players/upload', {
+           const response = await apiCall('/players/upload', {
              method: 'POST',
              body: formData,
              // Non impostare Content-Type per FormData, il browser lo farà automaticamente
@@ -186,7 +186,7 @@ export const PlayersAPI = {
          },
 
          async getStats() {
-           const response = await apiCall('/api/players/stats');
+           const response = await apiCall('/players/stats');
            return response.data;
          },
 };

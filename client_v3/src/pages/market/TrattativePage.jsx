@@ -2,12 +2,13 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Plus, Edit3, Trash2, FileText } from 'lucide-react';
 import PageHeader from '@/design-system/ds/PageHeader';
+import PageLoading from '@/design-system/ds/PageLoading';
 import Card, { CardContent } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import DataTable from '@/design-system/ds/DataTable';
 import EmptyState from '@/design-system/ds/EmptyState';
 import { AuthContext } from '@/contexts/AuthContext';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import NegotiationModal from '@/components/market/NegotiationModal';
 
 export default function TrattativePage() {
@@ -76,15 +77,10 @@ export default function TrattativePage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <PageHeader 
-          title="Trattative" 
-          subtitle="Gestione delle trattative di mercato" 
-        />
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
+      <PageLoading
+        title="Trattative"
+        description="Gestione delle trattative di mercato"
+      />
     );
   }
 

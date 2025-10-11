@@ -26,7 +26,7 @@ import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import NegotiationModal from '@/components/market/NegotiationModal';
 import NegotiationDetailsModal from '@/components/market/NegotiationDetailsModal';
 

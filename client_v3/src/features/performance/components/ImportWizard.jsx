@@ -1,10 +1,10 @@
-// client_v3/src/features/performance/components/ImportWizard.jsx
+// Percorso: client_v3/src/features/performance/components/ImportWizard.jsx
 import React, { useState, useCallback } from "react";
 import { Upload, FileText, RefreshCw, Search, FileSpreadsheet, Info, X, CheckCircle, AlertTriangle } from "lucide-react";
 import ColumnMappingStep from "./ColumnMappingStep";
 import DataPreviewStep from "./DataPreviewStep";
 
-const API_BASE = "/api/performance/import";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api"}/performance/import`;
 
 export default function ImportWizard({ teamId }) {
   const [step, setStep] = useState(1);

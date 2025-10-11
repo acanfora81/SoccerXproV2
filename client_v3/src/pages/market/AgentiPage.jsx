@@ -2,13 +2,14 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Plus, Edit3, Trash2, UserCheck, Eye } from 'lucide-react';
 import PageHeader from '@/design-system/ds/PageHeader';
+import PageLoading from '@/design-system/ds/PageLoading';
 import Card, { CardContent } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import DataTable from '@/design-system/ds/DataTable';
 import EmptyState from '@/design-system/ds/EmptyState';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
 import { AuthContext } from '@/contexts/AuthContext';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import AgentModal from '@/components/market/AgentModal';
 
 export default function AgentiPage() {
@@ -109,15 +110,10 @@ export default function AgentiPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <PageHeader 
-          title="Agenti" 
-          subtitle="Gestione degli agenti e procuratori" 
-        />
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
+      <PageLoading
+        title="Agenti"
+        description="Gestione degli agenti e procuratori"
+      />
     );
   }
 

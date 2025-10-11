@@ -1,22 +1,23 @@
-// server/src/routes/performance.js
+// Percorso: server/src/modules/performance/routes/performanceRoutes.js
 // Routes per gestione dati performance SoccerXpro V2 - MULTI-TENANT FIXED
 
 const express = require("express");
-const { authenticate } = require("../../middleware/auth");
-const tenantContext = require("../../middleware/tenantContext"); // 🔧 AGGIUNTO
+const { authenticate } = require("../../../middleware/auth");
+const tenantContext = require("../../../middleware/tenantContext"); // 🔧 AGGIUNTO
+const { requireModuleAccess } = require("../../../utils/permissions");
 const {
   getPerformanceData,
   getPerformanceDataById,
   createPerformanceData,
   deletePerformanceData,
   getSessionsByPlayer  // 🔴 FIX: Aggiungi questa riga qui
-} = require("../../controllers/performance");
-const { getPrismaClient } = require("../../config/database");
-const smartColumnMapper = require("../../utils/columnMapper");
-const { dlog, dwarn, derr } = require("../../utils/logger");
-const { computeHSR, computeSprintPer90, calculateACWR, buildPeriodRange, parseSessionTypeFilter, parseSessionTypeFilterSimple, round } = require("../../utils/kpi");
+} = require("../controllers/performanceController");
+const { getPrismaClient } = require("../../../config/database");
+const smartColumnMapper = require("../utils/columnMapper");
+const { dlog, dwarn, derr } = require("../../../utils/logger");
+const { computeHSR, computeSprintPer90, calculateACWR, buildPeriodRange, parseSessionTypeFilter, parseSessionTypeFilterSimple, round } = require("../../../utils/kpi");
 
-const { validateMapping } = require("../../validation/mappingSchema");
+const { validateMapping } = require("../../../validation/mappingSchema");
 const fsAsync = require("fs").promises;
 
 // 🔧 AGGIUNTE per preview-mapping con file upload
@@ -25,111 +26,57 @@ const csv = require("csv-parser");
 const xlsx = require("xlsx");
 const fs = require("fs");
 const path = require("path");
-const { completeRow } = require("../../utils/gpsDeriver.js");
+const { completeRow } = require("../../../utils/gpsDeriver.js");
 
 const upload = multer({ dest: "uploads/" });
 
 dlog("🟢 [INFO] Caricamento route performance multi-tenant...");
 
 const router = express.Router();
-// KPI service (import non invasivo)
-const {
-  calcDistancePerMin,
-  calcIntensityRatio,
-  calcEfficiencyIndex,
-  calcSprintHSRRatio,
-  calcAcwrAverage,
-  calcMetabolicEfficiency,
-  calcCardioEffortIndex
-} = require('../../services/kpiCalculationService.js');
 
-// 🟢 In-memory job store per progress import (semplice, per dev)
-const importJobs = new Map();
-
-function createJob(totalSteps = 100) {
-  const id = Math.random().toString(36).slice(2);
-  const job = { id, progress: 0, state: 'running', phase: 'init', totalSteps, startedAt: Date.now(), updatedAt: Date.now(), summary: null, error: null };
-  importJobs.set(id, job);
-  return job;
-}
-
-function updateJob(id, partial) {
-  const job = importJobs.get(id);
-  if (!job) return;
-  Object.assign(job, partial, { updatedAt: Date.now() });
-}
-
-router.get('/import/status/:jobId', (req, res) => {
-  const job = importJobs.get(req.params.jobId);
-  if (!job) return res.status(404).json({ error: 'JOB_NOT_FOUND' });
-  return res.json({
-    id: job.id,
-    progress: job.progress,
-    state: job.state,
-    phase: job.phase,
-    summary: job.summary,
-    error: job.error
-  });
+// 🔍 Log di debug per tutte le richieste al router performance
+router.use((req, res, next) => {
+  console.log('🔍 [Performance Router] Richiesta ricevuta:', req.method, req.path, req.originalUrl);
+  next();
 });
 
-// 🔧 FIX: Funzione per parsing sessionType con mapping frontend→database
-function parseSessionTypeFilterFixed(sessionType) {
-  dlog('🔵 [DEBUG] parseSessionTypeFilter: input:', sessionType);
-  
-  if (!sessionType || sessionType === 'all') return null;
-  
-  // Mapping esplicito frontend → database
-  const mapping = {
-    'training': 'Allenamento',
-    'match': 'Partita',
-    'allenamento': 'Allenamento', // già corretto
-    'partita': 'Partita' // già corretto
-  };
-  
-  const mapped = mapping[sessionType.toLowerCase()] || sessionType;
-  dlog('🟢 [INFO] sessionType mapping:', sessionType, '→', mapped);
-  return mapped;
-}
+// 🔓 ROUTE PUBBLICHE (senza autenticazione) - devono essere PRIMA del middleware globale
+router.get('/import/status/:jobId', (req, res) => {
+  try {
+    console.log('🔍 [Import Status] Richiesta status per jobId:', req.params.jobId);
+    console.log('🔍 [Import Status] importJobs size:', importJobs.size);
+    console.log('🔍 [Import Status] importJobs keys:', Array.from(importJobs.keys()));
 
-// 🔧 FIX: Parser per players filter
-function parsePlayersFilter(playersParam) {
-  if (!playersParam || playersParam === 'all') return [];
-  return playersParam.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
-}
+    const job = importJobs.get(req.params.jobId);
 
-// 🟠 Configurazioni ottimizzazione import (configurabili via ENV)
-const BATCH_SIZE = Math.max(
-  1,
-  parseInt(process.env.IMPORT_BATCH_SIZE || "50", 10) || 50
-); // Record per batch - RIDOTTO da 100 a 50
-const TRANSACTION_TIMEOUT =
-  parseInt(process.env.IMPORT_TX_TIMEOUT_MS || "60000", 10) || 60000; // ms - AUMENTATO da 20s a 60s
-const BATCH_DELAY_MS =
-  parseInt(process.env.IMPORT_BATCH_DELAY_MS || "100", 10) || 100; // ms - AGGIUNTO delay di 100ms
+    if (!job) {
+      console.log('❌ [Import Status] Job non trovato:', req.params.jobId);
+      return res.status(404).json({ error: 'JOB_NOT_FOUND' });
+    }
 
-// 🔐 Middleware di autenticazione + tenant context per tutte le route
-router.use(authenticate, tenantContext); // 🔧 FIXED - Aggiunto tenantContext
+    console.log('✅ [Import Status] Job trovato:', job);
 
-// 🔧 FIX: Monta il sotto-router di compare PRIMA delle route parametriche (/:id)
-// per evitare che "/compare" venga interpretato come ":id" e causi INVALID_ID
-try {
-  const compareRouter = require('./compare');
-  router.use('/compare', compareRouter);
-} catch (e) {
-  dwarn('⚠️ Impossibile montare compare router in anticipo:', e?.message);
-}
+    // Assicurati che tutti i valori siano serializzabili
+    const response = {
+      id: job.id || '',
+      progress: job.progress || 0,
+      state: job.state || 'pending',
+      phase: job.phase || '',
+      summary: job.summary || {},
+      error: job.error || null
+    };
 
-// Helper: valida parametro numerico
-const ensureNumericParam = (paramName) => (req, res, next) => {
-  const val = Number(req.params[paramName]);
-  if (!Number.isInteger(val) || val <= 0) {
-    return res.status(400).json({
-      error: `Parametro ${paramName} non valido`,
-      code: "INVALID_ID",
-    });
+    console.log('📤 [Import Status] Sending response:', JSON.stringify(response));
+
+    return res.json(response);
+  } catch (error) {
+    console.error('🔴 [Import Status] Errore:', error);
+    return res.status(500).json({ error: error.message });
   }
-  next();
-};
+});
+
+// 🔐 Middleware di autenticazione + tenant context + module access per tutte le route PROTETTE
+router.use(authenticate, tenantContext, requireModuleAccess('performance')); // 🔧 FIXED - Aggiunto tenantContext e module access
 
 /**
  * 📁 POST /api/performance/upload
@@ -183,6 +130,93 @@ router.post("/import/upload", upload.single("file"), async (req, res) => {
     });
   }
 });
+
+// KPI service (import non invasivo)
+const {
+  calcDistancePerMin,
+  calcIntensityRatio,
+  calcEfficiencyIndex,
+  calcSprintHSRRatio,
+  calcAcwrAverage,
+  calcMetabolicEfficiency,
+  calcCardioEffortIndex
+} = require('../../../services/kpiCalculationService.js');
+
+// 🟢 In-memory job store per progress import (semplice, per dev)
+const importJobs = new Map();
+
+function createJob(totalSteps = 100) {
+  const id = Math.random().toString(36).slice(2);
+  const job = { id, progress: 0, state: 'running', phase: 'init', totalSteps, startedAt: Date.now(), updatedAt: Date.now(), summary: null, error: null };
+  importJobs.set(id, job);
+  return job;
+}
+
+function updateJob(id, partial) {
+  const job = importJobs.get(id);
+  if (!job) return;
+  Object.assign(job, partial, { updatedAt: Date.now() });
+}
+
+// Rotte di import spostate sotto il middleware specifico
+
+// 🔧 FIX: Funzione per parsing sessionType con mapping frontend→database
+function parseSessionTypeFilterFixed(sessionType) {
+  dlog('🔵 [DEBUG] parseSessionTypeFilter: input:', sessionType);
+  
+  if (!sessionType || sessionType === 'all') return null;
+  
+  // Mapping esplicito frontend → database
+  const mapping = {
+    'training': 'Allenamento',
+    'match': 'Partita',
+    'allenamento': 'Allenamento', // già corretto
+    'partita': 'Partita' // già corretto
+  };
+  
+  const mapped = mapping[sessionType.toLowerCase()] || sessionType;
+  dlog('🟢 [INFO] sessionType mapping:', sessionType, '→', mapped);
+  return mapped;
+}
+
+// 🔧 FIX: Parser per players filter
+function parsePlayersFilter(playersParam) {
+  if (!playersParam || playersParam === 'all') return [];
+  return playersParam.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+}
+
+// 🟠 Configurazioni ottimizzazione import (configurabili via ENV)
+const BATCH_SIZE = Math.max(
+  1,
+  parseInt(process.env.IMPORT_BATCH_SIZE || "50", 10) || 50
+); // Record per batch - RIDOTTO da 100 a 50
+const TRANSACTION_TIMEOUT =
+  parseInt(process.env.IMPORT_TX_TIMEOUT_MS || "60000", 10) || 60000; // ms - AUMENTATO da 20s a 60s
+const BATCH_DELAY_MS =
+  parseInt(process.env.IMPORT_BATCH_DELAY_MS || "100", 10) || 100; // ms - AGGIUNTO delay di 100ms
+
+// 🔧 FIX: Monta il sotto-router di compare PRIMA delle route parametriche (/:id)
+// per evitare che "/compare" venga interpretato come ":id" e causi INVALID_ID
+try {
+  const compareRouter = require('./compare');
+  router.use('/compare', compareRouter);
+} catch (e) {
+  dwarn('⚠️ Impossibile montare compare router in anticipo:', e?.message);
+}
+
+// Helper: valida parametro numerico
+const ensureNumericParam = (paramName) => (req, res, next) => {
+  const val = Number(req.params[paramName]);
+  if (!Number.isInteger(val) || val <= 0) {
+    return res.status(400).json({
+      error: `Parametro ${paramName} non valido`,
+      code: "INVALID_ID",
+    });
+  }
+  next();
+};
+
+// Rotte di import spostate sotto il middleware specifico
 
 /**
  * 🧠 POST /api/performance/map-columns
@@ -435,8 +469,13 @@ router.post("/import/preview-data", async (req, res) => {
     }
 
     // Corretto: la cartella upload è a server/uploads (non server/src/uploads)
-    const UPLOAD_DIR = path.join(__dirname, "../../../uploads");
+    const UPLOAD_DIR = path.join(__dirname, "../../../../uploads");
     const filePath = path.join(UPLOAD_DIR, fileId);
+    
+    console.log('🔍 [Preview Data] UPLOAD_DIR:', UPLOAD_DIR);
+    console.log('🔍 [Preview Data] filePath:', filePath);
+    console.log('🔍 [Preview Data] fileId:', fileId);
+    console.log('🔍 [Preview Data] File exists:', fs.existsSync(filePath));
 
     if (!fs.existsSync(filePath)) {
       return res
@@ -562,7 +601,7 @@ router.post("/import/import-data", async (req, res) => {
 
     // Trova il file usando fileId
     // Corretto: la cartella upload è a server/uploads (non server/src/uploads)
-    const UPLOAD_DIR = path.join(__dirname, "../../../uploads");
+    const UPLOAD_DIR = path.join(__dirname, "../../../../uploads");
     const filePath = path.join(UPLOAD_DIR, fileId);
 
     if (!fs.existsSync(filePath)) {
@@ -1826,7 +1865,7 @@ router.get("/stats/players", async (req, res) => {
         
         totalPlayerLoad = sum(validRows.map(r => toNum(r.player_load)));
         // Allinea HSR alla Dashboard usando la stessa utility
-        const { computeHSR } = require('../../utils/kpi');
+        const { computeHSR } = require('../../../utils/kpi');
         totalHSR = computeHSR(validRows);
         totalSprints = sum(validRows.map(r => toNum(r.sprint_count)));
         avgMaxSpeed = mean(validRows.map(r => toNum(r.top_speed_kmh)));
@@ -3014,7 +3053,7 @@ router.get("/compare", async (req, res) => {
       });
 
     // Importa utilities per i calcoli KPI
-    const { buildPeriodRange, parseSessionTypeFilterSimple, computeHSR, computeSprintPer90, calculateACWR } = require('../../utils/kpi');
+    const { buildPeriodRange, parseSessionTypeFilterSimple, computeHSR, computeSprintPer90, calculateACWR } = require('../../../utils/kpi');
 
     // Calcola KPI per ogni giocatore usando la stessa logica di Dashboard
     const playersWithStats = await Promise.all(players.map(async (player) => {

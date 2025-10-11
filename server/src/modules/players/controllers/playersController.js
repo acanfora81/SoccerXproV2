@@ -1,21 +1,16 @@
-// server/src/controllers/players.js
+// Percorso: server/src/modules/players/controllers/playersController.js
 // Controller per gestione giocatori SoccerXpro V2
 
-const { getPrismaClient } = require('../config/database');
-const { API_ERRORS, createErrorResponse } = require('../constants/errors');
+const { getPrismaClient } = require('../../../config/database');
+const { API_ERRORS, createErrorResponse } = require('../../../constants/errors');
 
-console.log('🟢 [INFO] Caricamento controller giocatori...'); // INFO - rimuovere in produzione
+console.log('🟢 [INFO] Caricamento controller giocatori...');
 
-
-/**
- * 📋 Ottieni lista giocatori (scoppiata per team)
- * GET /api/players
- */
+// 📋 Ottieni lista giocatori
 const getPlayers = async (req, res) => {
   try {
     console.log('🔵 [DEBUG] Richiesta lista giocatori');
 
-    // ✅ 1) Contesto multi-tenant
     const teamId = req?.context?.teamId;
     if (!teamId) {
       const errorResponse = createErrorResponse(
@@ -25,28 +20,28 @@ const getPlayers = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ✅ 2) Prisma client condiviso
     const prisma = getPrismaClient();
 
-    // ✅ 3) Query filtrata per teamId (stessa include e ordinamenti)
     const players = await prisma.player.findMany({
-      where: { teamId }, // 👈 filtro multi-tenant
+      where: { teamId },
       orderBy: [
         { isActive: 'desc' },
         { lastName: 'asc' },
         { firstName: 'asc' }
       ],
       include: {
-        createdBy: {
-          select: { first_name: true, last_name: true }
-        },
+        createdBy: { select: { first_name: true, last_name: true } },
         contracts: {
           select: {
             id: true,
             startDate: true,
             endDate: true,
+            salary: true,
+            netSalary: true,
+            socialContributions: true,
             contractType: true,
-            status: true
+            status: true,
+            currency: true
           },
           orderBy: { startDate: 'desc' }
         },
@@ -64,13 +59,7 @@ const getPlayers = async (req, res) => {
     });
 
     console.log('🟢 [INFO] Lista giocatori recuperata:', players.length, 'giocatori');
-
-    return res.json({
-      message: 'Lista giocatori recuperata con successo',
-      data: players,
-      count: players.length
-    });
-
+    return res.json({ message: 'Lista giocatori recuperata con successo', data: players, count: players.length });
   } catch (error) {
     console.log('🔴 Errore recupero lista giocatori:', error.message);
     const errorResponse = createErrorResponse(API_ERRORS.DATABASE_ERROR);
@@ -78,13 +67,9 @@ const getPlayers = async (req, res) => {
   }
 };
 
-/**
- * 👤 Ottieni giocatore per ID (scoppiato per team)
- * GET /api/players/:id
- */
+// 👤 Ottieni giocatore per ID
 const getPlayerById = async (req, res) => {
   try {
-    // ✅ 1) Contesto multi‑tenant
     const teamId = req?.context?.teamId;
     if (!teamId) {
       const errorResponse = createErrorResponse(
@@ -94,7 +79,6 @@ const getPlayerById = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ✅ 2) Validazione ID
     const playerId = parseInt(req.params.id, 10);
     if (Number.isNaN(playerId)) {
       const errorResponse = createErrorResponse(
@@ -106,17 +90,30 @@ const getPlayerById = async (req, res) => {
 
     console.log('🔵 [DEBUG] Richiesta dettagli giocatore ID:', playerId);
 
-    // ✅ 3) Query vincolata a id + teamId
     const prisma = getPrismaClient();
     const player = await prisma.player.findFirst({
-      where: { id: playerId, teamId },   // 👈 filtro tenant
+      where: { id: playerId, teamId },
       include: {
         createdBy: { select: { first_name: true, last_name: true } },
-        contracts: { orderBy: { startDate: 'desc' } },
-        injuries:  { orderBy: { injuryDate: 'desc' } },
+        contracts: { 
+          orderBy: { startDate: 'desc' },
+          select: {
+            id: true,
+            startDate: true,
+            endDate: true,
+            salary: true,
+            netSalary: true,
+            socialContributions: true,
+            contractType: true,
+            status: true,
+            currency: true,
+            signedDate: true
+          }
+        },
+        injuries: { orderBy: { injuryDate: 'desc' } },
         medicalVisits: { orderBy: { visitDate: 'desc' }, take: 10 },
         transfers: { orderBy: { createdAt: 'desc' } },
-        statistics:{ orderBy: { season: 'desc' } }
+        statistics: { orderBy: { season: 'desc' } }
       }
     });
 
@@ -130,12 +127,7 @@ const getPlayerById = async (req, res) => {
     }
 
     console.log('🟢 [INFO] Dettagli giocatore recuperati:', player.firstName, player.lastName);
-
-    return res.json({
-      message: 'Dettagli giocatore recuperati con successo',
-      data: player
-    });
-
+    return res.json({ message: 'Dettagli giocatore recuperati con successo', data: player });
   } catch (error) {
     console.log('🔴 Errore recupero giocatore:', error.message);
     const errorResponse = createErrorResponse(API_ERRORS.DATABASE_ERROR);
@@ -143,13 +135,9 @@ const getPlayerById = async (req, res) => {
   }
 };
 
-/**
- * ➕ Crea nuovo giocatore
- * POST /api/players
- */
+// ➕ Crea nuovo giocatore
 const createPlayer = async (req, res) => {
   try {
-    // ✅ 1) Contesto multi‑tenant (obbligatorio)
     const teamId = req?.context?.teamId;
     const createdById = req?.context?.userId || req.user?.profile?.id;
     if (!teamId || !createdById) {
@@ -160,25 +148,10 @@ const createPlayer = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ✅ 2) White‑list campi dal body
-    const {
-      firstName,
-      lastName,
-      dateOfBirth,
-      nationality,
-      position,
-      shirtNumber,
-      height,
-      weight,
-      preferredFoot,
-      placeOfBirth,
-      taxCode,
-      passportNumber
-    } = req.body || {};
+    const { firstName, lastName, dateOfBirth, nationality, position, shirtNumber, height, weight, preferredFoot, placeOfBirth, taxCode, passportNumber } = req.body || {};
 
     console.log('🔵 [DEBUG] Creazione nuovo giocatore:', firstName, lastName);
 
-    // ✅ 3) Validazioni base
     if (!firstName || !lastName || !dateOfBirth || !nationality || !position) {
       const errorResponse = createErrorResponse(
         API_ERRORS.REQUIRED_FIELD_MISSING,
@@ -206,7 +179,6 @@ const createPlayer = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // Data di nascita valida
     const dob = new Date(dateOfBirth);
     if (Number.isNaN(dob.getTime())) {
       const errorResponse = createErrorResponse(
@@ -216,19 +188,13 @@ const createPlayer = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ✅ 4) Client Prisma
     const prisma = getPrismaClient();
 
-    // ✅ 5) Verifiche di unicità (scopiate per team dove ha senso)
     if (shirtNumber !== undefined && shirtNumber !== null && `${shirtNumber}`.trim() !== '') {
       const parsedShirt = parseInt(shirtNumber, 10);
       if (!Number.isNaN(parsedShirt)) {
         const existingPlayer = await prisma.player.findFirst({
-          where: {
-            shirtNumber: parsedShirt,
-            isActive: true,
-            teamId                      // ← unicità “di fatto” per team
-          }
+          where: { shirtNumber: parsedShirt, isActive: true, teamId }
         });
         if (existingPlayer) {
           const errorResponse = createErrorResponse(
@@ -241,9 +207,7 @@ const createPlayer = async (req, res) => {
     }
 
     if (taxCode) {
-      const existingByTax = await prisma.player.findFirst({
-        where: { taxCode: taxCode.toUpperCase().trim() }
-      });
+      const existingByTax = await prisma.player.findFirst({ where: { taxCode: taxCode.toUpperCase().trim() } });
       if (existingByTax) {
         const errorResponse = createErrorResponse(
           API_ERRORS.VALIDATION_FAILED,
@@ -253,7 +217,6 @@ const createPlayer = async (req, res) => {
       }
     }
 
-    // ✅ 6) Creazione forzando teamId e createdById
     const player = await prisma.player.create({
       data: {
         firstName: firstName.trim(),
@@ -261,40 +224,24 @@ const createPlayer = async (req, res) => {
         dateOfBirth: dob,
         nationality: nationality.trim(),
         position,
-        shirtNumber: (shirtNumber === undefined || shirtNumber === null || `${shirtNumber}`.trim() === '')
-          ? null
-          : parseInt(shirtNumber, 10),
-        height: (height === undefined || height === null || `${height}`.trim?.() === '')
-          ? null
-          : parseFloat(height),
-        weight: (weight === undefined || weight === null || `${weight}`.trim?.() === '')
-          ? null
-          : parseFloat(weight),
+        shirtNumber: (shirtNumber === undefined || shirtNumber === null || `${shirtNumber}`.trim() === '') ? null : parseInt(shirtNumber, 10),
+        height: (height === undefined || height === null || `${height}`.trim?.() === '') ? null : parseFloat(height),
+        weight: (weight === undefined || weight === null || `${weight}`.trim?.() === '') ? null : parseFloat(weight),
         preferredFoot: preferredFoot || null,
         placeOfBirth: placeOfBirth ? placeOfBirth.trim() : null,
         taxCode: taxCode ? taxCode.toUpperCase().trim() : null,
         passportNumber: passportNumber ? passportNumber.trim() : null,
         isActive: true,
-        createdById,      // 👈 audit
-        teamId            // 👈 iniezione multi‑tenant
+        createdById,
+        teamId
       },
-      include: {
-        createdBy: {
-          select: { first_name: true, last_name: true }
-        }
-      }
+      include: { createdBy: { select: { first_name: true, last_name: true } } }
     });
 
     console.log('🟢 [INFO] Giocatore creato con ID:', player.id);
-
-    return res.status(201).json({
-      message: 'Giocatore creato con successo',
-      data: player
-    });
-
+    return res.status(201).json({ message: 'Giocatore creato con successo', data: player });
   } catch (error) {
     console.log('🔴 Errore creazione giocatore:', error.message);
-
     if (error.code === 'P2002') {
       const errorResponse = createErrorResponse(
         API_ERRORS.VALIDATION_FAILED,
@@ -302,26 +249,20 @@ const createPlayer = async (req, res) => {
       );
       return res.status(errorResponse.status).json(errorResponse.body);
     }
-
     const errorResponse = createErrorResponse(API_ERRORS.DATABASE_ERROR);
     return res.status(errorResponse.status).json(errorResponse.body);
   }
 };
 
-/**
- * ✏️ Aggiorna giocatore
- * PUT /api/players/:id
- */
+// ✏️ Aggiorna giocatore
 const updatePlayer = async (req, res) => {
   try {
-    // ✅ contesto tenant
     const teamId = req?.context?.teamId;
     if (!teamId) {
       const errorResponse = createErrorResponse(API_ERRORS.FORBIDDEN, 'Contesto team non disponibile');
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ✅ id valido
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) {
       const errorResponse = createErrorResponse(API_ERRORS.INVALID_VALUE, 'ID giocatore non valido');
@@ -330,24 +271,8 @@ const updatePlayer = async (req, res) => {
 
     const prisma = getPrismaClient();
 
-    // ✅ white-list campi aggiornabili (teamId ignorato)
-    const {
-      firstName,
-      lastName,
-      dateOfBirth,
-      nationality,
-      position,
-      shirtNumber,
-      height,
-      weight,
-      preferredFoot,
-      placeOfBirth,
-      taxCode,
-      passportNumber,
-      isActive
-    } = req.body || {};
+    const { firstName, lastName, dateOfBirth, nationality, position, shirtNumber, height, weight, preferredFoot, placeOfBirth, taxCode, passportNumber, isActive } = req.body || {};
 
-    // (opzionale) validazioni leggere su enum
     if (position && !['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'].includes(position)) {
       const errorResponse = createErrorResponse(API_ERRORS.INVALID_VALUE, 'Ruolo non valido');
       return res.status(errorResponse.status).json(errorResponse.body);
@@ -357,17 +282,11 @@ const updatePlayer = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // (opzionale) unicità numero maglia per team
     if (shirtNumber !== undefined && shirtNumber !== null && `${shirtNumber}`.trim() !== '') {
       const parsedShirt = parseInt(shirtNumber, 10);
       if (!Number.isNaN(parsedShirt)) {
         const clash = await prisma.player.findFirst({
-          where: {
-            id: { not: id },
-            teamId,
-            isActive: true,
-            shirtNumber: parsedShirt
-          },
+          where: { id: { not: id }, teamId, isActive: true, shirtNumber: parsedShirt },
           select: { id: true, firstName: true, lastName: true }
         });
         if (clash) {
@@ -380,7 +299,6 @@ const updatePlayer = async (req, res) => {
       }
     }
 
-    // costruisci l'oggetto data solo con i campi presenti
     const data = {};
     if (firstName !== undefined) data.firstName = firstName?.trim();
     if (lastName !== undefined) data.lastName = lastName?.trim();
@@ -394,51 +312,27 @@ const updatePlayer = async (req, res) => {
     }
     if (nationality !== undefined) data.nationality = nationality?.trim();
     if (position !== undefined) data.position = position;
-    if (shirtNumber !== undefined)
-      data.shirtNumber =
-        (shirtNumber === '' || shirtNumber === null || typeof shirtNumber === 'undefined')
-          ? null
-          : parseInt(shirtNumber, 10);
-    if (height !== undefined)
-      data.height =
-        (height === '' || height === null || typeof height === 'undefined')
-          ? null
-          : parseFloat(height);
-    if (weight !== undefined)
-      data.weight =
-        (weight === '' || weight === null || typeof weight === 'undefined')
-          ? null
-          : parseFloat(weight);
+    if (shirtNumber !== undefined) data.shirtNumber = (shirtNumber === '' || shirtNumber === null || typeof shirtNumber === 'undefined') ? null : parseInt(shirtNumber, 10);
+    if (height !== undefined) data.height = (height === '' || height === null || typeof height === 'undefined') ? null : parseFloat(height);
+    if (weight !== undefined) data.weight = (weight === '' || weight === null || typeof weight === 'undefined') ? null : parseFloat(weight);
     if (preferredFoot !== undefined) data.preferredFoot = preferredFoot || null;
     if (placeOfBirth !== undefined) data.placeOfBirth = placeOfBirth ? placeOfBirth.trim() : null;
     if (taxCode !== undefined) data.taxCode = taxCode ? taxCode.toUpperCase().trim() : null;
     if (passportNumber !== undefined) data.passportNumber = passportNumber ? passportNumber.trim() : null;
     if (isActive !== undefined) data.isActive = !!isActive;
 
-    // ✅ update blindato per team
-    const result = await prisma.player.updateMany({
-      where: { id, teamId },
-      data
-    });
-
+    const result = await prisma.player.updateMany({ where: { id, teamId }, data });
     if (result.count === 0) {
       const errorResponse = createErrorResponse(API_ERRORS.RESOURCE_NOT_FOUND, 'Giocatore non trovato');
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ritorna il record aggiornato
     const updated = await prisma.player.findFirst({
       where: { id, teamId },
-      include: {
-        createdBy: { select: { first_name: true, last_name: true } }
-      }
+      include: { createdBy: { select: { first_name: true, last_name: true } } }
     });
 
-    return res.json({
-      message: 'Giocatore aggiornato con successo',
-      data: updated
-    });
-
+    return res.json({ message: 'Giocatore aggiornato con successo', data: updated });
   } catch (error) {
     console.log('🔴 Errore aggiornamento giocatore:', error?.message);
     if (error.code === 'P2002') {
@@ -453,21 +347,15 @@ const updatePlayer = async (req, res) => {
   }
 };
 
-
-/**
- * 🗑️ Elimina giocatore
- * DELETE /api/players/:id
- */
+// 🗑️ Elimina giocatore
 const deletePlayer = async (req, res) => {
   try {
-    // ✅ contesto tenant
     const teamId = req?.context?.teamId;
     if (!teamId) {
       const errorResponse = createErrorResponse(API_ERRORS.FORBIDDEN, 'Contesto team non disponibile');
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ✅ id valido
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) {
       const errorResponse = createErrorResponse(API_ERRORS.INVALID_VALUE, 'ID giocatore non valido');
@@ -476,87 +364,32 @@ const deletePlayer = async (req, res) => {
 
     const prisma = getPrismaClient();
 
-    // ✅ Verifica che il giocatore esista e appartenga al team
-    const player = await prisma.Player.findFirst({
-      where: { id, teamId }
-    });
-
+    const player = await prisma.Player.findFirst({ where: { id, teamId } });
     if (!player) {
       const errorResponse = createErrorResponse(API_ERRORS.RESOURCE_NOT_FOUND, 'Giocatore non trovato');
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ✅ Elimina in transazione tutte le relazioni dipendenti
     await prisma.$transaction(async (tx) => {
-      // Elimina performance data
-      await tx.PerformanceData.deleteMany({
-        where: { playerId: id }
-      });
+      await tx.PerformanceData.deleteMany({ where: { playerId: id } });
+      await tx.medical_visits.deleteMany({ where: { playerId: id } });
+      await tx.player_statistics.deleteMany({ where: { playerId: id } });
+      await tx.transfers.deleteMany({ where: { playerId: id } });
+      await tx.injuries.deleteMany({ where: { playerId: id } });
 
-      // Elimina medical visits
-      await tx.medical_visits.deleteMany({
-        where: { playerId: id }
-      });
-
-      // Elimina player statistics
-      await tx.player_statistics.deleteMany({
-        where: { playerId: id }
-      });
-
-      // Elimina transfers
-      await tx.transfers.deleteMany({
-        where: { playerId: id }
-      });
-
-      // Elimina injuries
-      await tx.injuries.deleteMany({
-        where: { playerId: id }
-      });
-
-      // Elimina contratti e le loro relazioni
-      const contracts = await tx.contracts.findMany({
-        where: { playerId: id },
-        select: { id: true }
-      });
-
+      const contracts = await tx.contracts.findMany({ where: { playerId: id }, select: { id: true } });
       for (const contract of contracts) {
-        // Elimina emendamenti del contratto
-        await tx.contract_amendments.deleteMany({
-          where: { contractId: contract.id }
-        });
-
-        // Elimina file del contratto
-        await tx.contract_files.deleteMany({
-          where: { contractId: contract.id }
-        });
-
-        // Elimina clausole del contratto
-        await tx.contract_clauses.deleteMany({
-          where: { contractId: contract.id }
-        });
-
-        // Elimina schedule di pagamento del contratto
-        await tx.contract_payment_schedule.deleteMany({
-          where: { contractId: contract.id }
-        });
-
-        // Elimina il contratto
-        await tx.contracts.delete({
-          where: { id: contract.id }
-        });
+        await tx.contract_amendments.deleteMany({ where: { contractId: contract.id } });
+        await tx.contract_files.deleteMany({ where: { contractId: contract.id } });
+        await tx.contract_clauses.deleteMany({ where: { contractId: contract.id } });
+        await tx.contract_payment_schedule.deleteMany({ where: { contractId: contract.id } });
+        await tx.contracts.delete({ where: { id: contract.id } });
       }
 
-      // Elimina il giocatore
-      await tx.Player.delete({
-        where: { id }
-      });
+      await tx.Player.delete({ where: { id } });
     });
 
-    return res.json({
-      message: 'Giocatore eliminato con successo',
-      data: { id }
-    });
-
+    return res.json({ message: 'Giocatore eliminato con successo', data: { id } });
   } catch (error) {
     console.log('🔴 Errore eliminazione giocatore:', error?.message);
     const errorResponse = createErrorResponse(API_ERRORS.DATABASE_ERROR);
@@ -564,16 +397,11 @@ const deletePlayer = async (req, res) => {
   }
 };
 
-
-/**
- * 📊 Esporta giocatori in Excel
- * GET /api/players/export-excel
- */
+// 📊 Esporta giocatori in Excel
 const exportPlayersToExcel = async (req, res) => {
   try {
     console.log('🔵 [DEBUG] Richiesta esportazione Excel giocatori');
 
-    // ✅ 1) Contesto multi-tenant
     const teamId = req?.context?.teamId;
     if (!teamId) {
       const errorResponse = createErrorResponse(
@@ -583,74 +411,37 @@ const exportPlayersToExcel = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // ✅ 2) Prisma client
     const prisma = getPrismaClient();
 
-    // Helper per tradurre posizioni
     const translatePosition = (position) => {
-      const translations = {
-        'GOALKEEPER': 'Portiere',
-        'DEFENDER': 'Difensore', 
-        'MIDFIELDER': 'Centrocampista',
-        'FORWARD': 'Attaccante'
-      };
+      const translations = { GOALKEEPER: 'Portiere', DEFENDER: 'Difensore', MIDFIELDER: 'Centrocampista', FORWARD: 'Attaccante' };
       return translations[position] || position;
     };
 
-    // ✅ 3) Ottieni tutti i giocatori con tutti i dati
     const players = await prisma.player.findMany({
       where: { teamId },
-      orderBy: [
-        { position: 'asc' },
-        { lastName: 'asc' },
-        { firstName: 'asc' }
-      ],
+      orderBy: [ { position: 'asc' }, { lastName: 'asc' }, { firstName: 'asc' } ],
       include: {
-        contracts: {
-          select: {
-            startDate: true,
-            endDate: true,
-            contractType: true,
-            status: true,
-            salary: true
-          }
-        },
-        createdBy: {
-          select: { first_name: true, last_name: true }
-        }
+        contracts: { select: { startDate: true, endDate: true, contractType: true, status: true, salary: true } },
+        createdBy: { select: { first_name: true, last_name: true } }
       }
     });
 
-    // ✅ 4) Genera file Excel
     const ExcelJS = require('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Giocatori');
 
-    // ✅ 5) Header del foglio
     const headers = [
-      'ID', 'Nome', 'Cognome', 'Numero Maglia', 'Posizione', 'Data Nascita',
-      'Luogo Nascita', 'Nazionalità', 'Altezza (cm)', 'Peso (kg)', 'Piede',
-      'Telefono', 'Email', 'Indirizzo', 'Codice Fiscale', 'Note', 'Attivo',
-      'Data Creazione', 'Creato da', 'Contratto Attivo', 'Tipo Contratto',
-      'Data Inizio Contratto', 'Data Fine Contratto', 'Stipendio'
+      'ID','Nome','Cognome','Numero Maglia','Posizione','Data Nascita','Luogo Nascita','Nazionalità','Altezza (cm)','Peso (kg)','Piede','Telefono','Email','Indirizzo','Codice Fiscale','Note','Attivo','Data Creazione','Creato da','Contratto Attivo','Tipo Contratto','Data Inizio Contratto','Data Fine Contratto','Stipendio'
     ];
-
     worksheet.addRow(headers);
-
-    // ✅ 6) Stile header
     const headerRow = worksheet.getRow(1);
     headerRow.font = { bold: true };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: '6d28d9' }
-    };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '6d28d9' } };
     headerRow.font = { bold: true, color: { argb: 'FFFFFF' } };
 
-    // ✅ 7) Aggiungi dati giocatori
     players.forEach(player => {
       const activeContract = player.contracts?.find(c => c.status === 'ACTIVE');
-      
       worksheet.addRow([
         player.id,
         player.firstName || '',
@@ -679,36 +470,21 @@ const exportPlayersToExcel = async (req, res) => {
       ]);
     });
 
-    // ✅ 8) Auto-width delle colonne
-    worksheet.columns.forEach(column => {
-      column.width = 15;
-    });
+    worksheet.columns.forEach(column => { column.width = 15; });
 
-    // ✅ 9) Imposta header e invia file
     const fileName = `giocatori_export_${new Date().toISOString().split('T')[0]}.xlsx`;
-    
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-
-    // ✅ 10) Scrivi il buffer Excel e invia
     await workbook.xlsx.write(res);
     res.end();
-
     console.log('🟢 [SUCCESS] Esportazione Excel completata:', fileName);
-
   } catch (error) {
     console.error('🔴 [ERROR] Errore esportazione Excel:', error);
-    res.status(500).json({
-      error: 'Errore durante l\'esportazione Excel',
-      details: error.message
-    });
+    res.status(500).json({ error: 'Errore durante l\'esportazione Excel', details: error.message });
   }
 };
 
-/**
- * 🔄 Aggiorna stato del giocatore
- * PUT /api/players/:id/status
- */
+// 🔄 Aggiorna stato del giocatore
 const updatePlayerStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -727,26 +503,13 @@ const updatePlayerStatus = async (req, res) => {
     }
 
     const prisma = getPrismaClient();
-
-    // Aggiorna lo stato
-    const result = await prisma.player.updateMany({
-      where: { id: playerId, teamId },
-      data: { isActive: status === 'active' }
-    });
-
+    const result = await prisma.player.updateMany({ where: { id: playerId, teamId }, data: { isActive: status === 'active' } });
     if (result.count === 0) {
       const errorResponse = createErrorResponse(API_ERRORS.RESOURCE_NOT_FOUND, 'Giocatore non trovato');
       return res.status(errorResponse.status).json(errorResponse.body);
     }
-
-    const updated = await prisma.player.findFirst({
-      where: { id: playerId, teamId }
-    });
-
-    res.json({
-      message: 'Stato giocatore aggiornato con successo',
-      data: updated
-    });
+    const updated = await prisma.player.findFirst({ where: { id: playerId, teamId } });
+    res.json({ message: 'Stato giocatore aggiornato con successo', data: updated });
   } catch (err) {
     console.error('[updatePlayerStatus]', err);
     const errorResponse = createErrorResponse(API_ERRORS.DATABASE_ERROR);
@@ -763,3 +526,5 @@ module.exports = {
   exportPlayersToExcel,
   updatePlayerStatus
 };
+
+

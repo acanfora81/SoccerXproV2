@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, User, Building, Target, DollarSign } from 'lucide-react';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 
 const NegotiationModal = ({ open, onClose, onSubmit }) => {
   const [form, setForm] = useState({

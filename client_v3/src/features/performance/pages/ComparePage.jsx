@@ -1,4 +1,4 @@
-// src/pages/performance/ComparePage.jsx
+// Percorso: client_v3/src/features/performance/pages/ComparePage.jsx
 // 🏆 PAGINA CONFRONTO MULTI-GIOCATORE - Completamente Tailwind
 
 import React, { useState, useEffect } from 'react';
@@ -28,7 +28,7 @@ import {
   ArrowLeftRight
 } from 'lucide-react';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters/index.js';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const ComparePage = () => {
@@ -42,6 +42,7 @@ const ComparePage = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('summary');
   const [viewMode, setViewMode] = useState('tables'); // Nuovo: 'tables' o 'charts'
+  const [filtersInitialized, setFiltersInitialized] = useState(false);
   
   // Estrai parametri dalla URL
   const playerIds = searchParams.get('players')?.split(',').filter(Boolean).map(Number) || [];
@@ -55,12 +56,17 @@ const ComparePage = () => {
     const roles = searchParams.get('roles')?.split(',') || [];
     const status = searchParams.get('status');
     
+    console.log('🔵 ComparePage: inizializzazione filtri da URL:', { period, sessionType, startDate, endDate, roles, status });
+    
     if (period) updateFilter('period', period);
     if (sessionType) updateFilter('sessionType', sessionType);
     if (startDate) updateFilter('startDate', startDate);
     if (endDate) updateFilter('endDate', endDate);
     if (roles.length > 0) updateFilter('roles', roles);
     if (status) updateFilter('status', status);
+    
+    // Marca i filtri come inizializzati
+    setFiltersInitialized(true);
   }, []); // Solo al mount, non dipende da searchParams per evitare loop
   
   // Tab identiche a CompareOverlay
@@ -101,18 +107,11 @@ const ComparePage = () => {
       setError(null);
 
       const query = buildPerformanceQuery(filters);
-      const url = `/api/performance/compare?players=${playerIds.join(',')}&${query}`;
+      const url = `/performance/compare?players=${playerIds.join(',')}&${query}`;
       
       console.log('🔵 ComparePage: fetch URL:', url);
-
-      const response = await apiFetch(url);
-        
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Errore ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
+      
+      const data = await apiFetch(url);
       console.log('🟢 ComparePage: dati ricevuti:', data);
       
       const playersData = data.players || data || [];
@@ -126,10 +125,16 @@ const ComparePage = () => {
     }
   };
 
-  // Effect per caricare i dati
+  // Effect per caricare i dati (solo dopo che i filtri sono stati inizializzati)
   useEffect(() => {
+    if (!filtersInitialized) {
+      console.log('⏳ ComparePage: in attesa inizializzazione filtri...');
+      return;
+    }
+    
+    console.log('🚀 ComparePage: fetch dati con filtri:', filters);
     fetchCompareData();
-  }, [playerIds.join(','), JSON.stringify(filters)]);
+  }, [playerIds.join(','), JSON.stringify(filters), filtersInitialized]);
 
   // Tabella comparativa dinamica
   const renderCompareTable = (metrics) => {

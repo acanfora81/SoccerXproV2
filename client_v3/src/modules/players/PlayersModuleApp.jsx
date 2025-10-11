@@ -12,7 +12,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import apiFetch from '../../utils/apiFetch';
+import apiFetch from '../../utils/apiClient';
 import PlayerCreateDialog from "@/modules/players/components/PlayerCreateDialog";
 
 const PlayersModuleApp = () => {

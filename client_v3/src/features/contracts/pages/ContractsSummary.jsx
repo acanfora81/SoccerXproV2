@@ -10,11 +10,12 @@ import {
   RefreshCw,
   Download
 } from 'lucide-react';
-import { apiFetch } from '@/lib/utils/apiFetch';
+import { apiFetch } from '@/utils/apiClient';
 import Button from '@/design-system/ds/Button';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import KPICard from '@/design-system/ds/KPICard';
 import PageHeader from '@/design-system/ds/PageHeader';
+import PageLoading from '@/design-system/ds/PageLoading';
 import EmptyState from '@/design-system/ds/EmptyState';
 import ContractSummaryKPI from '@/features/contracts/components/ContractSummaryKPI';
 
@@ -116,6 +117,8 @@ const ContractsSummary = () => {
       case 'YOUTH': return 'Giovanile';
       case 'AMATEUR': return 'Dilettante';
       case 'TRAINING': return 'Tirocinio';
+      case 'APPRENTICESHIP': return 'Apprendistato';
+      case 'TRAINING_AGREEMENT': return 'Accordo formativo';
       default: return type || 'Non specificato';
     }
   };
@@ -181,12 +184,13 @@ const ContractsSummary = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center gap-3">
-          <RefreshCw size={24} className="animate-spin text-primary" />
-          <span className="text-lg text-gray-600 dark:text-gray-400">Caricamento Riepilogo Contratti...</span>
-        </div>
-      </div>
+      <PageLoading
+        title="Riepilogo Contratti"
+        description="Panoramica completa dei contratti del team"
+        height="min-h-[400px]"
+        showText={true}
+        text="Caricamento Riepilogo Contratti..."
+      />
     );
   }
 

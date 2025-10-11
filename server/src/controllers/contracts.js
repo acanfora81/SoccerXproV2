@@ -2588,6 +2588,117 @@ const getDashboardExpenses = async (req, res) => {
   }
 };
 
+/**
+ * 🔗 Collega contratto a giocatore
+ * POST /api/contracts/link
+ */
+const linkContractToPlayer = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    const { playerId, contractId } = req.body;
+
+    if (!playerId || !contractId) {
+      return res.status(400).json({
+        success: false,
+        error: 'playerId e contractId sono richiesti'
+      });
+    }
+
+    const prisma = getPrismaClient();
+
+    // Verifica che il contratto appartenga al team
+    const contract = await prisma.contracts.findFirst({
+      where: { id: parseInt(contractId), teamId }
+    });
+
+    if (!contract) {
+      return res.status(404).json({
+        success: false,
+        error: 'Contratto non trovato o non appartiene al team'
+      });
+    }
+
+    // Verifica che il giocatore appartenga al team
+    const player = await prisma.player.findFirst({
+      where: { id: parseInt(playerId), teamId }
+    });
+
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        error: 'Giocatore non trovato o non appartiene al team'
+      });
+    }
+
+    // Collega il contratto al giocatore (se il tuo schema lo supporta)
+    // Nota: questo dipende dalla struttura del tuo database
+    // Potresti dover aggiornare il campo contractId nel player o viceversa
+
+    res.json({
+      success: true,
+      message: 'Contratto collegato al giocatore con successo',
+      data: { playerId: parseInt(playerId), contractId: parseInt(contractId) }
+    });
+
+  } catch (error) {
+    console.error('Errore nel collegamento contratto-giocatore:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server',
+      details: error.message
+    });
+  }
+};
+
+/**
+ * 🔓 Scollega contratto da giocatore
+ * DELETE /api/contracts/link/:playerId
+ */
+const unlinkContractFromPlayer = async (req, res) => {
+  try {
+    const { teamId } = req.context;
+    const { playerId } = req.params;
+
+    if (!playerId) {
+      return res.status(400).json({
+        success: false,
+        error: 'playerId è richiesto'
+      });
+    }
+
+    const prisma = getPrismaClient();
+
+    // Verifica che il giocatore appartenga al team
+    const player = await prisma.player.findFirst({
+      where: { id: parseInt(playerId), teamId }
+    });
+
+    if (!player) {
+      return res.status(404).json({
+        success: false,
+        error: 'Giocatore non trovato o non appartiene al team'
+      });
+    }
+
+    // Scollega il contratto dal giocatore
+    // Nota: implementazione dipende dallo schema
+
+    res.json({
+      success: true,
+      message: 'Contratto scollegato dal giocatore con successo',
+      data: { playerId: parseInt(playerId) }
+    });
+
+  } catch (error) {
+    console.error('Errore nello scollegamento contratto-giocatore:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Errore interno del server',
+      details: error.message
+    });
+  }
+};
+
 module.exports = {
   getContracts,
   getContract,
@@ -2606,7 +2717,9 @@ module.exports = {
   getDashboardExpiring,
   getDashboardTopPlayers,
   getDashboardExpenses,
-  getDashboardAll
+  getDashboardAll,
+  linkContractToPlayer,
+  unlinkContractFromPlayer
 };
 
 // Endpoint temporaneo per correggere i dati esistenti

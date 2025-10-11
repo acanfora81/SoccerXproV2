@@ -1,3 +1,4 @@
+// Percorso: client_v3/src/features/performance/components/ColumnMappingStep.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ArrowRight, ArrowLeft, CheckCircle, XCircle, RefreshCw, Info, Lightbulb } from 'lucide-react';
 
@@ -109,7 +110,8 @@ export default function ColumnMappingStep({ csvHeaders = [], onMappingComplete, 
     try {
       setSuggestionsLoading(true);
       setError(null);
-      const res = await fetch('/api/performance/map-columns', {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+      const res = await fetch(`${API_BASE}/performance/map-columns`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

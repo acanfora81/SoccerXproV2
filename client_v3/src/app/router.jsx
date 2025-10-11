@@ -116,6 +116,7 @@ const router = createBrowserRouter([
       
       // Contratti
       { path: "dashboard/contracts", element: <ContractsList /> },
+      { path: "dashboard/contracts/:id", element: <ContractsList /> },
       { path: "dashboard/contracts/dashboard", element: <ContractsDashboard /> },
       { path: "dashboard/contracts/expiring", element: <ExpiringContracts /> },
       { path: "dashboard/contracts/summary", element: <ContractsSummary /> },

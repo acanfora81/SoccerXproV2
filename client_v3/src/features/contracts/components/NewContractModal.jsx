@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { X, Save, FileText, Euro, Percent, AlertTriangle, RefreshCw } from 'lucide-react';
-import { apiFetch } from '@/lib/utils/apiFetch';
+import { apiFetch } from '@/utils/apiClient';
 import useAuthStore from '@/store/authStore';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
 import { useUnifiedFiscalCalculation } from '@/lib/hooks/useUnifiedFiscalCalculation';
@@ -481,6 +481,10 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
           const netValue = calculationMode === 'net' ? parseItalianNumberToFloat(formData.netSalary) : (unifiedCalculations?.salary?.netSalary || 0);
           return Number(netValue.toFixed(2));
         })(),
+        socialContributions: (() => {
+          const employerContributions = unifiedCalculations?.total?.employerContributions || 0;
+          return Number(employerContributions.toFixed(2));
+        })(),
         buyPrice: formData.buyPrice ? parseItalianNumberToFloat(formData.buyPrice) : null,
         responsibleUserId: formData.responsibleUserId || null,
         imageRights: formData.imageRights ? parseItalianNumberToFloat(formData.imageRights) : 0,
@@ -491,23 +495,17 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         transferAllowance: formData.transferAllowance ? parseItalianNumberToFloat(formData.transferAllowance) : 0,
       };
 
-      let response;
+      let saved;
       if (editingContract) {
-        response = await apiFetch(`/api/contracts/${editingContract.id}`, {
+        saved = await apiFetch(`/api/contracts/${editingContract.id}`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(contractData),
         });
       } else {
-        response = await apiFetch('/api/contracts', {
+        saved = await apiFetch('/api/contracts', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(contractData),
         });
       }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Errore ${response.status}`);
-      }
-
-      const saved = await response.json();
       setSuccessDialog({ isOpen: true, message: editingContract ? 'Contratto modificato con successo!' : 'Contratto creato con successo!' });
 
       setFormData((prev) => ({

@@ -19,7 +19,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import { useFilters, buildPerformanceQuery } from '@/modules/filters/index.js';
 import { FiltersBar } from '@/modules/filters/index.js';
 import { formatItalianNumber } from '@/utils/italianNumbers';
@@ -85,16 +85,10 @@ const CompareDrawer = ({
         console.log('🔵 CompareDrawer: fetch dati confronto', { 
           playerIds, 
           filters,
-          url: `/api/performance/compare?players=${playerIds.join(',')}&${params}`
+          url: `/performance/compare?players=${playerIds.join(',')}&${params}`
         });
 
-        const response = await apiFetch(`/api/performance/compare?players=${playerIds.join(',')}&${params}`);
-        
-        if (!response.ok) {
-          throw new Error(`Errore ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        const data = await apiFetch(`/performance/compare?players=${playerIds.join(',')}&${params}`);
         
         console.log('🟢 CompareDrawer: dati confronto caricati', { 
           giocatori: data.players?.length || 0, 

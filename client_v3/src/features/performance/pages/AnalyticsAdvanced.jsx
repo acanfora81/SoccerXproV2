@@ -1,9 +1,11 @@
+// Percorso: client_v3/src/features/performance/pages/AnalyticsAdvanced.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart3, RefreshCw, Users, Download, User, AlertCircle } from "lucide-react";
 import { FiltersBar, useFilters, buildPerformanceQuery } from "@/modules/filters";
-import { apiFetch } from "@/utils/http";
+import { apiFetch } from "@/utils/apiClient";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ExportModal from "@/components/common/ExportModal";
+import PageLoading from "@/design-system/ds/PageLoading";
 
 // Sezioni già presenti in client_v3 (Tailwind)
 import Accelerazioni from "@/features/performance/components/sections/Accelerazioni";
@@ -68,13 +70,7 @@ export default function AnalyticsAdvanced() {
         const query = buildPerformanceQuery(cleanFilters);
 
         // Carica dati performance aggregati
-        const performanceResponse = await apiFetch(`/api/performance?${query}`);
-        if (!performanceResponse.ok) {
-          const errorText = await performanceResponse.text();
-          throw new Error(`Errore caricamento performance: ${performanceResponse.status} - ${errorText}`);
-        }
-
-        const performanceResult = await performanceResponse.json();
+        const performanceResult = await apiFetch(`/performance?${query}`);
         const aggregatedDataFromAPI = performanceResult.data || [];
         console.log("✅ Dati performance team caricati:", aggregatedDataFromAPI.length, "record");
         
@@ -135,9 +131,7 @@ export default function AnalyticsAdvanced() {
         // Aggiungi limit alto per avere TUTTE le sessioni del periodo
         qRaw += '&limit=10000';
         console.log('🔍 [CHIRURGICO] Query RAW per ReportCoach:', qRaw);
-        const resp = await apiFetch(`/api/performance?${qRaw}`);
-        if (!resp.ok) throw new Error(`Raw sessions ${resp.status}`);
-        const json = await resp.json();
+        const json = await apiFetch(`/performance?${qRaw}`);
         const rows = Array.isArray(json?.data) ? json.data : [];
         setRawSessions(rows);
         console.log('🟢 RAW sessions per ReportCoach:', rows.length, 'record');
@@ -170,13 +164,7 @@ export default function AnalyticsAdvanced() {
       const query = buildPerformanceQuery(cleanFilters);
       const playerId = parseInt(selectedPlayer);
 
-      const performanceResponse = await apiFetch(`/api/performance?${query}&playerId=${playerId}`);
-
-      if (!performanceResponse.ok) {
-        throw new Error(`Errore ${performanceResponse.status}: ${performanceResponse.statusText}`);
-      }
-
-      const performanceResult = await performanceResponse.json();
+      const performanceResult = await apiFetch(`/performance?${query}&playerId=${playerId}`);
       const playerPerformanceData = performanceResult.data || [];
       console.log("✅ Dati performance giocatore caricati:", playerPerformanceData.length, "record");
       setPerformanceData(playerPerformanceData);
@@ -230,15 +218,7 @@ export default function AnalyticsAdvanced() {
         const query = buildPerformanceQuery(cleanFilters);
         console.log("🔍 Query API performance:", query);
 
-        const performanceResponse = await apiFetch(`/api/performance?${query}`);
-
-        if (!performanceResponse.ok) {
-          const errorText = await performanceResponse.text();
-          console.error("🔴 Errore API performance:", performanceResponse.status, errorText);
-          throw new Error(`Errore caricamento performance: ${performanceResponse.status} - ${errorText}`);
-        }
-
-        const performanceResult = await performanceResponse.json();
+        const performanceResult = await apiFetch(`/performance?${query}`);
         console.log("🟢 Performance data aggregati caricati:", performanceResult.data?.length || 0, "date uniche");
 
         const aggregatedDataFromAPI = performanceResult.data || [];
@@ -276,12 +256,7 @@ export default function AnalyticsAdvanced() {
         }
 
         // Carica lista giocatori
-        const playersResponse = await apiFetch("/api/players");
-        if (!playersResponse.ok) {
-          throw new Error(`Errore API players: ${playersResponse.status}`);
-        }
-
-        const playersResponseData = await playersResponse.json();
+        const playersResponseData = await apiFetch("/players");
         console.log("✅ Players data caricati:", playersResponseData.length, "giocatori");
 
         const playersData = playersResponseData.data || playersResponseData;
@@ -360,12 +335,9 @@ export default function AnalyticsAdvanced() {
   useEffect(() => {
     const loadPlayers = async () => {
       try {
-        const response = await apiFetch("/api/players");
-        if (response.ok) {
-          const data = await response.json();
-          const playersData = data.data || data;
-          setPlayers(playersData);
-        }
+        const data = await apiFetch("/players");
+        const playersData = data.data || data;
+        setPlayers(playersData);
       } catch (error) {
         console.error("❌ Errore caricamento giocatori:", error);
       }
@@ -631,10 +603,13 @@ export default function AnalyticsAdvanced() {
   // ===========================
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-gray-600 dark:text-gray-300">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mr-3"></div>
-        Caricamento…
-      </div>
+      <PageLoading
+        title="Analytics Avanzate"
+        description="Analisi approfondite delle performance del team"
+        height="py-16"
+        showText={true}
+        text="Caricamento..."
+      />
     );
   }
 

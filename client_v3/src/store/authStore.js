@@ -54,6 +54,13 @@ const useAuthStore = create(
                   isLoading: false,
                   error: null
                 });
+
+                // Redirect alla pagina originale se salvata
+                const redirectUrl = sessionStorage.getItem('postLoginRedirect');
+                if (redirectUrl && redirectUrl !== '/login') {
+                  sessionStorage.removeItem('postLoginRedirect');
+                  window.location.href = redirectUrl;
+                }
               } else {
                 // Fallback: usa user del login
                 set({

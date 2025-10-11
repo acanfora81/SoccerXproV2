@@ -6,9 +6,11 @@ import DataTable from "@/design-system/ds/DataTable";
 import EmptyState from "@/design-system/ds/EmptyState";
 import ConfirmDialog from "@/design-system/ds/ConfirmDialog";
 
-import { Users, Download, RefreshCw, Upload, Edit, Trash2 } from "lucide-react";
+import { Users, Download, RefreshCw, Upload, Edit, Trash2, Eye } from "lucide-react";
 
 import PlayerFormModal from "../components/PlayerFormModal";
+import useAuthStore from "@/store/authStore";
+import { formatItalianCurrency } from "@/lib/utils/italianNumbers";
 import PlayerCreateDialog from "@/modules/players/components/PlayerCreateDialog";
 import { PlayersAPI } from "@/lib/api/players";
 
@@ -37,7 +39,8 @@ const translateContractType = (contracts) => {
     'TRIAL': 'Prova',
     'YOUTH': 'Giovanile',
     'AMATEUR': 'Dilettante',
-    'PART_TIME': 'Part-time'
+    'PART_TIME': 'Part-time',
+    'APPRENTICESHIP': 'Apprendistato'
   };
   return contractMap[latestContract.contractType] || latestContract.contractType || '-';
 };
@@ -59,10 +62,15 @@ export default function PlayersList() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [selected, setSelected] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [editPlayer, setEditPlayer] = useState(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
+  const [viewPlayer, setViewPlayer] = useState(null);
+
+  const { user } = useAuthStore();
+  const canUseContracts = user?.modules?.includes('contracts') ?? true;
 
   const fetchPlayers = async () => {
     setLoading(true);
@@ -218,10 +226,20 @@ export default function PlayersList() {
                   header: "Azioni",
                   accessor: (p) => (
                     <div className="flex gap-2 justify-center">
+                      {canUseContracts && (
+                        <Button
+                          size="sm"
+                          variant="success"
+                          onClick={() => setViewPlayer(p)}
+                          title="Visualizza contratto"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="info"
-                        onClick={() => { setSelected(p); setFormOpen(true); }}
+                        onClick={() => setEditPlayer(p)}
                         title="Modifica giocatore"
                       >
                         <Edit className="w-4 h-4" />
@@ -253,6 +271,17 @@ export default function PlayersList() {
         />
       )}
 
+      {/* Modale modifica giocatore (nuova con tab) */}
+      {editPlayer && (
+        <PlayerCreateDialog
+          player={editPlayer}
+          onUpdated={() => {
+            setEditPlayer(null);
+            fetchPlayers();
+          }}
+        />
+      )}
+
       {/* Dialog conferma eliminazione */}
       {confirmDelete && (
         <ConfirmDialog
@@ -262,6 +291,61 @@ export default function PlayersList() {
           message="Sei sicuro di voler eliminare questo giocatore?"
           onConfirm={() => handleDelete(confirmDelete)}
         />
+      )}
+
+      {/* Modale sola visualizzazione contratto */}
+      {viewPlayer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setViewPlayer(null)} />
+          <div className="relative bg-white dark:bg-[#0f1424] text-gray-900 dark:text-gray-100 rounded-xl shadow-xl w-full max-w-lg mx-4 p-5 border dark:border-white/10">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-semibold">Dettaglio Contratto</h3>
+              <button className="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white" onClick={() => setViewPlayer(null)}>✕</button>
+            </div>
+
+            {(() => {
+              const activeContract = viewPlayer?.contracts?.find(c => c.status === 'ACTIVE') || viewPlayer?.contracts?.[0];
+              if (!activeContract) {
+                return <div className="text-sm text-gray-500">Nessun contratto associato.</div>;
+              }
+
+              const typeMap = { PERMANENT:'Permanente', PROFESSIONAL:'Professionale', LOAN:'Prestito', TRIAL:'Prova', YOUTH:'Giovanile', AMATEUR:'Dilettante', PART_TIME:'Part-time' };
+              const statusMap = { ACTIVE:'Attivo', EXPIRED:'Scaduto', TERMINATED:'Terminato', DRAFT:'Bozza', RENEWED:'Rinnovato', PENDING:'In attesa' };
+
+              const euro = (v) => typeof v === 'number' ? v.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'N/D';
+
+              return (
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">Stato</div>
+                    <span className={`px-2 py-0.5 rounded text-xs ${activeContract.status === 'ACTIVE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'}`}>{statusMap[activeContract.status] || activeContract.status}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <div><span className="font-medium">Tipo:</span> {typeMap[activeContract.contractType] || activeContract.contractType || 'N/D'}</div>
+                      <div><span className="font-medium">Inizio:</span> {activeContract.startDate ? new Date(activeContract.startDate).toLocaleDateString('it-IT') : 'N/D'}</div>
+                      <div><span className="font-medium">Scadenza:</span> {activeContract.endDate ? new Date(activeContract.endDate).toLocaleDateString('it-IT') : 'N/D'}</div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-medium">Stipendio Netto:</span>
+                        <span className="font-bold text-green-600 dark:text-green-400"><span className="inline-block w-3 text-right">€</span> {euro(Number(activeContract.netSalary))}</span>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-medium">Stipendio Lordo:</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400"><span className="inline-block w-3 text-right">€</span> {euro(Number(activeContract.salary))}</span>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-medium">Costo Aziendale:</span>
+                        <span className="font-bold text-red-600 dark:text-red-400"><span className="inline-block w-3 text-right">€</span> {euro(Number(activeContract.salary || 0) + Number(activeContract.socialContributions || 0))}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
       )}
     </div>
   );

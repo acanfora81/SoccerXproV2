@@ -250,6 +250,28 @@ function canAccessUserData(currentUser, targetUserId) {
   return currentUser.id === targetUserId;
 }
 
+const requireModuleAccess = (moduleKey) => (req, res, next) => {
+  // 🔓 ESCLUSIONE: Le rotte di import sono sempre accessibili (necessarie per caricare dati)
+  // Controlla sia req.path che req.url per compatibilità con router Express nidificati
+  const fullPath = req.originalUrl || req.url || req.path || '';
+  
+  // Log di debug temporaneo
+  console.log('🔵 [requireModuleAccess] module:', moduleKey, 'path:', fullPath);
+  
+  if (fullPath.includes('/import/')) {
+    console.log('✅ [requireModuleAccess] Import route detected - bypassing module access check');
+    return next();
+  }
+  
+  const { plan, modules } = req.user || {};
+  const enabled = Array.isArray(modules) ? modules.includes(moduleKey) : true;
+  if (!enabled) {
+    console.log('❌ [requireModuleAccess] Access denied - module not in plan');
+    return res.status(403).json({ success:false, message:`Modulo ${moduleKey} non incluso nel piano` });
+  }
+  next();
+};
+
 module.exports = {
   ROLES,
   PERMISSIONS,
@@ -260,5 +282,6 @@ module.exports = {
   requireRole,
   requirePermission,
   getRolePermissions,
-  canAccessUserData
+  canAccessUserData,
+  requireModuleAccess
 };

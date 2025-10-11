@@ -1,3 +1,4 @@
+// Percorso: client_v3/src/features/performance/components/CompareOverlay.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 
 // 🚀 OPTIMIZATION: Funzione debounce per ottimizzare le chiamate API
@@ -66,7 +67,7 @@ import {
   PolarRadiusAxis,
   Radar
 } from 'recharts';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import { useFilters } from '@/modules/filters/index.js';
 import { FiltersBar } from '@/modules/filters/index.js';
 import '@/modules/filters/filters.css';
@@ -577,7 +578,7 @@ const CompareOverlay = ({
         if (filters.startDate) qs.set('startDate', filters.startDate);
         if (filters.endDate) qs.set('endDate', filters.endDate);
 
-        const url = `/api/performance/compare?${qs.toString()}`;
+        const url = `/performance/compare?${qs.toString()}`;
         console.log('🔵 CompareOverlay: fetch URL:', url);
         console.log('🔍 CompareOverlay: filtri ricevuti:', {
           period: filters.period,
@@ -658,8 +659,7 @@ const CompareOverlay = ({
       if (filters.endDate) params.set('endDate', filters.endDate);
       if (filters.sessionType) params.set('sessionType', filters.sessionType);
       
-      const response = await apiFetch(`/api/performance/compare/charts-data?${params}`);
-      const data = await response.json();
+      const data = await apiFetch(`/performance/compare/charts-data?${params}`);
       
       if (data.success && data.data) {
         setTimeSeriesData(data.data);

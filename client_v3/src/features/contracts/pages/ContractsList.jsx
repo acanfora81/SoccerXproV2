@@ -1,7 +1,8 @@
-// client_v3/src/features/contracts/pages/ContractsList.jsx
+// Percorso: client_v3/src/features/contracts/pages/ContractsList.jsx
 // Pagina lista contratti con tabella e azioni
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { 
   Search, 
   Filter, 
@@ -12,9 +13,10 @@ import {
   Eye,
   History
 } from 'lucide-react';
-import { apiFetch } from '@/lib/utils/apiFetch';
+import { apiFetch } from '@/utils/apiClient';
 import { formatItalianCurrency } from '@/lib/utils/italianNumbers';
 import PageHeader from '@/design-system/ds/PageHeader';
+import PageLoading from '@/design-system/ds/PageLoading';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
@@ -26,6 +28,8 @@ import ContractHistoryModal from '../components/ContractHistoryModal';
 import ContractKPICards from '../components/dashboard/ContractKPICards';
 
 const ContractsList = () => {
+  const { id: contractIdParam } = useParams();
+  const [searchParams] = useSearchParams();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,6 +49,18 @@ const ContractsList = () => {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, contract: null });
   const [feedbackDialog, setFeedbackDialog] = useState({ isOpen: false, message: '', type: 'success' });
+
+  // Se c'è un contractId nell'URL (come parametro o query string), apri la modale dettagli
+  useEffect(() => {
+    const contractIdFromUrl = contractIdParam || searchParams.get('id');
+    if (contractIdFromUrl && contracts.length > 0 && !isViewModalOpen) {
+      const contract = contracts.find(c => c.id === parseInt(contractIdFromUrl));
+      if (contract) {
+        setViewingContract(contract);
+        setIsViewModalOpen(true);
+      }
+    }
+  }, [contractIdParam, searchParams, contracts, isViewModalOpen]);
 
   // Carica contratti
   const fetchContracts = useCallback(async () => {
@@ -362,15 +378,10 @@ const ContractsList = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Lista Contratti"
-          description="Gestione completa dei contratti del team"
-        />
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
+      <PageLoading
+        title="Lista Contratti"
+        description="Gestione completa dei contratti del team"
+      />
     );
   }
 

@@ -6,7 +6,7 @@ import {
   Minus, TrendingUp, TrendingDown, Shield, Target, Activity, Users
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters/index.js';
 import CompareBar from './CompareBar';
 import DossierDrawer from './DossierDrawer';
@@ -148,22 +148,15 @@ const PerformancePlayersList = () => {
       setError(null);
 
       const query = buildPerformanceQuery(filters);
-      console.log('[PERF-LIST] calling /api/performance/stats/players?', query);
+      console.log('[PERF-LIST] calling /performance/stats/players?', query);
 
-      const response = await apiFetch(`/api/performance/stats/players?${query}`, { 
+      const data = await apiFetch(`/performance/stats/players?${query}`, { 
         signal: controller.signal,
-        // 🔧 FIX: Aggiungi header per bypassare cache browser se necessario
         headers: {
-          'Cache-Control': 'max-age=30', // Cache per 30 secondi
+          'Cache-Control': 'max-age=30',
           'Content-Type': 'application/json'
         }
       });
-      
-      if (!response.ok) {
-        throw new Error(`Errore ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
       
       // Salva in cache
       playersCache.set(cacheKey, {
@@ -200,11 +193,9 @@ const PerformancePlayersList = () => {
       if (filters.sessionType) params.set('sessionType', filters.sessionType);
       if (filters.sessionName) params.set('sessionName', filters.sessionName);
 
-      const res = await apiFetch(`/api/dashboard/stats/player/${playerId}?${params.toString()}`, {
+      const json = await apiFetch(`/dashboard/stats/player/${playerId}?${params.toString()}`, {
         headers: { 'Content-Type': 'application/json' }
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
       const data = json?.data || {};
       setPlayerDashById(prev => new Map(prev).set(playerId, data));
     } catch (e) {

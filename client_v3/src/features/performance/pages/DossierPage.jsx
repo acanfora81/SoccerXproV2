@@ -19,7 +19,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters/index.js';
-import { apiFetch } from '@/utils/http';
+import { apiFetch } from '@/utils/apiClient';
 import {
   ResponsiveContainer,
   LineChart,
@@ -93,17 +93,11 @@ export default function DossierPage() {
             sessionName: filters.sessionName,
             normalize: filters.normalize,
             sortBy: filters.sortBy,
-            url: `/api/performance/player/${playerId}/dossier?${query}`
+            url: `/performance/player/${playerId}/dossier?${query}`
           });
         }
 
-        const response = await apiFetch(`/api/performance/player/${playerId}/dossier?${query}`);
-        
-        if (!response.ok) {
-          throw new Error(`Errore ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        const data = await apiFetch(`/performance/player/${playerId}/dossier?${query}`);
         console.log('🟢 DossierPage: dati ricevuti:', data);
         setPlayer(data);
       } catch (err) {
@@ -152,9 +146,9 @@ export default function DossierPage() {
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Errore</h3>
             <button 
               className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-              onClick={() => navigate('/app/performance/players')}
+              onClick={() => navigate('/app/dashboard/performance/players')}
             >
-              ← Torna alla Lista
+              ← Torna alla Vista Giocatori
             </button>
           </div>
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
@@ -198,9 +192,9 @@ export default function DossierPage() {
             {/* Header actions */}
             <button 
               className="px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-              onClick={() => navigate('/app/performance/players')}
+              onClick={() => navigate('/app/dashboard/performance/players')}
             >
-              ← Torna alla Lista
+              ← Torna alla Vista Giocatori
             </button>
           </div>
         </div>

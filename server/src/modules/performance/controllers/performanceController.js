@@ -1,9 +1,9 @@
-// server/src/controllers/performance.js
+// Percorso: server/src/modules/performance/controllers/performanceController.js
 // Controller per gestione dati performance SoccerXpro V2 - MULTI-TENANT FIXED
 
-const { getPrismaClient } = require('../config/database');
-const { API_ERRORS, createErrorResponse } = require('../constants/errors');
-const { calculateACWR } = require('../utils/kpi');
+const { getPrismaClient } = require('../../../config/database');
+const { API_ERRORS, createErrorResponse } = require('../../../constants/errors');
+const { calculateACWR } = require('../../../utils/kpi');
 
 console.log('🔵 [DEBUG] Caricamento controller performance multi-tenant...'); // INFO DEV - rimuovere in produzione
 

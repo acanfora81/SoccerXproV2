@@ -4,7 +4,7 @@ import PageHeader from '@/design-system/ds/PageHeader';
 import Card, { CardContent } from '@/design-system/ds/Card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BriefcaseBusiness } from 'lucide-react';
-import apiFetch from '@/lib/utils/apiFetch';
+import apiFetch from '@/utils/apiClient';
 import MarketKPI from './components/MarketKPI';
 import NegotiationsTable from './components/NegotiationsTable';
 import OffersTable from './components/OffersTable';
