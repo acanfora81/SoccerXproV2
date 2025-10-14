@@ -3,6 +3,7 @@
 
 const express = require('express');
 const { getPrismaClient } = require('../config/database');
+const slugify = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 const { API_ERRORS, createErrorResponse } = require('../constants/errors');
 
 const router = express.Router();
@@ -162,6 +163,12 @@ router.post('/', async (req, res) => {
           maxPlayers: limits.maxPlayers,
           billingEmail: email,
           features: {
+            // Nuovo formato: includi sempre la lista moduli esplicita
+            modules: [
+              'contracts',
+              ...(plan !== 'BASIC' ? ['performance'] : [])
+            ],
+            // Flag legacy mantenuti per retro-compatibilità
             analytics: plan !== 'BASIC',
             advanced_reports: ['PREMIUM', 'ENTERPRISE'].includes(plan),
             api_access: plan === 'ENTERPRISE',
@@ -263,6 +270,48 @@ router.get('/plans', (req, res) => {
 });
 
 module.exports = router;
+
+// ================== ACCOUNT-CENTRIC ENDPOINTS ==================
+// Crea Account + Team + AccountUser per club o professionista singolo
+// Body: { accountName, accountType: 'CLUB'|'INDIVIDUAL'|'AGENCY', teamName, userId }
+// Risposta: { account, team }
+router.post('/register-account', async (req, res) => {
+  const prisma = getPrismaClient();
+  try {
+    const { accountName, accountType = 'INDIVIDUAL', teamName, userId } = req.body || {};
+    if (!accountName || !teamName || !userId) {
+      return res.status(400).json({ success: false, error: 'Missing accountName, teamName or userId' });
+    }
+    const accountSlug = slugify(accountName);
+    const account = await prisma.account.upsert({
+      where: { slug: accountSlug },
+      update: {},
+      create: { name: accountName, slug: accountSlug, type: accountType }
+    });
+
+    const teamSlug = slugify(`${teamName}-${account.slug}`);
+    const team = await prisma.team.create({
+      data: {
+        name: teamName,
+        slug: teamSlug,
+        accountId: account.id,
+        isPersonal: accountType === 'INDIVIDUAL'
+      }
+    });
+
+    await prisma.accountUser.upsert({
+      where: { accountId_userId: { accountId: account.id, userId } },
+      update: {},
+      create: { accountId: account.id, userId, role: 'admin' }
+    });
+
+    await prisma.userProfile.update({ where: { id: userId }, data: { teamId: team.id } });
+
+    return res.json({ success: true, data: { account, team } });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 
 

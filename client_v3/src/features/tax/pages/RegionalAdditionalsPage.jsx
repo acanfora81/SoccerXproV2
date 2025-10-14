@@ -7,6 +7,7 @@ import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
 import PageHeader from '@/design-system/ds/PageHeader';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 
 const RegionalAdditionalsPage = () => {
   const { user } = useAuthStore();
@@ -452,21 +453,7 @@ const RegionalAdditionalsPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Gestione Addizionali Regionali"
-          subtitle="Visualizza e gestisci le addizionali regionali per i calcoli fiscali"
-          icon={CheckCircle}
-        />
-        <EmptyState
-          icon={Clock}
-          title="Caricamento in corso..."
-          description="Caricamento addizionali regionali..."
-          loading={true}
-        />
-      </div>
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   return (

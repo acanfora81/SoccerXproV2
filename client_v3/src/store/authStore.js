@@ -181,6 +181,32 @@ const useAuthStore = create(
       },
 
       /**
+       * 🧩 Registrazione unificata con redirect a pagamento
+       */
+      registerUnified: async (payload) => {
+        console.log('🔵 AuthStore: registerUnified', payload.email);
+        set({ isLoading: true, error: null });
+        try {
+          const response = await fetch('http://localhost:3001/api/auth/register-unified', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          if (response.ok && data.success) {
+            set({ isLoading: false });
+            return data; // contiene redirect
+          }
+          set({ isLoading: false, error: data.error || 'Errore registrazione' });
+          return { success: false, error: data.error };
+        } catch (e) {
+          set({ isLoading: false, error: 'Errore di connessione' });
+          return { success: false, error: 'Errore di connessione' };
+        }
+      },
+
+      /**
        * 🚪 Logout utente
        */
       logout: async () => {

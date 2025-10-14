@@ -82,15 +82,41 @@ const authenticate = async (req, res, next) => {
 
     console.log('🟢 [INFO] Utente autenticato:', user.email); // INFO
 
-    // 3) Carica UserProfile
-    const userProfile = await getUserProfile(user.id);
+    // 3) Carica UserProfile (con fallback auto-provision se mancante)
+    let userProfile = await getUserProfile(user.id);
     if (!userProfile) {
-      console.log('🔴 UserProfile mancante per:', user.id); // ERROR
-      return res.status(403).json({
-        error: 'Profilo utente non configurato',
-        code: 'PROFILE_REQUIRED',
-        message: 'Contatta amministratore per configurare il profilo'
-      });
+      console.log('🟡 [WARN] UserProfile mancante, tentativo auto-provision per:', user.id);
+      try {
+        const prisma = getPrismaClient();
+        // upsert su email (unique) per creare rapidamente un profilo minimo
+        userProfile = await prisma.userProfile.upsert({
+          where: { email: user.email },
+          update: {
+            auth_user_id: user.id,
+            updated_at: new Date().toISOString()
+          },
+          create: {
+            auth_user_id: user.id,
+            email: user.email,
+            first_name: user.user_metadata?.first_name || 'Nome',
+            last_name: user.user_metadata?.last_name || 'Cognome',
+            role: 'ADMIN',
+            is_active: true,
+            theme_preference: 'light',
+            language_preference: 'it',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        });
+        console.log('🟢 [INFO] Auto-provision UserProfile completato.');
+      } catch (e) {
+        console.log('🔴 Auto-provision UserProfile fallito:', e.message);
+        return res.status(403).json({
+          error: 'Profilo utente non configurato',
+          code: 'PROFILE_REQUIRED',
+          message: 'Contatta amministratore per configurare il profilo'
+        });
+      }
     }
 
     if (!userProfile.is_active) {
@@ -102,13 +128,39 @@ const authenticate = async (req, res, next) => {
     }
 
     // 4) Inietta info utente nella request
+    // Costruisci contesto accountId da Team collegato (transizione verso Account-Centric)
+    let accountId = null;
+    let subscriptionStatus = null;
+    let teamPlan = null;
+    if (userProfile.teamId) {
+      const prisma = getPrismaClient();
+      const team = await prisma.team.findUnique({
+        where: { id: userProfile.teamId },
+        select: { accountId: true, subscriptionStatus: true, plan: true }
+      });
+      accountId = team?.accountId || null;
+      subscriptionStatus = team?.subscriptionStatus || null;
+      teamPlan = team?.plan || null;
+    }
+
+    // 5) Costruisci i moduli effettivi per gating
+    let modules = [];
+    try {
+      const { buildEffectiveModules } = require('../services/MultiTenantAuthService');
+      modules = await buildEffectiveModules({ userId: userProfile.id, teamId: userProfile.teamId, accountId });
+    } catch (_) {}
+
     req.user = {
       id: user.id,
       email: user.email,
       profile: userProfile,
-      profileId: userProfile.id, // Aggiunto per compatibilità con tenantContext
+      profileId: userProfile.id,
       role: userProfile.role,
-      theme_preference: userProfile.theme_preference || 'light'
+      theme_preference: userProfile.theme_preference || 'light',
+      accountId,
+      modules,
+      subscriptionStatus,
+      teamPlan
     };
 
     console.log('🟢 [INFO] Autenticazione completata, ruolo:', req.user.role); // INFO

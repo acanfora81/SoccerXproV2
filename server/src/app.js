@@ -141,6 +141,24 @@ try {
 const performanceModule = require('./modules/performance');
 app.use('/api', performanceModule);
 
+// 💳 Subscription/payment routes
+try {
+  const subscriptionRoutes = require('./routes/subscription');
+  app.use('/api', subscriptionRoutes);
+  console.log('🟢 [INFO] Subscription routes mounted at /api/subscription/*');
+} catch (e) {
+  console.log('🟡 [WARN] Subscription routes not mounted:', e?.message);
+}
+
+// 📋 Plans routes
+try {
+  const plansRoutes = require('./routes/plans');
+  app.use('/api', plansRoutes);
+  console.log('🟢 [INFO] Plans routes mounted at /api/plans/*');
+} catch (e) {
+  console.log('🟡 [WARN] Plans routes not mounted:', e?.message);
+}
+
 // 📈 Dashboard
 const dashboardRoutes = require('./routes/dashboard');
 app.use('/api/dashboard', dashboardRoutes);

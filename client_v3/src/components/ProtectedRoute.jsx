@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
 
   if (isLoading) {
     return (
@@ -19,6 +19,15 @@ export default function ProtectedRoute({ children }) {
   if (!isAuthenticated) {
     console.log('🟡 [ROUTE] Accesso negato - redirect a /login');
     return <Navigate to="/login" replace />;
+  }
+
+  // Blocca accesso se subscription non è attiva
+  const status = user?.subscriptionStatus;
+  const teamId = user?.teamId;
+  const plan = user?.planCode;
+  if (status && status !== 'ACTIVE' && teamId) {
+    const target = `/onboarding/payment?teamId=${encodeURIComponent(teamId)}${plan ? `&plan=${encodeURIComponent(plan)}` : ''}`;
+    return <Navigate to={target} replace />;
   }
 
   console.log('🟢 [ROUTE] Accesso consentito');

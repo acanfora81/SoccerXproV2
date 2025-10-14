@@ -19,7 +19,7 @@ import Button from '@/design-system/ds/Button';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import KPICard from '@/design-system/ds/KPICard';
 import PageHeader from '@/design-system/ds/PageHeader';
-import PageLoading from '@/design-system/ds/PageLoading';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 import EmptyState from '@/design-system/ds/EmptyState';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
 
@@ -162,15 +162,7 @@ const ExpiringContracts = () => {
   };
 
   if (loading) {
-    return (
-      <PageLoading
-        title="Contratti in Scadenza"
-        description="Monitoraggio contratti in scadenza e azioni richieste"
-        height="min-h-[400px]"
-        showText={true}
-        text="Caricamento Contratti in Scadenza..."
-      />
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   if (error) {

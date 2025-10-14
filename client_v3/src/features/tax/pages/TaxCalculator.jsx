@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Calculator, MapPin, Euro, TrendingUp } from 'lucide-react';
 import PageHeader from '@/design-system/ds/PageHeader';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
@@ -219,21 +220,7 @@ const TaxCalculator = () => {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Calcolatore Fiscale (Simulazione AIC)"
-          subtitle="Calcola stipendi lordi e netti con il sistema fiscale parametrico"
-          icon={Calculator}
-        />
-        <EmptyState
-          icon={Calculator}
-          title="Caricamento in corso..."
-          description="Caricamento dati fiscali per la regione selezionata..."
-          loading={true}
-        />
-      </div>
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   if (error) {

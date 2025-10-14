@@ -4,7 +4,9 @@
 const { createClient } = require('@supabase/supabase-js');
 const { getPrismaClient } = require('../config/database');
 const { AUTH_ERRORS, API_ERRORS, createErrorResponse } = require('../constants/errors');
-const MultiTenantAuthService = require('../services/MultiTenantAuthService');
+const { MultiTenantAuthService } = require('../services/MultiTenantAuthService');
+const EmailService = require('../services/EmailService');
+const { sendMail } = require('../utils/mailer');
 
 console.log('🟢 [INFO] Caricamento controller autenticazione sicuro...'); // INFO - rimuovere in produzione
 
@@ -174,7 +176,7 @@ const register = async (req, res) => {
         const existingProfile = await getUserProfile(existingUser.id);
 
         if (!existingProfile) {
-          console.log('🟢 [INFO] Account orfano rilevato, creo UserProfile e faccio login');
+          console.log('🟢 [INFO] Account orfano rilevato, creazione automatica...');
 
           // Crea UserProfile
           const userProfile = await createUserProfile(existingUser, { first_name, last_name, role });
@@ -314,7 +316,7 @@ const register = async (req, res) => {
  */
 const registerWithTeam = async (req, res) => {
   try {
-    const { email, password, first_name, last_name, teamName, plan = 'BASIC' } = req.body;
+    const { email, password, first_name, last_name, teamName, plan = 'BASIC', isPersonal = false, type } = req.body;
 
     console.log('🔵 [CONTROLLER] Tentativo registrazione con team per:', email);
 
@@ -327,53 +329,76 @@ const registerWithTeam = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // Validazione piano
-    const validPlans = ['BASIC', 'PROFESSIONAL', 'PREMIUM', 'ENTERPRISE'];
-    if (!validPlans.includes(plan)) {
+    // Validazione piano reale dal DB
+    const prisma = getPrismaClient();
+    const planRecord = await prisma.planCatalog.findUnique({
+      where: { code: plan },
+      select: { id: true, code: true, features: true, is_active: true }
+    });
+
+    if (!planRecord || !planRecord.is_active) {
       const errorResponse = createErrorResponse(
         API_ERRORS.INVALID_VALUE,
-        'Piano non valido',
-        `Piani validi: ${validPlans.join(', ')}`
+        'Piano non valido o non attivo'
       );
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    // Controllo email esistente
+    const planModules =
+      (planRecord.features && planRecord.features.modules) || [];
+
+    // Controllo email esistente con gestione "account orfano"
+    let supabaseUser = null;
     try {
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
       const existingUser = existingUsers?.users?.find(u => u.email === email);
 
       if (existingUser) {
-        const errorResponse = createErrorResponse(
-          API_ERRORS.EMAIL_ALREADY_EXISTS,
-          'Email già registrata'
-        );
-        return res.status(errorResponse.status).json(errorResponse.body);
+        const existingProfile = await getUserProfile(existingUser.id);
+        const isOrphan = !existingProfile || !existingProfile.teamId;
+        if (isOrphan) {
+          console.log('🟢 [INFO] Account orfano rilevato (register-with-team), procedo con collegamento');
+          // Allinea password per permettere il login immediato
+          try {
+            await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password });
+          } catch (pwErr) {
+            console.log('🟡 [WARN] Impossibile aggiornare password account orfano:', pwErr.message);
+          }
+          supabaseUser = existingUser; // user già esistente; salta la creazione
+        } else {
+          const errorResponse = createErrorResponse(
+            API_ERRORS.EMAIL_ALREADY_EXISTS,
+            'Email già registrata'
+          );
+          return res.status(errorResponse.status).json(errorResponse.body);
+        }
       }
     } catch (checkError) {
       console.log('🟡 [WARN] Errore controllo email esistente:', checkError.message);
     }
 
-    let supabaseUser = null;
-
     try {
-      // STEP 1: Crea utente Supabase
-      const { data, error } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true
-      });
+      // STEP 1: Crea utente Supabase (se non orfano già esistente)
+      if (!supabaseUser) {
+        const { data, error } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true
+        });
 
-      if (error || !data?.user) {
-        const errorResponse = createErrorResponse(
-          API_ERRORS.VALIDATION_FAILED,
-          error?.message || 'Errore registrazione'
-        );
-        return res.status(errorResponse.status).json(errorResponse.body);
+        if (error || !data?.user) {
+          const errorResponse = createErrorResponse(
+            API_ERRORS.VALIDATION_FAILED,
+            error?.message || 'Errore registrazione'
+          );
+          return res.status(errorResponse.status).json(errorResponse.body);
+        }
+
+        supabaseUser = data.user;
+        console.log('🟢 [CONTROLLER] Utente Supabase creato:', supabaseUser.id);
+      } else {
+        console.log('🟢 [CONTROLLER] Riutilizzo utente Supabase esistente:', supabaseUser.id);
       }
-
-      supabaseUser = data.user;
-      console.log('🟢 [CONTROLLER] Utente Supabase creato:', supabaseUser.id);
 
       // STEP 2: Delega al servizio (transazione atomica)
       const authService = new MultiTenantAuthService();
@@ -383,10 +408,27 @@ const registerWithTeam = async (req, res) => {
         first_name,
         last_name,
         teamName,
-        plan
+        plan,
+        planCode: planRecord.code,
+        planId: planRecord.id,
+        modules: planModules,
+        isPersonal: Boolean(isPersonal || (type === 'INDIVIDUAL'))
       });
+      // Log di debug opzionale
+      try {
+        console.log(`🟢 [REGISTER] Piano collegato: ${planRecord.code} | Moduli: ${planModules.join(',')}`);
+      } catch (_) {}
 
       console.log('🟢 [CONTROLLER] Team e UserProfile creati:', result.team.id, result.userProfile.id);
+
+      // Invio email di benvenuto (non bloccante)
+      try {
+        sendMail({
+          to: email,
+          subject: 'Benvenuto in Soccer X Pro Suite',
+          html: `<p>Ciao ${first_name},</p><p>il tuo team <strong>${teamName}</strong> è stato creato con il piano <strong>${planRecord.code}</strong>.</p>`
+        }).catch(() => {});
+      } catch (_) {}
 
       // STEP 3: Login automatico
       const { data: loginData, error: loginError } = await supabasePublic.auth.signInWithPassword({ email, password });
@@ -600,10 +642,100 @@ const updateLastLogin = async (userId) => {
   }
 };
 
+// ================================
+// 🧩 Registrazione unificata (pending payment)
+// ================================
+async function registerUnified(req, res) {
+  try {
+    const { first_name, last_name, email, password, type, teamName, plan, vatNumber, address, phone } = req.body || {};
+    if (!email || !password || !first_name || !last_name || !type || !plan) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    const prisma = getPrismaClient();
+
+    // Piano reale dal catalogo
+    const planRecord = await prisma.planCatalog.findUnique({
+      where: { code: plan },
+      select: { id: true, code: true, is_active: true, features: true }
+    });
+    if (!planRecord || !planRecord.is_active) {
+      return res.status(400).json({ success: false, error: 'Invalid or inactive plan' });
+    }
+    const modules = (planRecord.features && planRecord.features.modules) || [];
+
+    // Crea o riusa utente Supabase (account orfano)
+    let supabaseUserId = null;
+    try {
+      const { data: existing } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = existing?.users?.find(u => u.email === email);
+      if (existingUser) {
+        const existingProfile = await getUserProfile(existingUser.id);
+        const isOrphan = !existingProfile || !existingProfile.teamId;
+        if (isOrphan) {
+          await supabaseAdmin.auth.admin.updateUserById(existingUser.id, { password }).catch(() => {});
+          supabaseUserId = existingUser.id;
+        } else {
+          return res.status(409).json({ success: false, error: 'Email already registered' });
+        }
+      }
+    } catch (_) {}
+
+    if (!supabaseUserId) {
+      const { data: su, error: suErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
+      });
+      if (suErr || !su?.user) {
+        return res.status(400).json({ success: false, error: 'Failed to create user' });
+      }
+      supabaseUserId = su.user.id;
+    }
+
+    // Crea Account/Team/Profile (senza subscription - sarà creata dopo pagamento)
+    const svc = new MultiTenantAuthService();
+    const result = await svc.registerWithNewTeam({
+      supabaseUserId,
+      email,
+      first_name,
+      last_name,
+      teamName,
+      plan: planRecord.code,
+      planId: planRecord.id,
+      modules,
+      isPersonal: String(type).toUpperCase() === 'PERSONAL',
+      status: 'PENDING_PAYMENT',
+      vatNumber,
+      address,
+      phone,
+      createSubscription: false // Non creare subscription ora
+    });
+
+    // Email
+    await EmailService.sendRegistrationPending({
+      email,
+      name: first_name,
+      plan: planRecord.code,
+      paymentUrl: `${process.env.FRONTEND_URL || process.env.APP_BASE_URL}/onboarding/payment?plan=${planRecord.code}&teamId=${result.team.id}`
+    }).catch((e) => { console.log('🟡 [WARN] Invio email pending fallito:', e?.message); });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Registration completed. Proceed to payment.',
+      redirect: `/onboarding/payment?plan=${planRecord.code}&teamId=${result.team.id}`
+    });
+  } catch (e) {
+    console.error('❌ registerUnified error:', e);
+    return res.status(500).json({ success: false, error: 'Internal error' });
+  }
+}
+
 module.exports = {
   login,
   register,
   registerWithTeam,
+  registerUnified,
   logout,
   refreshToken
 };

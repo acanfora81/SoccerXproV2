@@ -1,3 +1,15 @@
+### Modelli Account-Centric
+
+```startLine:endLine:server/prisma/schema.prisma
+// vedere definizioni di Account, AccountUser, AccountModuleLicense, Team.accountId, Team.isPersonal
+```
+
+Uso tipico:
+- Un Account (CLUB/INDIVIDUAL/AGENCY) possiede N `Team`
+- Utenti si associano all'Account via `AccountUser`
+- I moduli acquistati a livello Account sono in `AccountModuleLicense`
+- Il gating moduli legge da licenze account (con fallback alle subscription team legacy)
+
 # 📋 SCHEMA.PRISMA - DOCUMENTAZIONE INTERNA COMPLETATA
 
 **Data**: 09/10/2025  

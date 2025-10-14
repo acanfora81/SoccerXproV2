@@ -16,7 +16,7 @@ import {
 import { apiFetch } from '@/utils/apiClient';
 import { formatItalianCurrency } from '@/lib/utils/italianNumbers';
 import PageHeader from '@/design-system/ds/PageHeader';
-import PageLoading from '@/design-system/ds/PageLoading';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
@@ -377,12 +377,7 @@ const ContractsList = () => {
   };
 
   if (loading) {
-    return (
-      <PageLoading
-        title="Lista Contratti"
-        description="Gestione completa dei contratti del team"
-      />
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   if (error) {

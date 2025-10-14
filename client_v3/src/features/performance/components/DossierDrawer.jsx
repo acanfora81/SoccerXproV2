@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '@/utils/apiClient';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 import { useFilters, buildPerformanceQuery } from '@/modules/filters/index.js';
 import { FiltersBar } from '@/modules/filters/index.js';
 
@@ -130,13 +131,9 @@ const DossierDrawer = ({
             </button>
           </div>
           
-          {/* Content */}
-          <div className="p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-              ))}
-            </div>
+          {/* Global Loader */}
+          <div className="flex-1">
+            <GlobalLoader />
           </div>
         </div>
       </div>

@@ -39,7 +39,7 @@ import AlertPanel from "@/features/performance/components/dashboard/AlertPanel";
 import useAuthStore from '@/store/authStore';
 import { apiFetch } from '@/utils/apiClient';
 import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters/index.js';
-import PageLoader from '@/components/ui/PageLoader';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 import Segmented from '@/components/ui/Segmented';
 import { formatItalianNumber, formatItalianCurrency } from '@/utils/italianNumbers';
 
@@ -345,7 +345,7 @@ const TeamDashboard = () => {
 
   // Loading state ottimizzato
   if (isLoading && !dashboardData) {
-    return <PageLoader message="Caricamento Dashboard…" minHeight={360} />;
+    return <GlobalLoader sectionName="Dashboard Squadra" />;
   }
 
   // Error state

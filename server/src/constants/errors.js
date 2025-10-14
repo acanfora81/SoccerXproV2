@@ -41,6 +41,7 @@ const API_ERRORS = {
   REQUIRED_FIELD_MISSING: 'REQUIRED_FIELD_MISSING',
   INVALID_FORMAT: 'INVALID_FORMAT',
   INVALID_VALUE: 'INVALID_VALUE',
+  EMAIL_ALREADY_EXISTS: 'EMAIL_ALREADY_EXISTS',
   
   // Resource errors
   RESOURCE_NOT_FOUND: 'RESOURCE_NOT_FOUND',
@@ -183,6 +184,11 @@ const ERROR_DEFINITIONS = {
   
   // 409 Conflict
   409: {
+    [API_ERRORS.EMAIL_ALREADY_EXISTS]: {
+      message: 'Email già registrata',
+      message_en: 'Email already exists',
+      details: 'Provare con un indirizzo email differente'
+    },
     [API_ERRORS.RESOURCE_ALREADY_EXISTS]: {
       message: 'Risorsa già esistente',
       message_en: 'Resource already exists',

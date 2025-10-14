@@ -8,6 +8,7 @@ import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import PageHeader from '@/design-system/ds/PageHeader';
 import EmptyState from '@/design-system/ds/EmptyState';
 import DataTable from '@/design-system/ds/DataTable';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 
 const IrpefBracketsPage = () => {
   const { user } = useAuthStore();
@@ -334,12 +335,7 @@ const IrpefBracketsPage = () => {
   ];
 
   if (loading && brackets.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Clock size={32} className="animate-spin text-blue-600" />
-        <span className="ml-3 text-lg">Caricamento scaglioni IRPEF...</span>
-      </div>
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   return (

@@ -7,9 +7,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 
 // Onboarding Pages
 import LandingPage from "@/pages/LandingPage";
-import ChoosePlan from "@/pages/ChoosePlan";
-import CheckoutPage from "@/pages/CheckoutPage";
-import SetupTeam from "@/pages/SetupTeam";
+import OnboardingWizard from "@/features/onboarding/OnboardingWizard";
+import Payment from "@/pages/onboarding/Payment";
+import SetupTeam from "@/pages/onboarding/SetupTeam";
 
 // Auth Pages
 import LoginPage from "@/pages/auth/LoginPage";
@@ -75,15 +75,15 @@ const router = createBrowserRouter([
   
   // Onboarding Routes (pubbliche senza guard)
   {
-    path: "/onboarding/choose-plan",
-    element: <ChoosePlan />,
+    path: "/onboarding",
+    element: <OnboardingWizard />,
   },
   {
     path: "/onboarding/payment",
-    element: <CheckoutPage />,
+    element: <Payment />,
   },
   {
-    path: "/onboarding/setup-team",
+    path: "/onboarding/setup",
     element: <SetupTeam />,
   },
   {

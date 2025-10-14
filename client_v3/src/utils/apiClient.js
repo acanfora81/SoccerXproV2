@@ -47,8 +47,8 @@ export async function apiFetch(endpoint, options = {}) {
   // Esegue la richiesta
   const response = await fetch(url, config);
 
-  // Redirect centralizzato su 401/403 → Login page
-  if (response.status === 401 || response.status === 403) {
+  // Redirect centralizzato SOLO su 401 → Login page
+  if (response.status === 401) {
     try {
       const current = `${window.location.pathname}${window.location.search}`;
       sessionStorage.setItem('postLoginRedirect', current);
@@ -60,11 +60,16 @@ export async function apiFetch(endpoint, options = {}) {
   // Gestione errori base
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
+    let details;
     try {
       const data = await response.json();
       if (data?.error) message = data.error;
+      if (data?.code) details = data.code;
     } catch (_) {}
-    throw new Error(message);
+    const err = new Error(message);
+    err.status = response.status;
+    if (details) err.code = details;
+    throw err;
   }
 
   // Ritorna JSON se presente, altrimenti testo

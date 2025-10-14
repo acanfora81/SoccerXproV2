@@ -5,6 +5,7 @@ import Card, { CardContent } from "@/design-system/ds/Card";
 import DataTable from "@/design-system/ds/DataTable";
 import EmptyState from "@/design-system/ds/EmptyState";
 import ConfirmDialog from "@/design-system/ds/ConfirmDialog";
+import GlobalLoader from "@/components/ui/GlobalLoader";
 
 import { Users, Download, RefreshCw, Upload, Edit, Trash2, Eye } from "lucide-react";
 
@@ -201,7 +202,7 @@ export default function PlayersList() {
 
       {/* DataTable */}
       {loading ? (
-        <p>Caricamento...</p>
+        <GlobalLoader sectionName="Giocatori" />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Users}

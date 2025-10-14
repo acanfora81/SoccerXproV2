@@ -1,3 +1,15 @@
+## ACCOUNT-CENTRIC MODEL (Enterprise)
+
+Questa sezione riassume i cambiamenti strutturali introdotti:
+
+- Aggiunti modelli: `Account`, `AccountUser`, `AccountModuleLicense`
+- Aggiunti enum: `ModuleKey`, `LicenseStatus`, `AccountType`
+- Esteso `Team` con `accountId` (nullable per compat) e `isPersonal`
+- Middleware: `server/src/middleware/requireModule.js`
+- Auth: arricchito `req.user` con `accountId` e `modules`
+
+Compat: il vecchio `Subscription` (team-based) resta per transizione; i moduli effettivi vengono calcolati unendo licenze account e features presenti nella subscription.
+
 # 📋 SCHEMA.PRISMA - RIORGANIZZAZIONE COMPLETATA
 
 **Data**: 09/10/2025  

@@ -7,7 +7,7 @@ import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
 import PageHeader from '@/design-system/ds/PageHeader';
-import PageLoading from '@/design-system/ds/PageLoading';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 import municipalitiesData from '@/data/municipalities.json';
 
 const MunicipalAdditionalsPage = () => {
@@ -500,14 +500,7 @@ const MunicipalAdditionalsPage = () => {
   };
 
   if (loading) {
-    return (
-      <PageLoading
-        title="Gestione Addizionali Comunali"
-        description="Visualizza e gestisci le addizionali comunali per i calcoli fiscali"
-        showText={true}
-        text="Caricamento addizionali comunali..."
-      />
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   return (

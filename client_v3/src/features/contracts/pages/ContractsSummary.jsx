@@ -15,7 +15,7 @@ import Button from '@/design-system/ds/Button';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import KPICard from '@/design-system/ds/KPICard';
 import PageHeader from '@/design-system/ds/PageHeader';
-import PageLoading from '@/design-system/ds/PageLoading';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 import EmptyState from '@/design-system/ds/EmptyState';
 import ContractSummaryKPI from '@/features/contracts/components/ContractSummaryKPI';
 
@@ -183,15 +183,7 @@ const ContractsSummary = () => {
   };
 
   if (loading) {
-    return (
-      <PageLoading
-        title="Riepilogo Contratti"
-        description="Panoramica completa dei contratti del team"
-        height="min-h-[400px]"
-        showText={true}
-        text="Caricamento Riepilogo Contratti..."
-      />
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   if (error) {

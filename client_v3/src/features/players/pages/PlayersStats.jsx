@@ -4,6 +4,7 @@ import Button from "@/design-system/ds/Button";
 import Card, { CardContent, CardHeader } from "@/design-system/ds/Card";
 import KPICard from "@/design-system/ds/KPICard";
 import EmptyState from "@/design-system/ds/EmptyState";
+import GlobalLoader from "@/components/ui/GlobalLoader";
 
 import { 
   Users, 

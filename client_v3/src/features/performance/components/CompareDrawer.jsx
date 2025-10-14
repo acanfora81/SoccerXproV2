@@ -23,6 +23,7 @@ import { apiFetch } from '@/utils/apiClient';
 import { useFilters, buildPerformanceQuery } from '@/modules/filters/index.js';
 import { FiltersBar } from '@/modules/filters/index.js';
 import { formatItalianNumber } from '@/utils/italianNumbers';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 
 // Import di tutte le sezioni di AnalyticsAdvanced
 import CaricoVolumi from './sections/CaricoVolumi';
@@ -134,10 +135,7 @@ const CompareDrawer = ({
             </button>
           </div>
           <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">Caricamento dati confronto...</p>
-            </div>
+            <GlobalLoader />
           </div>
         </div>
       </div>

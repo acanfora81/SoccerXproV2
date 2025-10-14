@@ -1,39 +1,43 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 
 const plans = [
-  { 
-    code: "BASIC", 
-    name: "Basic", 
-    price: "Gratis", 
-    features: ["Dashboard base", "Gestione giocatori", "Contratti base", "Statistiche essenziali", "Supporto community"] 
+  {
+    code: "PLAYERS",
+    name: "Players",
+    price: "4,99€/mese",
+    features: ["Gestione completa dei giocatori", "Ruoli, anagrafiche, note"],
   },
-  { 
-    code: "PROFESSIONAL", 
-    name: "Professional", 
-    price: "29€/mese", 
-    features: ["Analytics avanzate", "Report personalizzati", "Performance tracking", "Supporto prioritario", "Integrazione GPS"] 
+  {
+    code: "PERFORMANCE",
+    name: "Performance",
+    price: "12,99€/mese",
+    features: ["Dashboard GPS e carichi", "Analisi ACWR, trend, freshness"],
   },
-  { 
-    code: "PREMIUM", 
-    name: "Premium", 
-    price: "59€/mese", 
-    features: ["Analytics predittive", "Report avanzati", "API accesso", "Training AI insights"] 
+  {
+    code: "CONTRACTS",
+    name: "Contracts",
+    price: "11,99€/mese",
+    features: ["Gestione contratti", "IRPEF e bonus automatici"],
   },
-  { 
-    code: "ENTERPRISE", 
-    name: "Enterprise", 
-    price: "Custom", 
-    features: ["API completa", "Supporto dedicato", "White-label option", "SLA garantito"] 
+  {
+    code: "FULL",
+    name: "Full Access",
+    price: "49€/mese",
+    features: ["Tutti i moduli (anche in arrivo)", "Aggiornamenti inclusi"],
   },
 ];
 
 export default function ChoosePlan() {
-  const [selected, setSelected] = useState("BASIC");
+  const [selected, setSelected] = useState("PLAYERS");
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const type = params.get("type") || "CLUB";
 
-  const goNext = () => navigate(`/onboarding/payment?plan=${selected}`);
+  const goNext = () => {
+    navigate(`/onboarding/payment?plan=${selected}&type=${type}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#111827] to-[#1e1b4b] text-white flex flex-col items-center justify-center px-6 py-20">
@@ -63,10 +67,14 @@ export default function ChoosePlan() {
       </div>
       <button
         onClick={goNext}
-        className="mt-12 btn btn-primary bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-full text-lg font-semibold hover:scale-105 transition-transform"
+        className="mt-12 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-full text-lg font-semibold hover:scale-105 transition-transform"
       >
-        Procedi al pagamento
+        {type === "CLUB" ? "Procedi come Team" : "Procedi come Professionista"}
       </button>
     </div>
   );
 }
+
+
+
+

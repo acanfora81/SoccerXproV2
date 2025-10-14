@@ -37,6 +37,7 @@ function parseFiltersForDashboard(req) {
   };
 }
 const { authenticate } = require('../middleware/auth');
+const { requireActiveSubscription } = require('../middleware/subscription');
 const tenantContext = require('../middleware/tenantContext');
 
 // 🔍 DEBUG: Log di caricamento routes
@@ -1126,7 +1127,7 @@ async function handleDashboard(req, res) {
 // -----------------------------
 // Routes
 // -----------------------------
-router.use(authenticate, tenantContext);
+router.use(authenticate, tenantContext, requireActiveSubscription);
 router.get('/team', handleDashboard);
 router.get('/team/:teamId', (req, res, next) => handleDashboard(req, res, next));
 

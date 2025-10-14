@@ -250,6 +250,13 @@ function canAccessUserData(currentUser, targetUserId) {
   return currentUser.id === targetUserId;
 }
 
+// Override di configurazione via ENV per aprire i moduli (es. in demo/dev)
+const OPEN_ALL_MODULES = String(process.env.OPEN_ALL_MODULES || '').toLowerCase() === 'true';
+const OPEN_MODULES = String(process.env.OPEN_MODULES || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 const requireModuleAccess = (moduleKey) => (req, res, next) => {
   // 🔓 ESCLUSIONE: Le rotte di import sono sempre accessibili (necessarie per caricare dati)
   // Controlla sia req.path che req.url per compatibilità con router Express nidificati
@@ -263,6 +270,11 @@ const requireModuleAccess = (moduleKey) => (req, res, next) => {
     return next();
   }
   
+  // Bypass totale se ADMIN o se override ENV è attivo
+  if (req.user?.role === ROLES.ADMIN || OPEN_ALL_MODULES || OPEN_MODULES.includes(moduleKey)) {
+    return next();
+  }
+
   const { plan, modules } = req.user || {};
   const enabled = Array.isArray(modules) ? modules.includes(moduleKey) : true;
   if (!enabled) {

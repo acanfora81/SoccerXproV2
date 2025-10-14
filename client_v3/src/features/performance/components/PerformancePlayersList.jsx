@@ -11,7 +11,7 @@ import { useFilters, buildPerformanceQuery, FiltersBar } from '@/modules/filters
 import CompareBar from './CompareBar';
 import DossierDrawer from './DossierDrawer';
 import CompareDrawer from './CompareDrawer';
-import PageLoader from '@/components/ui/PageLoader';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 
 // --- Hook debounce ---
 const useDebounce = (value, delay = 300) => {
@@ -678,7 +678,7 @@ const PerformancePlayersList = () => {
 
   // Loading state
   if (isLoading && players.length === 0) {
-    return <PageLoader message="Caricamento Performance…" minHeight={360} />;
+    return <GlobalLoader sectionName="Performance" />;
   }
 
   // Error state

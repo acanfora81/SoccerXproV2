@@ -6,7 +6,7 @@ import { Plus, FileText, TrendingUp, Users, Euro, Calendar, AlertTriangle, BarCh
 import { apiFetch } from '@/utils/apiClient';
 import useAuthStore from '@/store/authStore';
 import PageHeader from '@/design-system/ds/PageHeader';
-import PageLoading from '@/design-system/ds/PageLoading';
+import GlobalLoader from '@/components/ui/GlobalLoader';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
@@ -157,14 +157,7 @@ const ContractsDashboard = () => {
 
   // Loading state
   if (loading) {
-    return (
-      <PageLoading
-        title="Dashboard Contratti"
-        description="Panoramica completa della gestione contratti"
-        showText={true}
-        text="Recupero dei dati della dashboard contratti..."
-      />
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   // Error state

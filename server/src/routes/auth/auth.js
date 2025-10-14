@@ -4,7 +4,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { authenticate } = require('../../middleware/auth');
-const { login, register, registerWithTeam, logout, refreshToken } = require('../../controllers/auth');
+const { login, register, registerWithTeam, registerUnified, logout, refreshToken } = require('../../controllers/auth');
 const twoFactorAuthRoutes = require('./twoFactorAuth');
 
 const router = express.Router();
@@ -13,14 +13,18 @@ console.log('🟢 [INFO] Caricamento route autenticazione...'); // INFO - rimuov
 
 /**
  * 🛡️ Rate limiting per login/register (protezione brute force)
+ * - In sviluppo è più permissivo
+ * - Conta solo i tentativi FALLITI (skipSuccessfulRequests)
  */
+const isDev = process.env.NODE_ENV !== 'production';
 const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minuti
-  max: 5, // Massimo 5 tentativi per IP
+  windowMs: isDev ? 60 * 1000 : 15 * 60 * 1000, // 1 minuto in dev, 15 minuti in prod
+  max: isDev ? 100 : 5, // molto permissivo in dev
+  skipSuccessfulRequests: true, // non contare login andati a buon fine
   message: {
     error: 'Troppi tentativi di login',
     code: 'RATE_LIMIT_EXCEEDED',
-    retry_after: '15 minuti'
+    retry_after: isDev ? '1 minuto' : '15 minuti'
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -29,7 +33,7 @@ const authRateLimit = rateLimit({
     res.status(429).json({
       error: 'Troppi tentativi di login',
       code: 'RATE_LIMIT_EXCEEDED',
-      retry_after: '15 minuti'
+      retry_after: isDev ? '1 minuto' : '15 minuti'
     });
   }
 });
@@ -91,6 +95,25 @@ router.post('/register', authRateLimit, (req, res, next) => {
   
   next();
 }, register);
+
+// 🧩 Registrazione unificata (pending payment)
+router.post('/register-unified', authRateLimit, (req, res, next) => {
+  console.log('🔵 [DEBUG] POST /api/auth/register-unified chiamato');
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({
+      error: 'Body richiesta non valido',
+      code: 'INVALID_REQUEST_BODY'
+    });
+  }
+  const { email } = req.body;
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({
+      error: 'Formato email non valido',
+      code: 'INVALID_EMAIL_FORMAT'
+    });
+  }
+  next();
+}, registerUnified);
 
 /**
  * 📝 Registrazione nuovo utente con creazione team
@@ -154,6 +177,13 @@ router.get('/me', authenticate, (req, res) => {
   console.log('🔵 [DEBUG] GET /api/auth/me chiamato'); // INFO - rimuovere in produzione
   
   try {
+    // Moduli da esporre al client
+    const DEFAULT_MODULES = ['dashboard','players','contracts','performance','medical','market','taxes'];
+    const openAll = String(process.env.OPEN_ALL_MODULES || '').toLowerCase() === 'true';
+    const isAdmin = req.user?.role === 'ADMIN';
+    const sessionModules = Array.isArray(req.user?.modules) ? req.user.modules : [];
+    const modules = (isAdmin || openAll) ? DEFAULT_MODULES : sessionModules;
+
     res.json({
       message: 'Informazioni utente corrente',
       user: {
@@ -167,7 +197,10 @@ router.get('/me', authenticate, (req, res) => {
         teamId: req.user.profile?.teamId, // 👈 AGGIUNTO - teamId per multi-tenancy
         is_active: req.user.profile?.is_active,
         last_login: req.user.profile?.last_login,
-        created_at: req.user.profile?.created_at
+        created_at: req.user.profile?.created_at,
+        modules,
+        subscriptionStatus: req.user.subscriptionStatus,
+        planCode: req.user.teamPlan
       },
       timestamp: new Date().toISOString()
     });

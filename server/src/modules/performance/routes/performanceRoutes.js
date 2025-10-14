@@ -5,6 +5,7 @@ const express = require("express");
 const { authenticate } = require("../../../middleware/auth");
 const tenantContext = require("../../../middleware/tenantContext"); // 🔧 AGGIUNTO
 const { requireModuleAccess } = require("../../../utils/permissions");
+const { requireModule } = require("../../../middleware/requireModule");
 const {
   getPerformanceData,
   getPerformanceDataById,
@@ -105,7 +106,7 @@ router.get('/import/status/:jobId', (req, res) => {
 });
 
 // 🔐 Middleware di autenticazione + tenant context + module access per tutte le route PROTETTE
-router.use(authenticate, tenantContext, requireModuleAccess('performance')); // 🔧 FIXED - Aggiunto tenantContext e module access
+router.use(authenticate, tenantContext, requireModule('PERFORMANCE')); // Gating a livello Account
 
 /**
  * 📁 POST /api/performance/upload

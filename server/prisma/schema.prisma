@@ -48,6 +48,9 @@ model Team {
   name                    String
   slug                    String                      @unique
   plan                    String                      @default("basic")
+  /// Account di appartenenza (ACCOUNT-CENTRIC MODEL)
+  accountId               String?                     @db.Uuid
+  isPersonal              Boolean                     @default(false)
   isActive                Boolean                     @default(true)
   maxPlayers              Int                         @default(25)
   maxUsers                Int                         @default(5)
@@ -103,6 +106,7 @@ model Team {
   scoutingShortlists ScoutingShortlist[]
   scoutingEventLogs  ScoutingEventLog[]
   agents             Agent[]
+  account            Account?                   @relation(fields: [accountId], references: [id])
 
   @@map("teams")
   @@schema("soccerxpro")
@@ -153,6 +157,9 @@ model UserProfile {
   scoutingShortlistsCreated ScoutingShortlist[] @relation("ScoutingShortlistCreatedBy")
   scoutingEventLogs         ScoutingEventLog[]  @relation("ScoutingEventLogUser")
   agentsCreated             Agent[]             @relation("AgentCreatedBy")
+
+  // Account relations (Account-Centric Model)
+  accounts AccountUser[]
 
   @@map("user_profiles")
   @@schema("soccerxpro")
@@ -785,7 +792,11 @@ model tax_bonus_l207_rule {
 model Subscription {
   id            String             @id @default(uuid()) @db.Uuid
   teamId        String             @unique @map("team_id") @db.Uuid
+  // Legacy enum (compatibilità): non usato come fonte di verità
   plan          SubscriptionPlan   @default(BASIC)
+  // Nuovi campi reali collegati a PlanCatalog (subscription_plan)
+  planId        String?            @map("plan_id") @db.Uuid
+  planCode      String?            @map("plan_code")
   status        SubscriptionStatus @default(ACTIVE)
   startDate     DateTime           @default(now()) @map("start_date")
   endDate       DateTime?          @map("end_date")
@@ -801,6 +812,25 @@ model Subscription {
   team Team @relation("TeamSubscription", fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+  @@schema("soccerxpro")
+}
+
+/// Catalogo piani di abbonamento reali (fonte di verità)
+model PlanCatalog {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique
+  name        String?
+  // Prezzi e limiti (colonne reali in subscription_plan)
+  price_monthly Decimal?  @db.Decimal(10, 2)
+  price_yearly  Decimal?  @db.Decimal(10, 2)
+  max_users     Int?
+  max_players   Int?
+  is_active   Boolean  @default(true)
+  features    Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("subscription_plan")
   @@schema("soccerxpro")
 }
 
@@ -826,6 +856,69 @@ model TeamInvite {
   @@index([token])
   @@index([expiresAt])
   @@map("team_invites")
+  @@schema("soccerxpro")
+}
+
+/// ===============================================================
+/// 1A️⃣ CORE / ACCOUNT-CENTRIC MODEL (Enterprise)
+/// Gestione Account (fatturazione/proprietà), membership e licenze modulo
+/// ===============================================================
+
+/// 🔹 Unità di fatturazione/proprietà del dato (club, individuo, agenzia)
+model Account {
+  id        String                 @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String                 @unique
+  type      AccountType            @default(CLUB)
+  plan      String?                @default("basic")
+  status    String?                @default("active")
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  teams     Team[]
+  users     AccountUser[]
+  licenses  AccountModuleLicense[]
+
+  @@map("accounts")
+  @@schema("soccerxpro")
+}
+
+/// 🔹 Membership utente in un Account (ruoli/account-level)
+model AccountUser {
+  id         String      @id @default(uuid()) @db.Uuid
+  accountId  String      @db.Uuid
+  userId     Int
+  role       String      @default("member")
+  invitedAt  DateTime?
+  joinedAt   DateTime?   @default(now())
+  createdAt  DateTime    @default(now())
+
+  account Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user    UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, userId])
+  @@map("account_users")
+  @@schema("soccerxpro")
+}
+
+/// 🔹 Licenze per modulo acquistate a livello Account
+model AccountModuleLicense {
+  id        String       @id @default(uuid()) @db.Uuid
+  accountId String       @db.Uuid
+  module    ModuleKey
+  plan      String        @default("BASIC")
+  status    LicenseStatus @default(ACTIVE)
+  seats     Int           @default(1)
+  features  Json?
+  startDate DateTime      @default(now())
+  endDate   DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, module])
+  @@map("account_module_licenses")
   @@schema("soccerxpro")
 }
 
@@ -1150,6 +1243,39 @@ enum SubscriptionStatus {
   SUSPENDED
   CANCELLED
   EXPIRED
+  PENDING_PAYMENT
+
+  @@schema("soccerxpro")
+}
+
+/// -------- ENUMS ACCOUNT-CENTRIC (Enterprise) --------
+enum ModuleKey {
+  PLAYERS
+  PERFORMANCE
+  CONTRACTS
+  MEDICAL
+  SCOUTING
+  MARKET
+  BUDGETS
+  GDPR
+
+  @@schema("soccerxpro")
+}
+
+enum LicenseStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
+
+  @@schema("soccerxpro")
+}
+
+enum AccountType {
+  CLUB
+  INDIVIDUAL
+  AGENCY
 
   @@schema("soccerxpro")
 }

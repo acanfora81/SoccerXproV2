@@ -17,7 +17,7 @@ import useAuthStore from "@/store/authStore";
 import Button from "@/design-system/ds/Button";
 import Card, { CardContent, CardHeader } from "@/design-system/ds/Card";
 import PageHeader from "@/design-system/ds/PageHeader";
-import PageLoading from "@/design-system/ds/PageLoading";
+import GlobalLoader from "@/components/ui/GlobalLoader";
 import EmptyState from "@/design-system/ds/EmptyState";
 import ConfirmDialog from "@/design-system/ds/ConfirmDialog";
 import DataTable from "@/design-system/ds/DataTable";
@@ -230,15 +230,7 @@ export default function BonusTaxRatesList({ teamId: teamIdProp }) {
   ];
 
   if (loading) {
-    return (
-      <PageLoading
-        title="Bonus Fiscali"
-        description="Visualizza e gestisci i bonus fiscali per i contratti"
-        height="py-12"
-        showText={true}
-        text="Caricamento aliquote bonus..."
-      />
-    );
+    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
   }
 
   return (
