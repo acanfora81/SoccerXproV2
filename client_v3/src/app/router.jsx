@@ -31,6 +31,11 @@ import IrpefBracketsPage from "@/features/tax/pages/IrpefBracketsPage";
 import RegionalAdditionalsPage from "@/features/tax/pages/RegionalAdditionalsPage";
 import MunicipalAdditionalsPage from "@/features/tax/pages/MunicipalAdditionalsPage";
 import TaxCalculator from "@/features/tax/pages/TaxCalculator";
+import TaxRatesPage from "@/features/tax/pages/TaxRatesPage";
+import TaxConfigEditor from "@/features/tax/pages/TaxConfigEditor";
+import ExtraDeductionRulesPage from "@/features/tax/pages/ExtraDeductionRulesPage";
+import BonusL207RulesPage from "@/features/tax/pages/BonusL207RulesPage";
+import FiscalSetupPage from "@/features/taxes/FiscalSetupPage";
 
 // Performance Pages
 import PerformanceDashboard from "@/features/performance/pages/PerformanceDashboard";
@@ -128,6 +133,10 @@ const router = createBrowserRouter([
       { path: "dashboard/tax/regional-additionals", element: <RegionalAdditionalsPage /> },
       { path: "dashboard/tax/municipal-additionals", element: <MunicipalAdditionalsPage /> },
       { path: "dashboard/tax/calculator", element: <TaxCalculator /> },
+      { path: "dashboard/tax/config", element: <TaxConfigEditor /> },
+      { path: "dashboard/tax/extra-deductions", element: <ExtraDeductionRulesPage /> },
+      { path: "dashboard/tax/bonus-l207", element: <BonusL207RulesPage /> },
+      { path: "dashboard/tax/fiscal-setup", element: <FiscalSetupPage /> },
       
       // Area Medica
       { path: "dashboard/medical", element: <PlaceholderPage title="Area Medica" /> },

@@ -164,13 +164,22 @@ const MunicipalAdditionalsPage = () => {
     setSelectedMunicipality('');
   }, [selectedRegion]);
 
-  // Lista comuni filtrata per regione
+  // Lista comuni filtrata per regione con deduplica per evitare key duplicate
   const getFilteredMunicipalities = () => {
-    if (!selectedRegion) {
-      return municipalitiesData;
-    }
+    const list = selectedRegion
+      ? municipalitiesData.filter(m => m.region === selectedRegion)
+      : municipalitiesData;
 
-    return municipalitiesData.filter(municipality => municipality.region === selectedRegion);
+    // Deduplica per nome all'interno della regione selezionata
+    const seen = new Set();
+    const unique = [];
+    for (const m of list) {
+      const k = `${m.region}::${m.name}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      unique.push(m);
+    }
+    return unique;
   };
 
   // Gestione anni
@@ -642,11 +651,14 @@ const MunicipalAdditionalsPage = () => {
                 className="input-base w-full sm:w-64"
               >
                 <option value="">Tutti i comuni</option>
-                {getFilteredMunicipalities().map(municipality => (
-                  <option key={municipality.name} value={municipality.name}>
-                    {municipality.name}
-                  </option>
-                ))}
+                {getFilteredMunicipalities().map((municipality, idx) => {
+                  const key = `${municipality.region}::${municipality.name}`;
+                  return (
+                    <option key={key} value={municipality.name}>
+                      {municipality.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             

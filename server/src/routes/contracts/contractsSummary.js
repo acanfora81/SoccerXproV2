@@ -18,6 +18,12 @@ router.get('/summary', async (req, res) => {
 
     console.log('🔵 Contracts Summary: Recupero contratti per teamId:', teamId);
 
+    // 🔎 Impostazioni predefinite del team per addizionali (usa region/city come default)
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+      select: { region: true, city: true }
+    });
+
     // Recupera tutti i contratti con i dati del giocatore
     const contracts = await prisma.contracts.findMany({
       where: {
@@ -95,8 +101,10 @@ router.get('/summary', async (req, res) => {
           grossSalary,
           taxRates,
           new Date().getFullYear(),
-          'DEFAULT', // TODO: aggiungere regione dal team
-          'DEFAULT'  // TODO: aggiungere comune dal team
+          team?.region || 'Marche',
+          team?.city || 'Pesaro',
+          contract.contractType || null,
+          contract.teamId || null
         );
 
         calculatedNetSalary = netSalary || calculation.netSalary;

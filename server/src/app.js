@@ -176,9 +176,10 @@ try {
   console.log('🟡 [WARN] Contracts module not mounted:', e?.message);
 }
 
-// 💰 Tax Rates Upload
+// 💰 Tax Rates Upload (protetto: necessario per derivare teamId dal contesto)
+const { authenticate } = require('./middleware/auth');
 const taxRatesUpload = require('./routes/tax/taxratesUpload');
-app.use('/api/taxrates', taxRatesUpload);
+app.use('/api/taxrates', authenticate, taxRatesUpload);
 
 const bonusTaxRatesUpload = require('./routes/tax/bonusTaxRatesUpload');
 app.use('/api/bonustaxrates', bonusTaxRatesUpload);
@@ -190,6 +191,10 @@ app.use('/api/contracts-summary', contractsSummary);
 // 💰 Tax Calculations
 const taxesRoutes = require('./routes/taxes');
 app.use('/api/taxes', taxesRoutes);
+
+// 🧮 Fiscal Setup (parlante, DB-driven)
+const fiscalSetupRoutes = require('./routes/fiscalSetup');
+app.use('/api/fiscal-setup', authenticate, fiscalSetupRoutes);
 
 // 🏥 Medical Area (GDPR)
 const medicalRoutes = require('./routes/medical');

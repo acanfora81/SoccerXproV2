@@ -5,17 +5,19 @@ const { getPrismaClient } = require("../../config/database");
 const prisma = getPrismaClient();
 const router = express.Router();
 
-// ⚠️ WARNING: Questo file contiene riferimenti a tabelle obsolete
-// tax_municipal_additional e tax_regional_additional sono state rimosse
-// Usa tax_municipal_additional_rule e tax_regional_additional_scheme invece
+// Tax rates upload and management routes
 
 const upload = multer({ dest: "uploads/" });
 
-// GET /api/taxrates - Recupera aliquote per team
+// GET /api/taxrates - Recupera aliquote per team (scoped da auth) e filtro opzionale per anno/tipo
 router.get("/", async (req, res) => {
   try {
-    const { teamId } = req.query;
-    
+    const authTeamId = req.user?.profile?.teamId;
+    const fallbackTeamId = req.query.teamId; // compat
+    const teamId = authTeamId || fallbackTeamId;
+    const yearParam = req.query.year ? parseInt(req.query.year) : null;
+    const typeParam = req.query.type ? String(req.query.type).toUpperCase() : null;
+
     if (!teamId) {
       return res.status(400).json({ 
         success: false, 
@@ -23,42 +25,25 @@ router.get("/", async (req, res) => {
       });
     }
 
-    console.log('🔵 TaxRates GET: Recupero aliquote per teamId:', teamId);
+    console.log('🔵 TaxRates GET: Recupero aliquote', { teamId, year: yearParam, type: typeParam });
+
+    const where = { teamId };
+    if (yearParam) where.year = yearParam;
+    if (typeParam) where.type = typeParam;
 
     const taxRates = await prisma.taxRate.findMany({
-      where: { teamId },
+      where,
       orderBy: [
         { year: 'desc' },
         { type: 'asc' }
       ]
     });
 
-    console.log('🟢 TaxRates GET: Trovate', taxRates.length, 'aliquote');
-    console.log('🔵 TaxRates GET: Esempio aliquota:', taxRates[0] ? {
-      id: taxRates[0].id,
-      year: taxRates[0].year,
-      type: taxRates[0].type,
-      inpsWorker: taxRates[0].inpsWorker,
-      inpsEmployer: taxRates[0].inpsEmployer,
-      inailEmployer: taxRates[0].inailEmployer,
-      ffcWorker: taxRates[0].ffcWorker,
-      ffcEmployer: taxRates[0].ffcEmployer,
-      solidarityWorker: taxRates[0].solidarityWorker,
-      solidarityEmployer: taxRates[0].solidarityEmployer
-    } : null);
-
-    res.json({
-      success: true,
-      data: taxRates,
-      count: taxRates.length
-    });
+    res.json({ success: true, data: taxRates, count: taxRates.length });
 
   } catch (error) {
     console.error('🔴 TaxRates GET: Errore:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Errore nel recupero delle aliquote: " + error.message 
-    });
+    res.status(500).json({ success: false, message: "Errore nel recupero delle aliquote: " + error.message });
   }
 });
 
@@ -274,10 +259,12 @@ router.delete("/:id", async (req, res) => {
 // POST /api/taxrates - creazione/upsert manuale aliquote stipendi
 router.post('/', async (req, res) => {
   try {
-    const { teamId, year, type,
+    const authTeamId = req.user?.profile?.teamId;
+    const { teamId: bodyTeamId, year, type,
       // campi split
       inpsWorker, inpsEmployer, ffcWorker, ffcEmployer, inailEmployer,
       solidarityWorker, solidarityEmployer } = req.body;
+    const teamId = authTeamId || bodyTeamId;
     if (!teamId || !year || !type) {
       return res.status(400).json({ success: false, message: 'Parametri mancanti' });
     }
@@ -292,25 +279,29 @@ router.post('/', async (req, res) => {
     const solidarityWorkerF = parseNum(solidarityWorker);
     const solidarityEmployerF = parseNum(solidarityEmployer);
 
+    // Costruisci dinamicamente i payload evitando di scrivere null su colonne NOT NULL
+    const updateData = { updatedAt: new Date() };
+    if (inpsWorkerF !== null) updateData.inpsWorker = inpsWorkerF;
+    if (inpsEmployerF !== null) updateData.inpsEmployer = inpsEmployerF;
+    if (ffcWorkerF !== null) updateData.ffcWorker = ffcWorkerF;
+    if (ffcEmployerF !== null) updateData.ffcEmployer = ffcEmployerF;
+    if (inailEmployerF !== null) updateData.inailEmployer = inailEmployerF;
+    if (solidarityWorkerF !== null) updateData.solidarityWorker = solidarityWorkerF;
+    if (solidarityEmployerF !== null) updateData.solidarityEmployer = solidarityEmployerF;
+
+    const createData = { year: yearInt, type: normalizedType, team: { connect: { id: teamId } } };
+    if (inpsWorkerF !== null) createData.inpsWorker = inpsWorkerF;
+    if (inpsEmployerF !== null) createData.inpsEmployer = inpsEmployerF;
+    if (ffcWorkerF !== null) createData.ffcWorker = ffcWorkerF;
+    if (ffcEmployerF !== null) createData.ffcEmployer = ffcEmployerF;
+    if (inailEmployerF !== null) createData.inailEmployer = inailEmployerF;
+    if (solidarityWorkerF !== null) createData.solidarityWorker = solidarityWorkerF;
+    if (solidarityEmployerF !== null) createData.solidarityEmployer = solidarityEmployerF;
+
     const saved = await prisma.taxRate.upsert({
       where: { year_type_teamId: { year: yearInt, type: normalizedType, teamId } },
-      update: { 
-        inpsWorker: inpsWorkerF, inpsEmployer: inpsEmployerF,
-        ffcWorker: ffcWorkerF, ffcEmployer: ffcEmployerF,
-        inailEmployer: inailEmployerF,
-        solidarityWorker: solidarityWorkerF, solidarityEmployer: solidarityEmployerF,
-        updatedAt: new Date() 
-      },
-      create: { 
-        year: yearInt, type: normalizedType, teamId,
-        inpsWorker: inpsWorkerF, 
-        inpsEmployer: inpsEmployerF,
-        ffcWorker: ffcWorkerF, 
-        ffcEmployer: ffcEmployerF,
-        inailEmployer: inailEmployerF,
-        solidarityWorker: solidarityWorkerF,
-        solidarityEmployer: solidarityEmployerF
-      }
+      update: updateData,
+      create: createData
     });
 
     res.json({ success: true, data: saved, message: 'Aliquota salvata' });
@@ -354,6 +345,8 @@ router.put('/:id', async (req, res) => {
 router.get('/irpef-brackets', async (req, res) => {
   try {
     const { year } = req.query;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
     
     let whereClause = {};
     if (year) {
@@ -361,7 +354,7 @@ router.get('/irpef-brackets', async (req, res) => {
     }
     
     const brackets = await prisma.tax_irpef_bracket.findMany({
-      where: whereClause,
+      where: { ...whereClause, teamId },
       orderBy: [
         { year: 'desc' },
         { min: 'asc' }
@@ -380,6 +373,8 @@ router.get('/irpef-brackets', async (req, res) => {
 router.post('/irpef-brackets', async (req, res) => {
   try {
     const { year, brackets } = req.body;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
     
     if (!year || !brackets || !Array.isArray(brackets)) {
       return res.status(400).json({ 
@@ -392,7 +387,7 @@ router.post('/irpef-brackets', async (req, res) => {
     
     // Elimina brackets esistenti per l'anno
     const deleted = await prisma.tax_irpef_bracket.deleteMany({
-      where: { year: parseInt(year) }
+      where: { year: parseInt(year), teamId }
     });
     
     console.log('🔵 IRPEF Brackets POST: Eliminati', deleted.count, 'scaglioni esistenti');
@@ -402,7 +397,8 @@ router.post('/irpef-brackets', async (req, res) => {
       year: parseInt(year),
       min: parseFloat(bracket.min),
       max: bracket.max === null ? null : parseFloat(bracket.max),
-      rate: parseFloat(bracket.rate)
+      rate: parseFloat(bracket.rate),
+      teamId
     }));
     
     const created = await prisma.tax_irpef_bracket.createMany({
@@ -425,11 +421,13 @@ router.post('/irpef-brackets', async (req, res) => {
 router.delete('/irpef-brackets/:year', async (req, res) => {
   try {
     const { year } = req.params;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
     
     console.log('🔵 IRPEF Brackets DELETE: Eliminazione scaglioni per anno', year);
     
     const deleted = await prisma.tax_irpef_bracket.deleteMany({
-      where: { year: parseInt(year) }
+      where: { year: parseInt(year), teamId }
     });
     
     console.log('🟢 IRPEF Brackets DELETE: Eliminati', deleted.count, 'scaglioni');
@@ -449,6 +447,8 @@ router.delete('/irpef-brackets/:year', async (req, res) => {
 router.post('/irpef-brackets/year', async (req, res) => {
   try {
     const { year } = req.body;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'year e teamId obbligatori' });
     
     if (!year) {
       return res.status(400).json({ 
@@ -465,7 +465,8 @@ router.post('/irpef-brackets/year', async (req, res) => {
         year: parseInt(year),
         min: -1, // Valore speciale per indicare "anno registrato ma senza scaglioni"
         max: -1,
-        rate: 0
+        rate: 0,
+        teamId
       }
     });
     
@@ -485,12 +486,15 @@ router.post('/irpef-brackets/year', async (req, res) => {
 // GET /api/taxrates/irpef-brackets/years - Recupera anni disponibili per scaglioni IRPEF
 router.get('/irpef-brackets/years', async (req, res) => {
   try {
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
     console.log('🔵 IRPEF Brackets Years GET: Recupero anni disponibili');
     
     // Recupera TUTTI gli anni (inclusi quelli con solo record dummy)
     const allYears = await prisma.tax_irpef_bracket.findMany({
       select: { year: true },
       distinct: ['year'],
+      where: { teamId },
       orderBy: { year: 'desc' }
     });
     
@@ -519,6 +523,11 @@ router.post('/irpef-upload', upload.single('file'), async (req, res) => {
     }
 
     console.log('🔵 IRPEF Upload: File ricevuto:', req.file.originalname);
+
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) {
+      return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    }
 
     const results = [];
     let processedCount = 0;
@@ -586,10 +595,10 @@ router.post('/irpef-upload', upload.single('file'), async (req, res) => {
 
         await prisma.tax_irpef_bracket.upsert({
           where: {
-            year_min: { year, min },
+            teamId_year_min: { teamId, year, min },
           },
           update: { max, rate, updatedAt: new Date() },
-          create: { year, min, max, rate },
+          create: { year, min, max, rate, teamId },
         });
 
         processedCount++;
@@ -645,6 +654,7 @@ router.post('/irpef-upload', upload.single('file'), async (req, res) => {
 router.post('/regional-additionals/year', async (req, res) => {
   try {
     const { year } = req.body;
+    const teamId = req.user?.profile?.teamId;
     
     if (!year) {
       return res.status(400).json({ 
@@ -661,7 +671,8 @@ router.post('/regional-additionals/year', async (req, res) => {
         year: parseInt(year),
         region: 'DUMMY', // Valore speciale per indicare "anno registrato ma senza addizionali"
         is_progressive: false,
-        flat_rate: -1 // Valore speciale per indicare "anno registrato ma senza addizionali"
+        flat_rate: -1, // Valore speciale per indicare "anno registrato ma senza addizionali"
+        teamId
       }
     });
     
@@ -681,12 +692,14 @@ router.post('/regional-additionals/year', async (req, res) => {
 // GET /api/taxrates/regional-additionals/years - Recupera anni disponibili per addizionali regionali
 router.get('/regional-additionals/years', async (req, res) => {
   try {
+    const teamId = req.user?.profile?.teamId;
     console.log('🔵 Regional Additionals Years GET: Recupero anni disponibili');
     
     // Recupera TUTTI gli anni (inclusi quelli con solo record dummy)
     const allYears = await prisma.tax_regional_additional_scheme.findMany({
       select: { year: true },
       distinct: ['year'],
+      where: { teamId },
       orderBy: { year: 'desc' }
     });
     
@@ -708,26 +721,21 @@ router.get('/regional-additionals/years', async (req, res) => {
 router.get('/regional-additionals', async (req, res) => {
   try {
     const { year } = req.query;
+    const teamId = req.user?.profile?.teamId;
     let whereClause = {};
     if (year) {
       whereClause.year = parseInt(year);
     }
     
-    // ⚠️ DEPRECATO: tax_regional_additional è stata rimossa
-    // Usa tax_regional_additional_scheme con flat_rate invece
-    const flatAdditionals = []; // await prisma.tax_regional_additional.findMany({
-    //   where: whereClause,
-    //   orderBy: [
-    //     { year: 'desc' },
-    //     { region: 'asc' }
-    //   ]
-    // });
+    // Le addizionali fisse sono ora gestite tramite tax_regional_additional_scheme con flat_rate
+    const flatAdditionals = [];
     
     // Recupera addizionali progressive (escludendo i record dummy)
     const progressiveAdditionals = await prisma.tax_regional_additional_scheme.findMany({
       where: {
         ...whereClause,
-        region: { not: 'DUMMY' } // Esclude i record dummy
+        region: { not: 'DUMMY' }, // Esclude i record dummy
+        teamId
       },
       include: {
         tax_regional_additional_bracket: {
@@ -770,6 +778,7 @@ router.get('/regional-additionals', async (req, res) => {
 router.post('/regional-additionals', async (req, res) => {
   try {
     const { year, region, isProgressive, flatRate, brackets } = req.body;
+    const teamId = req.user?.profile?.teamId;
     
     if (!year || !region) {
       return res.status(400).json({ 
@@ -792,18 +801,16 @@ router.post('/regional-additionals', async (req, res) => {
       // Crea lo schema progressivo
       const scheme = await prisma.tax_regional_additional_scheme.upsert({
         where: {
-          year_region_is_default: { 
-            year: parseInt(year), 
-            region, 
-            is_default: true 
-          }
+          teamId_year_region_is_default: { teamId, year: parseInt(year), region, is_default: true }
         },
         update: { 
           is_progressive: true,
           flat_rate: null,
-          createdat: new Date()
+          createdat: new Date(),
+          teamId
         },
         create: {
+          teamId,
           year: parseInt(year),
           region,
           is_progressive: true,
@@ -812,18 +819,24 @@ router.post('/regional-additionals', async (req, res) => {
       });
       
       // Elimina i bracket esistenti
-      await prisma.tax_regional_additional_bracket.deleteMany({
-        where: { scheme_id: scheme.id }
-      });
-      
-      // Crea i nuovi bracket
-      for (const bracket of brackets) {
+      await prisma.tax_regional_additional_bracket.deleteMany({ where: { scheme_id: scheme.id } });
+
+      // Parser decimale robusto (supporta "9000,01")
+      const toNum = (v) => {
+        if (v === '' || v === null || v === undefined) return null;
+        const s = String(v).replace(',', '.');
+        const n = parseFloat(s);
+        return Number.isFinite(n) ? n : null;
+      };
+
+      // Crea i nuovi bracket (decimali supportati)
+      for (const b of brackets) {
         await prisma.tax_regional_additional_bracket.create({
           data: {
             scheme_id: scheme.id,
-            min: parseFloat(bracket.min),
-            max: bracket.max ? parseFloat(bracket.max) : null,
-            rate: parseFloat(bracket.rate)
+            min: toNum(b.min) ?? 0,
+            max: toNum(b.max),
+            rate: toNum(b.rate) ?? 0
           }
         });
       }
@@ -847,18 +860,20 @@ router.post('/regional-additionals', async (req, res) => {
       // ⚠️ DEPRECATO: Usa tax_regional_additional_scheme invece
       const newAdditional = await prisma.tax_regional_additional_scheme.upsert({
         where: {
-          year_region_is_default: { year: parseInt(year), region, is_default: true }
+          teamId_year_region_is_default: { teamId, year: parseInt(year), region, is_default: true }
         },
         update: { 
           is_progressive: false,
-          flat_rate: parseFloat(flatRate),
-          createdat: new Date()
+          flat_rate: parseFloat(String(flatRate).replace(',', '.')),
+          createdat: new Date(),
+          teamId
         },
         create: {
+          teamId,
           year: parseInt(year),
           region,
           is_progressive: false,
-          flat_rate: parseFloat(flatRate),
+          flat_rate: parseFloat(String(flatRate).replace(',', '.')),
           is_default: true
         }
       });
@@ -876,15 +891,86 @@ router.post('/regional-additionals', async (req, res) => {
   }
 });
 
+// PUT /api/taxrates/regional-additionals/:id - Modifica schema regionale (fisso o progressivo)
+router.put('/regional-additionals/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { year, region, isProgressive, flatRate, brackets } = req.body;
+    const teamId = req.user?.profile?.teamId;
+
+    const toNum = (v) => {
+      if (v === '' || v === null || v === undefined) return null;
+      const s = String(v).replace(',', '.');
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    // Verifica esistenza e ownership
+    const existing = await prisma.tax_regional_additional_scheme.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ success: false, error: 'Schema non trovato' });
+    if (teamId && existing.teamId && existing.teamId !== teamId) {
+      return res.status(403).json({ success: false, error: 'Accesso negato' });
+    }
+
+    if (isProgressive) {
+      // Aggiorna schema a progressivo e sostituisce gli scaglioni
+      const updated = await prisma.tax_regional_additional_scheme.update({
+        where: { id },
+        data: {
+          year: year ? parseInt(year) : existing.year,
+          region: region || existing.region,
+          is_progressive: true,
+          flat_rate: null
+        }
+      });
+
+      await prisma.tax_regional_additional_bracket.deleteMany({ where: { scheme_id: id } });
+      if (Array.isArray(brackets)) {
+        for (const b of brackets) {
+          await prisma.tax_regional_additional_bracket.create({
+            data: {
+              scheme_id: id,
+              min: toNum(b.min) ?? 0,
+              max: toNum(b.max),
+              rate: toNum(b.rate) ?? 0
+            }
+          });
+        }
+      }
+
+      return res.json({ success: true, message: 'Schema progressivo aggiornato', data: updated });
+    }
+
+    // Aggiorna a flat (o resta flat)
+    const updated = await prisma.tax_regional_additional_scheme.update({
+      where: { id },
+      data: {
+        year: year ? parseInt(year) : existing.year,
+        region: region || existing.region,
+        is_progressive: false,
+        flat_rate: toNum(flatRate) ?? 0
+      }
+    });
+    // In modalità flat, elimina eventuali scaglioni residui
+    await prisma.tax_regional_additional_bracket.deleteMany({ where: { scheme_id: id } });
+
+    return res.json({ success: true, message: 'Schema fisso aggiornato', data: updated });
+  } catch (error) {
+    console.error('❌ Errore modifica addizionale regionale:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // DELETE /api/taxrates/regional-additionals/:year - Elimina tutti i record per un anno
 router.delete('/regional-additionals/:year', async (req, res) => {
   try {
     const { year } = req.params;
+    const teamId = req.user?.profile?.teamId;
     
     console.log('🔵 Regional Additionals DELETE: Eliminazione tutti i record per anno', year);
     
     const deleted = await prisma.tax_regional_additional_scheme.deleteMany({
-      where: { year: parseInt(year) }
+      where: { year: parseInt(year), teamId }
     });
     
     console.log('🟢 Regional Additionals DELETE: Eliminati', deleted.count, 'record');
@@ -904,47 +990,11 @@ router.delete('/regional-additionals/:year', async (req, res) => {
 router.delete('/regional-additionals/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // ⚠️ DEPRECATO: tax_regional_additional è stata rimossa
-    // Prova prima a eliminare come addizionale fissa
-    try {
-      // const deleted = await prisma.tax_regional_additional.delete({
-      //   where: { id }
-      // });
-      throw new Error('tax_regional_additional non più supportata');
-      
-      console.log('🟢 Regional Additionals DELETE: Eliminata addizionale fissa:', id);
-      res.json({ 
-        success: true, 
-        message: 'Addizionale regionale eliminata con successo'
-      });
-      return;
-    } catch (error) {
-      // Se non è una addizionale fissa, prova come schema progressivo
-      if (error.code === 'P2025') { // Record not found
-        try {
-          const deleted = await prisma.tax_regional_additional_scheme.delete({
-            where: { id }
-          });
-          
-          console.log('🟢 Regional Additionals DELETE: Eliminato schema progressivo:', id);
-          res.json({ 
-            success: true, 
-            message: 'Addizionale regionale eliminata con successo'
-          });
-          return;
-        } catch (error2) {
-          if (error2.code === 'P2025') {
-            return res.status(404).json({ 
-              success: false, 
-              error: 'Addizionale regionale non trovata' 
-            });
-          }
-          throw error2;
-        }
-      }
-      throw error;
-    }
+    // Cancella anche i bracket collegati
+    await prisma.tax_regional_additional_bracket.deleteMany({ where: { scheme_id: id } });
+    const deleted = await prisma.tax_regional_additional_scheme.delete({ where: { id } });
+    console.log('🟢 Regional Additionals DELETE: Eliminato schema regionale:', id);
+    res.json({ success: true, message: 'Schema regionale eliminato con successo', data: deleted });
   } catch (error) {
     console.error('❌ Errore eliminazione addizionale regionale:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -959,6 +1009,7 @@ router.delete('/regional-additionals/:id', async (req, res) => {
 router.post('/municipal-additionals/year', async (req, res) => {
   try {
     const { year } = req.body;
+    const teamId = req.user?.profile?.teamId;
     
     if (!year) {
       return res.status(400).json({ 
@@ -976,7 +1027,8 @@ router.post('/municipal-additionals/year', async (req, res) => {
         region: 'DUMMY', // Valore speciale per indicare "anno registrato ma senza addizionali"
         municipality: 'DUMMY', // Valore speciale per indicare "anno registrato ma senza addizionali"
         is_progressive: false,
-        flat_rate: -1 // Valore speciale per indicare "anno registrato ma senza addizionali"
+        flat_rate: -1, // Valore speciale per indicare "anno registrato ma senza addizionali"
+        teamId
       }
     });
     
@@ -996,12 +1048,14 @@ router.post('/municipal-additionals/year', async (req, res) => {
 // GET /api/taxrates/municipal-additionals/years - Recupera anni disponibili per addizionali comunali
 router.get('/municipal-additionals/years', async (req, res) => {
   try {
+    const teamId = req.user?.profile?.teamId;
     console.log('🔵 Municipal Additionals Years GET: Recupero anni disponibili');
     
     // Recupera TUTTI gli anni (inclusi quelli con solo record dummy)
     const allYears = await prisma.tax_municipal_additional_rule.findMany({
       select: { year: true },
       distinct: ['year'],
+      where: { teamId },
       orderBy: { year: 'desc' }
     });
     
@@ -1023,27 +1077,21 @@ router.get('/municipal-additionals/years', async (req, res) => {
 router.get('/municipal-additionals', async (req, res) => {
   try {
     const { year, region, municipality } = req.query;
+    const teamId = req.user?.profile?.teamId;
     let whereClause = {};
     if (year) whereClause.year = parseInt(year);
     if (region) whereClause.region = region;
     if (municipality) whereClause.municipality = municipality;
     
-    // ⚠️ DEPRECATO: tax_municipal_additional è stata rimossa
-    // Usa tax_municipal_additional_rule con flat_rate invece
-    const flatAdditionals = []; // await prisma.tax_municipal_additional.findMany({
-    //   where: whereClause,
-    //   orderBy: [
-    //     { year: 'desc' },
-    //     { region: 'asc' },
-    //     { municipality: 'asc' }
-    //   ]
-    // });
+    // Le addizionali fisse sono ora gestite tramite tax_municipal_additional_rule con flat_rate
+    const flatAdditionals = [];
     
     // Recupera addizionali progressive (escludendo i record dummy)
     const progressiveAdditionals = await prisma.tax_municipal_additional_rule.findMany({
       where: {
         ...whereClause,
-        municipality: { not: 'DUMMY' } // Esclude i record dummy
+        municipality: { not: 'DUMMY' }, // Esclude i record dummy
+        teamId
       },
       include: {
         tax_municipal_additional_bracket: {
@@ -1091,6 +1139,7 @@ router.post('/municipal-additionals', async (req, res) => {
   
   try {
     const { year, region, municipality, isProgressive, flatRate, brackets } = req.body;
+    const teamId = req.user?.profile?.teamId;
     
     if (!year || !region || !municipality) {
       console.log('❌ Municipal Additionals POST: Campi obbligatori mancanti', { year, region, municipality });
@@ -1114,19 +1163,16 @@ router.post('/municipal-additionals', async (req, res) => {
       // Crea la regola progressiva
       const rule = await prisma.tax_municipal_additional_rule.upsert({
         where: {
-          year_region_municipality_is_default: { 
-            year: parseInt(year), 
-            region, 
-            municipality,
-            is_default: true 
-          }
+          teamId_year_region_municipality_is_default: { teamId, year: parseInt(year), region, municipality, is_default: true }
         },
         update: { 
           is_progressive: true,
           flat_rate: null,
-          createdat: new Date()
+          createdat: new Date(),
+          teamId
         },
         create: {
+          teamId,
           year: parseInt(year),
           region,
           municipality,
@@ -1167,32 +1213,33 @@ router.post('/municipal-additionals', async (req, res) => {
           error: 'flatRate obbligatorio per addizionale fissa' 
         });
       }
-      
-      const newAdditional = await prisma.tax_municipal_additional.upsert({
+
+      // Usa la regola con is_progressive=false
+      const newRule = await prisma.tax_municipal_additional_rule.upsert({
         where: {
-          year_region_municipality: { 
-            year: parseInt(year), 
-            region, 
-            municipality 
-          }
+          teamId_year_region_municipality_is_default: { teamId, year: parseInt(year), region, municipality, is_default: true }
         },
         update: { 
-          rate: parseFloat(flatRate),
-          createdat: new Date()
+          is_progressive: false,
+          flat_rate: parseFloat(flatRate),
+          createdat: new Date(),
+          teamId
         },
         create: {
+          teamId,
           year: parseInt(year),
           region,
           municipality,
-          rate: parseFloat(flatRate)
+          is_progressive: false,
+          flat_rate: parseFloat(flatRate)
         }
       });
-      
-      console.log('🟢 Municipal Additionals POST: Inserita addizionale fissa:', newAdditional.id);
+
+      console.log('🟢 Municipal Additionals POST: Inserita addizionale fissa:', newRule.id);
       res.json({ 
         success: true, 
         message: `Addizionale comunale fissa inserita per ${municipality}, ${region} ${year}`,
-        data: { id: newAdditional.id, type: 'flat' }
+        data: { id: newRule.id, type: 'flat' }
       });
     }
   } catch (error) {
@@ -1228,10 +1275,27 @@ router.post('/regional-additionals/upload', upload.single('file'), async (req, r
       if (!anno || !regione || !tipo) continue;
 
       if (tipo === 'fissa') {
-        await prisma.tax_regional_additional.upsert({
-          where: { year_region: { year: anno, region: regione } },
-          update: { rate: aliquota, createdat: new Date() },
-          create: { year: anno, region: regione, rate: aliquota }
+        await prisma.tax_regional_additional_scheme.upsert({
+          where: { 
+            teamId_year_region_is_default: { 
+              teamId: req.user?.profile?.teamId, 
+              year: anno, 
+              region: regione, 
+              is_default: true 
+            } 
+          },
+          update: { 
+            is_progressive: false,
+            flat_rate: aliquota, 
+            createdat: new Date() 
+          },
+          create: { 
+            teamId: req.user?.profile?.teamId,
+            year: anno, 
+            region: regione, 
+            is_progressive: false,
+            flat_rate: aliquota 
+          }
         });
         processed++;
       } else {
@@ -1290,10 +1354,29 @@ router.post('/municipal-additionals/upload', upload.single('file'), async (req, 
       if (!anno || !regione || !comune || !tipo) continue;
 
       if (tipo === 'fissa') {
-        await prisma.tax_municipal_additional.upsert({
-          where: { year_region_municipality: { year: anno, region: regione, municipality: comune } },
-          update: { rate: aliquota, createdat: new Date() },
-          create: { year: anno, region: regione, municipality: comune, rate: aliquota }
+        await prisma.tax_municipal_additional_rule.upsert({
+          where: { 
+            teamId_year_region_municipality_is_default: { 
+              teamId: req.user?.profile?.teamId, 
+              year: anno, 
+              region: regione, 
+              municipality: comune, 
+              is_default: true 
+            } 
+          },
+          update: { 
+            is_progressive: false,
+            flat_rate: aliquota, 
+            createdat: new Date() 
+          },
+          create: { 
+            teamId: req.user?.profile?.teamId,
+            year: anno, 
+            region: regione, 
+            municipality: comune, 
+            is_progressive: false,
+            flat_rate: aliquota 
+          }
         });
         processed++;
       } else {
@@ -1327,11 +1410,12 @@ router.post('/municipal-additionals/upload', upload.single('file'), async (req, 
 router.delete('/municipal-additionals/:year', async (req, res) => {
   try {
     const { year } = req.params;
+    const teamId = req.user?.profile?.teamId;
     
     console.log('🔵 Municipal Additionals DELETE: Eliminazione tutti i record per anno', year);
     
     const deleted = await prisma.tax_municipal_additional_rule.deleteMany({
-      where: { year: parseInt(year) }
+      where: { year: parseInt(year), teamId }
     });
     
     console.log('🟢 Municipal Additionals DELETE: Eliminati', deleted.count, 'record');
@@ -1352,44 +1436,16 @@ router.delete('/municipal-additionals/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Prova prima a eliminare come addizionale fissa
-    try {
-      const deleted = await prisma.tax_municipal_additional.delete({
-        where: { id }
-      });
-      
-      console.log('🟢 Municipal Additionals DELETE: Eliminata addizionale fissa:', id);
-      res.json({ 
-        success: true, 
-        message: 'Addizionale comunale eliminata con successo'
-      });
-      return;
-    } catch (error) {
-      // Se non è una addizionale fissa, prova come regola progressiva
-      if (error.code === 'P2025') { // Record not found
-        try {
-          const deleted = await prisma.tax_municipal_additional_rule.delete({
-            where: { id }
-          });
-          
-          console.log('🟢 Municipal Additionals DELETE: Eliminata regola progressiva:', id);
-          res.json({ 
-            success: true, 
-            message: 'Addizionale comunale eliminata con successo'
-          });
-          return;
-        } catch (error2) {
-          if (error2.code === 'P2025') {
-            return res.status(404).json({ 
-              success: false, 
-              error: 'Addizionale comunale non trovata' 
-            });
-          }
-          throw error2;
-        }
-      }
-      throw error;
-    }
+    // Le addizionali comunali sono ora gestite tramite tax_municipal_additional_rule
+    const deleted = await prisma.tax_municipal_additional_rule.delete({
+      where: { id }
+    });
+    
+    console.log('🟢 Municipal Additionals DELETE: Eliminata regola comunale:', id);
+    res.json({ 
+      success: true, 
+      message: 'Regola comunale eliminata con successo'
+    });
   } catch (error) {
     console.error('❌ Errore eliminazione addizionale comunale:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -1404,10 +1460,11 @@ router.delete('/municipal-additionals/:id', async (req, res) => {
 router.get('/tax-config', async (req, res) => {
   try {
     const { year } = req.query;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
     let whereClause = {};
-    if (year) {
-      whereClause.year = parseInt(year);
-    }
+    if (year) whereClause.year = parseInt(year);
+    whereClause.teamId = teamId;
     
     const configs = await prisma.tax_config.findMany({
       where: whereClause,
@@ -1418,6 +1475,24 @@ router.get('/tax-config', async (req, res) => {
     res.json({ success: true, data: configs });
   } catch (error) {
     console.error('❌ Errore recupero tax config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/taxrates/tax-config/years - Elenco anni disponibili
+router.get('/tax-config/years', async (req, res) => {
+  try {
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    const rows = await prisma.tax_config.findMany({
+      where: { teamId },
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' }
+    });
+    return res.json({ success: true, data: rows.map(r => r.year) });
+  } catch (error) {
+    console.error('❌ Errore recupero anni tax_config:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -1433,20 +1508,26 @@ router.post('/tax-config', async (req, res) => {
       detrazionipercentonirpef, 
       ulterioredetrazionefixed, 
       ulterioredetrazionepercent, 
-      bonusl207fixed 
+      bonusl207fixed,
+      detrazioneFascia1,
+      detrazioneMinimo,
+      detrazioneFascia2,
+      detrazioneFascia2Max,
+      detrazioneFascia3
     } = req.body;
     
-    if (!year) {
+    const teamId = req.user?.profile?.teamId;
+    if (!year || !teamId) {
       return res.status(400).json({ 
         success: false, 
-        error: 'year obbligatorio' 
+        error: 'year e teamId obbligatori' 
       });
     }
     
     console.log('🔵 Tax Config POST: Inserimento configurazione per anno', year);
     
     const config = await prisma.tax_config.upsert({
-      where: { year: parseInt(year) },
+      where: { teamId_year: { teamId, year: parseInt(year) } },
       update: { 
         contributionrate: parseFloat(contributionrate || 0),
         solidarityrate: parseFloat(solidarityrate || 0),
@@ -1455,9 +1536,15 @@ router.post('/tax-config', async (req, res) => {
         ulterioredetrazionefixed: parseFloat(ulterioredetrazionefixed || 0),
         ulterioredetrazionepercent: parseFloat(ulterioredetrazionepercent || 0),
         bonusl207fixed: parseFloat(bonusl207fixed || 0),
+        detrazioneFascia1: detrazioneFascia1 !== undefined ? parseFloat(String(detrazioneFascia1).replace(',', '.')) : undefined,
+        detrazioneMinimo: detrazioneMinimo !== undefined ? parseFloat(String(detrazioneMinimo).replace(',', '.')) : undefined,
+        detrazioneFascia2: detrazioneFascia2 !== undefined ? parseFloat(String(detrazioneFascia2).replace(',', '.')) : undefined,
+        detrazioneFascia2Max: detrazioneFascia2Max !== undefined ? parseFloat(String(detrazioneFascia2Max).replace(',', '.')) : undefined,
+        detrazioneFascia3: detrazioneFascia3 !== undefined ? parseFloat(String(detrazioneFascia3).replace(',', '.')) : undefined,
         createdat: new Date()
       },
       create: {
+        teamId,
         year: parseInt(year),
         contributionrate: parseFloat(contributionrate || 0),
         solidarityrate: parseFloat(solidarityrate || 0),
@@ -1465,7 +1552,12 @@ router.post('/tax-config', async (req, res) => {
         detrazionipercentonirpef: parseFloat(detrazionipercentonirpef || 0),
         ulterioredetrazionefixed: parseFloat(ulterioredetrazionefixed || 0),
         ulterioredetrazionepercent: parseFloat(ulterioredetrazionepercent || 0),
-        bonusl207fixed: parseFloat(bonusl207fixed || 0)
+        bonusl207fixed: parseFloat(bonusl207fixed || 0),
+        detrazioneFascia1: detrazioneFascia1 !== undefined ? parseFloat(String(detrazioneFascia1).replace(',', '.')) : undefined,
+        detrazioneMinimo: detrazioneMinimo !== undefined ? parseFloat(String(detrazioneMinimo).replace(',', '.')) : undefined,
+        detrazioneFascia2: detrazioneFascia2 !== undefined ? parseFloat(String(detrazioneFascia2).replace(',', '.')) : undefined,
+        detrazioneFascia2Max: detrazioneFascia2Max !== undefined ? parseFloat(String(detrazioneFascia2Max).replace(',', '.')) : undefined,
+        detrazioneFascia3: detrazioneFascia3 !== undefined ? parseFloat(String(detrazioneFascia3).replace(',', '.')) : undefined
       }
     });
     
@@ -1492,7 +1584,12 @@ router.put('/tax-config/:id', async (req, res) => {
       detrazionipercentonirpef, 
       ulterioredetrazionefixed, 
       ulterioredetrazionepercent, 
-      bonusl207fixed 
+      bonusl207fixed,
+      detrazioneFascia1,
+      detrazioneMinimo,
+      detrazioneFascia2,
+      detrazioneFascia2Max,
+      detrazioneFascia3
     } = req.body;
     
     console.log('🔵 Tax Config PUT: Modifica configurazione ID:', id);
@@ -1507,6 +1604,11 @@ router.put('/tax-config/:id', async (req, res) => {
         ulterioredetrazionefixed: parseFloat(ulterioredetrazionefixed || 0),
         ulterioredetrazionepercent: parseFloat(ulterioredetrazionepercent || 0),
         bonusl207fixed: parseFloat(bonusl207fixed || 0),
+        detrazioneFascia1: detrazioneFascia1 !== undefined ? parseFloat(String(detrazioneFascia1).replace(',', '.')) : undefined,
+        detrazioneMinimo: detrazioneMinimo !== undefined ? parseFloat(String(detrazioneMinimo).replace(',', '.')) : undefined,
+        detrazioneFascia2: detrazioneFascia2 !== undefined ? parseFloat(String(detrazioneFascia2).replace(',', '.')) : undefined,
+        detrazioneFascia2Max: detrazioneFascia2Max !== undefined ? parseFloat(String(detrazioneFascia2Max).replace(',', '.')) : undefined,
+        detrazioneFascia3: detrazioneFascia3 !== undefined ? parseFloat(String(detrazioneFascia3).replace(',', '.')) : undefined,
         createdat: new Date()
       }
     });
@@ -1546,6 +1648,20 @@ router.delete('/tax-config/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/taxrates/tax-config/year/:year - Elimina configurazioni di un anno
+router.delete('/tax-config/year/:year', async (req, res) => {
+  try {
+    const { year } = req.params;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    const deleted = await prisma.tax_config.deleteMany({ where: { teamId, year: parseInt(year) } });
+    res.json({ success: true, message: `Eliminate ${deleted.count} configurazioni per l'anno ${year}`, data: deleted });
+  } catch (error) {
+    console.error('❌ Errore eliminazione anno tax_config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/taxrates/tax-config/upload - Upload CSV configurazioni fiscali
 router.post('/tax-config/upload', upload.single('file'), async (req, res) => {
   try {
@@ -1560,6 +1676,8 @@ router.post('/tax-config/upload', upload.single('file'), async (req, res) => {
 
     const results = [];
     let processedCount = 0;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, message: 'Team ID mancante' });
 
     // Leggi e processa il CSV
     const csvContent = fs.readFileSync(req.file.path, 'utf8');
@@ -1623,13 +1741,14 @@ router.post('/tax-config/upload', upload.single('file'), async (req, res) => {
         console.log('🔵 Tax Config Upload: Upserting:', { year, contributionrate, solidarityrate, detrazionifixed, detrazionipercentonirpef, ulterioredetrazionefixed, ulterioredetrazionepercent, bonusl207fixed });
 
         await prisma.tax_config.upsert({
-          where: { year },
+          where: { teamId_year: { teamId, year } },
           update: { 
             contributionrate, solidarityrate, detrazionifixed, detrazionipercentonirpef,
             ulterioredetrazionefixed, ulterioredetrazionepercent, bonusl207fixed,
             createdat: new Date() 
           },
           create: { 
+            teamId,
             year, contributionrate, solidarityrate, detrazionifixed, detrazionipercentonirpef,
             ulterioredetrazionefixed, ulterioredetrazionepercent, bonusl207fixed
           }
@@ -1688,10 +1807,10 @@ router.post('/tax-config/upload', upload.single('file'), async (req, res) => {
 router.get('/extra-deduction-rules', async (req, res) => {
   try {
     const { year } = req.query;
+    const teamId = req.user?.profile?.teamId;
     let whereClause = {};
-    if (year) {
-      whereClause.year = parseInt(year);
-    }
+    if (year) whereClause.year = parseInt(year);
+    if (teamId) whereClause.teamId = teamId;
     
     const rules = await prisma.tax_extra_deduction_rule.findMany({
       where: whereClause,
@@ -1706,15 +1825,34 @@ router.get('/extra-deduction-rules', async (req, res) => {
   }
 });
 
+// GET /api/taxrates/extra-deduction-rules/years - Elenco anni disponibili
+router.get('/extra-deduction-rules/years', async (req, res) => {
+  try {
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    const rows = await prisma.tax_extra_deduction_rule.findMany({
+      where: { teamId },
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' }
+    });
+    res.json({ success: true, data: rows.map(r => r.year) });
+  } catch (error) {
+    console.error('❌ Errore recupero anni extra deduction:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/taxrates/extra-deduction-rules - Crea regola ulteriore detrazione
 router.post('/extra-deduction-rules', async (req, res) => {
   try {
     const { year, min, max, amount } = req.body;
+    const teamId = req.user?.profile?.teamId;
     
-    if (!year || min === undefined || amount === undefined) {
+    if (!year || min === undefined || amount === undefined || !teamId) {
       return res.status(400).json({ 
         success: false, 
-        error: 'year, min e amount sono obbligatori' 
+        error: 'year, min, amount e teamId sono obbligatori' 
       });
     }
     
@@ -1739,7 +1877,10 @@ router.post('/extra-deduction-rules', async (req, res) => {
         year: yearInt,
         min: minFloat,
         max: maxFloat,
-        amount: amountFloat
+        amount: amountFloat,
+        team: {
+          connect: { id: teamId }
+        }
       }
     });
     
@@ -1760,6 +1901,7 @@ router.put('/extra-deduction-rules/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { year, min, max, amount } = req.body;
+    const teamId = req.user?.profile?.teamId;
     
     console.log('🔵 Extra Deduction Rules PUT: Modifica regola ID:', id);
     
@@ -1771,6 +1913,7 @@ router.put('/extra-deduction-rules/:id', async (req, res) => {
     const amountFloat = amount !== undefined ? parseFloat(String(amount).replace(',', '.')) : undefined;
     
     const updateData = {};
+    if (teamId) updateData.teamId = teamId;
     if (yearInt !== undefined) updateData.year = yearInt;
     if (minFloat !== undefined) updateData.min = minFloat;
     if (maxFloat !== undefined) updateData.max = maxFloat;
@@ -1816,6 +1959,20 @@ router.delete('/extra-deduction-rules/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/taxrates/extra-deduction-rules/year/:year - Elimina regole di un anno
+router.delete('/extra-deduction-rules/year/:year', async (req, res) => {
+  try {
+    const { year } = req.params;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    const deleted = await prisma.tax_extra_deduction_rule.deleteMany({ where: { teamId, year: parseInt(year) } });
+    res.json({ success: true, message: `Eliminate ${deleted.count} regole per l'anno ${year}`, data: deleted });
+  } catch (error) {
+    console.error('❌ Errore eliminazione anno extra deduction:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/taxrates/extra-deduction-rules/upload - Upload CSV regole ulteriore detrazione
 router.post('/extra-deduction-rules/upload', upload.single('file'), async (req, res) => {
   try {
@@ -1830,6 +1987,8 @@ router.post('/extra-deduction-rules/upload', upload.single('file'), async (req, 
 
     const results = [];
     let processedCount = 0;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, message: 'Team ID mancante' });
 
     // Leggi e processa il CSV
     const csvContent = fs.readFileSync(req.file.path, 'utf8');
@@ -1894,7 +2053,15 @@ router.post('/extra-deduction-rules/upload', upload.single('file'), async (req, 
         console.log('🔵 Extra Deduction Rules Upload: Creando regola:', { year, min, max, amount });
 
         await prisma.tax_extra_deduction_rule.create({
-          data: { year, min, max, amount }
+          data: { 
+            year, 
+            min, 
+            max, 
+            amount,
+            team: {
+              connect: { id: teamId }
+            }
+          }
         });
 
         processedCount++;
@@ -1950,13 +2117,14 @@ router.post('/extra-deduction-rules/upload', upload.single('file'), async (req, 
 router.get('/bonus-l207-rules', async (req, res) => {
   try {
     const { year } = req.query;
+    const teamId = req.user?.profile?.teamId;
     
     console.log('🔵 Bonus L207 Rules GET: Recupero regole per anno', year);
     
-    const where = year ? { year: parseInt(year) } : {};
+    const where = year ? { year: parseInt(year), teamId } : { teamId };
     const rules = await prisma.tax_bonus_l207_rule.findMany({
       where,
-      orderBy: [{ year: 'desc' }, { min: 'asc' }]
+      orderBy: [{ year: 'desc' }, { min_income: 'asc' }]
     });
     
     console.log('🟢 Bonus L207 Rules GET: Trovate', rules.length, 'regole');
@@ -1971,26 +2139,130 @@ router.get('/bonus-l207-rules', async (req, res) => {
   }
 });
 
+// GET /api/taxrates/bonus-l207-rules/years - Elenco anni disponibili
+router.get('/bonus-l207-rules/years', async (req, res) => {
+  try {
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    const rows = await prisma.tax_bonus_l207_rule.findMany({
+      where: { teamId },
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' }
+    });
+    res.json({ success: true, data: rows.map(r => r.year) });
+  } catch (error) {
+    console.error('❌ Errore recupero anni bonus L207:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/taxrates/bonus-l207-rules/year - Crea nuovo anno per bonus L207
+router.post('/bonus-l207-rules/year', async (req, res) => {
+  try {
+    const { year } = req.body;
+    const teamId = req.user?.profile?.teamId;
+    
+    if (!year || !teamId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Anno e Team ID obbligatori' 
+      });
+    }
+
+    const yearInt = parseInt(year);
+
+    // Verifica se l'anno esiste già
+    const existing = await prisma.tax_bonus_l207_rule.findFirst({
+      where: { teamId, year: yearInt }
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        error: `Regole bonus L207 per l'anno ${year} già esistenti`
+      });
+    }
+
+    // Crea regole di default per il nuovo anno (esempio con 3 scaglioni)
+    const defaultRules = [
+      { min_income: 0, max_income: 15000, bonus_percentage: 100, note: 'Bonus pieno fino a 15.000 €' },
+      { min_income: 15000.01, max_income: 25000, bonus_percentage: 50, note: 'Bonus ridotto al 50%' },
+      { min_income: 25000.01, max_income: null, bonus_percentage: 0, note: 'Nessun bonus oltre 25.000 €' }
+    ];
+
+    const created = [];
+    for (const rule of defaultRules) {
+      const createdRule = await prisma.tax_bonus_l207_rule.create({
+        data: {
+          team: { connect: { id: teamId } },
+          year: yearInt,
+          min_income: rule.min_income,
+          max_income: rule.max_income,
+          bonus_percentage: rule.bonus_percentage,
+          bonus_type: 'TAX_DISCOUNT',
+          note: rule.note
+        }
+      });
+      created.push(createdRule);
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Creato anno ${year} con ${created.length} regole predefinite`, 
+      data: created 
+    });
+  } catch (error) {
+    console.error('❌ Errore creazione anno bonus L207:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/taxrates/bonus-l207-rules - Crea regola bonus L207
 router.post('/bonus-l207-rules', async (req, res) => {
   try {
-    const { year, min, max, amount } = req.body;
+    const { year, min_income, max_income, bonus_percentage, bonus_type, applicable_to, note } = req.body;
+    const teamId = req.user?.profile?.teamId;
     
-    console.log('🔵 Bonus L207 Rules POST: Creazione regola:', { year, min, max, amount });
+    console.log('🔵 Bonus L207 Rules POST: Creazione regola (%):', { year, min_income, max_income, bonus_percentage, bonus_type, applicable_to, note });
     
-    if (!year || min === undefined || amount === undefined) {
+    if (!year || min_income === undefined || bonus_percentage === undefined || !teamId) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Anno, minimo e importo sono obbligatori' 
+        message: 'Anno, reddito minimo, percentuale e teamId sono obbligatori' 
       });
     }
-    
+
+    // Normalizzazione numerica robusta (supporta virgola e stringhe vuote)
+    const yearInt = parseInt(String(year));
+    const minFloat = String(min_income).trim() === '' ? NaN : parseFloat(String(min_income).replace(',', '.'));
+    const maxFloat = (max_income === undefined || max_income === null || String(max_income).trim() === '')
+      ? null
+      : parseFloat(String(max_income).replace(',', '.'));
+    const percFloat = String(bonus_percentage).trim() === '' ? NaN : parseFloat(String(bonus_percentage).replace(',', '.'));
+
+    if (!Number.isFinite(yearInt) || !Number.isFinite(minFloat) || !Number.isFinite(percFloat)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valori numerici non validi (year/min_income/bonus_percentage)'
+      });
+    }
+    if (percFloat < 0 || percFloat > 100) {
+      return res.status(400).json({ success: false, error: 'bonus_percentage deve essere tra 0 e 100' });
+    }
+
     const rule = await prisma.tax_bonus_l207_rule.create({
       data: {
-        year: parseInt(year),
-        min: parseFloat(min),
-        max: max ? parseFloat(max) : null,
-        amount: parseFloat(amount)
+        year: yearInt,
+        min_income: minFloat,
+        max_income: maxFloat,
+        bonus_percentage: percFloat,
+        bonus_type: bonus_type || 'TAX_DISCOUNT',
+        applicable_to: applicable_to || null,
+        note: note || null,
+        team: {
+          connect: { id: teamId }
+        }
       }
     });
     
@@ -2011,18 +2283,40 @@ router.post('/bonus-l207-rules', async (req, res) => {
 router.put('/bonus-l207-rules/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { year, min, max, amount } = req.body;
+    const { year, min_income, max_income, bonus_percentage, bonus_type, applicable_to, note } = req.body;
     
     console.log('🔵 Bonus L207 Rules PUT: Modifica regola ID', id);
-    
+
+    // Normalizza solo i campi presenti
+    const data = {};
+    if (year !== undefined) {
+      const yearInt = parseInt(String(year));
+      if (!Number.isFinite(yearInt)) return res.status(400).json({ success: false, error: 'Anno non valido' });
+      data.year = yearInt;
+    }
+    if (min_income !== undefined) {
+      if (String(min_income).trim() === '') return res.status(400).json({ success: false, error: 'Min non può essere vuoto' });
+      const minFloat = parseFloat(String(min_income).replace(',', '.'));
+      if (!Number.isFinite(minFloat)) return res.status(400).json({ success: false, error: 'Min non valido' });
+      data.min_income = minFloat;
+    }
+    if (max_income !== undefined) {
+      data.max_income = (max_income === null || String(max_income).trim() === '') ? null : parseFloat(String(max_income).replace(',', '.'));
+      if (data.max_income !== null && !Number.isFinite(data.max_income)) return res.status(400).json({ success: false, error: 'Max non valido' });
+    }
+    if (bonus_percentage !== undefined) {
+      if (String(bonus_percentage).trim() === '') return res.status(400).json({ success: false, error: 'Percentuale non può essere vuota' });
+      const percFloat = parseFloat(String(bonus_percentage).replace(',', '.'));
+      if (!Number.isFinite(percFloat) || percFloat < 0 || percFloat > 100) return res.status(400).json({ success: false, error: 'Percentuale non valida (0-100)' });
+      data.bonus_percentage = percFloat;
+    }
+    if (bonus_type !== undefined) data.bonus_type = bonus_type;
+    if (applicable_to !== undefined) data.applicable_to = applicable_to;
+    if (note !== undefined) data.note = note;
+
     const rule = await prisma.tax_bonus_l207_rule.update({
       where: { id },
-      data: {
-        year: year ? parseInt(year) : undefined,
-        min: min !== undefined ? parseFloat(min) : undefined,
-        max: max !== undefined ? (max ? parseFloat(max) : null) : undefined,
-        amount: amount !== undefined ? parseFloat(amount) : undefined
-      }
+      data
     });
     
     console.log('🟢 Bonus L207 Rules PUT: Regola aggiornata');
@@ -2061,6 +2355,161 @@ router.delete('/bonus-l207-rules/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/taxrates/bonus-l207-rules/year/:year - Elimina regole di un anno
+router.delete('/bonus-l207-rules/year/:year', async (req, res) => {
+  try {
+    const { year } = req.params;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    const deleted = await prisma.tax_bonus_l207_rule.deleteMany({ where: { teamId, year: parseInt(year) } });
+    res.json({ success: true, message: `Eliminate ${deleted.count} regole bonus L207 per l'anno ${year}`, data: deleted });
+  } catch (error) {
+    console.error('❌ Errore eliminazione anno bonus L207:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ========================================
+// TAX RATES (Aliquote Contributive) - Gestione Anni
+// ========================================
+
+// GET /api/taxrates/tax-rates/years - Elenco anni disponibili
+router.get('/tax-rates/years', async (req, res) => {
+  try {
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    const rows = await prisma.taxRate.findMany({
+      where: { teamId },
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' }
+    });
+    res.json({ success: true, data: rows.map(r => r.year) });
+  } catch (error) {
+    console.error('❌ Errore recupero anni tax rates:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/taxrates/tax-rates/year - Crea nuovo anno con aliquote di default
+router.post('/tax-rates/year', async (req, res) => {
+  try {
+    const { year, templateYear, initialRates } = req.body;
+    const teamId = req.user?.profile?.teamId;
+    
+    if (!year || !teamId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Anno e Team ID obbligatori' 
+      });
+    }
+
+    const yearInt = parseInt(year);
+    
+    // Verifica se l'anno esiste già
+    const existing = await prisma.taxRate.findFirst({
+      where: { teamId, year: yearInt }
+    });
+    
+    if (existing) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Aliquote per l'anno ${year} già esistenti` 
+      });
+    }
+
+    // 1) Se il frontend passa initialRates, usiamo quelli (massimo controllo all'utente)
+    if (Array.isArray(initialRates) && initialRates.length > 0) {
+      const allowedTypes = ['PROFESSIONAL', 'APPRENTICESHIP'];
+      const parseNum = (v, d = 0) => {
+        const n = parseFloat(String(v).replace(',', '.'));
+        return Number.isFinite(n) ? n : d;
+      };
+      const created = [];
+      for (const r of initialRates) {
+        const type = String(r.type || '').toUpperCase();
+        if (!allowedTypes.includes(type)) continue;
+        const row = await prisma.taxRate.create({
+          data: {
+            team: { connect: { id: teamId } },
+            year: yearInt,
+            type,
+            inpsWorker: parseNum(r.inpsWorker),
+            inpsEmployer: parseNum(r.inpsEmployer),
+            ffcWorker: parseNum(r.ffcWorker),
+            ffcEmployer: parseNum(r.ffcEmployer),
+            inailEmployer: parseNum(r.inailEmployer),
+            solidarityWorker: parseNum(r.solidarityWorker),
+            solidarityEmployer: parseNum(r.solidarityEmployer)
+          }
+        });
+        created.push(row);
+      }
+      return res.json({ success: true, message: `Creato anno ${year} con ${created.length} righe da input utente`, data: created });
+    }
+
+    // 2) Se viene indicato un templateYear, clona i valori dell'anno indicato
+    if (templateYear) {
+      const tplYear = parseInt(templateYear);
+      const source = await prisma.taxRate.findMany({ where: { teamId, year: tplYear } });
+      if (source.length > 0) {
+        const created = [];
+        for (const s of source) {
+          if (!['PROFESSIONAL', 'APPRENTICESHIP'].includes(String(s.type).toUpperCase())) {
+            continue; // salta tipi non supportati
+          }
+          const row = await prisma.taxRate.create({
+            data: {
+              team: { connect: { id: teamId } },
+              year: yearInt,
+              type: s.type,
+              inpsWorker: s.inpsWorker,
+              inpsEmployer: s.inpsEmployer,
+              ffcWorker: s.ffcWorker,
+              ffcEmployer: s.ffcEmployer,
+              inailEmployer: s.inailEmployer,
+              solidarityWorker: s.solidarityWorker,
+              solidarityEmployer: s.solidarityEmployer
+            }
+          });
+          created.push(row);
+        }
+        return res.json({ success: true, message: `Creato anno ${year} copiando ${created.length} righe dal ${tplYear}` , data: created });
+      }
+    }
+
+    // 3) Fallback: crea righe con valori consigliati (modificabili dall'utente)
+    const contractTypes = ['PROFESSIONAL', 'APPRENTICESHIP'];
+    const defaults = {
+      PROFESSIONAL: { inpsWorker: 9.19, inpsEmployer: 30.0, ffcWorker: 6.25, ffcEmployer: 0.0, inailEmployer: 1.5, solidarityWorker: 0.0, solidarityEmployer: 0.5 },
+      APPRENTICESHIP: { inpsWorker: 9.19, inpsEmployer: 30.0, ffcWorker: 6.25, ffcEmployer: 0.0, inailEmployer: 0.0, solidarityWorker: 0.0, solidarityEmployer: 0.5 }
+    };
+    const createdFallback = [];
+    for (const type of contractTypes) {
+      const created = await prisma.taxRate.create({ data: { team: { connect: { id: teamId } }, year: yearInt, type, ...defaults[type] } });
+      createdFallback.push(created);
+    }
+    res.json({ success: true, message: `Creato anno ${year} con ${createdFallback.length} righe predefinite`, data: createdFallback });
+  } catch (error) {
+    console.error('❌ Errore creazione anno tax rates:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// DELETE /api/taxrates/tax-rates/year/:year - Elimina aliquote di un anno
+router.delete('/tax-rates/year/:year', async (req, res) => {
+  try {
+    const { year } = req.params;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID mancante' });
+    const deleted = await prisma.taxRate.deleteMany({ where: { teamId, year: parseInt(year) } });
+    res.json({ success: true, message: `Eliminate ${deleted.count} aliquote per l'anno ${year}`, data: deleted });
+  } catch (error) {
+    console.error('❌ Errore eliminazione anno tax rates:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/taxrates/bonus-l207-rules/upload - Upload CSV regole bonus L207
 router.post('/bonus-l207-rules/upload', upload.single('file'), async (req, res) => {
   try {
@@ -2075,6 +2524,8 @@ router.post('/bonus-l207-rules/upload', upload.single('file'), async (req, res) 
 
     const results = [];
     let processedCount = 0;
+    const teamId = req.user?.profile?.teamId;
+    if (!teamId) return res.status(400).json({ success: false, message: 'Team ID mancante' });
 
     // Leggi e processa il CSV
     const csvContent = fs.readFileSync(req.file.path, 'utf8');
@@ -2096,12 +2547,12 @@ router.post('/bonus-l207-rules/upload', upload.single('file'), async (req, res) 
     const headerMap = {
       'anno': 'year',
       'year': 'year',
-      'minimo': 'min',
-      'min': 'min',
-      'massimo': 'max',
-      'max': 'max',
-      'importo': 'amount',
-      'amount': 'amount'
+      'minimo': 'min_income',
+      'min': 'min_income',
+      'massimo': 'max_income',
+      'max': 'max_income',
+      'percentuale': 'bonus_percentage',
+      'bonus_percentage': 'bonus_percentage'
     };
 
     // Processa ogni riga
@@ -2119,12 +2570,12 @@ router.post('/bonus-l207-rules/upload', upload.single('file'), async (req, res) 
         }
       });
 
-      if (row.year && row.min !== undefined && row.amount !== undefined) {
+      if (row.year && row.min_income !== undefined && row.bonus_percentage !== undefined) {
         results.push({
           year: parseInt(row.year),
-          min: parseFloat(String(row.min).replace(',', '.')),
-          max: row.max ? parseFloat(String(row.max).replace(',', '.')) : null,
-          amount: parseFloat(String(row.amount).replace(',', '.'))
+          min_income: parseFloat(String(row.min_income).replace(',', '.')),
+          max_income: row.max_income ? parseFloat(String(row.max_income).replace(',', '.')) : null,
+          bonus_percentage: parseFloat(String(row.bonus_percentage).replace(',', '.'))
         });
       }
     }
@@ -2143,16 +2594,18 @@ router.post('/bonus-l207-rules/upload', upload.single('file'), async (req, res) 
       for (const rule of results) {
         await prisma.tax_bonus_l207_rule.upsert({
           where: {
-            year_min: {
-              year: rule.year,
-              min: rule.min
-            }
+            teamId_year_min_income: { teamId, year: rule.year, min_income: rule.min_income }
           },
           update: {
-            max: rule.max,
-            amount: rule.amount
+            max_income: rule.max_income,
+            bonus_percentage: rule.bonus_percentage
           },
-          create: rule
+          create: { 
+            ...rule, 
+            team: {
+              connect: { id: teamId }
+            }
+          }
         });
         processedCount++;
       }

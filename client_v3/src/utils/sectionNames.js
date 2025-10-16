@@ -33,6 +33,9 @@ export const SECTION_NAMES = [
   { path: "/app/dashboard/taxrates/list", name: "Aliquote Stipendi" },
   { path: "/app/dashboard/bonustaxrates/list", name: "Aliquote Bonus" },
   { path: "/app/dashboard/tax/irpef-brackets", name: "Scaglioni IRPEF" },
+  { path: "/app/dashboard/tax/config", name: "Aliquote Contributive" },
+  { path: "/app/dashboard/tax/extra-deductions", name: "Detrazioni Extra" },
+  { path: "/app/dashboard/tax/bonus-l207", name: "Bonus L207" },
   { path: "/app/dashboard/tax/municipal-additionals", name: "Addizionali Comunali" },
   { path: "/app/dashboard/tax/regional-additionals", name: "Addizionali Regionali" },
   

@@ -101,12 +101,31 @@ model Team {
   scouting_tags        scouting_tag[]
 
   // Scouting relations (Enterprise v2)
-  scoutingProspects  ScoutingProspect[]
-  scoutingReports    ScoutingReport[]
-  scoutingShortlists ScoutingShortlist[]
-  scoutingEventLogs  ScoutingEventLog[]
-  agents             Agent[]
-  account            Account?                   @relation(fields: [accountId], references: [id])
+  scoutingProspects              ScoutingProspect[]
+  scoutingReports                ScoutingReport[]
+  scoutingShortlists             ScoutingShortlist[]
+  scoutingEventLogs              ScoutingEventLog[]
+  agents                         Agent[]
+  account                        Account?                         @relation(fields: [accountId], references: [id])
+  tax_config                     tax_config[]
+  tax_irpef_bracket              tax_irpef_bracket[]
+  tax_municipal_additional_rule  tax_municipal_additional_rule[]
+  tax_regional_additional_scheme tax_regional_additional_scheme[]
+  tax_extra_deduction_rule       tax_extra_deduction_rule[]
+  tax_bonus_l207_rule            tax_bonus_l207_rule[]
+
+  // Fiscal Setup V2 relations
+  tax_rates_v2                         tax_rate_v2[]                         @relation("TaxRateV2Team")
+  tax_contribution_profiles            tax_contribution_profile[]            @relation("TaxContributionProfileTeam")
+  tax_contribution_points              tax_contribution_point[]              @relation("TaxContributionPointTeam")
+  tax_contribution_brackets            tax_contribution_bracket[]            @relation("TaxContributionBracketTeam")
+  tax_irpef_detraction_overrides       tax_irpef_detraction_override[]       @relation("TaxIrpefDetractionOverrideTeam")
+  tax_regional_additionals             tax_regional_additional[]             @relation("TaxRegionalAdditionalTeam")
+  tax_regional_additional_brackets_v2  tax_regional_additional_bracket_v2[]  @relation("TaxRegionalAdditionalBracketV2Team")
+  tax_municipal_additionals            tax_municipal_additional[]            @relation("TaxMunicipalAdditionalTeam")
+  tax_municipal_additional_brackets_v2 tax_municipal_additional_bracket_v2[] @relation("TaxMunicipalAdditionalBracketV2Team")
+  tax_bonus_l207_bands                 tax_bonus_l207_band[]                 @relation("TaxBonusL207BandTeam")
+  tax_extra_deduction_l207_entries     tax_extra_deduction_l207[]            @relation("TaxExtraDeductionL207Team")
 
   @@map("teams")
   @@schema("soccerxpro")
@@ -659,7 +678,7 @@ model BonusTaxRate {
 /// Configurazione base anno fiscale
 model tax_config {
   id                         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  year                       Int      @unique(map: "uq_tax_config_year")
+  year                       Int
   contributionrate           Float
   solidarityrate             Float
   detrazionifixed            Float    @default(0)
@@ -674,6 +693,12 @@ model tax_config {
   detrazioneFascia3          Float    @default(1910) // base fascia 28k–50k
   createdat                  DateTime @default(now()) @db.Timestamptz(6)
 
+  // Multi-tenancy
+  teamId String @map("team_id") @db.Uuid
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, year], map: "uq_tax_config_team_year")
+  @@index([teamId, year], map: "idx_tax_config_team_year")
   @@schema("soccerxpro")
 }
 
@@ -686,6 +711,12 @@ model tax_irpef_bracket {
   rate      Float
   createdat DateTime @default(now()) @db.Timestamptz(6)
 
+  // Multi-tenancy
+  teamId String @map("team_id") @db.Uuid
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, year, min], map: "uq_irpef_team_year_min")
+  @@index([teamId, year], map: "idx_irpef_team_year")
   @@schema("soccerxpro")
 }
 
@@ -719,8 +750,12 @@ model tax_municipal_additional_rule {
   createdat                        DateTime                           @default(now()) @db.Timestamptz(6)
   tax_municipal_additional_bracket tax_municipal_additional_bracket[]
 
-  @@unique([year, region, municipality, is_default], map: "uq_municipal_rule")
-  @@index([year, region, municipality], map: "idx_municipal_rule_lookup")
+  // Multi-tenancy
+  teamId String @map("team_id") @db.Uuid
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, year, region, municipality, is_default], map: "uq_municipal_rule_team")
+  @@index([teamId, year, region, municipality], map: "idx_municipal_rule_team_lookup")
   @@schema("soccerxpro")
 }
 
@@ -753,8 +788,12 @@ model tax_regional_additional_scheme {
   createdat                       DateTime                          @default(now()) @db.Timestamptz(6)
   tax_regional_additional_bracket tax_regional_additional_bracket[]
 
-  @@unique([year, region, is_default], map: "uq_regional_scheme")
-  @@index([year, region], map: "idx_regional_scheme_lookup")
+  // Multi-tenancy
+  teamId String @map("team_id") @db.Uuid
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, year, region, is_default], map: "uq_regional_scheme_team")
+  @@index([teamId, year, region], map: "idx_regional_scheme_team_lookup")
   @@schema("soccerxpro")
 }
 
@@ -769,22 +808,40 @@ model tax_extra_deduction_rule {
   slope     Float?   @default(0) // variazione lineare €/€ sopra min
   createdat DateTime @default(now()) @db.Timestamptz(6)
 
-  @@index([year, min], map: "idx_extra_deduction_year_min")
+  // Multi-tenancy
+  teamId String @map("team_id") @db.Uuid
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, year, min], map: "uq_extra_deduction_team_year_min")
+  @@index([teamId, year], map: "idx_extra_deduction_team_year")
   @@schema("soccerxpro")
 }
 
 /// Bonus L.207/2019
 model tax_bonus_l207_rule {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  year      Int
-  min       Float
-  max       Float?
-  amount    Float // importo iniziale alla soglia "min"
-  slope     Float?   @default(0) // €/€ di variazione lineare
-  createdat DateTime @default(now()) @db.Timestamptz(6)
+  id                      String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  year                    Int
+  min_income              Float
+  max_income              Float?
+  bonus_percentage        Float            @default(0) // sconto IRPEF %
+  bonus_type              TaxBonusL207Type @default(TAX_DISCOUNT)
+  applicable_to           String?
+  note                    String?
+  // Parametri avanzati di applicazione bonus (opzionali)
+  mode                    String?
+  cap_amount              Float?
+  eligible_contract_types String[]
+  valid_from              DateTime?        @db.Date
+  valid_to                DateTime?        @db.Date
+  include_additionals     Boolean          @default(false)
+  createdat               DateTime         @default(now()) @db.Timestamptz(6)
 
-  @@unique([year, min], map: "uq_bonus_l207_year_min")
-  @@index([year, min], map: "idx_bonus_l207_year_min")
+  // Multi-tenancy
+  teamId String @map("team_id") @db.Uuid
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, year, min_income], map: "uq_bonus207_team_year_min_income")
+  @@index([teamId, year], map: "idx_bonus207_team_year")
   @@schema("soccerxpro")
 }
 
@@ -817,18 +874,18 @@ model Subscription {
 
 /// Catalogo piani di abbonamento reali (fonte di verità)
 model PlanCatalog {
-  id          String   @id @default(uuid()) @db.Uuid
-  code        String   @unique
-  name        String?
+  id            String   @id @default(uuid()) @db.Uuid
+  code          String   @unique
+  name          String?
   // Prezzi e limiti (colonne reali in subscription_plan)
-  price_monthly Decimal?  @db.Decimal(10, 2)
-  price_yearly  Decimal?  @db.Decimal(10, 2)
+  price_monthly Decimal? @db.Decimal(10, 2)
+  price_yearly  Decimal? @db.Decimal(10, 2)
   max_users     Int?
   max_players   Int?
-  is_active   Boolean  @default(true)
-  features    Json?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  is_active     Boolean  @default(true)
+  features      Json?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   @@map("subscription_plan")
   @@schema("soccerxpro")
@@ -866,18 +923,18 @@ model TeamInvite {
 
 /// 🔹 Unità di fatturazione/proprietà del dato (club, individuo, agenzia)
 model Account {
-  id        String                 @id @default(uuid()) @db.Uuid
+  id        String      @id @default(uuid()) @db.Uuid
   name      String
-  slug      String                 @unique
-  type      AccountType            @default(CLUB)
-  plan      String?                @default("basic")
-  status    String?                @default("active")
-  createdAt DateTime               @default(now())
-  updatedAt DateTime               @updatedAt
+  slug      String      @unique
+  type      AccountType @default(CLUB)
+  plan      String?     @default("basic")
+  status    String?     @default("active")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  teams     Team[]
-  users     AccountUser[]
-  licenses  AccountModuleLicense[]
+  teams    Team[]
+  users    AccountUser[]
+  licenses AccountModuleLicense[]
 
   @@map("accounts")
   @@schema("soccerxpro")
@@ -885,13 +942,13 @@ model Account {
 
 /// 🔹 Membership utente in un Account (ruoli/account-level)
 model AccountUser {
-  id         String      @id @default(uuid()) @db.Uuid
-  accountId  String      @db.Uuid
-  userId     Int
-  role       String      @default("member")
-  invitedAt  DateTime?
-  joinedAt   DateTime?   @default(now())
-  createdAt  DateTime    @default(now())
+  id        String    @id @default(uuid()) @db.Uuid
+  accountId String    @db.Uuid
+  userId    Int
+  role      String    @default("member")
+  invitedAt DateTime?
+  joinedAt  DateTime? @default(now())
+  createdAt DateTime  @default(now())
 
   account Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
   user    UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -903,8 +960,8 @@ model AccountUser {
 
 /// 🔹 Licenze per modulo acquistate a livello Account
 model AccountModuleLicense {
-  id        String       @id @default(uuid()) @db.Uuid
-  accountId String       @db.Uuid
+  id        String        @id @default(uuid()) @db.Uuid
+  accountId String        @db.Uuid
   module    ModuleKey
   plan      String        @default("BASIC")
   status    LicenseStatus @default(ACTIVE)
@@ -1224,6 +1281,13 @@ enum TaxBase {
   IMPONIBILE_FISCALE
   LORDO
   NETTO
+
+  @@schema("soccerxpro")
+}
+
+enum TaxBonusL207Type {
+  TAX_DISCOUNT // sconto % su IRPEF
+  EXEMPTION // esenzione su imponibile (futuro)
 
   @@schema("soccerxpro")
 }
@@ -2843,5 +2907,227 @@ enum ScoutingStatus {
   TARGETED
   ARCHIVED
 
+  @@schema("soccerxpro")
+}
+
+/// ===============================================================
+/// 🧮 FISCAL SETUP - ARCHITETTURA PARLANTE DB-DRIVEN
+/// Nuovi modelli per configurazione fiscale guidata e chiara
+/// ===============================================================
+
+/// Aliquote base contributive e oneri (nomenclatura parlante) - V2
+model tax_rate_v2 {
+  id           String       @id @default(uuid()) @db.Uuid
+  teamId       String       @map("team_id") @db.Uuid
+  year         Int
+  contractType ContractType @map("contract_type")
+
+  // Lavoratore (employee) - percentuali
+  inpsWorkerPct       Decimal @default(0) @map("inps_worker_pct") @db.Decimal(5, 2)
+  ffcWorkerPct        Decimal @default(0) @map("ffc_worker_pct") @db.Decimal(5, 2)
+  solidarityWorkerPct Decimal @default(0) @map("solidarity_worker_pct") @db.Decimal(5, 2)
+
+  // Datore (employer) - percentuali
+  inpsEmployerPct       Decimal @default(0) @map("inps_employer_pct") @db.Decimal(5, 2)
+  ffcEmployerPct        Decimal @default(0) @map("ffc_employer_pct") @db.Decimal(5, 2)
+  inailEmployerPct      Decimal @default(0) @map("inail_employer_pct") @db.Decimal(5, 2)
+  solidarityEmployerPct Decimal @default(0) @map("solidarity_employer_pct") @db.Decimal(5, 2)
+  fondoRatePct          Decimal @default(0.5) @map("fondo_rate_pct") @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team Team @relation("TaxRateV2Team", fields: [teamId], references: [id])
+
+  @@unique([teamId, year, contractType])
+  @@index([teamId, year, contractType])
+  @@map("tax_rates_v2")
+  @@schema("soccerxpro")
+}
+
+/// Profilo modalità calcolo contributi
+model tax_contribution_profile {
+  id           String       @id @default(uuid()) @db.Uuid
+  teamId       String       @map("team_id") @db.Uuid
+  year         Int
+  contractType ContractType @map("contract_type")
+  mode         String // 'LOOKUP' | 'PIECEWISE'
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team Team @relation("TaxContributionProfileTeam", fields: [teamId], references: [id])
+
+  @@unique([teamId, year, contractType])
+  @@map("tax_contribution_profiles")
+  @@schema("soccerxpro")
+}
+
+/// Punti lookup contributi (x=lordo, y=contributi)
+model tax_contribution_point {
+  id           String       @id @default(uuid()) @db.Uuid
+  teamId       String       @map("team_id") @db.Uuid
+  year         Int
+  contractType ContractType @map("contract_type")
+  gross        Decimal      @db.Decimal(12, 2) // x: Lordo
+  contrib      Decimal      @db.Decimal(12, 2) // y: Contributi lavoratore in €
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation("TaxContributionPointTeam", fields: [teamId], references: [id])
+
+  @@index([teamId, year, contractType])
+  @@map("tax_contribution_points")
+  @@schema("soccerxpro")
+}
+
+/// Scaglioni contributi piecewise
+model tax_contribution_bracket {
+  id           String       @id @default(uuid()) @db.Uuid
+  teamId       String       @map("team_id") @db.Uuid
+  year         Int
+  contractType ContractType @map("contract_type")
+  from_amount  Decimal      @db.Decimal(12, 2)
+  to_amount    Decimal?     @db.Decimal(12, 2)
+  rate         Decimal      @db.Decimal(5, 2) // % su lordo
+  fixed        Decimal      @default(0) @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation("TaxContributionBracketTeam", fields: [teamId], references: [id])
+
+  @@index([teamId, year, contractType])
+  @@map("tax_contribution_brackets")
+  @@schema("soccerxpro")
+}
+
+/// Override detrazioni IRPEF art.13 (punti x/y)
+model tax_irpef_detraction_override {
+  id       String  @id @default(uuid()) @db.Uuid
+  teamId   String  @map("team_id") @db.Uuid
+  year     Int
+  x_income Decimal @db.Decimal(12, 2) // base imponibile
+  y_amount Decimal @db.Decimal(12, 2) // detrazione in €
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation("TaxIrpefDetractionOverrideTeam", fields: [teamId], references: [id])
+
+  @@index([teamId, year])
+  @@map("tax_irpef_detraction_overrides")
+  @@schema("soccerxpro")
+}
+
+/// Addizionale regionale unificata
+model tax_regional_additional {
+  id             String   @id @default(uuid()) @db.Uuid
+  teamId         String   @map("team_id") @db.Uuid
+  year           Int
+  region         String
+  is_progressive Boolean  @default(false)
+  flat_rate      Decimal? @db.Decimal(5, 2) // in %
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team Team @relation("TaxRegionalAdditionalTeam", fields: [teamId], references: [id])
+
+  @@unique([teamId, year, region])
+  @@map("tax_regional_additionals")
+  @@schema("soccerxpro")
+}
+
+/// Scaglioni addizionale regionale
+model tax_regional_additional_bracket_v2 {
+  id     String   @id @default(uuid()) @db.Uuid
+  teamId String   @map("team_id") @db.Uuid
+  year   Int
+  region String
+  min    Decimal  @db.Decimal(12, 2)
+  max    Decimal? @db.Decimal(12, 2)
+  rate   Decimal  @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation("TaxRegionalAdditionalBracketV2Team", fields: [teamId], references: [id])
+
+  @@index([teamId, year, region])
+  @@map("tax_regional_additional_brackets_v2")
+  @@schema("soccerxpro")
+}
+
+/// Addizionale comunale unificata
+model tax_municipal_additional {
+  id             String   @id @default(uuid()) @db.Uuid
+  teamId         String   @map("team_id") @db.Uuid
+  year           Int
+  region         String
+  municipality   String
+  is_progressive Boolean  @default(false)
+  flat_rate      Decimal? @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team Team @relation("TaxMunicipalAdditionalTeam", fields: [teamId], references: [id])
+
+  @@unique([teamId, year, region, municipality])
+  @@map("tax_municipal_additionals")
+  @@schema("soccerxpro")
+}
+
+/// Scaglioni addizionale comunale
+model tax_municipal_additional_bracket_v2 {
+  id           String   @id @default(uuid()) @db.Uuid
+  teamId       String   @map("team_id") @db.Uuid
+  year         Int
+  region       String
+  municipality String
+  min          Decimal  @db.Decimal(12, 2)
+  max          Decimal? @db.Decimal(12, 2)
+  rate         Decimal  @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation("TaxMunicipalAdditionalBracketV2Team", fields: [teamId], references: [id])
+
+  @@index([teamId, year, region, municipality])
+  @@map("tax_municipal_additional_brackets_v2")
+  @@schema("soccerxpro")
+}
+
+/// Bande bonus L.207/2019 (sconto IRPEF %)
+model tax_bonus_l207_band {
+  id         String  @id @default(uuid()) @db.Uuid
+  teamId     String  @map("team_id") @db.Uuid
+  year       Int
+  max_amount Decimal @db.Decimal(12, 2) // reddito imponibile massimo per la banda
+  pct        Decimal @db.Decimal(5, 2) // sconto IRPEF in %
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation("TaxBonusL207BandTeam", fields: [teamId], references: [id])
+
+  @@index([teamId, year])
+  @@map("tax_bonus_l207_bands")
+  @@schema("soccerxpro")
+}
+
+/// Ulteriore detrazione L.207 (unificata)
+model tax_extra_deduction_l207 {
+  id         String  @id @default(uuid()) @db.Uuid
+  teamId     String  @map("team_id") @db.Uuid
+  year       Int
+  fullAmount Decimal @map("full_amount") @db.Decimal(12, 2) // importo ulteriore detrazione piena
+  fullTo     Decimal @map("full_to") @db.Decimal(12, 2) // soglia R fino a cui è piena
+  fadeTo     Decimal @map("fade_to") @db.Decimal(12, 2) // soglia R oltre la quale decade a 0
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team Team @relation("TaxExtraDeductionL207Team", fields: [teamId], references: [id])
+
+  @@unique([teamId, year])
+  @@map("tax_extra_deduction_l207")
   @@schema("soccerxpro")
 }

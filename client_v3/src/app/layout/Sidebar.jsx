@@ -115,54 +115,17 @@ const ALL_MENU_ITEMS = [
       },
       {
         id: 'aliquote',
-        label: 'Visualizza Aliquote',
-        requiredPermission: 'contracts:read',
-        submenu: [
-          {
-            id: 'taxrates-list',
-            label: 'Aliquote Stipendi',
-            path: '/dashboard/taxrates/list',
-            requiredPermission: 'contracts:read'
-          },
-          {
-            id: 'bonustaxrates-list',
-            label: 'Aliquote Bonus',
-            path: '/dashboard/bonustaxrates/list',
-            requiredPermission: 'contracts:read'
-          },
-          {
-            id: 'irpef-brackets',
-            label: 'Scaglioni IRPEF',
-            path: '/dashboard/tax/irpef-brackets',
-            requiredPermission: 'contracts:read'
-          },
-          {
-            id: 'regional-additionals',
-            label: 'Addizionali Regionali',
-            path: '/dashboard/tax/regional-additionals',
-            requiredPermission: 'contracts:read'
-          },
-          {
-            id: 'municipal-additionals',
-            label: 'Addizionali Comunali',
-            path: '/dashboard/tax/municipal-additionals',
-            requiredPermission: 'contracts:read'
-          }
-        ]
-      },
-      {
-        id: 'sistema-fiscale',
-        label: 'Sistema Fiscale Parametrico',
+        label: 'Configurazione Fiscale',
         requiredPermission: 'contracts:write',
         submenu: [
           {
-            id: 'tax-calculator',
-            label: 'Calcolatore Fiscale',
-            path: '/dashboard/tax/calculator',
-            requiredPermission: 'contracts:read'
+            id: 'fiscal-setup',
+            label: '⚙️ Configurazione Fiscale',
+            path: '/dashboard/tax/fiscal-setup',
+            requiredPermission: 'contracts:write'
           }
         ]
-      }
+      },
     ]
   },
   {
@@ -326,19 +289,6 @@ const ALL_MENU_ITEMS = [
     path: '/dashboard/utilities',
     requiredPermission: 'contracts:write',
     submenu: [
-      {
-        id: 'setup-aliquote',
-        label: 'Setup Aliquote',
-        requiredPermission: 'contracts:write',
-        submenu: [
-          { id: 'taxrates-upload', label: 'Aliquote Stipendi', path: '/dashboard/taxrates/upload', requiredPermission: 'contracts:write' },
-          { id: 'bonustaxrates-upload', label: 'Aliquote Bonus', path: '/dashboard/bonustaxrates/upload', requiredPermission: 'contracts:write' },
-          { id: 'irpef-upload', label: 'Scaglioni IRPEF', path: '/dashboard/tax/irpef-upload', requiredPermission: 'contracts:write' },
-          { id: 'regional-additionals-upload', label: 'Addizionali Regionali', path: '/dashboard/regional-additionals/upload', requiredPermission: 'contracts:write' },
-          { id: 'municipal-additionals-upload', label: 'Addizionali Comunali', path: '/dashboard/municipal-additionals/upload', requiredPermission: 'contracts:write' },
-          { id: 'tax-config', label: 'Configurazioni Fiscali', path: '/dashboard/tax-config', requiredPermission: 'contracts:write' }
-        ]
-      }
     ]
   }
 ];

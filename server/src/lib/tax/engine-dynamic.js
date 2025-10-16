@@ -1,182 +1,260 @@
 // server/src/lib/tax/engine-dynamic.js
-// Motore di calcolo fiscale parametrico
-
-const r2 = (v) => Math.round((v + Number.EPSILON) * 100) / 100;
+// Motore di calcolo fiscale dinamico con supporto per slope field
 
 /**
- * Calcola imposta progressiva su base scaglioni
+ * Transform utilities per convertire dati DB in formati usabili dal motore
  */
-function progressiveTax(base, rows) {
-  // rows ordinate per from asc; to null = Infinity
-  let tax = 0;
-  let remaining = base;
-  for (const r of rows) {
-    const lo = r.from;
-    const hi = (r.to ?? Infinity);
-    if (base <= lo) break;
-    const width = Math.max(0, Math.min(base, hi) - lo);
-    if (width > 0) tax += width * r.rate + (r.fixed ?? 0);
-  }
-  return r2(tax);
+
+function transformBracketRows(rows) {
+  if (!rows || rows.length === 0) return [];
+  return rows.map(r => ({
+    from: Number(r.min || r.from_amount || 0),
+    to: r.max || r.to_amount || null,
+    rate: Number(r.rate) / 100, // converte % in decimale
+    fixed: Number(r.fixed || 0)
+  })).sort((a, b) => a.from - b.from);
+}
+
+function transformPoints(points) {
+  if (!points || points.length === 0) return null;
+  return points.map(p => ({
+    x: Number(p.gross || p.x_income),
+    y: Number(p.contrib || p.y_amount)
+  })).sort((a, b) => a.x - b.x);
+}
+
+function transformL207Bands(bands) {
+  if (!bands || bands.length === 0) return [];
+  return bands.map(b => ({
+    max: Number(b.max_amount || b.max_income),
+    pct: Number(b.pct || b.bonus_percentage) / 100
+  })).sort((a, b) => a.max - b.max);
 }
 
 /**
- * Interpolazione lineare tra punti
+ * Calcola contributi da lordo (lookup o piecewise)
  */
-function interpolate(points, x) {
-  const pts = [...points].sort((a, b) => a.x - b.x);
-  if (pts.length === 0) return 0;
-  if (x <= pts[0].x) return pts[0].y;
-  const last = pts[pts.length - 1];
-  if (x >= last.x) return last.y;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const A = pts[i], B = pts[i + 1];
-    if (x >= A.x && x <= B.x) {
-      const t = (x - A.x) / (B.x - A.x);
-      return r2(A.y + t * (B.y - A.y));
+function calcContrib(gross, mode, points, brackets) {
+  if (mode === 'LOOKUP' && points && points.length > 0) {
+    // Interpolazione lineare tra punti
+    if (gross <= points[0].x) return points[0].y;
+    if (gross >= points[points.length - 1].x) return points[points.length - 1].y;
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      if (gross >= points[i].x && gross <= points[i + 1].x) {
+        const slope = (points[i + 1].y - points[i].y) / (points[i + 1].x - points[i].x);
+        return points[i].y + slope * (gross - points[i].x);
+      }
+    }
+    return 0;
+  }
+  
+  // PIECEWISE con scaglioni
+  if (!brackets || brackets.length === 0) return 0;
+  
+  let total = 0;
+  for (const br of brackets) {
+    const min = br.from;
+    const max = br.to || Infinity;
+    if (gross > min) {
+      const taxable = Math.min(gross, max) - min;
+      total += taxable * br.rate + (br.fixed || 0);
     }
   }
-  return last.y;
+  return Math.round(total * 100) / 100;
 }
 
 /**
- * Calcola bonus L.207/24
+ * Calcola IRPEF progressiva
  */
-function bonusL207(R, bands) {
-  const b = [...bands].sort((a, b) => a.max - b.max).find(b => R <= b.max);
-  return b ? r2(R * b.pct) : 0;
+function calcIRPEF(taxableIncome, brackets) {
+  if (!brackets || brackets.length === 0) return 0;
+  
+  let totalTax = 0;
+  for (const br of brackets) {
+    const min = br.from;
+    const max = br.to || Infinity;
+    if (taxableIncome > min) {
+      const taxable = Math.min(taxableIncome, max) - min;
+      totalTax += taxable * br.rate + (br.fixed || 0);
+    }
+  }
+  return Math.round(totalTax * 100) / 100;
 }
 
 /**
- * Calcola ulteriore detrazione L.207/24
+ * Calcola detrazione art.13 (standard, override o funzione personalizzata)
  */
-function ulterioreDetrazioneL207(R, full, full_to, fade_to) {
-  if (R <= 20000) return 0;
-  if (R <= full_to) return full;
-  if (R < fade_to) return r2(full * (fade_to - R) / (fade_to - full_to));
+function calcDetraction(taxableIncome, overridePoints, detrazStdFn) {
+  // Se c'è una funzione personalizzata, usala
+  if (typeof detrazStdFn === 'function') {
+    return detrazStdFn(taxableIncome);
+  }
+  
+  if (overridePoints && overridePoints.length > 0) {
+    // Usa punti override
+    const ti = taxableIncome;
+    if (ti <= overridePoints[0].x) return overridePoints[0].y;
+    if (ti >= overridePoints[overridePoints.length - 1].x) return overridePoints[overridePoints.length - 1].y;
+    
+    for (let i = 0; i < overridePoints.length - 1; i++) {
+      if (ti >= overridePoints[i].x && ti <= overridePoints[i + 1].x) {
+        const slope = (overridePoints[i + 1].y - overridePoints[i].y) / (overridePoints[i + 1].x - overridePoints[i].x);
+        return overridePoints[i].y + slope * (ti - overridePoints[i].x);
+      }
+    }
+  return 0;
+}
+
+  // Formula standard art.13
+  if (taxableIncome <= 15000) {
+    return Math.max(1955 * (15000 - taxableIncome) / 15000, 690);
+  } else if (taxableIncome <= 28000) {
+    return 1910 + 1190 * (28000 - taxableIncome) / 13000;
+  } else if (taxableIncome <= 50000) {
+    return 1910 * (50000 - taxableIncome) / 22000;
+  }
   return 0;
 }
 
 /**
- * Formula standard detrazione art.13
+ * Calcola addizionale (flat o progressiva)
  */
-function detrazioneArt13Default(R) {
-  if (R <= 15000) return 1955;
-  if (R <= 28000) return 1910 + 1190 * ((28000 - R) / 13000);
-  if (R <= 35000) return 65 + 1910 * ((50000 - R) / 22000);
-  if (R <= 50000) return 1910 * ((50000 - R) / 22000);
-  return 0;
+function calcAdditional(taxableIncome, brackets) {
+  if (!brackets || brackets.length === 0) return 0;
+  
+  // Se c'è un solo bracket con from=0, è flat
+  if (brackets.length === 1 && brackets[0].from === 0) {
+    return Math.round(taxableIncome * brackets[0].rate * 100) / 100;
+  }
+  
+  // Altrimenti progressiva
+  let total = 0;
+  for (const br of brackets) {
+    const min = br.from;
+    const max = br.to || Infinity;
+    if (taxableIncome > min) {
+      const taxable = Math.min(taxableIncome, max) - min;
+      total += taxable * br.rate;
+    }
+  }
+  return Math.round(total * 100) / 100;
 }
 
 /**
- * Calcola detrazione con override opzionale
+ * Calcola bonus L.207
  */
-function detrazioneWithOverride(R, override, fallback) {
-  if (override && override.length) return r2(interpolate(override, R));
-  const f = fallback ?? detrazioneArt13Default;
-  return r2(f(R));
-}
-
-/**
- * Calcola contributi dal lordo
- */
-function contributiFromLordo(G, mode, pts, rows) {
-  if (mode === 'LOOKUP' && pts) return r2(interpolate(pts, G));
-  if (mode === 'PIECEWISE' && rows) return progressiveTax(G, rows); // scaglioni su lordo
-  return 0;
-}
-
-/**
- * Calcolo fiscale da lordo
- */
-function computeFromLordoDynamic(G, p) {
-  const fondoRate = p.fondoRate ?? 0.005;
-  const CS = contributiFromLordo(G, p.contribMode, p.contribPoints, p.contribBrackets);
-  const R = r2(G - CS);
-
-  const irpefLorda = progressiveTax(R, p.irpefBrackets);
-  const detStd = detrazioneWithOverride(R, p.detrazOverride, p.detrazStd);
-  const detL207 = ulterioreDetrazioneL207(R, p.l207Full, p.l207FullTo, p.l207FadeTo);
-  const irpefNet = r2(Math.max(0, irpefLorda - detStd - detL207));
-
-  const addReg = p.addRegionBrackets?.length ? progressiveTax(R, p.addRegionBrackets) : 0;
-  const addCity = p.addCityBrackets?.length ? progressiveTax(R, p.addCityBrackets) : 0;
-
-  const bonus = bonusL207(R, p.l207Bands);
-  const fondo = r2(G * fondoRate);
-
-  const netto = r2(G - CS - irpefNet - addReg - addCity - fondo + bonus);
-
+function calcL207(taxableIncome, bands, extraFull, extraFullTo, extraFadeTo) {
+  let discount = 0;
+  
+  // Sconto IRPEF da bande
+  for (const band of bands) {
+    if (taxableIncome <= band.max) {
+      discount = band.pct;
+      break;
+    }
+  }
+  
+  // Ulteriore detrazione
+  let extraDeduction = 0;
+  if (extraFull && extraFullTo && extraFadeTo) {
+    if (taxableIncome <= extraFullTo) {
+      extraDeduction = extraFull;
+    } else if (taxableIncome < extraFadeTo) {
+      const slope = -extraFull / (extraFadeTo - extraFullTo);
+      extraDeduction = extraFull + slope * (taxableIncome - extraFullTo);
+    }
+  }
+  
   return {
-    lordo: r2(G),
-    netto,
-    contributi: CS,
-    imponibile: R,
-    irpefLorda,
-    detrazioniStd: detStd,
-    ulterioreDetrazione: detL207,
-    irpefNet,
-    addRegion: addReg,
-    addCity: addCity,
-    fondo,
-    bonus
+    discount: Math.round(discount * 10000) / 10000,
+    extraDeduction: Math.round(extraDeduction * 100) / 100
   };
 }
 
 /**
- * Calcolo fiscale da netto (risolutore binario)
+ * LORDO → NETTO
  */
-function computeFromNettoDynamic(targetNet, p) {
-  let lo = 0, hi = Math.max(targetNet * 3, 200000);
-  for (let i = 0; i < 70; i++) {
-    const mid = (lo + hi) / 2;
-    const res = computeFromLordoDynamic(mid, p);
-    if (res.netto >= targetNet) hi = mid; else lo = mid;
+function computeFromLordoDynamic(grossSalary, p) {
+  const G = grossSalary;
+  
+  // 1. Contributi lavoratore
+  const contrib = calcContrib(G, p.contribMode || 'PIECEWISE', p.contribPoints, p.contribBrackets);
+  
+  // 2. Imponibile fiscale
+  const R = G - contrib;
+  
+  // 3. IRPEF
+  const irpef = calcIRPEF(R, p.irpefBrackets || []);
+  
+  // 4. Detrazione art.13
+  const detraz = calcDetraction(R, p.detrazOverride, p.detrazStd);
+  
+  // 5. L.207
+  const l207 = calcL207(R, p.l207Bands || [], p.l207Full, p.l207FullTo, p.l207FadeTo);
+  const irpefAfterL207 = irpef * (1 - l207.discount) - l207.extraDeduction;
+  
+  // 6. Addizionali
+  const addReg = calcAdditional(R, p.addRegionBrackets || []);
+  const addCity = calcAdditional(R, p.addCityBrackets || []);
+  
+  // 7. Netto
+  const totalTax = Math.max(0, irpefAfterL207) + addReg + addCity;
+  const net = Math.round((R - totalTax) * 100) / 100;
+
+  return {
+    lordo: G,
+    netto: net,
+    contrib,
+    imponibile: R,
+    irpef,
+    detraz,
+    l207Discount: l207.discount,
+    l207Extra: l207.extraDeduction,
+    irpefAfterL207,
+    addReg,
+    addCity,
+    totalTax
+  };
+}
+
+/**
+ * NETTO → LORDO (binary search + slope field)
+ */
+function computeFromNettoDynamic(targetNet, p, maxIter = 50) {
+  let low = targetNet;
+  let high = targetNet * 3;
+  let bestG = targetNet;
+  
+  for (let iter = 0; iter < maxIter; iter++) {
+    const mid = (low + high) / 2;
+    const result = computeFromLordoDynamic(mid, p);
+    
+    if (Math.abs(result.netto - targetNet) < 0.5) {
+      bestG = mid;
+      break;
+    }
+    
+    if (result.netto < targetNet) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+    bestG = mid;
   }
-  return computeFromLordoDynamic(hi, p);
-}
-
-/**
- * Trasforma righe DB in formato BracketRow
- */
-function transformBracketRows(rows) {
-  return rows
-    .sort((a, b) => a.from_amount - b.from_amount)
-    .map(row => ({
-      from: Number(row.from_amount),
-      to: row.to_amount ? Number(row.to_amount) : null,
-      rate: Number(row.rate),
-      fixed: Number(row.fixed || 0)
-    }));
-}
-
-/**
- * Trasforma punti DB in formato interpolazione
- */
-function transformPoints(points) {
-  return points
-    .sort((a, b) => a.gross - b.gross)
-    .map(point => ({
-      x: Number(point.gross),
-      y: Number(point.contrib || point.detrazione)
-    }));
-}
-
-/**
- * Trasforma bande L.207 in formato Bands
- */
-function transformL207Bands(bands) {
-  return bands.map(band => ({
-    max: Number(band.max_amount),
-    pct: Number(band.pct)
-  }));
+  
+  return computeFromLordoDynamic(bestG, p);
 }
 
 module.exports = {
-  computeFromLordoDynamic,
-  computeFromNettoDynamic,
   transformBracketRows,
   transformPoints,
   transformL207Bands,
-  detrazioneArt13Default
+  calcContrib,
+  calcIRPEF,
+  calcDetraction,
+  calcAdditional,
+  calcL207,
+  computeFromLordoDynamic,
+  computeFromNettoDynamic
 };

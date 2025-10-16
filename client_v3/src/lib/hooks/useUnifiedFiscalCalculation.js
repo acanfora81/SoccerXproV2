@@ -8,7 +8,7 @@ const API_BASE_URL = 'http://localhost:3001';
  * Hook unificato per gestire TUTTI i calcoli fiscali
  * Gestisce stipendio, bonus e tutti i campi monetari in modo unificato
  */
-export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) => {
+export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType, region, municipality) => {
   const [taxRates, setTaxRates] = useState(null);
   const [bonusTaxRates, setBonusTaxRates] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -107,11 +107,10 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
       
       if (bonusResponse.data.success) {
         console.log('🔵 TUTTE LE ALIQUOTE BONUS DISPONIBILI:', bonusResponse.data.data);
-        
         const allRates = bonusResponse.data.data;
-        const relevantRates = allRates.filter(rate => rate.year === contractYear);
-        
-        console.log('🔵 ALIQUOTE BONUS PER ANNO', contractYear, ':', relevantRates);
+        const targetYear = parseInt(contractYear);
+        const relevantRates = allRates.filter(rate => parseInt(rate.year) === targetYear);
+        console.log('🔵 ALIQUOTE BONUS PER ANNO', targetYear, ':', relevantRates);
         
         if (relevantRates.length > 0) {
           const ratesMap = {};
@@ -159,17 +158,20 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
     
     try {
       setCalculating(true);
-      const response = await axios.post(`${API_BASE_URL}/api/taxes/gross-from-net`, {
+      const payload = {
         netSalary,
         taxRates: taxRates,
         year: contractYear || 2025,
-        region: 'Marche',
-        municipality: 'Pesaro',
+        region: region || null,
+        municipality: municipality || null,
         contractType: contractType,
         teamId: teamId
-      }, {
+      };
+      console.log('🟦 [FE] POST /api/taxes/gross-from-net payload:', payload);
+      const response = await axios.post(`${API_BASE_URL}/api/taxes/gross-from-net`, payload, {
         withCredentials: true
       });
+      console.log('🟩 [FE] Response /api/taxes/gross-from-net:', response.data);
       if (response.data.success) {
         return response.data.data;
       } else {
@@ -190,17 +192,20 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
     }
     try {
       setCalculating(true);
-      const response = await axios.post(`${API_BASE_URL}/api/taxes/net-from-gross`, {
+      const payload = {
         grossSalary,
         taxRates: taxRates,
         year: contractYear || 2025,
-        region: 'Marche',
-        municipality: 'Pesaro',
+        region: region || null,
+        municipality: municipality || null,
         contractType: contractType,
         teamId: teamId
-      }, {
+      };
+      console.log('🟦 [FE] POST /api/taxes/net-from-gross payload:', payload);
+      const response = await axios.post(`${API_BASE_URL}/api/taxes/net-from-gross`, payload, {
         withCredentials: true
       });
+      console.log('🟩 [FE] Response /api/taxes/net-from-gross:', response.data);
       if (response.data.success) {
         return response.data.data;
       } else {
@@ -428,17 +433,23 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType) 
       inputData: { cleanBonusData, customTaxRates, bonusModes }
     });
 
-    return {
+    const workerTot = (salaryCalculation?.totaleContributiWorker ?? ( (salaryCalculation?.inpsWorker || 0) + (salaryCalculation?.ffcWorker || 0) + (salaryCalculation?.solidarityWorker || 0) ));
+    const employerTot = (salaryCalculation?.totaleContributiEmployer ?? ( (salaryCalculation?.inpsEmployer || 0) + (salaryCalculation?.inailEmployer || 0) + (salaryCalculation?.ffcEmployer || 0) ));
+
+    const result = {
       salary: salaryCalculation,
       bonuses: bonusCalculation,
       total: {
         gross: (salaryCalculation?.grossSalary || 0) + bonusCalculation.totalGross,
         net: (salaryCalculation?.netSalary || 0) + bonusCalculation.totalNet,
-        taxes: (salaryCalculation?.totalContributionsWorker || 0) + bonusCalculation.totalTax,
-        employerContributions: salaryCalculation?.employerContributions || 0,
-        companyCost: (salaryCalculation?.companyCost || 0) + bonusCalculation.totalGross // costo lordo + bonus
+        taxes: workerTot + bonusCalculation.totalTax,
+        employerContributions: employerTot,
+        companyCost: (salaryCalculation?.companyCost || ((salaryCalculation?.grossSalary || 0) + employerTot)) + bonusCalculation.totalGross // costo lordo + bonus
       }
     };
+
+    console.log('🟪 [FE] calculateUnified summary:', result);
+    return result;
   }, [calculateSalaryFromNet, calculateSalaryFromGross, calculateAllBonuses]);
 
   useEffect(() => {

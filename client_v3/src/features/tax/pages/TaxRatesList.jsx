@@ -28,6 +28,12 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
   const [taxRates, setTaxRates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Gestione anni (standard come IRPEF)
+  const [availableYears, setAvailableYears] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(null);
+  const [showAddYearForm, setShowAddYearForm] = useState(false);
+  const [newYear, setNewYear] = useState("");
+  const [deleteYearConfirm, setDeleteYearConfirm] = useState({ isOpen: false, year: null });
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, rate: null });
   const [editingRate, setEditingRate] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -41,15 +47,46 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
   });
 
   const fetchTaxRates = async () => {
-    if (!teamId) return;
+    if (!teamId || selectedYear === null) return;
     try {
       setLoading(true);
       setError(null);
-      const response = await apiFetch(`/api/taxrates?teamId=${teamId}`);
-      setTaxRates(response.data || response);
+      const response = await apiFetch(`/api/taxrates?year=${selectedYear}`);
+      const raw = response.data || response || [];
+      const normalized = Array.isArray(raw) ? raw.map(r => ({
+        ...r,
+        inpsWorker: r.inpsWorker != null ? parseFloat(r.inpsWorker) : r.inpsWorker,
+        inpsEmployer: r.inpsEmployer != null ? parseFloat(r.inpsEmployer) : r.inpsEmployer,
+        ffcWorker: r.ffcWorker != null ? parseFloat(r.ffcWorker) : r.ffcWorker,
+        ffcEmployer: r.ffcEmployer != null ? parseFloat(r.ffcEmployer) : r.ffcEmployer,
+        inailEmployer: r.inailEmployer != null ? parseFloat(r.inailEmployer) : r.inailEmployer,
+        solidarityWorker: r.solidarityWorker != null ? parseFloat(r.solidarityWorker) : r.solidarityWorker,
+        solidarityEmployer: r.solidarityEmployer != null ? parseFloat(r.solidarityEmployer) : r.solidarityEmployer
+      })) : [];
+      setTaxRates(normalized);
     } catch (err) {
       setError("Errore nel caricamento delle aliquote");
       console.error("Errore fetch aliquote:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAvailableYears = async () => {
+    try {
+      setLoading(true);
+      const response = await apiFetch('/api/taxrates/tax-rates/years');
+      const years = Array.isArray(response?.data) ? response.data : [];
+      const sorted = years.sort((a,b) => b - a);
+      setAvailableYears(sorted);
+      if (sorted.length === 0) {
+        setSelectedYear(null);
+      } else if (selectedYear === null || !sorted.includes(selectedYear)) {
+        setSelectedYear(sorted[0]);
+      }
+    } catch (e) {
+      setAvailableYears([]);
+      setSelectedYear(null);
     } finally {
       setLoading(false);
     }
@@ -134,9 +171,15 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
 
   useEffect(() => {
     if (teamId) {
-      fetchTaxRates();
+      fetchAvailableYears();
     }
   }, [teamId]);
+
+  useEffect(() => {
+    if (selectedYear !== null) {
+      fetchTaxRates();
+    }
+  }, [selectedYear]);
 
   const formatPercentage = (value) => {
     if (value === null || value === undefined || value === '') {
@@ -162,119 +205,79 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
     }
   };
 
-  // Definizione colonne per DataTable
+  // Definizione colonne per DataTable (header/accessor)
   const columns = [
     {
-      key: 'year',
-      label: 'Anno',
-      render: (rate) => (
+      header: 'Anno',
+      accessor: (rate) => (
         <div className="flex items-center justify-center">
           <Calendar size={16} className="text-gray-400 mr-2" />
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {rate.year}
-          </span>
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rate.year}</span>
         </div>
       )
     },
     {
-      key: 'type',
-      label: 'Tipo Contratto',
-      render: (rate) => (
+      header: 'Tipo Contratto',
+      accessor: (rate) => (
         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(rate.type)}`}>
           {getTypeLabel(rate.type)}
         </span>
       )
     },
     {
-      key: 'inpsWorker',
-      label: 'INPS Lav.',
-      render: (rate) => (
-        <span className="text-sm font-medium text-red-700 dark:text-red-400">
-          {formatPercentage(rate.inpsWorker)}
-        </span>
+      header: 'INPS Lav.',
+      accessor: (rate) => (
+        <span className="text-sm font-medium text-red-700 dark:text-red-400">{formatPercentage(rate.inpsWorker)}</span>
       )
     },
     {
-      key: 'inpsEmployer',
-      label: 'INPS Dat.',
-      render: (rate) => (
-        <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
-          {formatPercentage(rate.inpsEmployer)}
-        </span>
+      header: 'INPS Dat.',
+      accessor: (rate) => (
+        <span className="text-sm font-medium text-blue-700 dark:text-blue-400">{formatPercentage(rate.inpsEmployer)}</span>
       )
     },
     {
-      key: 'inailEmployer',
-      label: 'INAIL Dat.',
-      render: (rate) => (
-        <span className="text-sm font-medium text-purple-700 dark:text-purple-400">
-          {formatPercentage(rate.inailEmployer)}
-        </span>
+      header: 'INAIL Dat.',
+      accessor: (rate) => (
+        <span className="text-sm font-medium text-purple-700 dark:text-purple-400">{formatPercentage(rate.inailEmployer)}</span>
       )
     },
     {
-      key: 'ffcWorker',
-      label: 'FFC Lav.',
-      render: (rate) => (
-        <span className="text-sm font-medium text-green-700 dark:text-green-400">
-          {formatPercentage(rate.ffcWorker)}
-        </span>
+      header: 'FFC Lav.',
+      accessor: (rate) => (
+        <span className="text-sm font-medium text-green-700 dark:text-green-400">{formatPercentage(rate.ffcWorker)}</span>
       )
     },
     {
-      key: 'ffcEmployer',
-      label: 'FFC Dat.',
-      render: (rate) => (
-        <span className="text-sm font-medium text-indigo-700 dark:text-indigo-400">
-          {formatPercentage(rate.ffcEmployer)}
-        </span>
+      header: 'FFC Dat.',
+      accessor: (rate) => (
+        <span className="text-sm font-medium text-indigo-700 dark:text-indigo-400">{formatPercentage(rate.ffcEmployer)}</span>
       )
     },
     {
-      key: 'total',
-      label: 'Totale',
-      render: (rate) => {
+      header: 'Totale',
+      accessor: (rate) => {
         const inpsW = parseFloat(rate.inpsWorker) || 0;
         const inailE = parseFloat(rate.inailEmployer) || 0;
         const ffcW = parseFloat(rate.ffcWorker) || 0;
         const total = inpsW + inailE + ffcW;
-        return (
-          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-            {total.toFixed(2).replace('.', ',')}%
-          </span>
-        );
+        return <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{total.toFixed(2).replace('.', ',')}%</span>;
       }
     },
     {
-      key: 'updatedAt',
-      label: 'Aggiornato',
-      render: (rate) => (
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {new Date(rate.updatedAt).toLocaleDateString('it-IT')}
-        </span>
+      header: 'Aggiornato',
+      accessor: (rate) => (
+        <span className="text-sm text-gray-500 dark:text-gray-400">{new Date(rate.updatedAt).toLocaleDateString('it-IT')}</span>
       )
     },
     {
-      key: 'actions',
-      label: 'Azioni',
-      render: (rate) => (
+      header: 'Azioni',
+      accessor: (rate) => (
         <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="info"
-            size="sm"
-            onClick={() => openEdit(rate)}
-            title="Modifica aliquota"
-            className="min-w-[32px] h-8"
-          >
+          <Button variant="info" size="sm" onClick={() => openEdit(rate)} title="Modifica aliquota" className="min-w-[32px] h-8">
             <Edit3 size={14} />
           </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => handleDelete(rate)}
-            title="Elimina aliquota"
-            className="min-w-[32px] h-8"
-          >
+          <Button variant="destructive" size="sm" onClick={() => handleDelete(rate)} title="Elimina aliquota" className="min-w-[32px] h-8">
             <Trash2 size={14} />
           </Button>
         </div>
@@ -282,17 +285,74 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
     }
   ];
 
-  if (loading) {
-    return <GlobalLoader sectionName="Contratti e Finanze" fullscreen />;
+  if (loading && selectedYear !== null) {
+    return <GlobalLoader sectionName="Aliquote Stipendi" fullscreen={false} />;
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Aliquote Fiscali"
-        subtitle="Visualizza e gestisci le aliquote fiscali per i contratti"
+        title="Aliquote Stipendi"
+        subtitle="Gestisci le aliquote contributive per anno e tipo contratto"
         icon={Calculator}
       />
+
+      {/* Barra Anno + Nuovo anno + Elimina anno (standard IRPEF) */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Anno</label>
+              {availableYears.length > 0 ? (
+                <select
+                  value={selectedYear ?? ''}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                >
+                  {availableYears.map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-sm text-gray-500 dark:text-gray-400">Nessun anno configurato</span>
+              )}
+
+              <Button size="sm" variant="secondary" onClick={() => setShowAddYearForm(v => !v)}>Nuovo anno</Button>
+              {showAddYearForm && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={newYear}
+                    onChange={(e) => setNewYear(e.target.value)}
+                    placeholder="es. 2025"
+                    className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    min="2020"
+                    max="2035"
+                  />
+                  <Button size="sm" onClick={async () => {
+                    const y = parseInt(newYear);
+                    if (!Number.isFinite(y)) return;
+                    await apiFetch('/api/taxrates/tax-rates/year', { method: 'POST', body: JSON.stringify({ year: y }) });
+                    setShowAddYearForm(false); setNewYear('');
+                    await fetchAvailableYears();
+                    setSelectedYear(y);
+                  }}>Imposta</Button>
+                </div>
+              )}
+
+              <Button variant="ghost" size="sm" onClick={fetchTaxRates} disabled={selectedYear === null}>
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {availableYears.length > 0 && selectedYear !== null && (
+              <Button variant="danger" size="sm" onClick={() => setDeleteYearConfirm({ isOpen: true, year: selectedYear })}>
+                <Trash2 className="w-4 h-4 mr-2" /> Elimina anno
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+      </Card>
 
       {/* Error Display */}
       {error && (
@@ -486,7 +546,13 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
       </Card>
 
       {/* Tax Rates Table */}
-      {taxRates.length > 0 ? (
+      {selectedYear === null ? (
+        <EmptyState
+          icon={FileText}
+          title="Nessun anno configurato"
+          description="Crea un nuovo anno per iniziare a gestire le aliquote."
+        />
+      ) : taxRates.length > 0 ? (
         <Card>
           <CardHeader>
             <h3 className="text-lg font-semibold">
@@ -520,7 +586,7 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
       )}
 
       {/* Refresh Button */}
-      {taxRates.length > 0 && (
+      {selectedYear !== null && taxRates.length > 0 && (
         <div className="flex justify-center">
           <Button
             variant="secondary"
@@ -643,6 +709,26 @@ export default function TaxRatesList({ teamId: teamIdProp }) {
           </div>
         </ConfirmDialog>
       )}
+
+      {/* Dialog di conferma eliminazione anno */}
+      <ConfirmDialog
+        open={deleteYearConfirm.isOpen}
+        onOpenChange={(open) => !open && setDeleteYearConfirm({ isOpen: false, year: null })}
+        onConfirm={async () => {
+          try {
+            await apiFetch(`/api/taxrates/tax-rates/year/${deleteYearConfirm.year}`, { method: 'DELETE' });
+            setDeleteYearConfirm({ isOpen: false, year: null });
+            await fetchAvailableYears();
+          } catch (e) {
+            console.error('Errore eliminazione anno', e);
+          }
+        }}
+        title="Elimina anno"
+        message={`Sei sicuro di voler eliminare tutte le aliquote per l'anno ${deleteYearConfirm.year}?`}
+        confirmText="Elimina"
+        cancelText="Annulla"
+        type="danger"
+      />
     </div>
   );
 }

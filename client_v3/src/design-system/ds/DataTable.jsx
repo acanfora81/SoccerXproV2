@@ -31,7 +31,7 @@ export default function DataTable({ data, columns, className }) {
                   )}
                 >
                   {typeof column.accessor === 'function' 
-                    ? column.accessor(row) 
+                    ? column.accessor(row, rowIndex) 
                     : row[column.accessor]
                   }
                 </td>

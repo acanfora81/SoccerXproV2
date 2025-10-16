@@ -113,6 +113,9 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     internalNotes: '',
 
     isOfficialRenewal: false,
+    // ➕ Dati territoriali per addizionali
+    region: '',
+    municipality: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -138,6 +141,8 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     teamId: user?.teamId,
     contractYear: formData.startDate ? new Date(formData.startDate).getFullYear() : null,
     contractType: formData.contractType,
+    region: formData.region || null,
+    municipality: formData.municipality || null,
   };
 
   const {
@@ -152,6 +157,8 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
     hookParams.teamId,
     hookParams.contractYear,
     hookParams.contractType,
+    hookParams.region,
+    hookParams.municipality,
   );
 
   const performUnifiedCalculation = useCallback(() => {
@@ -178,6 +185,10 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
       customCarAllowanceTax: formData.customCarAllowanceTax ? parseItalianNumberToFloat(formData.customCarAllowanceTax) : undefined,
       customTransferAllowanceTax: formData.customTransferAllowanceTax ? parseItalianNumberToFloat(formData.customTransferAllowanceTax) : undefined,
     };
+
+    if (!hookParams.region || !hookParams.municipality) {
+      console.warn('⚠️ Region/Municipality mancanti: le addizionali potrebbero essere errate', { region: hookParams.region, municipality: hookParams.municipality });
+    }
 
     if (calculationMode === 'net' && parseItalianNumberToFloat(formData.netSalary) > 0) {
       calculateSalaryFromNet(parseItalianNumberToFloat(formData.netSalary))
@@ -321,6 +332,9 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         insuranceValue: editingContract.insuranceValue || '',
         insuranceProvider: editingContract.insuranceProvider || '',
         medicalInsurance: !!editingContract.medicalInsurance,
+        // prova a precompilare region/municipality se presenti nel contratto
+        region: editingContract.region || '',
+        municipality: editingContract.municipality || '',
       };
       
       console.log('🔵 FormData che verrà impostato:', newFormData);
@@ -358,6 +372,8 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         accommodationBonus: '',
         carAllowance: '',
         transferAllowance: '',
+        region: '',
+        municipality: '',
       }));
     }
   }, [editingContract]);

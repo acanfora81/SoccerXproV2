@@ -82,3 +82,11 @@ export default function ScoutingModal({ open, onClose, onSubmit, initial }) {
 
 
 
+
+
+
+
+
+
+
+

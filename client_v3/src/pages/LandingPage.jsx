@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, ArrowRight, Zap, BarChart3, Shield, Users, Building2 } from "lucide-react";
+import { CheckCircle2, ArrowRight, Zap, BarChart3, Shield, Users, Building2, LogIn } from "lucide-react";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -95,6 +95,17 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#111827] to-[#1e1b4b] text-white px-6 py-20">
+      {/* Header con pulsante Login */}
+      <div className="flex justify-end mb-8">
+        <button
+          onClick={() => navigate('/login')}
+          className="flex items-center gap-2 px-6 py-3 bg-white/10 border border-white/20 rounded-full font-semibold hover:bg-white/20 transition-all backdrop-blur-md"
+        >
+          <LogIn className="w-4 h-4" />
+          Accedi
+        </button>
+      </div>
+
       <div className="text-center mb-12">
         <h1 className="text-5xl font-extrabold mb-6">
           Soccer X Pro — La piattaforma modulare per il calcio professionale
