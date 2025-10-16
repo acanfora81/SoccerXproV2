@@ -82,6 +82,22 @@ function calcIRPEF(taxableIncome, brackets) {
   return Math.round(totalTax * 100) / 100;
 }
 
+// Funzione standard art.13 riutilizzabile (fallback)
+function detrazioneArt13Default(taxableIncome) {
+  const ti = Number(taxableIncome) || 0;
+  if (ti <= 15000) {
+    const base = 1955 * (15000 - ti) / 15000;
+    return Math.max(base, 690);
+  }
+  if (ti <= 28000) {
+    return 1910 + 1190 * (28000 - ti) / 13000;
+  }
+  if (ti <= 50000) {
+    return 1910 * (50000 - ti) / 22000;
+  }
+  return 0;
+}
+
 /**
  * Calcola detrazione art.13 (standard, override o funzione personalizzata)
  */
@@ -105,15 +121,8 @@ function calcDetraction(taxableIncome, overridePoints, detrazStdFn) {
     return detrazStdFn(taxableIncome);
   }
 
-  // Formula standard art.13
-  if (taxableIncome <= 15000) {
-    return Math.max(1955 * (15000 - taxableIncome) / 15000, 690);
-  } else if (taxableIncome <= 28000) {
-    return 1910 + 1190 * (28000 - taxableIncome) / 13000;
-  } else if (taxableIncome <= 50000) {
-    return 1910 * (50000 - taxableIncome) / 22000;
-  }
-  return 0;
+  // 3) Standard art.13
+  return detrazioneArt13Default(taxableIncome);
 }
 
 /**
@@ -256,6 +265,7 @@ module.exports = {
   calcDetraction,
   calcAdditional,
   calcL207,
+  detrazioneArt13Default,
   computeFromLordoDynamic,
   computeFromNettoDynamic
 };

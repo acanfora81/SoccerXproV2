@@ -127,7 +127,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
                 </span>
               </div>
               <div className="calculation-item">
-                <span className="calculation-label">Addizionali (1,73%):</span>
+                <span className="calculation-label">Addizionali Reg./Com.:</span>
                 <span className="calculation-value addizionali">
                   €{calculation.addizionali?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
@@ -192,7 +192,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
                 </span>
               </div>
               <div className="calculation-item">
-                <span className="calculation-label">Solidarietà Employer (0,50%):</span>
+                <span className="calculation-label">Solidarietà Employer ({(calculation?._rawRates?.solidarityEmployer ?? 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%):</span>
                 <span className="calculation-value solidarity-employer">
                   €{calculation.solidarityEmployer?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
@@ -281,7 +281,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
         {/* Riepilogo Totale con Bonus (se disponibile) */}
         {totalCalculation && (
           <div className="total-summary-section">
-            <h5 className="total-summary-title">📊 Riepilogo Totale Contratto</h5>
+            <h5 className="total-summary-title">Riepilogo Totale Contratto</h5>
             <div className="total-summary-grid">
               <div className="total-summary-item">
                 <span className="total-label">Totale Lordo:</span>
