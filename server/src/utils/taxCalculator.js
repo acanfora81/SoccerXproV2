@@ -407,11 +407,11 @@ async function calcolaLordoDaNetto(netSalary, taxRates, year, region = null, mun
     });
 
     const parseNum = (v) => parseFloat(String(v ?? 0).replace(',', '.')) || 0;
-    const detrazStdDb = (R) => {
+  const detrazStdDb = (R) => {
       let detrazioniBase;
       if (!taxConfig) {
-        // Nessuna configurazione in DB: non applicare art.13 (alzare lordo per raggiungere il netto)
-        detrazioniBase = 0;
+        // Usa la stessa formula standard del percorso lordo→netto per coerenza
+        detrazioniBase = detrazioneArt13Default(R);
       } else {
         const detrazioneFascia1 = parseNum(taxConfig?.detrazioneFascia1);
         const detrazioneMinimo = parseNum(taxConfig?.detrazioneMinimo);

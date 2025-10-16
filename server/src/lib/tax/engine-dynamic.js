@@ -86,25 +86,24 @@ function calcIRPEF(taxableIncome, brackets) {
  * Calcola detrazione art.13 (standard, override o funzione personalizzata)
  */
 function calcDetraction(taxableIncome, overridePoints, detrazStdFn) {
-  // Se c'è una funzione personalizzata, usala
-  if (typeof detrazStdFn === 'function') {
-    return detrazStdFn(taxableIncome);
-  }
-  
+  // 1) Override a punti: se presente, ha priorità
   if (overridePoints && overridePoints.length > 0) {
-    // Usa punti override
     const ti = taxableIncome;
     if (ti <= overridePoints[0].x) return overridePoints[0].y;
     if (ti >= overridePoints[overridePoints.length - 1].x) return overridePoints[overridePoints.length - 1].y;
-    
     for (let i = 0; i < overridePoints.length - 1; i++) {
       if (ti >= overridePoints[i].x && ti <= overridePoints[i + 1].x) {
         const slope = (overridePoints[i + 1].y - overridePoints[i].y) / (overridePoints[i + 1].x - overridePoints[i].x);
         return overridePoints[i].y + slope * (ti - overridePoints[i].x);
       }
     }
-  return 0;
-}
+    return 0;
+  }
+
+  // 2) Funzione personalizzata
+  if (typeof detrazStdFn === 'function') {
+    return detrazStdFn(taxableIncome);
+  }
 
   // Formula standard art.13
   if (taxableIncome <= 15000) {
@@ -192,14 +191,16 @@ function computeFromLordoDynamic(grossSalary, p) {
   
   // 5. L.207
   const l207 = calcL207(R, p.l207Bands || [], p.l207Full, p.l207FullTo, p.l207FadeTo);
-  const irpefAfterL207 = irpef * (1 - l207.discount) - l207.extraDeduction;
+  // Applica prima la detrazione art.13, poi eventuale L.207
+  const irpefAfterDetraz = Math.max(0, irpef - detraz);
+  const irpefAfterL207 = Math.max(0, irpefAfterDetraz * (1 - l207.discount) - l207.extraDeduction);
   
   // 6. Addizionali
   const addReg = calcAdditional(R, p.addRegionBrackets || []);
   const addCity = calcAdditional(R, p.addCityBrackets || []);
   
   // 7. Netto
-  const totalTax = Math.max(0, irpefAfterL207) + addReg + addCity;
+  const totalTax = irpefAfterL207 + addReg + addCity;
   const net = Math.round((R - totalTax) * 100) / 100;
 
   return {
