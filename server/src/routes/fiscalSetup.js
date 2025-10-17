@@ -114,6 +114,22 @@ router.post('/step/rates', async (req, res) => {
 });
 
 /**
+ * GET /api/fiscal-setup/step/rates
+ * Legge le aliquote base salvate
+ */
+router.get('/step/rates', async (req, res) => {
+  try {
+    const { teamId, year, contractType } = req.query || {};
+    if (!teamId || !year || !contractType) return res.status(400).json({ error: 'Missing required parameters' });
+    const found = await prisma.tax_rate_v2.findFirst({ where: { teamId, year: parseInt(year), contractType } });
+    res.json({ success: true, data: found || null });
+  } catch (error) {
+    console.error('Error in GET /step/rates:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /api/fiscal-setup/step/contributions
  * Salva il profilo contributi (mode + points/brackets)
  */
@@ -177,6 +193,25 @@ router.post('/step/contributions', async (req, res) => {
 });
 
 /**
+ * GET /api/fiscal-setup/step/contributions
+ */
+router.get('/step/contributions', async (req, res) => {
+  try {
+    const { teamId, year, contractType } = req.query || {};
+    if (!teamId || !year || !contractType) return res.status(400).json({ error: 'Missing required parameters' });
+    const yearInt = parseInt(year);
+    const profile = await prisma.tax_contribution_profile.findFirst({ where: { teamId, year: yearInt, contractType } });
+    const mode = profile?.mode || null;
+    const points = await prisma.tax_contribution_point.findMany({ where: { teamId, year: yearInt, contractType }, orderBy: { gross: 'asc' } });
+    const brackets = await prisma.tax_contribution_bracket.findMany({ where: { teamId, year: yearInt, contractType }, orderBy: { from_amount: 'asc' } });
+    res.json({ success: true, data: { mode, points, brackets } });
+  } catch (error) {
+    console.error('Error in GET /step/contributions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /api/fiscal-setup/step/irpef
  * Salva gli scaglioni IRPEF
  */
@@ -211,6 +246,21 @@ router.post('/step/irpef', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error in /step/irpef:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/fiscal-setup/step/irpef
+ */
+router.get('/step/irpef', async (req, res) => {
+  try {
+    const { teamId, year } = req.query || {};
+    if (!teamId || !year) return res.status(400).json({ error: 'Missing required parameters' });
+    const brackets = await prisma.tax_irpef_bracket.findMany({ where: { teamId, year: parseInt(year) }, orderBy: { min: 'asc' } });
+    res.json({ success: true, data: brackets });
+  } catch (error) {
+    console.error('Error in GET /step/irpef:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -276,6 +326,21 @@ router.post('/step/detractions', async (req, res) => {
 });
 
 /**
+ * GET /api/fiscal-setup/step/detractions
+ */
+router.get('/step/detractions', async (req, res) => {
+  try {
+    const { teamId, year } = req.query || {};
+    if (!teamId || !year) return res.status(400).json({ error: 'Missing required parameters' });
+    const found = await prisma.tax_config.findFirst({ where: { teamId, year: parseInt(year) } });
+    res.json({ success: true, data: found || null });
+  } catch (error) {
+    console.error('Error in GET /step/detractions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * POST /api/fiscal-setup/step/regional
  * Salva addizionale regionale
  */
@@ -329,6 +394,20 @@ router.post('/step/regional', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error in /step/regional:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/step/regional', async (req, res) => {
+  try {
+    const { teamId, year, region } = req.query || {};
+    if (!teamId || !year || !region) return res.status(400).json({ error: 'Missing required parameters' });
+    const yearInt = parseInt(year);
+    const cfg = await prisma.tax_regional_additional.findFirst({ where: { teamId, year: yearInt, region } });
+    const brackets = await prisma.tax_regional_additional_bracket_v2.findMany({ where: { teamId, year: yearInt, region }, orderBy: { min: 'asc' } });
+    res.json({ success: true, data: { config: cfg || null, brackets } });
+  } catch (error) {
+    console.error('Error in GET /step/regional:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -389,6 +468,20 @@ router.post('/step/municipal', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error in /step/municipal:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/step/municipal', async (req, res) => {
+  try {
+    const { teamId, year, region, municipality } = req.query || {};
+    if (!teamId || !year || !region || !municipality) return res.status(400).json({ error: 'Missing required parameters' });
+    const yearInt = parseInt(year);
+    const cfg = await prisma.tax_municipal_additional.findFirst({ where: { teamId, year: yearInt, region, municipality } });
+    const brackets = await prisma.tax_municipal_additional_bracket_v2.findMany({ where: { teamId, year: yearInt, region, municipality }, orderBy: { min: 'asc' } });
+    res.json({ success: true, data: { config: cfg || null, brackets } });
+  } catch (error) {
+    console.error('Error in GET /step/municipal:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -515,6 +608,297 @@ router.post('/copy-from-year', async (req, res) => {
     res.json({ success: true, message: `Copied fiscal setup from ${fromYear} to ${toYear}` });
   } catch (error) {
     console.error('Error in /copy-from-year:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/fiscal-setup/year
+ * Crea un nuovo anno "vuoto" (opzionale: crea solo un record scenario placeholder)
+ * Body: { teamId, year }
+ */
+router.post('/year', async (req, res) => {
+  try {
+    const { teamId, year } = req.body || {};
+    if (!teamId || !year) return res.status(400).json({ error: 'Missing required fields: teamId, year' });
+    const yearInt = parseInt(year);
+    // Crea uno scenario placeholder se non esiste nulla per quell'anno
+    const existingAny = await prisma.fiscal_scenario.findFirst({ where: { teamId, year: yearInt } });
+    if (!existingAny) {
+      await prisma.fiscal_scenario.create({
+        data: {
+          teamId,
+          year: yearInt,
+          contractType: null,
+          region: null,
+          municipality: null,
+          name: `${yearInt} • Vuoto`,
+          isDefault: false
+        }
+      });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error in POST /year:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/fiscal-setup/year
+ * Elimina TUTTE le configurazioni fiscali per un anno del team (operazione distruttiva)
+ * Query: teamId, year
+ */
+router.delete('/year', async (req, res) => {
+  try {
+    const { teamId, year } = req.query || {};
+    if (!teamId || !year) return res.status(400).json({ error: 'Missing required parameters: teamId, year' });
+    const yearInt = parseInt(year);
+
+    // Elimina scenari espliciti
+    await prisma.fiscal_scenario.deleteMany({ where: { teamId, year: yearInt } });
+    // Elimina dati V2 e legacy collegati all'anno
+    await prisma.tax_rate_v2.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_contribution_point.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_contribution_bracket.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_contribution_profile.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_irpef_bracket.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_config.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_regional_additional_bracket_v2.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_regional_additional.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_municipal_additional_bracket_v2.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_municipal_additional.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_bonus_l207_band.deleteMany({ where: { teamId, year: yearInt } });
+    await prisma.tax_extra_deduction_l207.deleteMany({ where: { teamId, year: yearInt } });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error in DELETE /year:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+// ==============================
+// SCENARIOS - EXPLICIT METADATA
+// ==============================
+
+async function computeScenarioStatus({ teamId, year, contractType, region, municipality }) {
+  const yearInt = parseInt(year);
+  // Reuse same checks as /status
+  const rates = contractType ? await prisma.tax_rate_v2.findFirst({ where: { teamId, year: yearInt, contractType } }) : null;
+  const contribProfile = contractType ? await prisma.tax_contribution_profile.findFirst({ where: { teamId, year: yearInt, contractType } }) : null;
+  const irpef = await prisma.tax_irpef_bracket.findFirst({ where: { teamId, year: yearInt } });
+  const detractions = await prisma.tax_config.findFirst({ where: { teamId, year: yearInt } });
+  const regional = region ? await prisma.tax_regional_additional.findFirst({ where: { teamId, year: yearInt, region } }) : null;
+  const municipal = (region && municipality) ? await prisma.tax_municipal_additional.findFirst({ where: { teamId, year: yearInt, region, municipality } }) : null;
+  const l207 = await prisma.tax_bonus_l207_band.findFirst({ where: { teamId, year: yearInt } });
+  return {
+    rates: !!rates,
+    contributions: !!contribProfile,
+    irpef: !!irpef,
+    detractions: !!detractions,
+    regional: region ? !!regional : null,
+    municipal: (region && municipality) ? !!municipal : null,
+    l207: !!l207
+  };
+}
+
+/**
+ * GET /api/fiscal-setup/scenarios
+ * Lista scenari espliciti (tabella fiscal_scenarios) con completezza
+ */
+router.get('/scenarios', async (req, res) => {
+  try {
+    const { teamId, year } = req.query;
+    if (!teamId) return res.status(400).json({ error: 'Missing required parameter: teamId' });
+    const where = { teamId, ...(year ? { year: parseInt(year) } : {}) };
+    const items = await prisma.fiscal_scenario.findMany({
+      where,
+      orderBy: [{ createdAt: 'asc' }]
+    });
+    const enriched = await Promise.all(items.map(async (s) => {
+      const status = await computeScenarioStatus({ teamId: s.teamId, year: s.year, contractType: s.contractType || undefined, region: s.region || undefined, municipality: s.municipality || undefined });
+      return { ...s, status };
+    }));
+    res.json(enriched);
+  } catch (error) {
+    console.error('Error in GET /scenarios:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/fiscal-setup/scenarios
+ * Crea scenario esplicito
+ */
+router.post('/scenarios', async (req, res) => {
+  try {
+    const { teamId, year, contractType, region, municipality, name, isDefault } = req.body || {};
+    if (!teamId || !year || !name) return res.status(400).json({ error: 'Missing required fields: teamId, year, name' });
+    const data = {
+      teamId,
+      year: parseInt(year),
+      contractType: contractType || null,
+      region: region || null,
+      municipality: municipality || null,
+      name,
+      isDefault: !!isDefault
+    };
+    const created = await prisma.fiscal_scenario.upsert({
+      where: { id: '00000000-0000-0000-0000-000000000000' },
+      update: {},
+      create: data
+    }).catch(async () => {
+      // Fallback safe-upsert per compatibilità con nomi vincoli univoci
+      const existing = await prisma.fiscal_scenario.findFirst({
+        where: { teamId: data.teamId, year: data.year, contractType: data.contractType, region: data.region, municipality: data.municipality }
+      });
+      if (existing) {
+        return prisma.fiscal_scenario.update({ where: { id: existing.id }, data: { name: data.name, isDefault: data.isDefault } });
+      }
+      return prisma.fiscal_scenario.create({ data });
+    });
+    const status = await computeScenarioStatus({ teamId: created.teamId, year: created.year, contractType: created.contractType || undefined, region: created.region || undefined, municipality: created.municipality || undefined });
+    res.json({ success: true, data: { ...created, status } });
+  } catch (error) {
+    console.error('Error in POST /scenarios:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PATCH /api/fiscal-setup/scenarios/:id
+ * Aggiorna nome o flag default
+ */
+router.patch('/scenarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, isDefault } = req.body || {};
+    const updated = await prisma.fiscal_scenario.update({ where: { id }, data: { ...(name != null ? { name } : {}), ...(isDefault != null ? { isDefault: !!isDefault } : {}) } });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Error in PATCH /scenarios/:id:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/fiscal-setup/scenarios/:id
+ */
+router.delete('/scenarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.fiscal_scenario.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error in DELETE /scenarios/:id:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+/**
+ * GET /api/fiscal-setup/scenarios
+ * Ritorna tutti gli scenari configurati per teamId e year
+ */
+router.get('/scenarios', async (req, res) => {
+  try {
+    const { teamId, year } = req.query;
+    
+    if (!teamId || !year) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters: teamId, year' 
+      });
+    }
+
+    const yearInt = parseInt(year);
+
+    // Trova tutte le combinazioni uniche di contractType + region + municipality
+    // che hanno almeno una configurazione salvata
+    const scenarios = [];
+
+    // 1. Scenari con aliquote configurate
+    const ratesScenarios = await prisma.tax_rate_v2.findMany({
+      where: { teamId, year: yearInt },
+      select: { contractType: true }
+    });
+
+    // 2. Scenari con addizionali regionali
+    const regionalScenarios = await prisma.tax_regional_additional.findMany({
+      where: { teamId, year: yearInt },
+      select: { region: true }
+    });
+
+    // 3. Scenari con addizionali comunali
+    const municipalScenarios = await prisma.tax_municipal_additional.findMany({
+      where: { teamId, year: yearInt },
+      select: { region: true, municipality: true }
+    });
+
+    // Combina tutti gli scenari unici
+    const scenarioMap = new Map();
+
+    // Aggiungi scenari da aliquote (solo contractType)
+    ratesScenarios.forEach(rate => {
+      const key = `${rate.contractType}|||`;
+      if (!scenarioMap.has(key)) {
+        scenarioMap.set(key, {
+          id: key,
+          contractType: rate.contractType,
+          region: null,
+          municipality: null,
+          hasRates: true,
+          hasRegional: false,
+          hasMunicipal: false
+        });
+      } else {
+        scenarioMap.get(key).hasRates = true;
+      }
+    });
+
+    // Aggiungi scenari da addizionali regionali
+    regionalScenarios.forEach(regional => {
+      const key = `|||${regional.region}||`;
+      if (!scenarioMap.has(key)) {
+        scenarioMap.set(key, {
+          id: key,
+          contractType: null,
+          region: regional.region,
+          municipality: null,
+          hasRates: false,
+          hasRegional: true,
+          hasMunicipal: false
+        });
+      } else {
+        scenarioMap.get(key).hasRegional = true;
+      }
+    });
+
+    // Aggiungi scenari da addizionali comunali
+    municipalScenarios.forEach(municipal => {
+      const key = `|||${municipal.region}|${municipal.municipality}`;
+      if (!scenarioMap.has(key)) {
+        scenarioMap.set(key, {
+          id: key,
+          contractType: null,
+          region: municipal.region,
+          municipality: municipal.municipality,
+          hasRates: false,
+          hasRegional: false,
+          hasMunicipal: true
+        });
+      } else {
+        scenarioMap.get(key).hasMunicipal = true;
+      }
+    });
+
+    // Converti in array e genera ID più leggibili
+    const scenariosArray = Array.from(scenarioMap.values()).map((scenario, index) => ({
+      ...scenario,
+      id: `scenario_${index + 1}`,
+      displayName: `${scenario.contractType || 'N/A'} - ${scenario.region || 'N/A'}/${scenario.municipality || 'N/A'}`
+    }));
+
+    res.json(scenariosArray);
+  } catch (error) {
+    console.error('Error in /scenarios:', error);
     res.status(500).json({ error: error.message });
   }
 });

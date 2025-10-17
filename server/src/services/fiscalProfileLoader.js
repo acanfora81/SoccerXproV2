@@ -7,7 +7,7 @@ const engine = require('../lib/tax/engine-dynamic');
  * Ritorna oggetto "p" per engine-dynamic in base a team/year/contractType/region/municipality
  */
 async function loadFiscalProfile({ teamId, year, contractType, region, municipality }) {
-  console.log(`📊 [FiscalProfileLoader] Loading profile for team=${teamId}, year=${year}, type=${contractType}, region=${region}, municipality=${municipality}`);
+  console.log(`[FiscalProfileLoader] Loading profile for team=${teamId}, year=${year}, type=${contractType}, region=${region}, municipality=${municipality}`);
   
   // Rates base (worker/employer + fondo)
   const base = await prisma.tax_rate_v2.findFirst({ 

@@ -113,7 +113,7 @@ File: `client_v3/src/features/taxes/FiscalSetupPage.jsx`
 ```javascript
 {
   id: 'fiscal-setup',
-  label: '⚙️ Configurazione Fiscale',
+  label: 'Configurazione Fiscale',
   path: '/dashboard/tax/fiscal-setup',
   requiredPermission: 'contracts:write'
 }
@@ -216,5 +216,8 @@ Usa `/api/fiscal-setup/copy-from-year` per duplicare configurazioni esistenti op
 
 **Implementazione completata il**: 15 Ottobre 2025  
 **Stato**: ✅ Pronto per migrazione DB e test end-to-end
+
+
+
 
 

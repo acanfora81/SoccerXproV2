@@ -70,7 +70,7 @@ const L207Step = () => {
                       updated[index].max_amount = parseFloat(e.target.value);
                       setBands(updated);
                     }}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                   />
                 </div>
                 <div>
@@ -86,7 +86,7 @@ const L207Step = () => {
                       updated[index].pct = parseFloat(e.target.value);
                       setBands(updated);
                     }}
-                    className="w-full border rounded px-3 py-2"
+                    className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                   />
                 </div>
               </div>
@@ -113,7 +113,7 @@ const L207Step = () => {
                     ...extraDeduction,
                     full: parseFloat(e.target.value)
                   })}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
               <div>
@@ -127,7 +127,7 @@ const L207Step = () => {
                     ...extraDeduction,
                     full_to: parseFloat(e.target.value)
                   })}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
               <div>
@@ -141,7 +141,7 @@ const L207Step = () => {
                     ...extraDeduction,
                     fade_to: parseFloat(e.target.value)
                   })}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
             </div>

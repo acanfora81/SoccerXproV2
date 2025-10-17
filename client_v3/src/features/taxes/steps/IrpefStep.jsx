@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -8,7 +8,7 @@ import { useFiscalSetup } from '../FiscalSetupProvider';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 const IrpefStep = () => {
-  const { teamId, year, fetchStatus } = useFiscalSetup();
+  const { teamId, year, fetchStatus, setActiveTab, currentScenarioId } = useFiscalSetup();
   const [brackets, setBrackets] = useState([
     { min: 0, max: 28000, rate: 23 },
     { min: 28000, max: 50000, rate: 35 },
@@ -43,6 +43,7 @@ const IrpefStep = () => {
       );
 
       setMessage({ type: 'success', text: 'Scaglioni IRPEF salvati con successo!' });
+      setActiveTab('detractions');
       fetchStatus();
     } catch (error) {
       console.error('Error saving IRPEF:', error);
@@ -51,6 +52,19 @@ const IrpefStep = () => {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    const load = async () => {
+      if (!teamId || !year) return;
+      try {
+        const res = await axios.get('/api/fiscal-setup/step/irpef', { params: { teamId, year }, withCredentials: true });
+        if (Array.isArray(res.data?.data) && res.data.data.length > 0) {
+          setBrackets(res.data.data.map(b => ({ min: b.min, max: b.max, rate: b.rate })));
+        }
+      } catch (e) {}
+    };
+    load();
+  }, [teamId, year, currentScenarioId]);
 
   return (
     <Card>
@@ -64,9 +78,9 @@ const IrpefStep = () => {
           </p>
 
           {/* Table */}
-          <div className="border rounded">
+          <div className="border rounded dark:border-gray-700 dark:bg-gray-900">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-800 dark:text-gray-100">
                 <tr>
                   <th className="px-4 py-2 text-left text-sm font-medium">Da (€)</th>
                   <th className="px-4 py-2 text-left text-sm font-medium">A (€)</th>
@@ -76,13 +90,13 @@ const IrpefStep = () => {
               </thead>
               <tbody>
                 {brackets.map((bracket, index) => (
-                  <tr key={index} className="border-t">
+                  <tr key={index} className="border-t dark:border-gray-700">
                     <td className="px-4 py-2">
                       <input
                         type="number"
                         value={bracket.min}
                         onChange={(e) => updateBracket(index, 'min', e.target.value)}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -91,7 +105,7 @@ const IrpefStep = () => {
                         value={bracket.max || ''}
                         onChange={(e) => updateBracket(index, 'max', e.target.value)}
                         placeholder="∞"
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -100,7 +114,7 @@ const IrpefStep = () => {
                         step="0.01"
                         value={bracket.rate}
                         onChange={(e) => updateBracket(index, 'rate', e.target.value)}
-                        className="w-full border rounded px-2 py-1"
+                        className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                       />
                     </td>
                     <td className="px-4 py-2">

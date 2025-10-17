@@ -9,6 +9,7 @@ const API_BASE_URL = 'http://localhost:3001';
  * Gestisce stipendio, bonus e tutti i campi monetari in modo unificato
  */
 export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType, region, municipality) => {
+  // Con architettura V2 non servono più le aliquote legacy lato FE
   const [taxRates, setTaxRates] = useState(null);
   const [bonusTaxRates, setBonusTaxRates] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType, 
   const [error, setError] = useState(null);
 
 
-  // Recupera tutte le aliquote fiscali
+  // Recupera solo le aliquote BONUS (le aliquote stipendio legacy non sono più usate)
   const fetchAllTaxRates = useCallback(async () => {
     console.log('🔵 fetchAllTaxRates chiamata con:', { teamId, contractYear, contractType });
     
@@ -30,73 +31,9 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType, 
     try {
       setLoading(true);
       setError(null);
-      
-      // Recupera aliquote stipendio
-      console.log('🔵 Chiamando API taxrates con URL:', `${API_BASE_URL}/api/taxrates?teamId=${teamId}`);
-      const taxResponse = await axios.get(`${API_BASE_URL}/api/taxrates?teamId=${teamId}`, {
-        withCredentials: true
-      });
-      console.log('🔵 RISPOSTA API TAXRATES:', taxResponse.data);
-      
-      if (taxResponse.data.success) {
-        console.log('🔵 TUTTE LE ALIQUOTE DISPONIBILI:', taxResponse.data.data);
-        
-        // Controllo sia valori inglesi che italiani per compatibility
-        const contractTypeMapping = {
-          'PROFESSIONAL': ['PROFESSIONAL', 'Professionista'],
-          'APPRENTICESHIP': ['APPRENTICESHIP', 'Apprendistato'],
-          'TRAINING_AGREEMENT': ['TRAINING_AGREEMENT', 'Accordo formativo'],
-          'AMATEUR': ['AMATEUR', 'Dilettante'],
-          'YOUTH': ['YOUTH', 'Giovanile'],
-          'LOAN': ['LOAN', 'Prestito'],
-          'PERMANENT': ['PERMANENT', 'Permanente'],
-          'TRIAL': ['TRIAL', 'Prova']
-        };
-        
-        // Cerca con entrambe le varianti (inglese e italiana)
-        const possibleTypes = contractTypeMapping[contractType.toUpperCase()] || [contractType.toUpperCase()];
-        
-        const rate = taxResponse.data.data.find(r => {
-          const yearMatch = r.year === parseInt(contractYear);
-          const typeMatch = possibleTypes.includes(r.type);
-          console.log('🔵 CONFRONTO ALIQUOTA:', { 
-            rateYear: r.year, 
-            rateType: r.type, 
-            yearMatch, 
-            typeMatch,
-            possibleTypes,
-            aliquota: r
-          });
-          return yearMatch && typeMatch;
-        });
-        
-        console.log('🔵 RICERCA ALIQUOTE PER:', { 
-          contractType, 
-          possibleTypes, 
-          year: contractYear, 
-          yearType: typeof contractYear 
-        });
-        
-        console.log('🔵 ALIQUOTE STIPENDIO:', rate ? 'TROVATE' : 'NON TROVATE', { contractType, possibleTypes, year: contractYear, rate });
-        
-        if (rate) {
-          console.log('🔵 DETTAGLIO ALIQUOTA TROVATA (DB):', rate);
-          // Usa i valori esattamente come da DB (DB-driven)
-          setTaxRates({
-            inpsWorker: rate.inpsWorker,
-            inpsEmployer: rate.inpsEmployer,
-            ffcWorker: rate.ffcWorker,
-            ffcEmployer: rate.ffcEmployer,
-            inailEmployer: rate.inailEmployer,
-            solidarityWorker: rate.solidarityWorker,
-            solidarityEmployer: rate.solidarityEmployer
-          });
-        } else {
-          setTaxRates(null);
-        }
-      } else {
-        console.log('🔴 API TAXRATES: success = false', taxResponse.data);
-      }
+
+      // Non recuperiamo più le aliquote stipendio legacy (tabella tax_rates rimossa)
+      setTaxRates(null);
 
       // Recupera aliquote bonus
       console.log('🔵 Chiamando API bonus con URL:', `${API_BASE_URL}/api/bonustaxrates?teamId=${teamId}`);
@@ -144,34 +81,27 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType, 
   }, [teamId, contractYear, contractType]);
 
 
-  // Calcola stipendio dal netto usando l'API backend
+  // Calcola stipendio dal netto usando l'API backend V2
   const calculateSalaryFromNet = useCallback(async (netSalary) => {
     if (!netSalary || netSalary <= 0) {
       return { netSalary: 0, grossSalary: 0, companyCost: 0 };
     }
-    
-    // Verifica che taxRates sia disponibile
-    if (!taxRates) {
-      console.warn('⚠️ calculateSalaryFromNet: taxRates non disponibili, saltando calcolo');
-      return { netSalary: 0, grossSalary: 0, companyCost: 0 };
-    }
-    
+
     try {
       setCalculating(true);
       const payload = {
         netSalary,
-        taxRates: taxRates,
         year: contractYear || 2025,
         region: region || null,
         municipality: municipality || null,
         contractType: contractType,
         teamId: teamId
       };
-      console.log('🟦 [FE] POST /api/taxes/gross-from-net payload:', payload);
-      const response = await axios.post(`${API_BASE_URL}/api/taxes/gross-from-net`, payload, {
+      console.log('🟦 [FE] POST /api/taxes/v2/gross-from-net payload:', payload);
+      const response = await axios.post(`${API_BASE_URL}/api/taxes/v2/gross-from-net`, payload, {
         withCredentials: true
       });
-      console.log('🟩 [FE] Response /api/taxes/gross-from-net:', response.data);
+      console.log('🟩 [FE] Response /api/taxes/v2/gross-from-net:', response.data);
       if (response.data.success) {
         return response.data.data;
       } else {
@@ -183,9 +113,9 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType, 
     } finally {
       setCalculating(false);
     }
-  }, [taxRates, contractYear, contractType, teamId]);
+  }, [contractYear, contractType, teamId, region, municipality]);
 
-  // Calcola stipendio dal lordo usando l'API backend
+  // Calcola stipendio dal lordo usando l'API backend V2
   const calculateSalaryFromGross = useCallback(async (grossSalary) => {
     if (!grossSalary || grossSalary <= 0) {
       return { netSalary: 0, grossSalary: 0, companyCost: 0 };
@@ -194,18 +124,17 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType, 
       setCalculating(true);
       const payload = {
         grossSalary,
-        taxRates: taxRates,
         year: contractYear || 2025,
         region: region || null,
         municipality: municipality || null,
         contractType: contractType,
         teamId: teamId
       };
-      console.log('🟦 [FE] POST /api/taxes/net-from-gross payload:', payload);
-      const response = await axios.post(`${API_BASE_URL}/api/taxes/net-from-gross`, payload, {
+      console.log('🟦 [FE] POST /api/taxes/v2/net-from-gross payload:', payload);
+      const response = await axios.post(`${API_BASE_URL}/api/taxes/v2/net-from-gross`, payload, {
         withCredentials: true
       });
-      console.log('🟩 [FE] Response /api/taxes/net-from-gross:', response.data);
+      console.log('🟩 [FE] Response /api/taxes/v2/net-from-gross:', response.data);
       if (response.data.success) {
         return response.data.data;
       } else {
@@ -217,7 +146,7 @@ export const useUnifiedFiscalCalculation = (teamId, contractYear, contractType, 
     } finally {
       setCalculating(false);
     }
-  }, [taxRates, contractYear, contractType, teamId]);
+  }, [contractYear, contractType, teamId, region, municipality]);
 
   // Calcola tasse per un bonus specifico (supporta aliquote personalizzate)
   const calculateBonusTax = useCallback((bonusType, grossAmount, customTaxRate = null) => {

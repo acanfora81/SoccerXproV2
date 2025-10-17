@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -8,7 +8,7 @@ import { useFiscalSetup } from '../FiscalSetupProvider';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 const RegionalStep = () => {
-  const { teamId, year, region, fetchStatus } = useFiscalSetup();
+  const { teamId, year, region, fetchStatus, setActiveTab, currentScenarioId } = useFiscalSetup();
   const [isProgressive, setIsProgressive] = useState(false);
   const [flatRate, setFlatRate] = useState(1.73);
   const [brackets, setBrackets] = useState([
@@ -65,6 +65,7 @@ const RegionalStep = () => {
       );
 
       setMessage({ type: 'success', text: 'Addizionale regionale salvata!' });
+      setActiveTab('municipal');
       fetchStatus();
     } catch (error) {
       console.error('Error saving regional:', error);
@@ -73,6 +74,28 @@ const RegionalStep = () => {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    const load = async () => {
+      if (!teamId || !year || !region) return;
+      try {
+        const res = await axios.get('/api/fiscal-setup/step/regional', { params: { teamId, year, region }, withCredentials: true });
+        const data = res.data?.data;
+        if (data?.config) {
+          setIsProgressive(!!data.config.is_progressive);
+          if (data.config.is_progressive) {
+            setBrackets((data.brackets || []).map(b => ({ min: Number(b.min), max: b.max == null ? null : Number(b.max), rate: Number(b.rate) })));
+          } else {
+            setBrackets([{ min: 0, max: null, rate: 0 }]);
+          }
+          if (!data.config.is_progressive && data.config.flat_rate != null) {
+            setFlatRate(Number(data.config.flat_rate));
+          }
+        }
+      } catch (e) {}
+    };
+    load();
+  }, [teamId, year, region, currentScenarioId]);
 
   return (
     <Card>
@@ -106,7 +129,7 @@ const RegionalStep = () => {
                 step="0.01"
                 value={flatRate}
                 onChange={(e) => setFlatRate(parseFloat(e.target.value) || 0)}
-                className="w-full max-w-xs border rounded px-3 py-2"
+                className="w-full max-w-xs border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
               />
             </div>
           ) : (
@@ -126,7 +149,7 @@ const RegionalStep = () => {
 
               <div className="space-y-2">
                 {brackets.map((bracket, index) => (
-                  <div key={index} className="flex items-center gap-2 bg-gray-50 p-3 rounded">
+                  <div key={index} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900 border dark:border-gray-700 p-3 rounded">
                     <div className="flex-1 grid grid-cols-3 gap-2">
                       <div>
                         <label className="text-xs text-gray-600">Da €</label>
@@ -134,7 +157,7 @@ const RegionalStep = () => {
                           type="number"
                           value={bracket.min}
                           onChange={(e) => updateBracket(index, 'min', e.target.value)}
-                          className="w-full border rounded px-2 py-1 text-sm"
+                          className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                         />
                       </div>
                       <div>
@@ -144,7 +167,7 @@ const RegionalStep = () => {
                           value={bracket.max || ''}
                           onChange={(e) => updateBracket(index, 'max', e.target.value)}
                           placeholder="∞"
-                          className="w-full border rounded px-2 py-1 text-sm"
+                          className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                         />
                       </div>
                       <div>
@@ -154,7 +177,7 @@ const RegionalStep = () => {
                           step="0.01"
                           value={bracket.rate}
                           onChange={(e) => updateBracket(index, 'rate', e.target.value)}
-                          className="w-full border rounded px-2 py-1 text-sm"
+                          className="w-full border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                         />
                       </div>
                     </div>
@@ -170,6 +193,14 @@ const RegionalStep = () => {
                 ))}
               </div>
             </div>
+          )}
+
+          {!region && (
+            <Alert className="border-yellow-500">
+              <AlertDescription>
+                ⚠️ Specifica una regione nel tab "Configurazione" per abilitare il salvataggio
+              </AlertDescription>
+            </Alert>
           )}
 
           {message && (

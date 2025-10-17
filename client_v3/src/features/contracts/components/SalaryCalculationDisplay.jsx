@@ -19,6 +19,11 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
     );
   }
 
+  // Percentuale addizionali effettiva calcolata su imponibile
+  const effectiveAdditionalsPct = calculation?.taxableIncome
+    ? ((calculation.addizionali || 0) / calculation.taxableIncome) * 100
+    : null;
+
   return (
     <Card>
       <CardHeader>
@@ -126,7 +131,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
                 </div>
                 
                 <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded border">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Addizionali (1,73%):</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Addizionali ({effectiveAdditionalsPct != null ? effectiveAdditionalsPct.toFixed(2).replace('.', ',') : '—'}%):</span>
                   <span className="font-semibold text-yellow-600 dark:text-yellow-400">
                     €{calculation.addizionali?.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
                   </span>

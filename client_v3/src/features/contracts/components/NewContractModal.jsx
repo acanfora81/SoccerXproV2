@@ -162,10 +162,6 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
   );
 
   const performUnifiedCalculation = useCallback(() => {
-    if (!taxRates) {
-      setUnifiedCalculations(null);
-      return;
-    }
 
     const calculationData = {
       salary: parseItalianNumberToFloat(formData.salary),
@@ -215,7 +211,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
         .then((calculations) => setUnifiedCalculations(calculations))
         .catch(() => setUnifiedCalculations(null));
     }
-  }, [taxRates, bonusTaxRates, calculationMode, formData, bonusModes, calculateUnified, calculateSalaryFromNet]);
+  }, [bonusTaxRates, calculationMode, formData, bonusModes, calculateUnified, calculateSalaryFromNet]);
 
   const handleNumberInput = useCallback((e, fieldName) => {
     const { value } = e.target;
@@ -697,6 +693,35 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                     className="input-base" 
                   />
                 </div>
+                <div className="space-y-2">
+                  <label htmlFor="region" className="text-sm font-medium text-foreground">Regione (per addizionali)</label>
+                  <input 
+                    type="text" 
+                    id="region" 
+                    name="region" 
+                    value={formData.region}
+                    onChange={handleChange}
+                    disabled={loading}
+                    placeholder="Es. Marche"
+                    className="input-base"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="municipality" className="text-sm font-medium text-foreground">Comune (per addizionali)</label>
+                  <input 
+                    type="text" 
+                    id="municipality" 
+                    name="municipality" 
+                    value={formData.municipality}
+                    onChange={handleChange}
+                    disabled={loading}
+                    placeholder="Es. Pesaro"
+                    className="input-base"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -787,18 +812,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                   </Card>
                 )}
 
-                {!taxRates && !taxLoading && (formData.netSalary || formData.salary) && (
-                  <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                        <Percent size={16} />
-                        <span>Nessuna aliquota fiscale trovata per {formData.startDate ? new Date(formData.startDate).getFullYear() : 'questo anno'} e tipo contratto "{formData.contractType}". Carica le aliquote dalla sezione "Carica Aliquote".</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {taxRates && (
+                {(unifiedCalculations?.salary || taxCalculating) && (
                   <SalaryCalculationDisplay
                     calculation={unifiedCalculations?.salary}
                     calculationMode={calculationMode}
@@ -808,16 +822,6 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
                   />
                 )}
 
-                {taxRates && !unifiedCalculations?.salary && (formData.netSalary || formData.salary) && (
-                  <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                        <Percent size={16} />
-                        <span>Inserisci un valore per {calculationMode === 'net' ? 'lo stipendio netto' : 'lo stipendio lordo'} per vedere i calcoli automatici</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

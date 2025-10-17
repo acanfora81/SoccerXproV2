@@ -139,14 +139,29 @@ router.post('/v2/net-from-gross', async (req, res) => {
     const solidarityEmployer = G * (profile._rawRates.solidarityEmployer / 100);
     const totaleContributiEmployer = inpsEmployer + inailEmployer + ffcEmployer + solidarityEmployer;
     const companyCost = G + totaleContributiEmployer + (G * profile.fondoRate);
+    // Breakdown lavoratore: ripartiamo il totale in proporzione alle % raw
+    const workerRateSum = (profile._rawRates.inpsWorker || 0) + (profile._rawRates.ffcWorker || 0) + (profile._rawRates.solidarityWorker || 0);
+    const inpsWorkerAmt = workerRateSum > 0 ? (result.contrib * (profile._rawRates.inpsWorker || 0) / workerRateSum) : 0;
+    const ffcWorkerAmt = workerRateSum > 0 ? (result.contrib * (profile._rawRates.ffcWorker || 0) / workerRateSum) : 0;
+    const solidarityWorkerAmt = workerRateSum > 0 ? (result.contrib * (profile._rawRates.solidarityWorker || 0) / workerRateSum) : 0;
     
     const response = {
       grossSalary: result.lordo,
       netSalary: result.netto,
       totaleContributiWorker: result.contrib,
+      inpsWorker: Math.round(inpsWorkerAmt * 100) / 100,
+      ffcWorker: Math.round(ffcWorkerAmt * 100) / 100,
+      solidarityWorker: Math.round(solidarityWorkerAmt * 100) / 100,
+      // Employer breakdown (per UI)
+      inpsEmployer: Math.round(inpsEmployer * 100) / 100,
+      inailEmployer: Math.round(inailEmployer * 100) / 100,
+      ffcEmployer: Math.round(ffcEmployer * 100) / 100,
+      solidarityEmployer: Math.round(solidarityEmployer * 100) / 100,
       totaleContributiEmployer: Math.round(totaleContributiEmployer * 100) / 100,
       companyCost: Math.round(companyCost * 100) / 100,
+      // Compatibilità nomi
       imponibileFiscale: result.imponibile,
+      taxableIncome: result.imponibile,
       irpef: result.irpef,
       detrazione: result.detraz,
       l207Discount: result.l207Discount,
@@ -154,6 +169,7 @@ router.post('/v2/net-from-gross', async (req, res) => {
       irpefAfterL207: result.irpefAfterL207,
       addRegionale: result.addReg,
       addComunale: result.addCity,
+      addizionali: Math.round((result.addReg + result.addCity) * 100) / 100,
       totalTax: result.totalTax,
       _rawRates: profile._rawRates
     };
@@ -214,14 +230,29 @@ router.post('/v2/gross-from-net', async (req, res) => {
     const solidarityEmployer = G * (profile._rawRates.solidarityEmployer / 100);
     const totaleContributiEmployer = inpsEmployer + inailEmployer + ffcEmployer + solidarityEmployer;
     const companyCost = G + totaleContributiEmployer + (G * profile.fondoRate);
+    // Breakdown lavoratore: ripartiamo il totale in proporzione alle % raw
+    const workerRateSum2 = (profile._rawRates.inpsWorker || 0) + (profile._rawRates.ffcWorker || 0) + (profile._rawRates.solidarityWorker || 0);
+    const inpsWorkerAmt2 = workerRateSum2 > 0 ? (result.contrib * (profile._rawRates.inpsWorker || 0) / workerRateSum2) : 0;
+    const ffcWorkerAmt2 = workerRateSum2 > 0 ? (result.contrib * (profile._rawRates.ffcWorker || 0) / workerRateSum2) : 0;
+    const solidarityWorkerAmt2 = workerRateSum2 > 0 ? (result.contrib * (profile._rawRates.solidarityWorker || 0) / workerRateSum2) : 0;
     
     const response = {
       grossSalary: result.lordo,
       netSalary: result.netto,
       totaleContributiWorker: result.contrib,
+      inpsWorker: Math.round(inpsWorkerAmt2 * 100) / 100,
+      ffcWorker: Math.round(ffcWorkerAmt2 * 100) / 100,
+      solidarityWorker: Math.round(solidarityWorkerAmt2 * 100) / 100,
+      // Employer breakdown (per UI)
+      inpsEmployer: Math.round(inpsEmployer * 100) / 100,
+      inailEmployer: Math.round(inailEmployer * 100) / 100,
+      ffcEmployer: Math.round(ffcEmployer * 100) / 100,
+      solidarityEmployer: Math.round(solidarityEmployer * 100) / 100,
       totaleContributiEmployer: Math.round(totaleContributiEmployer * 100) / 100,
       companyCost: Math.round(companyCost * 100) / 100,
+      // Compatibilità nomi
       imponibileFiscale: result.imponibile,
+      taxableIncome: result.imponibile,
       irpef: result.irpef,
       detrazione: result.detraz,
       l207Discount: result.l207Discount,
@@ -229,6 +260,7 @@ router.post('/v2/gross-from-net', async (req, res) => {
       irpefAfterL207: result.irpefAfterL207,
       addRegionale: result.addReg,
       addComunale: result.addCity,
+      addizionali: Math.round((result.addReg + result.addCity) * 100) / 100,
       totalTax: result.totalTax,
       _rawRates: profile._rawRates
     };

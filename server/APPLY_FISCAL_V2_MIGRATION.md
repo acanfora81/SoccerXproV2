@@ -171,3 +171,6 @@ DROP TABLE IF EXISTS soccerxpro.tax_contribution_profiles CASCADE;
 **Nota**: Una volta applicata la migrazione e popolate le tabelle, il sistema fiscale sarà completamente DB-driven e configurabile via UI.
 
 
+
+
+

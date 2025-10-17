@@ -426,3 +426,6 @@ BEGIN
     RAISE NOTICE '⚠️  Per eliminare tabelle legacy, usa cleanup_legacy_tax_tables.sql';
 END $$;
 
+
+
+

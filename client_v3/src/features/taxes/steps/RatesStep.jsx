@@ -8,7 +8,7 @@ import { useFiscalSetup } from '../FiscalSetupProvider';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 const RatesStep = () => {
-  const { teamId, year, contractType, fetchStatus } = useFiscalSetup();
+  const { teamId, year, contractType, fetchStatus, setActiveTab, currentScenarioId } = useFiscalSetup();
   const [rates, setRates] = useState({
     inpsWorkerPct: 9.19,
     ffcWorkerPct: 0.5,
@@ -56,6 +56,8 @@ const RatesStep = () => {
       );
 
       setMessage({ type: 'success', text: 'Aliquote salvate con successo!' });
+      // Avanza alla tab successiva
+      setActiveTab('irpef');
       fetchStatus();
     } catch (error) {
       console.error('Error saving rates:', error);
@@ -64,6 +66,36 @@ const RatesStep = () => {
       setSaving(false);
     }
   };
+
+  // Carica dati salvati quando cambia scenario/tab
+  useEffect(() => {
+    const load = async () => {
+      if (!teamId || !year || !contractType) return;
+      try {
+        const res = await axios.get('/api/fiscal-setup/step/rates', {
+          params: { teamId, year, contractType },
+          withCredentials: true
+        });
+        if (res.data?.data) {
+          const d = res.data.data;
+          setRates(prev => ({
+            ...prev,
+            inpsWorkerPct: parseFloat(d.inpsWorkerPct ?? prev.inpsWorkerPct),
+            ffcWorkerPct: parseFloat(d.ffcWorkerPct ?? prev.ffcWorkerPct),
+            solidarityWorkerPct: parseFloat(d.solidarityWorkerPct ?? prev.solidarityWorkerPct),
+            inpsEmployerPct: parseFloat(d.inpsEmployerPct ?? prev.inpsEmployerPct),
+            ffcEmployerPct: parseFloat(d.ffcEmployerPct ?? prev.ffcEmployerPct),
+            inailEmployerPct: parseFloat(d.inailEmployerPct ?? prev.inailEmployerPct),
+            solidarityEmployerPct: parseFloat(d.solidarityEmployerPct ?? prev.solidarityEmployerPct),
+            fondoRatePct: parseFloat(d.fondoRatePct ?? prev.fondoRatePct)
+          }));
+        }
+      } catch (e) {
+        // silenzioso: se non esiste ancora nessun dato, mantieni i placeholder
+      }
+    };
+    load();
+  }, [teamId, year, contractType, currentScenarioId]);
 
   return (
     <Card>
@@ -89,7 +121,7 @@ const RatesStep = () => {
                   step="0.01"
                   value={rates.inpsWorkerPct}
                   onChange={(e) => handleChange('inpsWorkerPct', e.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
               <div>
@@ -102,7 +134,7 @@ const RatesStep = () => {
                   step="0.01"
                   value={rates.ffcWorkerPct}
                   onChange={(e) => handleChange('ffcWorkerPct', e.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
               <div>
@@ -115,7 +147,7 @@ const RatesStep = () => {
                   step="0.01"
                   value={rates.solidarityWorkerPct}
                   onChange={(e) => handleChange('solidarityWorkerPct', e.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
             </div>
@@ -138,7 +170,7 @@ const RatesStep = () => {
                   step="0.01"
                   value={rates.inpsEmployerPct}
                   onChange={(e) => handleChange('inpsEmployerPct', e.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
               <div>
@@ -151,7 +183,7 @@ const RatesStep = () => {
                   step="0.01"
                   value={rates.inailEmployerPct}
                   onChange={(e) => handleChange('inailEmployerPct', e.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
               <div>
@@ -164,7 +196,7 @@ const RatesStep = () => {
                   step="0.01"
                   value={rates.ffcEmployerPct}
                   onChange={(e) => handleChange('ffcEmployerPct', e.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
               <div>
@@ -177,7 +209,7 @@ const RatesStep = () => {
                   step="0.01"
                   value={rates.solidarityEmployerPct}
                   onChange={(e) => handleChange('solidarityEmployerPct', e.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
                 />
               </div>
             </div>
@@ -194,7 +226,7 @@ const RatesStep = () => {
               step="0.01"
               value={rates.fondoRatePct}
               onChange={(e) => handleChange('fondoRatePct', e.target.value)}
-              className="w-full max-w-xs border rounded px-3 py-2"
+              className="w-full max-w-xs border rounded px-3 py-2 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400 dark:border-gray-700"
             />
           </div>
 

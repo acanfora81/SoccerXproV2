@@ -120,7 +120,7 @@ const ALL_MENU_ITEMS = [
         submenu: [
           {
             id: 'fiscal-setup',
-            label: '⚙️ Configurazione Fiscale',
+            label: 'Configuratore Fiscale',
             path: '/dashboard/tax/fiscal-setup',
             requiredPermission: 'contracts:write'
           }

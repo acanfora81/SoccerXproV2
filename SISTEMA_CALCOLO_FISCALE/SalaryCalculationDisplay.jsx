@@ -17,6 +17,11 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
     );
   }
 
+  // Percentuale addizionali effettiva calcolata su imponibile
+  const effectiveAdditionalsPct = calculation?.taxableIncome
+    ? ((calculation.addizionali || 0) / calculation.taxableIncome) * 100
+    : null;
+
   return (
     <div className="salary-calculation-display">
       
@@ -117,7 +122,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
                 </span>
               </div>
               <div className="calculation-item">
-                <span className="calculation-label">Addizionali (1,73%):</span>
+                <span className="calculation-label">Addizionali ({effectiveAdditionalsPct != null ? effectiveAdditionalsPct.toFixed(2).replace('.', ',') : '—'}%):</span>
                 <span className="calculation-value addizionali">
                   €{calculation.addizionali?.toLocaleString('it-IT', {
                     minimumFractionDigits: 2,
@@ -262,7 +267,7 @@ const SalaryCalculationDisplay = ({ calculation, calculationMode, inputAmount, t
         {/* Riepilogo Totale con Bonus (se disponibile) */}
         {totalCalculation && (
           <div className="total-summary-section">
-            <h5 className="total-summary-title">📊 Riepilogo Totale Contratto</h5>
+            <h5 className="total-summary-title">Riepilogo Totale Contratto</h5>
             <div className="total-summary-grid">
               <div className="total-summary-item">
                 <span className="total-label">Totale Lordo:</span>

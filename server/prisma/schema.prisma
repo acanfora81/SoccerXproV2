@@ -126,6 +126,7 @@ model Team {
   tax_municipal_additional_brackets_v2 tax_municipal_additional_bracket_v2[] @relation("TaxMunicipalAdditionalBracketV2Team")
   tax_bonus_l207_bands                 tax_bonus_l207_band[]                 @relation("TaxBonusL207BandTeam")
   tax_extra_deduction_l207_entries     tax_extra_deduction_l207[]            @relation("TaxExtraDeductionL207Team")
+  fiscal_scenario                      fiscal_scenario[]                     @relation("FiscalScenarioTeam")
 
   @@map("teams")
   @@schema("soccerxpro")
@@ -3129,5 +3130,27 @@ model tax_extra_deduction_l207 {
 
   @@unique([teamId, year])
   @@map("tax_extra_deduction_l207")
+  @@schema("soccerxpro")
+}
+
+/// Scenario fiscale esplicito (metadati utente)
+model fiscal_scenario {
+  id           String  @id @default(uuid()) @db.Uuid
+  teamId       String  @map("team_id") @db.Uuid
+  year         Int
+  contractType String? @map("contract_type")
+  region       String?
+  municipality String?
+  name         String
+  isDefault    Boolean @default(false) @map("is_default")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team Team @relation("FiscalScenarioTeam", fields: [teamId], references: [id])
+
+  @@unique([teamId, year, contractType, region, municipality], map: "uq_fiscal_scenario_unq")
+  @@index([teamId, year], map: "idx_fiscal_scenario_team_year")
+  @@map("fiscal_scenarios")
   @@schema("soccerxpro")
 }
