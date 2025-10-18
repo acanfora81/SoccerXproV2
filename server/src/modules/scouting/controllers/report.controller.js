@@ -90,15 +90,18 @@ const getReportById = async (req, res) => {
 const createReport = async (req, res) => {
   try {
     const teamId = req.context?.teamId;
-    const userId = req.user?.id;
+    const userId = req.user?.profile?.id;
 
     if (!teamId) {
       return res.status(401).json(errorResponse('No team in session'));
     }
 
+    console.log('[ReportController] Request body:', req.body);
     const validation = createReportSchema.safeParse(req.body);
     if (!validation.success) {
-      return res.status(400).json(errorResponse(validation.error.errors[0].message));
+      console.log('[ReportController] Validation error:', validation.error);
+      const errorMessage = validation.error?.errors?.[0]?.message || validation.error?.issues?.[0]?.message || 'Validation error';
+      return res.status(400).json(errorResponse(errorMessage));
     }
 
     const data = validation.data;

@@ -19,6 +19,14 @@ import {
 
 import { PlayersAPI } from "@/lib/api/players";
 import PhysicalStatsChart from "../components/PhysicalStatsChart";
+import BMIDistributionChart from "../components/BMIDistributionChart";
+import BMIByRoleChart from "../components/BMIByRoleChart";
+import HeightBoxplotByRoleChart from "../components/HeightBoxplotByRoleChart";
+import AgePyramidChart from "../components/AgePyramidChart";
+import BirthMonthDistributionChart from "../components/BirthMonthDistributionChart";
+import JerseyNumberHistogram from "../components/JerseyNumberHistogram";
+import HeightAgeScatterChart from "../components/HeightAgeScatterChart";
+import NationalityWorldMap from "../components/NationalityWorldMap";
 import ContractDistributionChart from "../components/ContractDistributionChart";
 import HeightWeightScatterChart from "../components/HeightWeightScatterChart";
 import AgeDistributionChart from "../components/AgeDistributionChart";
@@ -458,21 +466,108 @@ export default function PlayersStats() {
             </Card>
           </div>
 
-          {/* Terza riga: Mappa Scatter */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Mappa Altezza/Peso Giocatori
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Visualizzazione singoli giocatori per identificare outlier fisici
-              </p>
-            </CardHeader>
-            <CardContent>
-              <HeightWeightScatterChart players={players} />
-            </CardContent>
-          </Card>
+          {/* Terza riga: Nuovi grafici fisici */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Distribuzione BMI
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Classi BMI nella rosa</p>
+              </CardHeader>
+              <CardContent>
+                <BMIDistributionChart players={players} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  BMI medio per Ruolo
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Confronto condizione corporea</p>
+              </CardHeader>
+              <CardContent>
+                <BMIByRoleChart players={players} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quarta riga: Boxplot e Piramide Età */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Boxplot Altezza per Ruolo
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Distribuzione percentili</p>
+              </CardHeader>
+              <CardContent>
+                <HeightBoxplotByRoleChart players={players} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Piramide delle Età per Reparto
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Distribuzione età per fasce</p>
+              </CardHeader>
+              <CardContent>
+                <AgePyramidChart players={players} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quinta riga: Mese di nascita e Numeri maglia */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Distribuzione Mese di Nascita
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Effetto età relativa</p>
+              </CardHeader>
+              <CardContent>
+                <BirthMonthDistributionChart players={players} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Istogramma Numeri di Maglia
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Occupazione 1-99</p>
+              </CardHeader>
+              <CardContent>
+                <JerseyNumberHistogram players={players} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sesta riga: Mappa mondiale a tutta larghezza */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Mappa Mondiale Nazionalità
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Paesi con almeno un giocatore</p>
+              </CardHeader>
+              <CardContent>
+                <NationalityWorldMap players={players} />
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
 
@@ -502,9 +597,9 @@ export default function PlayersStats() {
                       {role}
                     </span>
                     <div className="flex items-center gap-2">
-                      <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-3 shadow-inner">
                         <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                          className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full shadow-sm transition-all duration-500 ease-out" 
                           style={{ width: `${(count / totalPlayers) * 100}%` }}
                         />
                       </div>
@@ -542,9 +637,9 @@ export default function PlayersStats() {
                       {nationality}
                     </span>
                     <div className="flex items-center gap-2">
-                      <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-3 shadow-inner">
                         <div 
-                          className="bg-green-600 h-2 rounded-full" 
+                          className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full shadow-sm transition-all duration-500 ease-out" 
                           style={{ width: `${(count / totalPlayers) * 100}%` }}
                         />
                       </div>
@@ -639,22 +734,22 @@ export default function PlayersStats() {
                       <span className="text-gray-600 dark:text-gray-400">Altezza</span>
                       <span className="font-semibold text-blue-600 dark:text-blue-400">{r.avgHeight || 0} cm</span>
                     </div>
-                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className="absolute inset-y-0 left-0 h-3 bg-blue-500 dark:bg-blue-400" style={{ width: `${pctHCap}%` }} />
+                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                      <div className="absolute inset-y-0 left-0 h-3 bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 shadow-sm transition-all duration-500 ease-out" style={{ width: `${pctHCap}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">Peso</span>
                       <span className="font-semibold text-green-600 dark:text-green-400">{r.avgWeight || 0} kg</span>
                     </div>
-                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className="absolute inset-y-0 left-0 h-3 bg-green-500 dark:bg-green-400" style={{ width: `${pctWCap}%` }} />
+                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                      <div className="absolute inset-y-0 left-0 h-3 bg-gradient-to-r from-green-500 to-green-600 dark:from-green-400 dark:to-green-500 shadow-sm transition-all duration-500 ease-out" style={{ width: `${pctWCap}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">Età</span>
                       <span className="font-semibold text-purple-600 dark:text-purple-400">{r.avgAge || 0} anni</span>
                     </div>
-                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className="absolute inset-y-0 left-0 h-3 bg-purple-500 dark:bg-purple-400" style={{ width: `${pctACap}%` }} />
+                    <div className="relative w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                      <div className="absolute inset-y-0 left-0 h-3 bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-400 dark:to-purple-500 shadow-sm transition-all duration-500 ease-out" style={{ width: `${pctACap}%` }} />
                     </div>
                   </div>
                 </div>
@@ -726,8 +821,8 @@ export default function PlayersStats() {
                 return (
                   <div key={role} className="flex items-center gap-3">
                     <div className="w-28 text-xs text-gray-600 dark:text-gray-400">{role}</div>
-                    <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-                      <div className={`h-2 ${color}`} style={{ width: `${pct}%` }} />
+                    <div className="flex-1 h-3 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden shadow-inner">
+                      <div className={`h-3 ${color} shadow-sm transition-all duration-500 ease-out`} style={{ width: `${pct}%` }} />
                     </div>
                     <div className="w-12 text-right text-xs font-semibold text-gray-900 dark:text-white">{avg}</div>
                   </div>

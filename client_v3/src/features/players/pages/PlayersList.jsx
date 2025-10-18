@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/design-system/ds/PageHeader";
 import Button from "@/design-system/ds/Button";
 import Card, { CardContent } from "@/design-system/ds/Card";
@@ -72,6 +73,7 @@ export default function PlayersList() {
 
   const { user } = useAuthStore();
   const canUseContracts = user?.modules?.includes('contracts') ?? true;
+  const navigate = useNavigate();
 
   const fetchPlayers = async () => {
     setLoading(true);
@@ -195,7 +197,7 @@ export default function PlayersList() {
         <Button variant="success" onClick={handleExport}>
           <Download className="w-4 h-4 mr-2" /> Esporta Excel
         </Button>
-        <Button variant="info">
+        <Button variant="info" onClick={() => navigate('/players/upload')}>
           <Upload className="w-4 h-4 mr-2" /> Carica Excel
         </Button>
       </div>

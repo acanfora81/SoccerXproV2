@@ -5,7 +5,7 @@ import { FiltersBar, useFilters, buildPerformanceQuery } from "@/modules/filters
 import { apiFetch } from "@/utils/apiClient";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ExportModal from "@/components/common/ExportModal";
-import PageLoading from "@/design-system/ds/PageLoading";
+import GlobalLoader from "@/components/ui/GlobalLoader";
 
 // Sezioni già presenti in client_v3 (Tailwind)
 import Accelerazioni from "@/features/performance/components/sections/Accelerazioni";
@@ -15,7 +15,7 @@ import ReportCoach from "@/features/performance/components/sections/ReportCoach"
 import RischioRecupero from "@/features/performance/components/sections/RischioRecupero";
 
 const SECTIONS = [
-  { id: "rischio-recupero", title: "Rischio & Recupero", component: RischioRecupero },
+  // { id: "rischio-recupero", title: "Rischio & Recupero", component: RischioRecupero }, // Temporaneamente nascosto
   { id: "energetico", title: "Energetico", component: Energetico },
   { id: "accelerazioni", title: "Accelerazioni/Decelerazioni", component: Accelerazioni },
   { id: "comparazioni", title: "Comparazioni", component: Comparazioni },
@@ -33,7 +33,7 @@ export default function AnalyticsAdvanced() {
 
   const [performanceData, setPerformanceData] = useState([]);
   const [players, setPlayers] = useState([]);
-  const [activeSection, setActiveSection] = useState(SECTIONS[0]?.id || "rischio-recupero");
+  const [activeSection, setActiveSection] = useState(SECTIONS[0]?.id || "energetico");
 
   // View mode: team o player
   const [viewMode, setViewMode] = useState("team");
@@ -116,11 +116,11 @@ export default function AnalyticsAdvanced() {
     [filters, performanceData.length]
   );
 
-  // 🔎 Fetch RAW sessions solo per Report Coach (serve playerId e session_date)
+  // 🔎 Fetch RAW sessions per sezioni che ne hanno bisogno (Report Coach, Rischio & Recupero)
   useEffect(() => {
     const fetchRawForReportCoach = async () => {
       try {
-        if (activeSection !== 'report-coach') { setRawSessions([]); return; }
+        if (activeSection !== 'report-coach' && activeSection !== 'rischio-recupero') { setRawSessions([]); return; }
         const cleanFilters = { ...filters, sortBy: undefined };
         const qAgg = buildPerformanceQuery(cleanFilters);
         // forza no-aggregate per sessioni raw + aumenta limit
@@ -128,6 +128,11 @@ export default function AnalyticsAdvanced() {
           .replace(/(&|^)aggregateExtended=true/g, '')
           .replace(/(&|^)aggregate=true/g, '')
           .replace(/^&/, '');
+        // Se in vista giocatore, limita al giocatore selezionato
+        if (viewMode === 'player' && selectedPlayer) {
+          const pid = parseInt(selectedPlayer);
+          if (!Number.isNaN(pid)) qRaw += `&playerId=${pid}`;
+        }
         // Aggiungi limit alto per avere TUTTE le sessioni del periodo
         qRaw += '&limit=10000';
         console.log('🔍 [CHIRURGICO] Query RAW per ReportCoach:', qRaw);
@@ -222,6 +227,12 @@ export default function AnalyticsAdvanced() {
         console.log("🟢 Performance data aggregati caricati:", performanceResult.data?.length || 0, "date uniche");
 
         const aggregatedDataFromAPI = performanceResult.data || [];
+        // Include eventuali dati ACWR forniti dal backend nella risposta (meta)
+        let combinedAggregated = [...aggregatedDataFromAPI];
+        if (performanceResult.meta && performanceResult.meta.acwrData) {
+          combinedAggregated.acwrData = performanceResult.meta.acwrData;
+          console.log('🟢 Meta ACWR allegata dalla API:', performanceResult.meta.acwrData.length);
+        }
         console.log("✅ Dati già aggregati dal backend:", aggregatedDataFromAPI.length, "giorni unici");
 
         // Debug primo record
@@ -261,7 +272,7 @@ export default function AnalyticsAdvanced() {
 
         const playersData = playersResponseData.data || playersResponseData;
 
-        setPerformanceData(aggregatedDataFromAPI);
+        setPerformanceData(combinedAggregated);
         setPlayers(playersData);
 
         // Salva in cache
@@ -582,11 +593,9 @@ export default function AnalyticsAdvanced() {
       last5Records: filteredData?.slice(-5),
     });
 
-    // 🔧 FIX: Per RischioRecupero, usa dati ACWR dal backend se disponibili
+    // 🔧 FIX: Per Rischio & Recupero servono SEMPRE sessioni RAW (per giocatore). Niente fallback ad aggregati.
     const sectionProps = {
-      data: activeSection === 'rischio-recupero' && performanceData.acwrData 
-        ? performanceData.acwrData 
-        : (filteredData || []),
+      data: activeSection === 'rischio-recupero' ? (rawSessions || []) : (filteredData || []),
       rawData: activeSection === 'report-coach' ? rawSessions : undefined,
       players: players || [],
       filters,
@@ -602,15 +611,7 @@ export default function AnalyticsAdvanced() {
   // RENDER PRINCIPALE
   // ===========================
   if (loading) {
-    return (
-      <PageLoading
-        title="Analytics Avanzate"
-        description="Analisi approfondite delle performance del team"
-        height="py-16"
-        showText={true}
-        text="Caricamento..."
-      />
-    );
+    return <GlobalLoader sectionName="Analytics Avanzate" />;
   }
 
   if (error) {
@@ -697,7 +698,7 @@ export default function AnalyticsAdvanced() {
                 console.log("🔄 Cambio giocatore:", newPlayerId);
                 setSelectedPlayer(newPlayerId);
               }}
-              className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none"
+              className="bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
             >
               <option value="">Seleziona giocatore</option>
               {players.map((player) => (

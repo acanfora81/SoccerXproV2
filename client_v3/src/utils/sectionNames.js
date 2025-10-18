@@ -52,7 +52,13 @@ export const SECTION_NAMES = [
   { path: "/app/dashboard/medical/settings", name: "Impostazioni" },
   { path: "/app/dashboard/medical", name: "Area Medica" },
   
-  // Market/Scouting - percorsi specifici prima (nomi esatti dalla sidebar)
+  // Scouting - percorsi specifici prima (modulo autonomo)
+  { path: "/app/dashboard/scouting/reports", name: "Reports Scouting" },
+  { path: "/app/dashboard/scouting/sessions", name: "Sessioni Scouting" },
+  { path: "/app/dashboard/scouting/prospects", name: "Prospects" },
+  { path: "/app/dashboard/scouting", name: "Scouting" },
+  
+  // Market - percorsi specifici prima (nomi esatti dalla sidebar)
   { path: "/app/dashboard/market/trattative", name: "Trattative" },
   { path: "/app/dashboard/market/offerte", name: "Offerte" },
   { path: "/app/dashboard/market/obiettivi", name: "Obiettivi" },

@@ -163,13 +163,24 @@ export const PlayersAPI = {
            const formData = new FormData();
            formData.append('file', file);
 
-           const response = await apiCall('/players/upload', {
+           // Usa fetch diretto per FormData invece di apiCall
+           const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'}/players/upload`, {
              method: 'POST',
              body: formData,
+             credentials: 'include', // per autenticazione con cookie
              // Non impostare Content-Type per FormData, il browser lo farà automaticamente
            });
-           
-           return response.data;
+
+           if (!response.ok) {
+             let message = `HTTP ${response.status}`;
+             try {
+               const data = await response.json();
+               if (data?.error) message = data.error;
+             } catch (_) {}
+             throw new Error(message);
+           }
+
+           return response.json();
          },
 
          async downloadTemplate(lang = 'en') {

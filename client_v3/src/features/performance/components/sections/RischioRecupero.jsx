@@ -19,7 +19,7 @@ import { Shield, TrendingUp, Activity, AlertTriangle } from 'lucide-react';
 import { useExport } from '@/hooks/useExport';
 import ExportModal from '@/components/common/ExportModal';
 
-const RischioRecupero = ({ data, players, filters, ...props }) => {
+const RischioRecupero = ({ data, players, filters, selectedPlayer, ...props }) => {
   const { 
     showExportModal, 
     exportFormat, 
@@ -46,39 +46,176 @@ const RischioRecupero = ({ data, players, filters, ...props }) => {
     );
   }
 
-  // CALCOLO ACWR (Acute:Chronic Workload Ratio)
-  const calculateACWR = (playerSessions, targetDate = null) => {
+  // Helpers comuni per compatibilità formati
+  const getSessionDate = (s) => {
+    const raw = s?.session_date || s?.dateFull || s?.date;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d) ? null : d;
+  };
+
+  const getLoad = (s) => {
+    const val = s?.playerLoadTotal ?? s?.playerLoad ?? s?.player_load ?? s?.training_load ?? 0;
+    const num = Number(val);
+    return isFinite(num) ? num : 0;
+  };
+
+  // CALCOLO ACWR (Acute:Chronic Workload Ratio) - VERSIONE CON RANGE DATE
+  const calculateACWR = (playerSessions, targetDate = null, filters = null) => {
     if (!playerSessions || playerSessions.length === 0) return 0;
     
-    let target;
-    if (targetDate) {
-      target = new Date(targetDate);
+    // Determina il range di date da utilizzare
+    let startDate, endDate;
+    
+    if (filters && filters.startDate && filters.endDate) {
+      // Usa il range dai filtri (es. "Tutti i dati luglio")
+      startDate = new Date(filters.startDate);
+      endDate = new Date(filters.endDate);
+    } else if (targetDate) {
+      // Usa data target specifica
+      endDate = new Date(targetDate);
+      startDate = new Date(endDate.getTime() - 28 * 24 * 60 * 60 * 1000); // 28 giorni prima
     } else {
-      const dates = playerSessions.map(s => {
-        const d = s.session_date;
-        return d ? new Date(d) : null;
-      }).filter(Boolean);
-      target = dates.length > 0 ? new Date(Math.max(...dates)) : new Date();
+      // Fallback: usa l'ultima sessione disponibile
+      const validDates = playerSessions
+        .map(s => getSessionDate(s))
+        .filter(d => d && !isNaN(d));
+      if (validDates.length === 0) return 0;
+      endDate = new Date(Math.max(...validDates.map(d => d.getTime())));
+      startDate = new Date(endDate.getTime() - 28 * 24 * 60 * 60 * 1000);
     }
     
-    const acute7Days = new Date(target.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const chronic28Days = new Date(target.getTime() - 28 * 24 * 60 * 60 * 1000);
-    
-    const acuteSessions = playerSessions.filter(session => {
-      const sessionDate = new Date(session.session_date);
-      return sessionDate >= acute7Days && sessionDate <= target;
+    // Filtra sessioni nel range di date
+    const sessionsInRange = playerSessions.filter(session => {
+      const sessionDate = getSessionDate(session);
+      return !isNaN(sessionDate) && sessionDate >= startDate && sessionDate <= endDate;
     });
     
-    const chronicSessions = playerSessions.filter(session => {
-      const sessionDate = new Date(session.session_date);
-      return sessionDate >= chronic28Days && sessionDate <= target;
+    if (sessionsInRange.length === 0) return 0;
+    
+    // Calcola ACWR per ogni giorno nel range (se range > 7 giorni)
+    const daysInRange = Math.ceil((endDate - startDate) / (24 * 60 * 60 * 1000));
+    
+    const buildDailySeries = (from, to, sessions) => {
+      const days = Math.max(1, Math.ceil((to - from) / (24 * 60 * 60 * 1000)) + 1);
+      const loadByDay = new Map();
+      sessions.forEach(s => {
+        const d = getSessionDate(s);
+        if (!d) return;
+        if (d < from || d > to) return;
+        const key = d.toISOString().slice(0,10);
+        loadByDay.set(key, (loadByDay.get(key) || 0) + getLoad(s));
+      });
+      const series = [];
+      for (let i = 0; i < days; i++) {
+        const d = new Date(from); d.setDate(from.getDate() + i);
+        const key = d.toISOString().slice(0,10);
+        series.push(loadByDay.get(key) || 0);
+      }
+      return series;
+    };
+
+    if (daysInRange <= 7) {
+      // Range piccolo: calcolo tradizionale
+      const acuteStart = new Date(endDate.getTime() - 6 * 24 * 60 * 60 * 1000);
+      const chronicStart = new Date(endDate.getTime() - 27 * 24 * 60 * 60 * 1000);
+
+      const acuteSeries = buildDailySeries(acuteStart, endDate, sessionsInRange);
+      const chronicSeries = buildDailySeries(chronicStart, endDate, sessionsInRange);
+
+      const acuteAvg = acuteSeries.reduce((s,v)=>s+v,0) / acuteSeries.length; // media 7 gg
+      const chronicNonZeroDays = chronicSeries.filter(v => v > 0).length;
+      const chronicAvg = chronicNonZeroDays >= 14
+        ? (chronicSeries.reduce((s,v)=>s+v,0) / 28) // media su 28 gg quando copertura sufficiente
+        : (chronicSeries.reduce((s,v)=>s+v,0) / Math.max(1, chronicNonZeroDays)); // media sui giorni attivi se copertura scarsa
+
+      if (!isFinite(acuteAvg) || !isFinite(chronicAvg) || chronicAvg <= 0) return 0;
+      return Math.max(0.1, Math.min(acuteAvg / chronicAvg, 5.0));
+    } else {
+      // Range grande: calcola ACWR medio per tutto il periodo
+      const acwrValues = [];
+      
+      // Calcola ACWR per ogni settimana nel range
+      for (let i = 0; i < daysInRange - 6; i += 7) {
+        const weekEnd = new Date(startDate.getTime() + (i + 6) * 24 * 60 * 60 * 1000);
+        const weekStart = new Date(weekEnd.getTime() - 6 * 24 * 60 * 60 * 1000);
+        const chronicStart = new Date(weekEnd.getTime() - 27 * 24 * 60 * 60 * 1000);
+
+        const acuteSeries = buildDailySeries(weekStart, weekEnd, sessionsInRange);
+        const chronicSeries = buildDailySeries(chronicStart, weekEnd, sessionsInRange);
+        const acuteAvg = acuteSeries.reduce((s,v)=>s+v,0) / acuteSeries.length;
+        const chronicNonZeroDays = chronicSeries.filter(v => v > 0).length;
+        const chronicAvg = chronicNonZeroDays >= 14
+          ? (chronicSeries.reduce((s,v)=>s+v,0) / 28)
+          : (chronicSeries.reduce((s,v)=>s+v,0) / Math.max(1, chronicNonZeroDays));
+
+        if (isFinite(acuteAvg) && isFinite(chronicAvg) && chronicAvg > 0) {
+          acwrValues.push(Math.max(0.1, Math.min(acuteAvg / chronicAvg, 5.0)));
+        }
+      }
+      
+      // Ritorna la media degli ACWR calcolati
+      return acwrValues.length > 0 
+        ? acwrValues.reduce((sum, val) => sum + val, 0) / acwrValues.length
+        : 0;
+    }
+  };
+
+  // Calcola Monotonia su finestra 7 giorni (media giornaliera / deviazione standard dei carichi giornalieri)
+  const computeMonotony7 = (playerSessions, filters = null) => {
+    if (!playerSessions || playerSessions.length === 0) return 0;
+    
+    // Determina il range di date da utilizzare
+    let start, end;
+    
+    if (filters && filters.startDate && filters.endDate) {
+      // Usa il range dai filtri
+      start = new Date(filters.startDate);
+      end = new Date(filters.endDate);
+      
+      // Se il range è > 7 giorni, usa solo gli ultimi 7 giorni
+      const daysDiff = Math.ceil((end - start) / (24 * 60 * 60 * 1000));
+      if (daysDiff > 7) {
+        start = new Date(end.getTime() - 6 * 24 * 60 * 60 * 1000);
+      }
+    } else {
+      // Fallback: trova l'ultima data disponibile
+      const validDates = playerSessions
+        .map(s => getSessionDate(s))
+        .filter(d => d && !isNaN(d));
+      if (validDates.length === 0) return 0;
+
+      end = new Date(Math.max(...validDates.map(d => d.getTime())));
+      start = new Date(end); start.setDate(end.getDate() - 6);
+    }
+
+    // Somma carico per giorno nella finestra, includendo i giorni senza sessione (0)
+    const loadByDay = new Map();
+    playerSessions.forEach(s => {
+      const d = getSessionDate(s);
+      if (!d || isNaN(d)) return;
+      if (d < start || d > end) return;
+      const key = d.toISOString().slice(0,10);
+      const load = getLoad(s);
+      loadByDay.set(key, (loadByDay.get(key) || 0) + load);
     });
-    
-    // 🔧 FIX: Supporta sia dati RAW (player_load) che AGGREGATI (playerLoad)
-    const acuteLoad = acuteSessions.reduce((sum, s) => sum + (s.playerLoad || s.player_load || 0), 0);
-    const chronicLoad = chronicSessions.reduce((sum, s) => sum + (s.playerLoad || s.player_load || 0), 0) / 4;
-    
-    return chronicLoad > 0 ? acuteLoad / chronicLoad : 0;
+
+    // Costruisci array di valori (un valore per ciascun giorno nel range)
+    const daysInRange = Math.ceil((end - start) / (24 * 60 * 60 * 1000)) + 1;
+    const series = [];
+    for (let i = 0; i < daysInRange; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const key = d.toISOString().slice(0,10);
+      series.push(loadByDay.get(key) || 0);
+    }
+
+    const mean = series.reduce((s, v) => s + v, 0) / series.length;
+    const variance = series.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / series.length;
+    const stddev = Math.sqrt(variance);
+    if (!isFinite(stddev) || stddev < 1e-6) return 0; // evita esplosioni
+    const monotony = mean / stddev;
+    // clamp a un range realistico per grafico
+    return Number(Math.max(0, Math.min(monotony, 6)).toFixed(2));
   };
 
   // DATA PROCESSING
@@ -155,6 +292,11 @@ const RischioRecupero = ({ data, players, filters, ...props }) => {
         console.warn(`⚠️ Record ${idx} senza playerId:`, session);
         return;
       }
+
+      // Se selezionato un singolo giocatore, ignora gli altri
+      if (selectedPlayer && String(playerId) !== String(selectedPlayer)) {
+        return;
+      }
       
       if (!playerMap.has(playerId)) {
         playerMap.set(playerId, []);
@@ -166,7 +308,18 @@ const RischioRecupero = ({ data, players, filters, ...props }) => {
       const player = players?.find(p => p.id === playerId);
       const playerName = player ? `${player.firstName} ${player.lastName}` : `Player ${playerId}`;
       
-      const acwr = calculateACWR(playerSessions);
+      const acwr = calculateACWR(playerSessions, null, filters);
+      
+      // 🔍 DEBUG: Log per Alessio Giustiniani
+      if (playerName.includes('Alessio') || playerName.includes('Giustiniani')) {
+        console.log(`🔍 [DEBUG ACWR] ${playerName}:`, {
+          totalSessions: playerSessions.length,
+          acwr: acwr,
+          filters: filters,
+          sessionDates: playerSessions.map(s => s.session_date).slice(0, 5),
+          loads: playerSessions.map(s => s.player_load || s.playerLoad || s.training_load).slice(0, 5)
+        });
+      }
       
       let status = 'normal';
       let riskLevel = 'low';
@@ -190,14 +343,18 @@ const RischioRecupero = ({ data, players, filters, ...props }) => {
         color = '#F59E0B'; // arancione
       }
       
-      // Calcola monotonia
-      const loads = playerSessions.map(s => s.player_load || 0).filter(l => l > 0);
-      const meanLoad = loads.length > 0 ? loads.reduce((sum, l) => sum + l, 0) / loads.length : 0;
-      const variance = loads.length > 0 ? loads.reduce((sum, l) => sum + Math.pow(l - meanLoad, 2), 0) / loads.length : 0;
-      const monotony = variance > 0 ? meanLoad / Math.sqrt(variance) : 0;
-      
-      // Calcola strain
-      const strain = playerSessions.reduce((sum, s) => sum + (s.player_load || 0), 0);
+      // Monotonia 7gg + Strain (somma settimanale * monotonia)
+      const monotony = computeMonotony7(playerSessions, filters);
+      const weeklySum = playerSessions
+        .filter(s => {
+          const d = getSessionDate(s);
+          if (!d || isNaN(d)) return false;
+          const maxD = new Date(Math.max(...playerSessions.map(ps => (getSessionDate(ps)?.getTime() || 0))));
+          const minD = new Date(maxD); minD.setDate(maxD.getDate() - 6);
+          return d >= minD && d <= maxD;
+        })
+        .reduce((sum, s) => sum + getLoad(s), 0);
+      const strain = Math.round(weeklySum * monotony);
       
       return {
         player: playerName,
@@ -206,78 +363,76 @@ const RischioRecupero = ({ data, players, filters, ...props }) => {
         status,
         riskLevel,
         color,
-        monotony: parseFloat(monotony.toFixed(2)),
-        strain: Math.round(strain),
+        monotony: monotony,
+        strain,
         sessionsCount: playerSessions.length
       };
     }).sort((a, b) => b.acwr - a.acwr);
     
     console.log('✅ Risk/recovery data processed:', result.length, 'players');
     return result;
-  }, [data, players]);
+  }, [data, players, filters]);
 
   // Trend temporale ACWR
   const acwrTrendData = useMemo(() => {
     if (!data?.length) return [];
     
-    // 🔧 FIX: Se i dati hanno già ACWR, usali direttamente
-    const hasPreCalculatedACWR = data[0] && 'acwr' in data[0] && 'date' in data[0];
-    
+    // 🔧 Se i dati hanno già ACWR giornaliero → usa direttamente
+    const hasPreCalculatedACWR = data[0] && 'acwr' in data[0] && ("date" in data[0] || "dateFull" in data[0]);
     if (hasPreCalculatedACWR) {
-      // Raggruppa per data e calcola media ACWR per data
       const dateMap = new Map();
-      
       data.forEach(record => {
-        const dateStr = record.date?.split('T')[0] || record.dateFull?.split('T')[0] || record.date;
+        const dateStr = (record.date || record.dateFull || '').toString().split('T')[0];
         if (!dateStr) return;
-        
-        if (!dateMap.has(dateStr)) {
-          dateMap.set(dateStr, { acwrSum: 0, count: 0 });
-        }
+        if (!dateMap.has(dateStr)) dateMap.set(dateStr, { acwrSum: 0, count: 0 });
         const entry = dateMap.get(dateStr);
-        entry.acwrSum += (record.acwr || 0);
+        entry.acwrSum += (Number(record.acwr) || 0);
         entry.count += 1;
       });
-      
       return Array.from(dateMap.entries()).map(([dateStr, { acwrSum, count }]) => {
         const date = new Date(dateStr);
         return {
           date: date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }),
           fullDate: dateStr,
-          acwr: parseFloat((acwrSum / count).toFixed(2)),
+          acwr: count > 0 ? parseFloat((acwrSum / count).toFixed(2)) : 0,
           sessionsCount: count
         };
       }).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
     }
     
-    // Calcola manualmente da sessioni
-    const dateMap = new Map();
+    // Costruisci timeline completa del periodo
+    const start = filters?.startDate ? new Date(filters.startDate) : (getSessionDate(data[0]) || new Date());
+    const end = filters?.endDate ? new Date(filters.endDate) : (getSessionDate(data[data.length - 1]) || new Date());
+    if (isNaN(start) || isNaN(end)) return [];
+    const days = Math.max(1, Math.ceil((end - start) / (24 * 60 * 60 * 1000)) + 1);
     
-    data.forEach(session => {
-      const dateStr = session.session_date?.split('T')[0] || session.session_date?.split(' ')[0];
-      if (!dateStr) return;
-      
-      if (!dateMap.has(dateStr)) {
-        dateMap.set(dateStr, []);
-      }
-      dateMap.get(dateStr).push(session);
+    // Raggruppa le sessioni per giocatore
+    const byPlayer = new Map();
+    data.forEach(s => {
+      const playerId = s.playerId || s.player?.id || s.player_id;
+      if (!playerId) return;
+      if (!byPlayer.has(playerId)) byPlayer.set(playerId, []);
+      byPlayer.get(playerId).push(s);
     });
     
-    return Array.from(dateMap.entries()).map(([dateStr, daySessions]) => {
-      const avgACWR = daySessions.reduce((sum, s) => {
-        const playerSessions = data.filter(d => d.playerId === s.playerId);
-        return sum + calculateACWR(playerSessions, dateStr);
-      }, 0) / daySessions.length;
-      
-      const date = new Date(dateStr);
-      return {
-        date: date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }),
+    const out = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const dateStr = d.toISOString().slice(0,10);
+      let sum = 0; let cnt = 0;
+      byPlayer.forEach((sessions) => {
+        const v = calculateACWR(sessions, dateStr, filters);
+        if (isFinite(v)) { sum += v; cnt += 1; }
+      });
+      out.push({
+        date: d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }),
         fullDate: dateStr,
-        acwr: parseFloat(avgACWR.toFixed(2)),
-        sessionsCount: daySessions.length
-      };
-    }).sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate));
-  }, [data]);
+        acwr: cnt > 0 ? parseFloat((sum / cnt).toFixed(2)) : 0,
+        sessionsCount: cnt
+      });
+    }
+    return out;
+  }, [data, filters]);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -306,8 +461,8 @@ const RischioRecupero = ({ data, players, filters, ...props }) => {
         </div>
       </div>
 
-      {/* Layout a griglia 2x2 come le altre sezioni */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Layout: un grafico per riga */}
+      <div className="grid grid-cols-1 gap-6">
         {/* Grafico 1: ACWR per Giocatore */}
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0f1424] p-4">
         <div className="flex items-center justify-between mb-3">

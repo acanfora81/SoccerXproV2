@@ -517,6 +517,160 @@ const updatePlayerStatus = async (req, res) => {
   }
 };
 
+// 📤 Upload file giocatori
+const uploadPlayersFile = async (req, res) => {
+  try {
+    console.log('🔵 [DEBUG] Richiesta upload file giocatori');
+
+    const teamId = req?.context?.teamId;
+    const createdById = req?.context?.userId || req.user?.profile?.id;
+    
+    if (!teamId || !createdById) {
+      const errorResponse = createErrorResponse(
+        API_ERRORS.FORBIDDEN,
+        'Contesto team non disponibile'
+      );
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    if (!req.file) {
+      const errorResponse = createErrorResponse(
+        API_ERRORS.REQUIRED_FIELD_MISSING,
+        'Nessun file caricato'
+      );
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    console.log('🔵 [DEBUG] File ricevuto:', req.file.originalname, 'TeamId:', teamId);
+
+    const fs = require('fs');
+    const csvContent = fs.readFileSync(req.file.path, 'utf8');
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    
+    if (lines.length < 2) {
+      const errorResponse = createErrorResponse(
+        API_ERRORS.VALIDATION_FAILED,
+        'File CSV vuoto o formato non valido'
+      );
+      return res.status(errorResponse.status).json(errorResponse.body);
+    }
+
+    // Prima riga = headers
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    console.log('🔵 [DEBUG] Headers rilevati:', headers);
+
+    const prisma = getPrismaClient();
+    const results = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Processa le righe di dati
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      if (values.length === headers.length) {
+        const row = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index];
+        });
+
+        try {
+          // Validazione dati obbligatori
+          if (!row.firstName || !row.lastName || !row.dateOfBirth || !row.nationality || !row.position) {
+            throw new Error('Campi obbligatori mancanti: nome, cognome, data di nascita, nazionalità, ruolo');
+          }
+
+          // Validazione ruolo
+          const validPositions = ['GOALKEEPER', 'DEFENDER', 'MIDFIELDER', 'FORWARD'];
+          if (!validPositions.includes(row.position)) {
+            throw new Error(`Ruolo non valido: ${row.position}. Valori validi: ${validPositions.join(', ')}`);
+          }
+
+          // Validazione data
+          const dob = new Date(row.dateOfBirth);
+          if (Number.isNaN(dob.getTime())) {
+            throw new Error(`Data di nascita non valida: ${row.dateOfBirth}`);
+          }
+
+          // Controllo numero maglia duplicato
+          if (row.shirtNumber && row.shirtNumber.trim() !== '') {
+            const parsedShirt = parseInt(row.shirtNumber, 10);
+            if (!Number.isNaN(parsedShirt)) {
+              const existingPlayer = await prisma.player.findFirst({
+                where: { shirtNumber: parsedShirt, isActive: true, teamId }
+              });
+              if (existingPlayer) {
+                throw new Error(`Numero maglia ${parsedShirt} già assegnato a ${existingPlayer.firstName} ${existingPlayer.lastName}`);
+              }
+            }
+          }
+
+          // Crea giocatore
+          const player = await prisma.player.create({
+            data: {
+              firstName: row.firstName.trim(),
+              lastName: row.lastName.trim(),
+              dateOfBirth: dob,
+              nationality: row.nationality.trim(),
+              position: row.position,
+              shirtNumber: (row.shirtNumber && row.shirtNumber.trim() !== '') ? parseInt(row.shirtNumber, 10) : null,
+              height: (row.height && row.height.trim() !== '') ? parseFloat(row.height) : null,
+              weight: (row.weight && row.weight.trim() !== '') ? parseFloat(row.weight) : null,
+              preferredFoot: row.preferredFoot || null,
+              placeOfBirth: row.placeOfBirth ? row.placeOfBirth.trim() : null,
+              taxCode: row.taxCode ? row.taxCode.toUpperCase().trim() : null,
+              passportNumber: row.passportNumber ? row.passportNumber.trim() : null,
+              isActive: true,
+              createdById,
+              teamId
+            }
+          });
+
+          results.push({
+            row: i + 1,
+            player: `${player.firstName} ${player.lastName}`,
+            status: 'success',
+            message: 'Giocatore creato con successo'
+          });
+          successCount++;
+
+        } catch (error) {
+          results.push({
+            row: i + 1,
+            player: `${row.firstName || ''} ${row.lastName || ''}`.trim(),
+            status: 'error',
+            message: error.message
+          });
+          errorCount++;
+        }
+      }
+    }
+
+    // Pulisci file temporaneo
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (cleanupError) {
+      console.warn('⚠️ [WARN] Errore pulizia file temporaneo:', cleanupError.message);
+    }
+
+    console.log('🟢 [SUCCESS] Upload completato:', successCount, 'successi,', errorCount, 'errori');
+
+    return res.json({
+      message: 'Upload completato',
+      summary: {
+        total: lines.length - 1,
+        success: successCount,
+        errors: errorCount
+      },
+      results
+    });
+
+  } catch (error) {
+    console.log('🔴 [ERROR] Errore upload file giocatori:', error.message);
+    const errorResponse = createErrorResponse(API_ERRORS.DATABASE_ERROR);
+    return res.status(errorResponse.status).json(errorResponse.body);
+  }
+};
+
 module.exports = {
   getPlayers,
   getPlayerById,
@@ -524,7 +678,8 @@ module.exports = {
   updatePlayer,
   deletePlayer,
   exportPlayersToExcel,
-  updatePlayerStatus
+  updatePlayerStatus,
+  uploadPlayersFile
 };
 
 

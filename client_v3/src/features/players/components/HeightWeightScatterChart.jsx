@@ -24,34 +24,51 @@ export default function HeightWeightScatterChart({ players }) {
       age: player.dateOfBirth ? new Date().getFullYear() - new Date(player.dateOfBirth).getFullYear() : null
     }));
 
-  // Colori per ruolo
+  // Colori moderni per ruolo
   const roleColors = {
-    'Portiere': '#3b82f6',
-    'Difensore': '#10b981', 
-    'Centrocampista': '#f59e0b',
-    'Attaccante': '#ef4444'
+    'Portiere': '#3B82F6',
+    'Difensore': '#10B981', 
+    'Centrocampista': '#F59E0B',
+    'Attaccante': '#EF4444'
   };
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900 dark:text-white">{data.name}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Ruolo: <span style={{ color: roleColors[data.role] }}>{data.role}</span>
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Altezza: {data.x} cm
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Peso: {data.y} kg
-          </p>
-          {data.age && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Età: {data.age} anni
-            </p>
-          )}
+        <div className="bg-gray-900 text-white p-4 rounded-lg border border-gray-700 shadow-xl">
+          <p className="font-semibold text-lg mb-3 text-blue-400">{data.name}</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: roleColors[data.role] }}
+              />
+              <span className="text-sm font-medium">
+                Ruolo: <span className="text-white font-bold">{data.role}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-sm font-medium">
+                Altezza: <span className="text-white font-bold">{data.x} cm</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-sm font-medium">
+                Peso: <span className="text-white font-bold">{data.y} kg</span>
+              </span>
+            </div>
+            {data.age && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500" />
+                <span className="text-sm font-medium">
+                  Età: <span className="text-white font-bold">{data.age} anni</span>
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       );
     }
@@ -72,31 +89,34 @@ export default function HeightWeightScatterChart({ players }) {
         <ScatterChart
           margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
           <XAxis 
             type="number" 
             dataKey="x" 
             name="Altezza"
             unit="cm"
-            stroke="#6b7280"
+            stroke="#9CA3AF"
             fontSize={12}
-            label={{ value: 'Altezza (cm)', position: 'insideBottom', offset: -5 }}
+            tick={{ fill: '#9CA3AF' }}
+            label={{ value: 'Altezza (cm)', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
           />
           <YAxis 
             type="number" 
             dataKey="y" 
             name="Peso"
             unit="kg"
-            stroke="#6b7280"
+            stroke="#9CA3AF"
             fontSize={12}
-            label={{ value: 'Peso (kg)', angle: -90, position: 'insideLeft' }}
+            tick={{ fill: '#9CA3AF' }}
+            label={{ value: 'Peso (kg)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip />} cursor={false} wrapperStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: 8, color: '#fff' }} />
           <Scatter 
             data={chartData} 
             fill="#8884d8"
             animationBegin={0}
-            animationDuration={800}
+            animationDuration={1200}
+            animationEasing="ease-out"
           >
             {chartData.map((entry, index) => (
               <Cell 

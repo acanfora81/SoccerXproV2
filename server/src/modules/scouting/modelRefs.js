@@ -12,42 +12,52 @@
  * - Verifica sempre i nomi esatti prima di usarli
  */
 
-const { PrismaClient } = require('../../prisma/generated/client');
-
-// Istanza Prisma condivisa
-const prisma = new PrismaClient();
+// Usa il Prisma Client condiviso configurato con l'URL corretto (pooler/ssl)
+const { getPrismaClient } = require('../../config/database');
+const prisma = getPrismaClient();
 
 /**
  * Riferimenti ai modelli Prisma per il modulo Scouting
  * 
- * MAPPING TABELLE → MODELLI:
- * - market_scouting              → ScoutingProspect
- * - market_scouting_report       → ScoutingReport
- * - market_scouting_shortlist    → ScoutingShortlist
- * - market_scouting_shortlist_item → ScoutingShortlistItem
- * - market_scouting_event_log    → ScoutingEventLog
- * - market_agent                 → Agent
+ * MAPPING TABELLE → MODELLI (NUOVO SCHEMA scout_*):
+ * - scout_prospects              → ScoutProspect
+ * - scout_reports                → ScoutReport
+ * - scout_sessions               → ScoutSession
+ * - scout_evaluations            → ScoutEvaluation
+ * - scout_followups              → ScoutFollowUp
+ * - scout_event_logs             → ScoutEventLog
+ * - scout_watchlists             → ScoutWatchlist
+ * - scout_agents                 → ScoutAgent
  */
 const ScoutingModels = {
-  // ============ MODELLI PRINCIPALI SCOUTING ============
+  // ============ MODELLI PRINCIPALI SCOUTING (NUOVO SCHEMA) ============
   
-  /** Prospect: Giocatore in osservazione (Tabella: market_scouting) */
-  Prospect: prisma.scoutingProspect,
+  /** Prospect: Giocatore in osservazione (Tabella: scout_prospects) */
+  Prospect: prisma.scoutProspect,
 
-  /** Report: Report di osservazione (Tabella: market_scouting_report) */
-  Report: prisma.scoutingReport,
+  /** Report: Report di osservazione (Tabella: scout_reports) */
+  Report: prisma.scoutReport,
 
-  /** Shortlist: Lista personalizzata (Tabella: market_scouting_shortlist) */
-  Shortlist: prisma.scoutingShortlist,
+  /** Session: Sessione di osservazione (Tabella: scout_sessions) */
+  Session: prisma.scoutSession,
 
-  /** ShortlistItem: Elemento shortlist (Tabella: market_scouting_shortlist_item) */
-  ShortlistItem: prisma.scoutingShortlistItem,
+  /** Formation: Formazione tattica (Tabella: scout_formations) */
+  Formation: prisma.scoutFormation,
 
-  /** EventLog: Cronologia eventi (Tabella: market_scouting_event_log) */
-  EventLog: prisma.scoutingEventLog,
+  /** Evaluation: Valutazione DS (Tabella: scout_evaluations) */
+  Evaluation: prisma.scoutEvaluation,
 
-  /** Agent: Agente/Procuratore (Tabella: market_agent) */
-  Agent: prisma.agent,
+  /** FollowUp: Task di follow-up (Tabella: scout_followups) */
+  FollowUp: prisma.scoutFollowUp,
+
+  /** EventLog: Cronologia eventi (Tabella: scout_event_logs) */
+  EventLog: prisma.scoutEventLog,
+
+  /** Watchlist: Lista personale scout (Tabella: scout_watchlists) */
+  Watchlist: prisma.scoutWatchlist,
+
+  /** Agent: Agente/Procuratore (Tabella: scout_agents) */
+  Agent: prisma.scoutAgent,
 
   // ============ MODELLI MARKET (per integrazione) ============
   
@@ -76,7 +86,10 @@ const ScoutingEnums = {
     DISCOVERY: 'DISCOVERY',
     MONITORING: 'MONITORING',
     ANALYZED: 'ANALYZED',
+    EVALUATED: 'EVALUATED',
     TARGETED: 'TARGETED',
+    SIGNED: 'SIGNED',
+    REJECTED: 'REJECTED',
     ARCHIVED: 'ARCHIVED',
   },
 
@@ -120,19 +133,6 @@ const ScoutingIncludes = {
         summary: true,
       },
     },
-    shortlistItems: {
-      select: {
-        id: true,
-        priority: true,
-        shortlist: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-          },
-        },
-      },
-    },
     eventLogs: {
       take: 10,
       orderBy: { createdAt: 'desc' },
@@ -172,7 +172,7 @@ const ScoutingIncludes = {
         id: true,
         firstName: true,
         lastName: true,
-        position: true,
+        mainPosition: true,
         currentClub: true,
       },
     },
@@ -185,23 +185,18 @@ const ScoutingIncludes = {
     },
   },
 
-  /** Include per Shortlist con items */
-  shortlistWithItems: {
-    items: {
-      include: {
-        prospect: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            position: true,
-            currentClub: true,
-            scoutingStatus: true,
-            potentialScore: true,
-          },
-        },
+  /** Include per Watchlist con items */
+  watchlistWithItems: {
+    prospect: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        mainPosition: true,
+        currentClub: true,
+        status: true,
+        potentialScore: true,
       },
-      orderBy: { priority: 'asc' },
     },
   },
 };

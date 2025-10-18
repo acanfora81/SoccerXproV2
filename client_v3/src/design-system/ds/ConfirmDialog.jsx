@@ -43,7 +43,7 @@ export default function ConfirmDialog({
             </Button>
           )}
           <Button 
-            variant={type === "danger" ? "destructive" : "default"} 
+            variant={type === "danger" ? "destructive" : type === "success" ? "success" : "default"} 
             onClick={onConfirm}
           >
             {confirmText}

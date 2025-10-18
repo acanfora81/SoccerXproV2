@@ -15,7 +15,10 @@ const scoutingStatusSchema = z.enum([
   'DISCOVERY',
   'MONITORING',
   'ANALYZED',
+  'EVALUATED',
   'TARGETED',
+  'SIGNED',
+  'REJECTED',
   'ARCHIVED',
 ]);
 
@@ -171,12 +174,13 @@ const phoneSchema = z
   .nullable();
 
 /**
- * Validazione nazionalità (ISO 3166-1 alpha-3)
+ * Validazione nazionalità (nome completo)
  */
 const nationalitySchema = z
   .string()
-  .length(3, 'Nazionalità deve essere codice ISO a 3 lettere')
-  .regex(/^[A-Z]{3}$/, 'Nazionalità deve essere maiuscolo')
+  .min(2, 'Nazionalità deve essere di almeno 2 caratteri')
+  .max(50, 'Nazionalità deve essere di massimo 50 caratteri')
+  .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Nazionalità può contenere solo lettere e spazi')
   .optional()
   .nullable();
 

@@ -35,30 +35,41 @@ export default function ContractDistributionChart({ players }) {
     percentage: ((count / players.length) * 100).toFixed(1)
   }));
 
-  // Colori per i segmenti
+  // Colori moderni per i segmenti
   const COLORS = [
-    '#3b82f6', // Blu
-    '#10b981', // Verde
-    '#f59e0b', // Giallo
-    '#ef4444', // Rosso
-    '#8b5cf6', // Viola
-    '#06b6d4', // Ciano
-    '#84cc16', // Lime
-    '#f97316'  // Arancione
+    '#3B82F6', // Blu moderno
+    '#10B981', // Verde moderno
+    '#F59E0B', // Arancione moderno
+    '#EF4444', // Rosso moderno
+    '#8B5CF6', // Viola moderno
+    '#06B6D4', // Ciano moderno
+    '#84CC16', // Lime moderno
+    '#F97316'  // Arancione scuro
   ];
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900 dark:text-white">{data.name}</p>
-          <p className="text-sm text-blue-600 dark:text-blue-400">
-            Giocatori: {data.value}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Percentuale: {data.payload.percentage}%
-          </p>
+        <div className="bg-gray-900 text-white p-4 rounded-lg border border-gray-700 shadow-xl">
+          <p className="font-semibold text-lg mb-3 text-blue-400">{data.name}</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: data.color }}
+              />
+              <span className="text-sm font-medium">
+                Giocatori: <span className="text-white font-bold">{data.value}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-sm font-medium">
+                Percentuale: <span className="text-white font-bold">{data.payload.percentage}%</span>
+              </span>
+            </div>
+          </div>
         </div>
       );
     }
@@ -110,13 +121,14 @@ export default function ContractDistributionChart({ players }) {
             fill="#8884d8"
             dataKey="value"
             animationBegin={0}
-            animationDuration={800}
+            animationDuration={1200}
+            animationEasing="ease-out"
           >
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip />} cursor={false} wrapperStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: 8, color: '#fff' }} />
           <Legend 
             verticalAlign="bottom" 
             height={36}

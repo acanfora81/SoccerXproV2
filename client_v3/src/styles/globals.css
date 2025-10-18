@@ -283,6 +283,7 @@ h4 {
 }
 
 /* === ACTION BUTTONS (TABLES) === */
+/* Updated: Added cursor pointer and border none */
 .btn-action {
     display: inline-flex;
     align-items: center;
@@ -294,13 +295,15 @@ h4 {
     font-weight: 600;
     transition: all 0.2s ease;
     color: #fff;
+    cursor: pointer;
+    border: none;
   }
   
   .btn-view {
-    background-color: #22c55e; /* green-500 */
+    background-color: #3b82f6; /* blue-500 - stesso colore della lista contratti */
   }
   .btn-view:hover {
-    background-color: #16a34a; /* green-600 */
+    background-color: #2563eb; /* blue-600 */
   }
   
   .btn-history {

@@ -16,6 +16,7 @@ const {
 
 const createReportSchema = z.object({
   prospectId: uuidSchema,
+  sessionId: optionalUuidSchema,
   matchDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional().nullable(),
   opponent: z.string().max(200).optional().nullable(),
   competition: z.string().max(200).optional().nullable(),
@@ -29,9 +30,10 @@ const createReportSchema = z.object({
   summary: longTextSchema,
   videoLink: urlSchema,
   attachmentUrl: urlSchema,
-}).strict();
+});
 
 const updateReportSchema = z.object({
+  sessionId: optionalUuidSchema,
   matchDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional().nullable(),
   opponent: z.string().max(200).optional().nullable(),
   competition: z.string().max(200).optional().nullable(),
@@ -45,7 +47,7 @@ const updateReportSchema = z.object({
   summary: longTextSchema,
   videoLink: urlSchema,
   attachmentUrl: urlSchema,
-}).strict();
+});
 
 const listReportsSchema = listQuerySchema.extend({
   prospectId: optionalUuidSchema,

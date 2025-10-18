@@ -91,21 +91,15 @@ model Team {
   market_offer            market_offer[]
   market_budget           market_budget[]
 
-  // Scouting relations (v1)
-  scouting_scouts      scouting_scout[]
-  scouting_rubrics     scouting_rubric[]
-  scouting_matches     scouting_match[]
-  scouting_sessions    scouting_session[]
-  scouting_assignments scouting_assignment[]
-  scouting_followups   scouting_followup[]
-  scouting_tags        scouting_tag[]
-
   // Scouting relations (Enterprise v2)
-  scoutingProspects              ScoutingProspect[]
-  scoutingReports                ScoutingReport[]
-  scoutingShortlists             ScoutingShortlist[]
-  scoutingEventLogs              ScoutingEventLog[]
-  agents                         Agent[]
+  scoutProspects                 ScoutProspect[]
+  scoutSessions                  ScoutSession[]
+  scoutReports                   ScoutReport[]
+  scoutEvaluations               ScoutEvaluation[]
+  scoutFollowups                 ScoutFollowUp[]
+  scoutEventLogs                 ScoutEventLog[]
+  scoutWatchlists                ScoutWatchlist[]
+  scoutAgents                    ScoutAgent[]
   account                        Account?                         @relation(fields: [accountId], references: [id])
   tax_config                     tax_config[]
   tax_irpef_bracket              tax_irpef_bracket[]
@@ -159,24 +153,15 @@ model UserProfile {
   createdInvites          TeamInvite[]      @relation("InvitesCreated")
   usedInvites             TeamInvite[]      @relation("InvitesUsed")
 
-  // Scouting relations (v1)
-  scouting_scouts            scouting_scout[]
-  scouting_rubrics           scouting_rubric[]
-  scouting_sessions_created  scouting_session[]    @relation("ScoutingSessionCreatedBy")
-  scouting_sessions_updated  scouting_session[]    @relation("ScoutingSessionUpdatedBy")
-  scouting_sessions_reviewer scouting_session[]    @relation("ScoutingSessionReviewer")
-  scouting_reports           scouting_report[]
-  scouting_assignments       scouting_assignment[]
-  scouting_followups         scouting_followup[]
-  scouting_media             scouting_media[]
-  scouting_reviews           scouting_review[]
-
   // Scouting relations (Enterprise v2)
-  scoutingProspectsCreated  ScoutingProspect[]  @relation("ScoutingProspectCreatedBy")
-  scoutingReportsCreated    ScoutingReport[]    @relation("ScoutingReportCreatedBy")
-  scoutingShortlistsCreated ScoutingShortlist[] @relation("ScoutingShortlistCreatedBy")
-  scoutingEventLogs         ScoutingEventLog[]  @relation("ScoutingEventLogUser")
-  agentsCreated             Agent[]             @relation("AgentCreatedBy")
+  scoutProspectsCreated   ScoutProspect[]   @relation("ScoutProspectCreatedBy")
+  scoutSessionsCreated    ScoutSession[]    @relation("ScoutSessionCreatedBy")
+  scoutReportsCreated     ScoutReport[]     @relation("ScoutReportCreatedBy")
+  scoutEvaluationsCreated ScoutEvaluation[] @relation("ScoutEvaluationCreatedBy")
+  scoutFollowupsAssigned  ScoutFollowUp[]   @relation("ScoutFollowUpAssigned")
+  scoutEventLogsCreated   ScoutEventLog[]   @relation("ScoutEventLogCreatedBy")
+  scoutWatchlistsCreated  ScoutWatchlist[]  @relation("ScoutWatchlistCreatedBy")
+  scoutAgentsCreated      ScoutAgent[]      @relation("ScoutAgentCreatedBy")
 
   // Account relations (Account-Centric Model)
   accounts AccountUser[]
@@ -233,7 +218,7 @@ model Player {
   market_target_converted market_target[] @relation("TargetToPlayerConversion")
 
   // Scouting relations
-  scouting_sessions scouting_session[]
+  scoutProspects ScoutProspect[]
 
   @@map("players")
   @@schema("soccerxpro")
@@ -2022,11 +2007,9 @@ model market_target {
   overall_rating       Decimal?  @db.Decimal(4, 2)
   recommendation_level Int?      @default(3)
   transfer_likelihood  Decimal?  @db.Decimal(5, 2)
-  scouting_report      String?
   video_url            String?
   profile_url          String?
   discovery_method     String?
-  scouting_source      String?
   report_confidence    Int?
   last_scouted_at      DateTime?
 
@@ -2054,10 +2037,7 @@ model market_target {
   market_negotiation    market_negotiation[]
 
   // Scouting relations
-  scouting_sessions    scouting_session[]
-  scouting_assignments scouting_assignment[]
-  scouting_followups   scouting_followup[]
-  scouting_tag_links   scouting_tag_link[]
+  scoutProspects ScoutProspect[]
 
   @@map("market_targets")
   @@schema("soccerxpro")
@@ -2254,16 +2234,6 @@ enum ObservationType {
   @@schema("soccerxpro")
 }
 
-enum ScoutingSessionStatus {
-  OPEN
-  EVALUATED
-  APPROVED
-  REJECTED
-  CLOSED
-
-  @@schema("soccerxpro")
-}
-
 enum RecommendationLevel {
   STRONG_BUY
   BUY
@@ -2305,609 +2275,285 @@ enum MediaType {
   @@schema("soccerxpro")
 }
 
-// ---------- PROFILO SCOUT ----------
-/// -------------------- SCOUTING CORE (v1) --------------------
-/// Gestione scouting classico con rubriche, sessioni e report.
+// ===============================================================
+// 🔍 SCOUTING MODULE - ENTERPRISE VERSION (SoccerXPro V2)
+// ===============================================================
+// 
+// Nuovo schema scouting con prefisso scout_* per organizzazione
+// e flusso: DISCOVERY → MONITORING → SESSION → REPORT → EVALUATED → TARGETED
+// 
+// ===============================================================
+// ===============================================================
+// 🔍 NUOVE TABELLE SCOUTING CON PREFISSO scout_*
+// ===============================================================
 
-/// Profilo dello scout
-model scouting_scout {
-  id            Int       @id @default(autoincrement())
-  // Anagrafica
-  first_name    String
-  last_name     String
-  nationality   String?
-  date_of_birth DateTime?
-  gender        String?
+/// Prospect scouting (giocatore osservato) - Core enterprise
+model ScoutProspect {
+  id          String @id @default(uuid()) @db.Uuid
+  teamId      String @map("team_id") @db.Uuid
+  createdById Int    @map("created_by_id")
+  updatedById Int?   @map("updated_by_id")
 
-  // Contatti
-  email           String?
-  phone           String?
-  secondary_phone String?
-  linkedin_url    String?
-  website         String?
-  address         String?
-  city            String?
-  country         String?
+  // Identità & anagrafica
+  firstName          String    @map("first_name")
+  lastName           String    @map("last_name")
+  fullName           String?   @map("full_name")
+  birthDate          DateTime? @map("birth_date")
+  birthPlace         String?   @map("birth_place")
+  nationalityPrimary String?   @map("nationality_primary")
+  nationalities      Json?     @map("nationalities")
+  euStatus           String?   @map("eu_status")
+  preferredFoot      String?   @map("preferred_foot")
 
-  // Profilo professionale
-  license_level    String? // es. UEFA A, FIGC Scout License
-  license_expiry   DateTime?
-  experience_years Int?      @default(0)
-  specialization   String? // es. "U17-Primavera", "Serie B"
-  preferred_roles  String? // es. "ATT, CC"
-  scouting_regions String? // libero o usi la join table sotto
-  languages        String?
-  notes            String?   @db.Text
+  // Profilo calcistico
+  heightCm           Int?   @map("height_cm")
+  weightKg           Int?   @map("weight_kg")
+  wingspanCm         Int?   @map("wingspan_cm")
+  mainPosition       String @map("main_position")
+  secondaryPositions Json?  @map("secondary_positions")
+  roleTags           Json?  @map("role_tags")
 
-  // Relazioni tenancy/identity
-  teamId String?      @map("team_id") @db.Uuid
-  userId Int? // collega a UserProfile se interno al club
-  team   Team?        @relation(fields: [teamId], references: [id])
-  user   UserProfile? @relation(fields: [userId], references: [id])
+  // Club & mercato
+  currentClub     String?   @map("current_club")
+  currentLeague   String?   @map("current_league")
+  countryClub     String?   @map("country_club")
+  contractType    String?   @map("contract_type")
+  contractUntil   DateTime? @map("contract_until")
+  marketValue     Float?    @map("market_value")
+  releaseClause   Float?    @map("release_clause")
+  sellOnClausePct Float?    @map("sell_on_clause_pct")
+  agentId         String?   @map("agent_id") @db.Uuid
 
-  // Attività collegate
-  sessions    scouting_session[]
-  assignments scouting_assignment[]   @relation("ScoutAssignments")
-  reviews     scouting_review[]
-  followups   scouting_followup[]
-  regions     scouting_scout_region[]
+  // Valutazioni
+  overallScore   Float?  @map("overall_score")
+  potentialScore Float?  @map("potential_score")
+  riskIndex      Float?  @map("risk_index")
+  status         String  @default("DISCOVERY")
+  statusReason   String? @map("status_reason")
 
-  // Audit
-  is_active   Boolean   @default(true)
-  is_verified Boolean   @default(false)
-  verified_by String?   @db.Uuid
-  verified_at DateTime?
-  created_by  String?   @db.Uuid
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  // Link cross-modulo
+  playerId     Int?  @map("player_id")
+  targetId     Int?  @map("target_id")
+  externalRefs Json? @map("external_refs")
 
-  @@index([teamId, is_active])
-  @@map("scouting_scouts")
-  @@schema("soccerxpro")
-}
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-// ---------- RUBRICHE (personalizzabili per Team) ----------
-/// Rubriche di valutazione (criteri)
-model scouting_rubric {
-  id          Int      @id @default(autoincrement())
-  teamId      String   @map("team_id") @db.Uuid
-  name        String // es. "Standard Prima Squadra 1-10"
-  description String?
-  scale_min   Int      @default(1)
-  scale_max   Int      @default(10)
-  is_default  Boolean  @default(false)
-  createdById Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Relations
+  team      Team           @relation(fields: [teamId], references: [id])
+  createdBy UserProfile    @relation("ScoutProspectCreatedBy", fields: [createdById], references: [id])
+  agent     ScoutAgent?    @relation(fields: [agentId], references: [id])
+  player    Player?        @relation(fields: [playerId], references: [id])
+  target    market_target? @relation(fields: [targetId], references: [id])
 
-  team      Team                        @relation(fields: [teamId], references: [id])
-  createdBy UserProfile?                @relation(fields: [createdById], references: [id])
-  criteria  scouting_rubric_criterion[]
-  reports   scouting_report[]
+  sessions    ScoutSession[]
+  reports     ScoutReport[]
+  evaluations ScoutEvaluation[]
+  followups   ScoutFollowUp[]
+  eventLogs   ScoutEventLog[]
+  watchlist   ScoutWatchlist[]
 
-  @@unique([teamId, name])
-  @@index([teamId, is_default])
-  @@map("scouting_rubrics")
-  @@schema("soccerxpro")
-}
-
-/// Criteri di valutazione per rubrica
-model scouting_rubric_criterion {
-  id         Int     @id @default(autoincrement())
-  rubricId   Int
-  // Categoria e descrizione del criterio (p.es. Tecnica/Passaggio)
-  category   String // TECHNICAL | TACTICAL | PHYSICAL | MENTAL | BEHAVIORAL | GK
-  name       String // es. "Passaggio", "Decision Making"
-  weight     Decimal @default(1.0) @db.Decimal(5, 2) // peso relativo nel calcolo
-  orderIndex Int     @default(0)
-  helpText   String?
-
-  rubric scouting_rubric         @relation(fields: [rubricId], references: [id], onDelete: Cascade)
-  scores scouting_report_score[]
-
-  @@unique([rubricId, name])
-  @@index([rubricId, category, orderIndex])
-  @@map("scouting_rubric_criteria")
-  @@schema("soccerxpro")
-}
-
-// ---------- PARTITA OSSERVATA (opzionale per contestualizzare la sessione) ----------
-/// Partite osservate
-model scouting_match {
-  id          Int      @id @default(autoincrement())
-  teamId      String   @map("team_id") @db.Uuid
-  competition String
-  season      String? // es. "2025/26"
-  round       String? // es. "Matchday 3", "Quarterfinal"
-  date        DateTime
-  stadium     String?
-  city        String?
-  homeTeam    String
-  awayTeam    String
-  result      String? // es. "2-1"
-  notes       String?  @db.Text
-
-  team        Team                  @relation(fields: [teamId], references: [id])
-  sessions    scouting_session[]
-  assignments scouting_assignment[]
-  tag_links   scouting_tag_link[]
-
-  @@index([teamId, date])
-  @@map("scouting_matches")
-  @@schema("soccerxpro")
-}
-
-// ---------- SESSIONE DI OSSERVAZIONE ----------
-/// Sessioni di osservazione
-model scouting_session {
-  id              Int                   @id @default(autoincrement())
-  teamId          String                @map("team_id") @db.Uuid
-  scoutId         Int                   @map("scout_id")
-  targetId        Int?                  @map("target_id") // market_target.id (opzionale)
-  playerId        Int?                  @map("player_id") // Player.id se già tesserato o noto
-  matchId         Int?                  @map("match_id") // scouting_match.id
-  observationType ObservationType       @default(LIVE)
-  status          ScoutingSessionStatus @default(OPEN)
-  priority        PriorityLevel         @default(MEDIUM)
-
-  // Contesto
-  dateObserved    DateTime?
-  location        String?
-  weather         String?
-  minutes_played  Int?
-  position_played Position? // riuso enum globale
-  shirt_number    Int?
-
-  // Snapshot dati giocatore (se target non formalizzato)
-  player_first_name  String?
-  player_last_name   String?
-  player_nationality String?
-  player_age         Int?
-  player_club        String?
-
-  // Valutazioni sintetiche
-  overall_rating   Decimal?            @db.Decimal(4, 2)
-  potential_rating Decimal?            @db.Decimal(4, 2)
-  recommendation   RecommendationLevel @default(NEUTRAL)
-
-  // Operatività
-  follow_up_date DateTime?
-  follow_up_note String?
-  next_action    String?
-  ds_reviewer_id Int?
-  notes          String?   @db.Text
-
-  // Audit
-  createdById Int?
-  updatedById Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relazioni
-  team      Team            @relation(fields: [teamId], references: [id])
-  scout     scouting_scout  @relation(fields: [scoutId], references: [id])
-  target    market_target?  @relation(fields: [targetId], references: [id])
-  player    Player?         @relation(fields: [playerId], references: [id])
-  match     scouting_match? @relation(fields: [matchId], references: [id])
-  createdBy UserProfile?    @relation("ScoutingSessionCreatedBy", fields: [createdById], references: [id])
-  updatedBy UserProfile?    @relation("ScoutingSessionUpdatedBy", fields: [updatedById], references: [id])
-  reviewer  UserProfile?    @relation("ScoutingSessionReviewer", fields: [ds_reviewer_id], references: [id])
-
-  report     scouting_report?
-  media      scouting_media[]
-  followups  scouting_followup[]
-  tags       scouting_tag_link[]
-  assignment scouting_assignment? @relation(fields: [id], references: [id])
-  reviews    scouting_review[]
-
-  @@index([teamId, scoutId, dateObserved])
-  @@index([teamId, status, priority])
-  @@index([teamId, targetId])
-  @@map("scouting_sessions")
-  @@schema("soccerxpro")
-}
-
-// ---------- REPORT STRUTTURATO (1:1 con sessione) ----------
-/// Report di osservazione con punteggi
-model scouting_report {
-  id              Int     @id @default(autoincrement())
-  sessionId       Int     @unique
-  rubricId        Int // quale rubrica ha usato il team per questo report
-  summary         String? @db.Text
-  strengths       String? @db.Text
-  weaknesses      String? @db.Text
-  playing_style   String? // es. "Regista", "Box-to-Box", "Inverted Winger"
-  comparable_to   String? // es. "somiglia a Barella"
-  medical_notes   String?
-  character_notes String?
-
-  // metriche aggregate (salvate per query veloci)
-  score_avg      Decimal? @db.Decimal(5, 2)
-  score_weighted Decimal? @db.Decimal(5, 2)
-
-  createdById Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  session   scouting_session        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  rubric    scouting_rubric         @relation(fields: [rubricId], references: [id])
-  createdBy UserProfile?            @relation(fields: [createdById], references: [id])
-  scores    scouting_report_score[]
-
-  @@map("scouting_reports")
-  @@schema("soccerxpro")
-}
-
-/// Punteggi per criterio nel report
-model scouting_report_score {
-  id          Int     @id @default(autoincrement())
-  reportId    Int
-  criterionId Int
-  score       Decimal @db.Decimal(5, 2) // deve stare tra rubric.scale_min e scale_max
-  note        String?
-
-  report    scouting_report           @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  criterion scouting_rubric_criterion @relation(fields: [criterionId], references: [id])
-
-  @@unique([reportId, criterionId])
-  @@index([criterionId])
-  @@map("scouting_report_scores")
-  @@schema("soccerxpro")
-}
-
-// ---------- ASSIGNMENT (pianificazione incarichi scouting) ----------
-/// Incarichi assegnati agli scout
-model scouting_assignment {
-  id            Int              @id @default(autoincrement())
-  teamId        String           @map("team_id") @db.Uuid
-  assignedToId  Int? // scouting_scout.id
-  requestedById Int? // UserProfile (DS)
-  targetId      Int? // market_target da osservare
-  matchId       Int? // partita specifica
-  priority      PriorityLevel    @default(MEDIUM)
-  status        AssignmentStatus @default(DRAFT)
-  due_date      DateTime?
-  title         String
-  description   String?
-  checklist     Json? // voci operative opzionali
-  link_refs     Json? // link utili (Wyscout, YT, TMkt, ecc.)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  team        Team              @relation(fields: [teamId], references: [id])
-  assignedTo  scouting_scout?   @relation("ScoutAssignments", fields: [assignedToId], references: [id])
-  requestedBy UserProfile?      @relation(fields: [requestedById], references: [id])
-  target      market_target?    @relation(fields: [targetId], references: [id])
-  match       scouting_match?   @relation(fields: [matchId], references: [id])
-  session     scouting_session?
-
-  @@index([teamId, status, priority])
-  @@index([teamId, assignedToId])
-  @@map("scouting_assignments")
-  @@schema("soccerxpro")
-}
-
-// ---------- FOLLOW-UP operativi (su sessione o target) ----------
-/// Follow-up operativi su sessioni o target
-model scouting_followup {
-  id           Int       @id @default(autoincrement())
-  teamId       String    @map("team_id") @db.Uuid
-  sessionId    Int?
-  targetId     Int?
-  assignedToId Int? // scouting_scout o utente
-  due_date     DateTime?
-  status       String    @default("OPEN")
-  note         String?
-  createdById  Int?
-  completedAt  DateTime?
-
-  team       Team              @relation(fields: [teamId], references: [id])
-  session    scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  target     market_target?    @relation(fields: [targetId], references: [id], onDelete: SetNull)
-  assignedTo scouting_scout?   @relation(fields: [assignedToId], references: [id])
-  createdBy  UserProfile?      @relation(fields: [createdById], references: [id])
-
-  @@index([teamId, status, due_date])
-  @@map("scouting_followups")
-  @@schema("soccerxpro")
-}
-
-// ---------- MEDIA allegati alle sessioni ----------
-/// Media allegati (video, immagini, link)
-model scouting_media {
-  id             Int       @id @default(autoincrement())
-  sessionId      Int
-  type           MediaType @default(LINK)
-  title          String?
-  url            String? // per LINK/VIDEO/IMG remoti
-  storagePath    String? // se caricato su bucket
-  mimeType       String?
-  sizeBytes      Int?
-  checksumSHA256 String?
-  tags           String?
-  uploadedById   Int?
-  uploadedAt     DateTime  @default(now())
-
-  session    scouting_session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  uploadedBy UserProfile?     @relation(fields: [uploadedById], references: [id])
-
-  @@index([sessionId, type])
-  @@map("scouting_media")
-  @@schema("soccerxpro")
-}
-
-// ---------- REVIEW del DS sul lavoro dello scout ----------
-/// Review del DS sul lavoro scout
-model scouting_review {
-  id         Int                 @id @default(autoincrement())
-  scoutId    Int
-  sessionId  Int?
-  reviewerId Int // UserProfile (DS)
-  decision   RecommendationLevel
-  comment    String?             @db.Text
-  createdAt  DateTime            @default(now())
-
-  scout    scouting_scout    @relation(fields: [scoutId], references: [id])
-  session  scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  reviewer UserProfile       @relation(fields: [reviewerId], references: [id])
-
-  @@index([scoutId, reviewerId, createdAt])
-  @@map("scouting_reviews")
-  @@schema("soccerxpro")
-}
-
-// ---------- REGIONI e copertura (facoltativo; per analisi geografiche) ----------
-/// Regioni e copertura scouting
-model scouting_region {
-  id        Int      @id @default(autoincrement())
-  code      String // es. "IT-MAR", "ES", "LATAM"
-  name      String
-  level     String? // es. "country", "region"
-  parentId  Int?
-  createdAt DateTime @default(now())
-
-  parent   scouting_region?        @relation("RegionParent", fields: [parentId], references: [id])
-  children scouting_region[]       @relation("RegionParent")
-  scouts   scouting_scout_region[]
-
-  @@unique([code, name])
-  @@map("scouting_regions")
-  @@schema("soccerxpro")
-}
-
-/// Relazione scout-regione
-model scouting_scout_region {
-  id       Int           @id @default(autoincrement())
-  scoutId  Int
-  regionId Int
-  priority PriorityLevel @default(MEDIUM)
-  note     String?
-
-  scout  scouting_scout  @relation(fields: [scoutId], references: [id], onDelete: Cascade)
-  region scouting_region @relation(fields: [regionId], references: [id], onDelete: Cascade)
-
-  @@unique([scoutId, regionId])
-  @@map("scouting_scout_regions")
-  @@schema("soccerxpro")
-}
-
-// ---------- TAGGING generico (sessioni, target, match) ----------
-/// Tagging generico (sessioni, match, target)
-model scouting_tag {
-  id        Int      @id @default(autoincrement())
-  teamId    String   @map("team_id") @db.Uuid
-  label     String
-  color     String? // es. "#3b82f6"
-  createdAt DateTime @default(now())
-
-  team  Team                @relation(fields: [teamId], references: [id])
-  links scouting_tag_link[]
-
-  @@unique([teamId, label])
-  @@map("scouting_tags")
-  @@schema("soccerxpro")
-}
-
-/// Link tag a entità (sessioni, target, match)
-model scouting_tag_link {
-  id        Int      @id @default(autoincrement())
-  tagId     Int
-  // Polymorphic link: al momento supportiamo session/target/match
-  sessionId Int?
-  targetId  Int?
-  matchId   Int?
-  createdAt DateTime @default(now())
-
-  tag     scouting_tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  session scouting_session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  target  market_target?    @relation(fields: [targetId], references: [id], onDelete: SetNull)
-  match   scouting_match?   @relation(fields: [matchId], references: [id], onDelete: SetNull)
-
-  @@index([tagId])
-  @@index([sessionId])
+  @@index([teamId, status])
+  @@index([lastName, firstName])
+  @@index([playerId])
   @@index([targetId])
-  @@index([matchId])
-  @@map("scouting_tag_links")
+  @@map("scout_prospects")
   @@schema("soccerxpro")
 }
 
-/// ===============================================================
-/// 🧩 SCOUTING MODULE – Enterprise Version (SoccerXPro)
-/// Schema: soccerxpro
-/// ===============================================================
+/// Sessioni di osservazione
+model ScoutSession {
+  id              String    @id @default(uuid()) @db.Uuid
+  prospectId      String    @map("prospect_id") @db.Uuid
+  teamId          String    @map("team_id") @db.Uuid
+  createdById     Int       @map("created_by_id")
+  observationType String?   @default("LIVE") @map("observation_type")
+  dateObserved    DateTime? @map("date_observed")
+  location        String?
+  opponent        String?
+  competition     String?
+  minutesPlayed   Int?      @map("minutes_played")
+  rolePlayed      String?   @map("role_played")
+  rating          Float?
+  notes           String?
+  prospectTeamSide String?  @default("HOME") @map("prospect_team_side")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
-/// -------------------- SCOUTING ENTERPRISE (v2) --------------------
-/// Sistema avanzato di scouting per analisi multi-criterio e tracciamento.
+  prospect   ScoutProspect    @relation(fields: [prospectId], references: [id])
+  team       Team             @relation(fields: [teamId], references: [id])
+  createdBy  UserProfile      @relation("ScoutSessionCreatedBy", fields: [createdById], references: [id])
+  reports    ScoutReport[]
+  formations ScoutFormation[]
 
-/// Prospect scouting (giocatore osservato)
-model ScoutingProspect {
-  id          String @id @default(uuid()) @db.Uuid
-  teamId      String @db.Uuid
-  createdById Int
-  updatedById Int?
-
-  firstName         String
-  lastName          String
-  fullName          String?
-  birthDate         DateTime?
-  nationality       String?
-  position          String?
-  secondaryPosition String?
-  preferredFoot     String?
-  heightCm          Int?
-  weightKg          Int?
-  currentClub       String?
-  contractUntil     DateTime?
-  agentId           String?        @db.Uuid
-  marketValue       Float?
-  potentialScore    Float?         @default(0)
-  scoutingStatus    ScoutingStatus @default(DISCOVERY)
-  notes             String?
-
-  reports        ScoutingReport[]
-  shortlistItems ScoutingShortlistItem[]
-  eventLogs      ScoutingEventLog[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  agent     Agent?      @relation(fields: [agentId], references: [id])
-  team      Team        @relation(fields: [teamId], references: [id])
-  createdBy UserProfile @relation("ScoutingProspectCreatedBy", fields: [createdById], references: [id])
-
-  @@map("market_scouting")
+  @@index([prospectId])
+  @@index([teamId, dateObserved])
+  @@map("scout_sessions")
   @@schema("soccerxpro")
 }
 
-/// Report dettagliato di un prospect
-model ScoutingReport {
-  id          String @id @default(uuid()) @db.Uuid
-  prospectId  String @db.Uuid
-  teamId      String @db.Uuid
-  createdById Int
+/// Formazione tattica osservata in una sessione (HOME/AWAY)
+model ScoutFormation {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @map("session_id") @db.Uuid
+  teamSide  String   @default("PROSPECT") @map("team_side") // PROSPECT | OPPONENT
+  formation String
+  positions Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  matchDate      DateTime?
+  session ScoutSession @relation(fields: [sessionId], references: [id])
+
+  @@map("scout_formations")
+  @@unique([sessionId, teamSide])
+  @@schema("soccerxpro")
+}
+
+/// Report di valutazione
+model ScoutReport {
+  id          String  @id @default(uuid()) @db.Uuid
+  prospectId  String  @map("prospect_id") @db.Uuid
+  sessionId   String? @map("session_id") @db.Uuid
+  teamId      String  @map("team_id") @db.Uuid
+  createdById Int     @map("created_by_id")
+
+  matchDate      DateTime? @map("match_date")
   opponent       String?
   competition    String?
-  rolePlayed     String?
-  minutesPlayed  Int?
-  techniqueScore Float?
-  tacticsScore   Float?
-  physicalScore  Float?
-  mentalityScore Float?
-  totalScore     Float?    @default(0)
+  rolePlayed     String?   @map("role_played")
+  minutesPlayed  Int?      @map("minutes_played")
+  techniqueScore Float?    @map("technique_score")
+  tacticsScore   Float?    @map("tactics_score")
+  physicalScore  Float?    @map("physical_score")
+  mentalityScore Float?    @map("mentality_score")
+  totalScore     Float?    @default(0) @map("total_score")
   summary        String?
-  videoLink      String?
-  attachmentUrl  String?
+  videoLink      String?   @map("video_link")
+  attachmentUrl  String?   @map("attachment_url")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  prospect  ScoutProspect @relation(fields: [prospectId], references: [id])
+  session   ScoutSession? @relation(fields: [sessionId], references: [id])
+  team      Team          @relation(fields: [teamId], references: [id])
+  createdBy UserProfile   @relation("ScoutReportCreatedBy", fields: [createdById], references: [id])
 
-  prospect  ScoutingProspect @relation(fields: [prospectId], references: [id])
-  team      Team             @relation(fields: [teamId], references: [id])
-  createdBy UserProfile      @relation("ScoutingReportCreatedBy", fields: [createdById], references: [id])
-
-  @@map("market_scouting_report")
+  @@index([prospectId])
+  @@index([teamId, createdAt])
+  @@map("scout_reports")
   @@schema("soccerxpro")
 }
 
-/// Shortlist personalizzate
-model ScoutingShortlist {
-  id          String @id @default(uuid()) @db.Uuid
-  teamId      String @db.Uuid
-  createdById Int
+/// Valutazione del DS
+model ScoutEvaluation {
+  id             String    @id @default(uuid()) @db.Uuid
+  prospectId     String    @map("prospect_id") @db.Uuid
+  teamId         String    @map("team_id") @db.Uuid
+  directorId     Int       @map("director_id")
+  averageScore   Float?    @map("average_score")
+  recommendation String?
+  notes          String?
+  decisionDate   DateTime? @default(now()) @map("decision_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
 
-  name        String
+  prospect ScoutProspect @relation(fields: [prospectId], references: [id])
+  team     Team          @relation(fields: [teamId], references: [id])
+  director UserProfile   @relation("ScoutEvaluationCreatedBy", fields: [directorId], references: [id])
+
+  @@index([prospectId])
+  @@index([teamId, decisionDate])
+  @@map("scout_evaluations")
+  @@schema("soccerxpro")
+}
+
+/// Follow-up operativi
+model ScoutFollowUp {
+  id          String    @id @default(uuid()) @db.Uuid
+  prospectId  String    @map("prospect_id") @db.Uuid
+  teamId      String    @map("team_id") @db.Uuid
+  assignedTo  Int?      @map("assigned_to")
+  dueDate     DateTime? @map("due_date")
+  status      String?   @default("OPEN")
+  note        String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  prospect ScoutProspect @relation(fields: [prospectId], references: [id])
+  team     Team          @relation(fields: [teamId], references: [id])
+  assigned UserProfile?  @relation("ScoutFollowUpAssigned", fields: [assignedTo], references: [id])
+
+  @@index([prospectId])
+  @@index([teamId, status])
+  @@map("scout_followups")
+  @@schema("soccerxpro")
+}
+
+/// Audit trail completo
+model ScoutEventLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  prospectId  String   @map("prospect_id") @db.Uuid
+  teamId      String   @map("team_id") @db.Uuid
+  userId      Int      @map("user_id")
+  action      String
   description String?
-  category    String? // e.g., "Under 23", "Defenders", "Summer Window"
-  isArchived  Boolean @default(false)
+  fromStatus  String?  @map("from_status")
+  toStatus    String?  @map("to_status")
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  items ScoutingShortlistItem[]
+  prospect ScoutProspect @relation(fields: [prospectId], references: [id])
+  team     Team          @relation(fields: [teamId], references: [id])
+  user     UserProfile   @relation("ScoutEventLogCreatedBy", fields: [userId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  team      Team        @relation(fields: [teamId], references: [id])
-  createdBy UserProfile @relation("ScoutingShortlistCreatedBy", fields: [createdById], references: [id])
-
-  @@map("market_scouting_shortlist")
+  @@index([prospectId])
+  @@index([teamId, createdAt])
+  @@map("scout_event_logs")
   @@schema("soccerxpro")
 }
 
-/// Item di shortlist personalizzate
-model ScoutingShortlistItem {
-  id          String  @id @default(uuid()) @db.Uuid
-  shortlistId String  @db.Uuid
-  prospectId  String  @db.Uuid
-  priority    Int?    @default(0)
-  notes       String?
+/// Watchlist personale degli scout
+model ScoutWatchlist {
+  id         String    @id @default(uuid()) @db.Uuid
+  prospectId String    @map("prospect_id") @db.Uuid
+  scoutId    Int       @map("scout_id")
+  teamId     String    @map("team_id") @db.Uuid
+  status     String?   @default("ACTIVE")
+  rating     Float?
+  lastSeenAt DateTime? @map("last_seen_at")
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  prospect ScoutProspect @relation(fields: [prospectId], references: [id])
+  scout    UserProfile   @relation("ScoutWatchlistCreatedBy", fields: [scoutId], references: [id])
+  team     Team          @relation(fields: [teamId], references: [id])
 
-  shortlist ScoutingShortlist @relation(fields: [shortlistId], references: [id])
-  prospect  ScoutingProspect  @relation(fields: [prospectId], references: [id])
-
-  @@unique([shortlistId, prospectId])
-  @@map("market_scouting_shortlist_item")
+  @@unique([prospectId, scoutId])
+  @@map("scout_watchlists")
   @@schema("soccerxpro")
 }
 
-/// Log eventi e cambi di stato
-model ScoutingEventLog {
-  id          String          @id @default(uuid()) @db.Uuid
-  prospectId  String          @db.Uuid
-  teamId      String          @db.Uuid
-  userId      Int
-  action      String // e.g., "CREATE", "UPDATE", "STATUS_CHANGE"
-  description String?
-  fromStatus  ScoutingStatus?
-  toStatus    ScoutingStatus?
-  createdAt   DateTime        @default(now())
-
-  prospect ScoutingProspect @relation(fields: [prospectId], references: [id])
-  team     Team             @relation(fields: [teamId], references: [id])
-  user     UserProfile      @relation("ScoutingEventLogUser", fields: [userId], references: [id])
-
-  @@map("market_scouting_event_log")
-  @@schema("soccerxpro")
-}
-
-/// Anagrafica agente (v2)
-model Agent {
-  id          String @id @default(uuid()) @db.Uuid
-  teamId      String @db.Uuid
-  createdById Int
-
-  firstName     String
-  lastName      String
+/// Agenti/procuratori
+model ScoutAgent {
+  id            String   @id @default(uuid()) @db.Uuid
+  teamId        String   @map("team_id") @db.Uuid
+  createdById   Int      @map("created_by_id")
+  firstName     String   @map("first_name")
+  lastName      String   @map("last_name")
   email         String?
   phone         String?
   company       String?
-  licenseNumber String?
+  licenseNumber String?  @map("license_number")
   country       String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  prospects ScoutingProspect[]
+  team      Team            @relation(fields: [teamId], references: [id])
+  createdBy UserProfile     @relation("ScoutAgentCreatedBy", fields: [createdById], references: [id])
+  prospects ScoutProspect[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  team      Team        @relation(fields: [teamId], references: [id])
-  createdBy UserProfile @relation("AgentCreatedBy", fields: [createdById], references: [id])
-
-  @@map("market_agent")
-  @@schema("soccerxpro")
-}
-
-/// Enum di stato per l'area scouting
-enum ScoutingStatus {
-  DISCOVERY
-  MONITORING
-  ANALYZED
-  TARGETED
-  ARCHIVED
-
+  @@index([teamId])
+  @@map("scout_agents")
   @@schema("soccerxpro")
 }
 

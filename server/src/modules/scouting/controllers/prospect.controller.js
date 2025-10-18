@@ -23,7 +23,7 @@ const {
 const getAllProspects = async (req, res) => {
   try {
     const teamId = req.context?.teamId;
-    const userId = req.user?.id;
+    const userId = req.user?.profile?.id;
 
     if (!teamId) {
       return res.status(401).json(errorResponse('No team in session'));
@@ -63,7 +63,7 @@ const getAllProspects = async (req, res) => {
 const getProspectById = async (req, res) => {
   try {
     const teamId = req.context?.teamId;
-    const userId = req.user?.id;
+    const userId = req.user?.profile?.id;
 
     if (!teamId) {
       return res.status(401).json(errorResponse('No team in session'));
@@ -101,17 +101,22 @@ const getProspectById = async (req, res) => {
 const createProspect = async (req, res) => {
   try {
     const teamId = req.context?.teamId;
-    const userId = req.user?.id;
+    const userId = req.user?.profile?.id;
 
     if (!teamId) {
       return res.status(401).json(errorResponse('No team in session'));
     }
 
     // Validazione body
+    console.log('[ProspectController] Request body:', JSON.stringify(req.body, null, 2));
+    
     const validation = createProspectSchema.safeParse(req.body);
     if (!validation.success) {
+      console.error('[ProspectController] Validation error:', validation.error);
+      console.error('[ProspectController] Validation error.errors:', validation.error.errors);
+      console.error('[ProspectController] Validation error.issues:', validation.error.issues);
       return res.status(400).json(
-        errorResponse(validation.error.errors[0].message)
+        errorResponse(validation.error.issues?.[0]?.message || 'Validation error')
       );
     }
 
@@ -145,7 +150,7 @@ const createProspect = async (req, res) => {
 const updateProspect = async (req, res) => {
   try {
     const teamId = req.context?.teamId;
-    const userId = req.user?.id;
+    const userId = req.user?.profile?.id;
 
     if (!teamId) {
       return res.status(401).json(errorResponse('No team in session'));
@@ -203,7 +208,7 @@ const updateProspect = async (req, res) => {
 const deleteProspect = async (req, res) => {
   try {
     const teamId = req.context?.teamId;
-    const userId = req.user?.id;
+    const userId = req.user?.profile?.id;
 
     if (!teamId) {
       return res.status(401).json(errorResponse('No team in session'));
@@ -247,7 +252,7 @@ const deleteProspect = async (req, res) => {
 const promoteProspect = async (req, res) => {
   try {
     const teamId = req.context?.teamId;
-    const userId = req.user?.id;
+    const userId = req.user?.profile?.id;
 
     if (!teamId) {
       return res.status(401).json(errorResponse('No team in session'));

@@ -245,7 +245,21 @@ export default function PlayersUpload() {
         <CardContent>
           <div className="space-y-6">
             {/* File Selector */}
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors">
+            <div 
+              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+              onDrop={(e) => {
+                e.preventDefault();
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                  setFile(files[0]);
+                  setError(null);
+                  setMessage("");
+                  setSuccess(false);
+                }
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragEnter={(e) => e.preventDefault()}
+            >
               {!file ? (
                 <div className="space-y-4">
                   <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
@@ -305,26 +319,27 @@ export default function PlayersUpload() {
               </div>
             )}
 
+
             {/* Upload Button */}
             <div className="flex justify-center">
-              <Button
-                variant="primary"
+              <button
+                type="button"
                 onClick={handleUpload}
                 disabled={!file || loading}
-                className="min-w-[200px]"
+                className="min-w-[200px] px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    <RefreshCw className="w-4 h-4 animate-spin" />
                     Caricamento...
                   </>
                 ) : (
                   <>
-                    <Upload className="w-4 h-4 mr-2" />
+                    <Upload className="w-4 h-4" />
                     Carica File
                   </>
                 )}
-              </Button>
+              </button>
             </div>
 
             {/* Messages */}

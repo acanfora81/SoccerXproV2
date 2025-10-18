@@ -45,6 +45,10 @@ import TrattativePage from "@/pages/market/TrattativePage";
 import OffersPage from "@/pages/market/OffersPage";
 import TargetsPage from "@/pages/market/TargetsPage";
 import ScoutingPage from "@/pages/market/ScoutingPage";
+import ProspectsPage from "@/pages/scouting/ProspectsPage";
+import ProspectDetailPage from "@/pages/scouting/ProspectDetailPage";
+import SessionsPage from "@/pages/scouting/SessionsPage";
+import ReportsPage from "@/pages/scouting/ReportsPage";
 import AgentiPage from "@/pages/market/AgentiPage";
 import NegotiationsPage from "@/pages/market/NegotiationsPage";
 import BudgetsPage from "@/pages/market/BudgetsPage";
@@ -151,12 +155,18 @@ const router = createBrowserRouter([
       { path: "dashboard/medical/audit", element: <PlaceholderPage title="Audit Medico" /> },
       { path: "dashboard/medical/settings", element: <PlaceholderPage title="Impostazioni Mediche" /> },
       
+      // Scouting (modulo autonomo)
+      { path: "dashboard/scouting", element: <ProspectsPage /> },
+      { path: "dashboard/scouting/prospects", element: <ProspectsPage /> },
+      { path: "dashboard/scouting/prospects/:id", element: <ProspectDetailPage /> },
+      { path: "dashboard/scouting/sessions", element: <SessionsPage /> },
+      { path: "dashboard/scouting/reports", element: <ReportsPage /> },
+
       // Mercato
       { path: "dashboard/market", element: <MarketDashboard /> },
       { path: "dashboard/market/trattative", element: <TrattativePage /> },
       { path: "dashboard/market/offerte", element: <OffersPage /> },
       { path: "dashboard/market/obiettivi", element: <TargetsPage /> },
-      { path: "dashboard/market/scouting", element: <ScoutingPage /> },
       { path: "dashboard/market/agenti", element: <AgentiPage /> },
       { path: "dashboard/market/trattative-nuove", element: <NegotiationsPage /> },
       { path: "dashboard/market/budget", element: <BudgetsPage /> },

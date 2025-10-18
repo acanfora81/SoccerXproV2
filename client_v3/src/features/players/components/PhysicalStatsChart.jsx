@@ -47,12 +47,19 @@ export default function PhysicalStatsChart({ players }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900 dark:text-white">{label}</p>
+        <div className="bg-gray-900 text-white p-4 rounded-lg border border-gray-700 shadow-xl">
+          <p className="font-semibold text-lg mb-3 text-blue-400">{label}</p>
           {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: {entry.value} {entry.name.includes('altezza') ? 'cm' : entry.name.includes('peso') ? 'kg' : ''}
-            </p>
+            <div key={index} className="flex items-center gap-2 mb-1">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="text-sm font-medium">
+                {entry.name}: <span className="text-white font-bold">{entry.value}</span>
+                {entry.name.includes('altezza') ? ' cm' : entry.name.includes('peso') ? ' kg' : ''}
+              </span>
+            </div>
           ))}
         </div>
       );
@@ -64,42 +71,63 @@ export default function PhysicalStatsChart({ players }) {
     <div className="h-80 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <defs>
+            <linearGradient id="altezzaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8}/>
+              <stop offset="100%" stopColor="#1D4ED8" stopOpacity={0.6}/>
+            </linearGradient>
+            <linearGradient id="pesoGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#10B981" stopOpacity={0.8}/>
+              <stop offset="100%" stopColor="#059669" stopOpacity={0.6}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
           <XAxis 
             dataKey="role" 
-            stroke="#6b7280"
+            stroke="#9CA3AF"
             fontSize={12}
+            tick={{ fill: '#9CA3AF' }}
           />
           <YAxis 
             yAxisId="left"
-            stroke="#6b7280"
+            stroke="#9CA3AF"
             fontSize={12}
-            label={{ value: 'Altezza (cm)', angle: -90, position: 'insideLeft' }}
+            tick={{ fill: '#9CA3AF' }}
+            label={{ value: 'Altezza (cm)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
           />
           <YAxis 
             yAxisId="right" 
             orientation="right" 
-            stroke="#6b7280"
+            stroke="#9CA3AF"
             fontSize={12}
-            label={{ value: 'Peso (kg)', angle: 90, position: 'insideRight' }}
+            tick={{ fill: '#9CA3AF' }}
+            label={{ value: 'Peso (kg)', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
+          <Tooltip content={<CustomTooltip />} cursor={false} wrapperStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: 8, color: '#fff' }} />
+          <Legend 
+            wrapperStyle={{ color: '#9CA3AF', fontSize: '12px' }}
+          />
           <Bar 
             yAxisId="left"
             dataKey="altezzaMedia" 
-            fill="#3b82f6" 
+            fill="url(#altezzaGradient)" 
             name="Altezza Media (cm)"
-            radius={[4, 4, 0, 0]}
+            radius={[6, 6, 0, 0]}
+            animationBegin={0}
+            animationDuration={1200}
+            animationEasing="ease-out"
           />
           <Line 
             yAxisId="right"
             type="monotone" 
             dataKey="pesoMedio" 
-            stroke="#10b981" 
-            strokeWidth={3}
+            stroke="url(#pesoGradient)" 
+            strokeWidth={4}
             name="Peso Medio (kg)"
-            dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+            dot={{ fill: '#10B981', strokeWidth: 3, r: 6 }}
+            animationBegin={0}
+            animationDuration={1200}
+            animationEasing="ease-out"
           />
         </ComposedChart>
       </ResponsiveContainer>

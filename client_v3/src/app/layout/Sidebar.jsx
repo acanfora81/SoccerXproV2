@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   Home, Users, BarChart3, FileText, Stethoscope,
   TrendingUp, ShieldCheck, Settings,
-  ChevronDown, ChevronRight, Calculator, LogOut
+  ChevronDown, ChevronRight, Calculator, LogOut, Target
 } from "lucide-react";
 import useAuthStore from "@/store/authStore";
 
@@ -198,6 +198,33 @@ const ALL_MENU_ITEMS = [
     ]
   },
   {
+    id: 'scouting',
+    label: 'Scouting',
+    icon: Target,
+    path: '/dashboard/scouting',
+    requiredPermission: null, // Temporaneamente senza permessi per test
+    submenu: [
+      {
+        id: 'scouting-prospects',
+        label: 'Prospect',
+        path: '/dashboard/scouting/prospects',
+        requiredPermission: null
+      },
+      {
+        id: 'scouting-sessions',
+        label: 'Sessioni',
+        path: '/dashboard/scouting/sessions',
+        requiredPermission: null
+      },
+      {
+        id: 'scouting-reports',
+        label: 'Report',
+        path: '/dashboard/scouting/reports',
+        requiredPermission: null
+      }
+    ]
+  },
+  {
     id: 'market',
     label: 'Mercato / Trasferimenti',
     icon: TrendingUp,
@@ -215,12 +242,6 @@ const ALL_MENU_ITEMS = [
         label: 'Budget',
         path: '/dashboard/market/budget',
         requiredPermission: 'market:write'
-      },
-      { 
-        id: 'market-scouting', 
-        label: 'Scouting', 
-        path: '/dashboard/market/scouting',
-        requiredPermission: 'scout:reports'
       },
       { 
         id: 'market-targets', 

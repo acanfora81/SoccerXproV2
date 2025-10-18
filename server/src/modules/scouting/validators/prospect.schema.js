@@ -30,19 +30,35 @@ const createProspectSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema,
   fullName: z.string().max(200).optional().nullable(),
-  birthDate: birthDateSchema,
-  nationality: nationalitySchema,
-  position: positionSchema,
-  secondaryPosition: positionSchema,
+  birthDate: birthDateSchema.optional().nullable(),
+  birthPlace: z.string().max(200).optional().nullable(),
+  nationalityPrimary: nationalitySchema,
+  nationalities: z.array(z.string()).optional().nullable(),
+  euStatus: z.enum(['EU', 'NON_EU', 'EFTA', 'UK']).optional().nullable(),
   preferredFoot: preferredFootSchema,
   heightCm: heightSchema,
   weightKg: weightSchema,
+  wingspanCm: z.number().int().min(100).max(300).optional().nullable(),
+  mainPosition: positionSchema.optional(),
+  secondaryPositions: z.array(positionSchema).optional().nullable(),
+  roleTags: z.array(z.string()).optional().nullable(),
   currentClub: z.string().max(200).optional().nullable(),
-  contractUntil: contractDateSchema,
-  agentId: optionalUuidSchema,
+  currentLeague: z.string().max(200).optional().nullable(),
+  countryClub: z.string().max(200).optional().nullable(),
+  contractType: z.enum(['PRO', 'YOUTH', 'AMATEUR', 'FREE_AGENT']).optional().nullable(),
+  contractUntil: contractDateSchema.optional().nullable(),
   marketValue: marketValueSchema,
+  releaseClause: z.number().min(0).optional().nullable(),
+  sellOnClausePct: z.number().min(0).max(100).optional().nullable(),
+  agentId: optionalUuidSchema,
+  overallScore: z.number().min(0).max(100).optional().nullable(),
   potentialScore: potentialScoreSchema,
-  scoutingStatus: scoutingStatusSchema.default('DISCOVERY'),
+  riskIndex: z.number().min(0).max(1).optional().nullable(),
+  status: scoutingStatusSchema.default('DISCOVERY'),
+  statusReason: z.string().max(500).optional().nullable(),
+  playerId: z.number().int().optional().nullable(),
+  targetId: z.number().int().optional().nullable(),
+  externalRefs: z.record(z.string(), z.string()).optional().nullable(),
   notes: longTextSchema,
 }).strict();
 
@@ -54,18 +70,34 @@ const updateProspectSchema = z.object({
   lastName: nameSchema.optional(),
   fullName: z.string().max(200).optional().nullable(),
   birthDate: birthDateSchema,
-  nationality: nationalitySchema,
-  position: positionSchema,
-  secondaryPosition: positionSchema,
+  birthPlace: z.string().max(200).optional().nullable(),
+  nationalityPrimary: nationalitySchema,
+  nationalities: z.array(z.string()).optional().nullable(),
+  euStatus: z.enum(['EU', 'NON_EU', 'EFTA', 'UK']).optional().nullable(),
   preferredFoot: preferredFootSchema,
   heightCm: heightSchema,
   weightKg: weightSchema,
+  wingspanCm: z.number().int().min(100).max(300).optional().nullable(),
+  mainPosition: positionSchema.optional(),
+  secondaryPositions: z.array(positionSchema).optional().nullable(),
+  roleTags: z.array(z.string()).optional().nullable(),
   currentClub: z.string().max(200).optional().nullable(),
+  currentLeague: z.string().max(200).optional().nullable(),
+  countryClub: z.string().max(200).optional().nullable(),
+  contractType: z.enum(['PRO', 'YOUTH', 'AMATEUR', 'FREE_AGENT']).optional().nullable(),
   contractUntil: contractDateSchema,
-  agentId: optionalUuidSchema,
   marketValue: marketValueSchema,
+  releaseClause: z.number().min(0).optional().nullable(),
+  sellOnClausePct: z.number().min(0).max(100).optional().nullable(),
+  agentId: optionalUuidSchema,
+  overallScore: z.number().min(0).max(100).optional().nullable(),
   potentialScore: potentialScoreSchema,
-  scoutingStatus: scoutingStatusSchema.optional(),
+  riskIndex: z.number().min(0).max(1).optional().nullable(),
+  status: scoutingStatusSchema.optional(),
+  statusReason: z.string().max(500).optional().nullable(),
+  playerId: z.number().int().optional().nullable(),
+  targetId: z.number().int().optional().nullable(),
+  externalRefs: z.record(z.string(), z.string()).optional().nullable(),
   notes: longTextSchema,
 }).strict();
 
@@ -77,11 +109,11 @@ const listProspectsSchema = listQuerySchema.extend({
     .union([scoutingStatusSchema, z.array(scoutingStatusSchema)])
     .transform((val) => (Array.isArray(val) ? val : [val]))
     .optional(),
-  position: z
+  mainPosition: z
     .union([z.string(), z.array(z.string())])
     .transform((val) => (Array.isArray(val) ? val : [val]))
     .optional(),
-  nationality: z
+  nationalityPrimary: z
     .union([z.string(), z.array(z.string())])
     .transform((val) => (Array.isArray(val) ? val : [val]))
     .optional(),
@@ -156,7 +188,7 @@ const validateProspectBusinessRules = (data) => {
     errors.push('Potential score > 80 richiede market value >= 1M');
   }
 
-  if (data.scoutingStatus === 'TARGETED' && (!data.potentialScore || data.potentialScore < 60)) {
+  if (data.status === 'TARGETED' && (!data.potentialScore || data.potentialScore < 60)) {
     errors.push('Status TARGETED richiede potentialScore >= 60');
   }
 

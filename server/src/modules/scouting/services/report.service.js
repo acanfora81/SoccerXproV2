@@ -35,6 +35,11 @@ const create = async (data, ctx) => {
 
     return report;
   } catch (error) {
+    const msg = String(error?.message || '');
+    if (msg.includes("Can't reach database server") || msg.includes('PrismaClientInitializationError') || msg.includes('P1001')) {
+      console.warn('[ReportService] DB unreachable, returning error for safety');
+      throw new Error('Database unavailable');
+    }
     console.error('[ReportService] Error creating:', error);
     throw new Error('Failed to create report');
   }
@@ -72,6 +77,11 @@ const update = async (id, data, ctx) => {
 
     return report;
   } catch (error) {
+    const msg = String(error?.message || '');
+    if (msg.includes("Can't reach database server") || msg.includes('PrismaClientInitializationError') || msg.includes('P1001')) {
+      console.warn('[ReportService] DB unreachable, returning error for safety');
+      throw new Error('Database unavailable');
+    }
     console.error('[ReportService] Error updating:', error);
     throw error;
   }
@@ -114,7 +124,24 @@ const list = async (filters, ctx) => {
     const [reports, total] = await Promise.all([
       ScoutingModels.Report.findMany({
         where,
-        include: ScoutingIncludes.reportWithProspect,
+        include: {
+          prospect: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              fullName: true,
+              mainPosition: true
+            }
+          },
+          session: {
+            select: {
+              id: true,
+              observationType: true,
+              dateObserved: true
+            }
+          }
+        },
         orderBy: { [orderBy]: orderDir },
         take: limit,
         skip,
@@ -124,6 +151,12 @@ const list = async (filters, ctx) => {
 
     return { reports, total, page: Math.floor(skip / limit) + 1, limit, hasMore: skip + limit < total };
   } catch (error) {
+    const msg = String(error?.message || '');
+    // Fallback soft in dev: se il DB non è raggiungibile, evita 500 e ritorna lista vuota
+    if (msg.includes("Can't reach database server") || msg.includes('PrismaClientInitializationError') || msg.includes('P1001')) {
+      console.warn('[ReportService] DB unreachable, returning empty list for safety');
+      return { reports: [], total: 0, page: 1, limit: filters?.limit || 20, hasMore: false };
+    }
     console.error('[ReportService] Error listing:', error);
     throw new Error('Failed to list reports');
   }
@@ -139,6 +172,11 @@ const get = async (id, ctx) => {
     if (!report) throw new Error('Report not found');
     return report;
   } catch (error) {
+    const msg = String(error?.message || '');
+    if (msg.includes("Can't reach database server") || msg.includes('PrismaClientInitializationError') || msg.includes('P1001')) {
+      console.warn('[ReportService] DB unreachable, returning null for safety');
+      return null;
+    }
     console.error('[ReportService] Error getting:', error);
     throw error;
   }
@@ -159,6 +197,11 @@ const remove = async (id, ctx) => {
     await ScoutingModels.Report.delete({ where: { id } });
     return { id, deleted: true };
   } catch (error) {
+    const msg = String(error?.message || '');
+    if (msg.includes("Can't reach database server") || msg.includes('PrismaClientInitializationError') || msg.includes('P1001')) {
+      console.warn('[ReportService] DB unreachable, returning error for safety');
+      throw new Error('Database unavailable');
+    }
     console.error('[ReportService] Error deleting:', error);
     throw error;
   }

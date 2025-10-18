@@ -23,14 +23,22 @@ export default function NationalityChart({ players }) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900 dark:text-white">{data.nationality}</p>
-          <p className="text-sm text-green-600 dark:text-green-400">
-            Giocatori: {data.count}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Percentuale: {data.percentage}%
-          </p>
+        <div className="bg-gray-900 text-white p-4 rounded-lg border border-gray-700 shadow-xl">
+          <p className="font-semibold text-lg mb-3 text-green-400">{data.nationality}</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <span className="text-sm font-medium">
+                Giocatori: <span className="text-white font-bold">{data.count}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-sm font-medium">
+                Percentuale: <span className="text-white font-bold">{data.percentage}%</span>
+              </span>
+            </div>
+          </div>
         </div>
       );
     }
@@ -49,28 +57,35 @@ export default function NationalityChart({ players }) {
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <defs>
+            <linearGradient id="nationalityGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#10B981" stopOpacity={0.8}/>
+              <stop offset="100%" stopColor="#059669" stopOpacity={0.6}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
           <XAxis 
             dataKey="nationality" 
-            stroke="#6b7280"
+            stroke="#9CA3AF"
             fontSize={12}
-            tick={{ fill: '#6b7280' }}
+            tick={{ fill: '#9CA3AF' }}
             angle={-45}
             textAnchor="end"
             height={60}
           />
           <YAxis 
-            stroke="#6b7280"
+            stroke="#9CA3AF"
             fontSize={12}
-            tick={{ fill: '#6b7280' }}
+            tick={{ fill: '#9CA3AF' }}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip />} cursor={false} wrapperStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: 8, color: '#fff' }} />
           <Bar 
             dataKey="count" 
-            fill="#10b981" 
-            radius={[4, 4, 0, 0]}
+            fill="url(#nationalityGradient)" 
+            radius={[6, 6, 0, 0]}
             animationBegin={0}
-            animationDuration={800}
+            animationDuration={1200}
+            animationEasing="ease-out"
           />
         </BarChart>
       </ResponsiveContainer>

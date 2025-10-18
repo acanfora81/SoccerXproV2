@@ -9,6 +9,21 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001
 
 const ReviewStep = () => {
   const { teamId, year, contractType, region, municipality } = useFiscalSetup();
+  
+  const contractTypeLabel = (t) => {
+    switch ((t || '').toUpperCase()) {
+      case 'PROFESSIONAL':
+        return 'Professionista';
+      case 'APPRENTICE':
+        return 'Apprendista';
+      case 'EMPLOYEE':
+        return 'Dipendente';
+      case 'INTERN':
+        return 'Stagista';
+      default:
+        return t || '—';
+    }
+  };
   const [testNet, setTestNet] = useState(33500);
   const [testRegion, setTestRegion] = useState(region || '');
   const [testMunicipality, setTestMunicipality] = useState(municipality || '');
@@ -57,7 +72,7 @@ const ReviewStep = () => {
             <h3 className="font-semibold mb-2">Configurazione Corrente</h3>
             <div className="bg-gray-50 p-4 rounded space-y-1 text-sm dark:bg-gray-900 dark:text-gray-100 border dark:border-gray-700">
               <p><strong>Anno:</strong> {year}</p>
-              <p><strong>Tipo Contratto:</strong> {contractType}</p>
+              <p><strong>Tipo Contratto:</strong> {contractTypeLabel(contractType)}</p>
               <p><strong>Regione:</strong> {region || 'Non specificata'}</p>
               <p><strong>Comune:</strong> {municipality || 'Non specificato'}</p>
             </div>

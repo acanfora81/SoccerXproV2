@@ -2,6 +2,8 @@
 // Routes per gestione giocatori SoccerXpro V2
 
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
 const { authenticate } = require('../../../middleware/auth');
 const tenantContext = require('../../../middleware/tenantContext');
 const {
@@ -11,10 +13,36 @@ const {
   updatePlayer,
   deletePlayer,
   exportPlayersToExcel,
-  updatePlayerStatus
+  updatePlayerStatus,
+  uploadPlayersFile
 } = require('../controllers/playersController');
 
 const router = express.Router();
+
+// 📁 Configurazione multer per upload file
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'players-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['.csv', '.xlsx', '.xls'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedTypes.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo file non supportato. Usa CSV o Excel.'), false);
+    }
+  }
+});
 
 // 🔐 Autenticazione per tutte le rotte di questo router
 router.use(authenticate, tenantContext);
@@ -51,6 +79,22 @@ router.get('/export-excel', (req, res, next) => {
   }
   next();
 }, exportPlayersToExcel);
+
+/**
+ * 📤 POST /api/players/upload
+ * Upload file giocatori (CSV/Excel)
+ */
+router.post('/upload', (req, res, next) => {
+  const allowedRoles = ['ADMIN', 'DIRECTOR_SPORT', 'SECRETARY'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({
+      error: 'Non autorizzato a caricare file giocatori',
+      code: 'INSUFFICIENT_PERMISSIONS',
+      requiredRoles: allowedRoles
+    });
+  }
+  next();
+}, upload.single('file'), uploadPlayersFile);
 
 /**
  * 👤 GET /api/players/:id
