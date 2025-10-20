@@ -1634,7 +1634,7 @@ const NewContractModal = ({ isOpen, onClose, onSuccess, editingContract = null }
           {/* Riepilogo Totale */}
           {unifiedCalculations && (
             <div className="form-section">
-              <h4 className="form-section-title">📊 Riepilogo Totale Contratto</h4>
+              <h4 className="form-section-title">Riepilogo Totale Contratto</h4>
               <div className="total-summary">
                 <div className="summary-grid">
                   {/* Stipendio Base */}

@@ -1,6 +1,7 @@
 // client_v3/src/pages/scouting/ProspectsPage.jsx
-import React, { useEffect, useState } from 'react';
-import { Search, Plus, Target, Eye, Pencil, Trash2 } from 'lucide-react';
+import React, { useEffect, useState, useContext } from 'react';
+import { Search, Plus, Target, Eye, Pencil, Trash2, TrendingUp } from 'lucide-react';
+import { AuthContext } from '@/contexts/AuthContext';
 import PageHeader from '@/design-system/ds/PageHeader';
 import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
@@ -11,6 +12,22 @@ import ProspectCreateModal from './ProspectCreateModal';
 import ProspectDetailsModal from './ProspectDetailsModal';
 
 export default function ProspectsPage() {
+  const { user } = useContext(AuthContext);
+  
+  // Normalizza ruolo e determina se mostrare il pulsante Promuovi
+  const canPromoteByRole = (role) => {
+    if (!role) return false;
+    const normalized = String(role).trim().toUpperCase();
+    // Gestione varianti localizzate
+    const map = {
+      'AMMINISTRATORE': 'ADMIN',
+      'SUPER AMMINISTRATORE': 'SUPER_ADMIN',
+      'DIRETTORE SPORTIVO': 'DIRECTOR_SPORT',
+    };
+    const resolved = map[normalized] || normalized;
+    return ['ADMIN', 'SUPER_ADMIN', 'DIRECTOR_SPORT'].includes(resolved);
+  };
+  
   // Helper per tradurre i ruoli
   const getPositionLabel = (position) => {
     const positions = {
@@ -37,6 +54,10 @@ export default function ProspectsPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, prospect: null });
   const [deleting, setDeleting] = useState(false);
+  const [promoteConfirm, setPromoteConfirm] = useState({ isOpen: false, prospect: null });
+  const [promoting, setPromoting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [filters, setFilters] = useState({ search: '', status: '', mainPosition: '' });
   const [form, setForm] = useState({ 
     firstName: '', 
@@ -130,6 +151,60 @@ export default function ProspectsPage() {
     setDeleteConfirm({ isOpen: false, prospect: null });
   };
 
+  // Funzione per promuovere un prospect a target
+  const handlePromoteToTarget = async () => {
+    const { prospect } = promoteConfirm;
+    if (!prospect?.id) return;
+
+    try {
+      setPromoting(true);
+      const response = await apiFetch(`/scouting/prospects/${prospect.id}/promote`, {
+        method: 'POST',
+        body: JSON.stringify({
+          targetNotes: `Promosso da prospect: ${prospect.fullName || `${prospect.firstName} ${prospect.lastName}`}`,
+          targetPriority: 3,
+          force: "true" // Forza la promozione anche se non è TARGETED (stringa per schema)
+        })
+      });
+
+      if (response?.success === false) {
+        throw new Error(response?.error || 'Errore durante la promozione');
+      }
+
+      setPromoteConfirm({ isOpen: false, prospect: null });
+      await load(); // Ricarica la lista
+      
+      // Mostra messaggio di successo
+      setSuccessMessage(`Prospect ${prospect.fullName || `${prospect.firstName} ${prospect.lastName}`} promosso a target con successo!`);
+      setTimeout(() => setSuccessMessage(null), 5000); // Nasconde dopo 5 secondi
+    } catch (error) {
+      console.error('Error promoting prospect:', error);
+      
+      // Traduci i messaggi di errore in italiano
+      let errorMsg = error.message;
+      if (error.message.includes('Prospect must have status TARGETED')) {
+        errorMsg = 'Il prospect deve avere status TARGETED per essere promosso. Contatta un amministratore.';
+      } else if (error.message.includes('Only DIRECTOR_SPORT')) {
+        errorMsg = 'Solo i Direttori Sportivi possono promuovere i prospect.';
+      } else if (error.message.includes('Prospect not found')) {
+        errorMsg = 'Prospect non trovato.';
+      } else if (error.message.includes('Errore durante la promozione')) {
+        errorMsg = error.message; // Mantieni il messaggio originale se già in italiano
+      } else {
+        errorMsg = `Errore durante la promozione: ${error.message}`;
+      }
+      
+      setErrorMessage(errorMsg);
+      setTimeout(() => setErrorMessage(null), 8000); // Nasconde dopo 8 secondi
+    } finally {
+      setPromoting(false);
+    }
+  };
+
+  const handleCancelPromote = () => {
+    setPromoteConfirm({ isOpen: false, prospect: null });
+  };
+
   // Gestione visualizzazione prospect
   const handleViewProspect = (prospect) => {
     setViewingProspect(prospect);
@@ -158,6 +233,54 @@ export default function ProspectsPage() {
           </Button>
         }
       />
+
+      {/* Messaggio di successo */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center">
+          <div className="flex-shrink-0">
+            <Target className="h-5 w-5 text-green-400" />
+          </div>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-green-800">{successMessage}</p>
+          </div>
+          <div className="ml-auto pl-3">
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="text-green-400 hover:text-green-600"
+            >
+              <span className="sr-only">Chiudi</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Messaggio di errore */}
+      {errorMessage && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-red-800">{errorMessage}</p>
+          </div>
+          <div className="ml-auto pl-3">
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="text-red-400 hover:text-red-600"
+            >
+              <span className="sr-only">Chiudi</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filtri */}
       <Card>
@@ -247,6 +370,7 @@ export default function ProspectsPage() {
                   <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Club</th>
                   <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stato</th>
                   <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Potenziale</th>
+                  <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rischio</th>
                   <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Azioni</th>
             </tr>
           </thead>
@@ -276,7 +400,28 @@ export default function ProspectsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-center text-gray-900 dark:text-white">
                       {p.potentialScore ? `${p.potentialScore}/100` : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      {p.riskIndex ? (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          p.riskIndex <= 0.2 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                          p.riskIndex <= 0.4 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                          p.riskIndex <= 0.6 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
+                          p.riskIndex <= 0.8 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                          'bg-gray-800 text-gray-200 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>
+                          {Math.round(p.riskIndex * 100)}% {
+                            p.riskIndex <= 0.2 ? '🟢' :
+                            p.riskIndex <= 0.4 ? '🟡' :
+                            p.riskIndex <= 0.6 ? '🟠' :
+                            p.riskIndex <= 0.8 ? '🔴' :
+                            '⚫'
+                          }
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-500">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center align-bottom">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleViewProspect(p)}
@@ -285,27 +430,38 @@ export default function ProspectsPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                  <button
+                        <button
                           onClick={()=>{ setEditingProspect(p); setModalOpen(true); }}
                           className="btn-action btn-edit"
                           title="Modifica"
-                  >
+                        >
                           <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
+                        </button>
+                        {/* Pulsante Promuovi a Target - ruoli abilitati, inclusi label localizzati */}
+                        {canPromoteByRole(user?.role) && (
+                          <button
+                            onClick={() => setPromoteConfirm({ isOpen: true, prospect: p })}
+                            className="btn-action btn-promote"
+                            title="Promuovi a Target"
+                            style={{ backgroundColor: '#10b981', color: 'white' }}
+                          >
+                            <TrendingUp className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
                           onClick={() => setDeleteConfirm({ isOpen: true, prospect: p })}
                           className="btn-action btn-delete"
                           title="Elimina"
                         >
                           <Trash2 className="h-4 w-4" />
-                  </button>
+                        </button>
                       </div>
                 </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                    <td className="px-6 py-12 text-center text-gray-500 dark:text-gray-400" colSpan={6}>
+                    <td className="px-6 py-12 text-center text-gray-500 dark:text-gray-400" colSpan={7}>
                       <div className="flex flex-col items-center">
                         <Eye className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
                         <p className="text-lg font-medium">Nessun prospect trovato</p>
@@ -334,6 +490,22 @@ export default function ProspectsPage() {
         confirmText={deleting ? 'Eliminazione...' : 'Elimina'}
         cancelText="Annulla"
         type="danger"
+      />
+
+      {/* Dialog di conferma promozione */}
+      <ConfirmDialog
+        open={promoteConfirm.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelPromote();
+          }
+        }}
+        onConfirm={handlePromoteToTarget}
+        title="Promuovi a Target"
+        message={`Sei sicuro di voler promuovere il prospect ${promoteConfirm.prospect?.fullName || `${promoteConfirm.prospect?.firstName} ${promoteConfirm.prospect?.lastName}`} a target di mercato?`}
+        confirmText={promoting ? 'Promozione...' : 'Promuovi'}
+        cancelText="Annulla"
+        type="success"
       />
     </div>
   );

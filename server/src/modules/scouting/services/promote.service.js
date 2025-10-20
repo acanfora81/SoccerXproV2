@@ -26,7 +26,7 @@ const promoteToTarget = async (prospectId, ctx, options = {}) => {
 
     // 2. Verifica precondizioni
     const isDirector = ctx.role === 'DIRECTOR_SPORT' || ctx.role === 'ADMIN';
-    const isTargeted = prospect.scoutingStatus === 'TARGETED';
+    const isTargeted = prospect.status === 'TARGETED';
 
     if (!isTargeted && !options.force) {
       throw new Error('Prospect must have status TARGETED to be promoted');
@@ -36,17 +36,29 @@ const promoteToTarget = async (prospectId, ctx, options = {}) => {
       throw new Error('Only DIRECTOR_SPORT or ADMIN can force promotion');
     }
 
+    // 3. Mappa posizioni da codici a enum
+    const positionMapping = {
+      'GK': 'GOALKEEPER',
+      'CB': 'DEFENDER',
+      'FB': 'DEFENDER',
+      'DM': 'MIDFIELDER',
+      'CM': 'MIDFIELDER',
+      'AM': 'MIDFIELDER',
+      'W': 'FORWARD',
+      'CF': 'FORWARD'
+    };
+
     // 3. Prepara dati target
     const targetData = {
       teamId: ctx.teamId,
       // Anagrafica
       first_name: prospect.firstName,
       last_name: prospect.lastName,
-      nationality: prospect.nationality,
+      nationality: prospect.nationalityPrimary,
       date_of_birth: prospect.birthDate,
-      position: prospect.position,
-      secondary_position: prospect.secondaryPosition,
-      preferred_foot: prospect.preferredFoot,
+      position: prospect.mainPosition ? positionMapping[prospect.mainPosition] || null : null,
+      secondary_roles: prospect.secondaryPositions ? prospect.secondaryPositions.join(', ') : null,
+      foot: prospect.preferredFoot,
       
       // Fisico
       height_cm: prospect.heightCm,
@@ -54,6 +66,7 @@ const promoteToTarget = async (prospectId, ctx, options = {}) => {
       
       // Club
       current_club: prospect.currentClub,
+      club_country: prospect.countryClub,
       contract_until: prospect.contractUntil,
       
       // Agente
@@ -61,7 +74,7 @@ const promoteToTarget = async (prospectId, ctx, options = {}) => {
       
       // Valutazione
       market_value: prospect.marketValue,
-      overall_rating: prospect.potentialScore,
+      overall_rating: prospect.overallScore,
       potential_rating: prospect.potentialScore,
       
       // Note
@@ -70,16 +83,12 @@ const promoteToTarget = async (prospectId, ctx, options = {}) => {
       // Priorità
       priority: options.targetPriority || 3,
       
-      // Scouting data
-      scouting_report: `Prospect ID: ${prospect.id}\nPotential: ${prospect.potentialScore}\nStatus: ${prospect.scoutingStatus}`,
-      
       // Status
-      status: 'ACTIVE',
+      status: 'SCOUTING',
       
-      // Audit
-      created_by: ctx.userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      // Discovery info
+      discovery_user_id: null, // Non abbiamo UUID valido, lasciamo null
+      discovery_date: new Date(),
     };
 
     // 4. Crea o aggiorna target
@@ -111,11 +120,11 @@ const promoteToTarget = async (prospectId, ctx, options = {}) => {
     }
 
     // 5. Aggiorna status prospect a TARGETED (se non lo era già)
-    if (prospect.scoutingStatus !== 'TARGETED') {
+    if (prospect.status !== 'TARGETED') {
       await ScoutingModels.Prospect.update({
         where: { id: prospectId },
         data: {
-          scoutingStatus: 'TARGETED',
+          status: 'TARGETED',
           updatedById: ctx.userId,
         },
       });

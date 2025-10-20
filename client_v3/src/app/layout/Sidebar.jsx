@@ -123,6 +123,12 @@ const ALL_MENU_ITEMS = [
             label: 'Configuratore Fiscale',
             path: '/dashboard/tax/fiscal-setup',
             requiredPermission: 'contracts:write'
+          },
+          {
+            id: 'tax-calculator',
+            label: 'Calcolatore Fiscale (AIC)',
+            path: '/dashboard/tax/calculator',
+            requiredPermission: 'contracts:read'
           }
         ]
       },
@@ -228,43 +234,43 @@ const ALL_MENU_ITEMS = [
     id: 'market',
     label: 'Mercato / Trasferimenti',
     icon: TrendingUp,
-    path: '/dashboard/market',
+    path: '/app/dashboard/market',
     requiredPermission: 'market:read',
     submenu: [
       {
-        id: 'market-overview',
-        label: 'Panoramica',
-        path: '/dashboard/market',
+        id: 'market-negotiations-kanban',
+        label: 'Kanban Trattative',
+        path: '/app/dashboard/market/trattative-kanban',
         requiredPermission: 'market:read'
-      },
-      { 
-        id: 'market-budget', 
-        label: 'Budget',
-        path: '/dashboard/market/budget',
-        requiredPermission: 'market:write'
       },
       { 
         id: 'market-targets', 
         label: 'Obiettivi',
-        path: '/dashboard/market/obiettivi',
-        requiredPermission: 'market:write'
-      },
-      {
-        id: 'market-agents',
-        label: 'Agenti',
-        path: '/dashboard/market/agenti',
+        path: '/app/dashboard/market/obiettivi',
         requiredPermission: 'market:write'
       },
       {
         id: 'market-negotiations-new',
         label: 'Gestione Trattative',
-        path: '/dashboard/market/trattative-nuove',
+        path: '/app/dashboard/market/trattative-nuove',
+        requiredPermission: 'market:write'
+      },
+      {
+        id: 'market-agents',
+        label: 'Agenti',
+        path: '/app/dashboard/market/agenti',
+        requiredPermission: 'market:write'
+      },
+      { 
+        id: 'market-budget', 
+        label: 'Budget',
+        path: '/app/dashboard/market/budget',
         requiredPermission: 'market:write'
       },
       {
         id: 'market-offers',
         label: 'Offerte',
-        path: '/dashboard/market/offerte',
+        path: '/app/dashboard/market/offerte',
         requiredPermission: 'market:read'
       }
     ]

@@ -1,5 +1,5 @@
 // client_v3/src/modules/scouting/components/FormationSection.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import SoccerField from './SoccerField';
 import Button from '@/design-system/ds/Button';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
@@ -232,8 +232,10 @@ const FormationSection = ({ sessionId, initialFormation = '4-3-3', isCreating = 
   const [awayTokens, setAwayTokens] = useState(() => defaultTokens(initialFormation, 'AWAY'));
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingTeam, setEditingTeam] = useState(null);
-  const [temp, setTemp] = useState({ number: '', name: '' });
+  const [temp, setTemp] = useState({ number: '', name: '', observed: false });
   const [saving, setSaving] = useState(false);
+  const [tempError, setTempError] = useState('');
+  const numberInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [feedbackDialog, setFeedbackDialog] = useState({ isOpen: false, message: '', type: 'success' });
 
@@ -298,11 +300,35 @@ const FormationSection = ({ sessionId, initialFormation = '4-3-3', isCreating = 
   const onClickToken = (index, token, team) => {
     setEditingIndex(index);
     setEditingTeam(team);
-    setTemp({ number: token.number || '', name: token.name || '' });
+    setTemp({ number: token.number || '', name: token.name || '', observed: !!token.observed });
+    setTempError('');
   };
+
+  useEffect(() => {
+    // Quando apro la modale, metto il focus sul campo Numero
+    if (editingIndex != null && numberInputRef.current) {
+      // timeout breve per garantire che l'input sia nel DOM
+      setTimeout(() => {
+        try {
+          numberInputRef.current.focus();
+          numberInputRef.current.select();
+        } catch (_) {}
+      }, 0);
+    }
+  }, [editingIndex]);
 
   const saveToken = () => {
     if (editingIndex == null || !editingTeam) return;
+    // Validazione: numero univoco all'interno della stessa squadra
+    const targetList = editingTeam === 'HOME' ? homeTokens : awayTokens;
+    const normalizedNew = String(temp.number || '').trim();
+    if (normalizedNew) {
+      const hasDuplicate = targetList.some((t, i) => i !== editingIndex && String(t.number || '').trim() === normalizedNew);
+      if (hasDuplicate) {
+        setTempError('Numero già presente nella stessa squadra');
+        return;
+      }
+    }
     
     if (editingTeam === 'HOME') {
       setHomeTokens(prev => prev.map((t, i) => (i === editingIndex ? { ...t, ...temp, number: String(temp.number || '').trim() } : t)));
@@ -323,12 +349,12 @@ const FormationSection = ({ sessionId, initialFormation = '4-3-3', isCreating = 
         home: {
           teamSide: prospectTeamSide === 'HOME' ? 'PROSPECT' : 'OPPONENT',
           formation: homeFormation,
-          positions: homeTokens.map(t => ({ role: t.role, number: t.number ? Number(t.number) : null, name: t.name || null, x: t.x, y: t.y })),
+          positions: homeTokens.map(t => ({ role: t.role, number: t.number ? Number(t.number) : null, name: t.name || null, x: t.x, y: t.y, observed: !!t.observed })),
         },
         away: {
           teamSide: prospectTeamSide === 'AWAY' ? 'PROSPECT' : 'OPPONENT',
           formation: awayFormation,
-          positions: awayTokens.map(t => ({ role: t.role, number: t.number ? Number(t.number) : null, name: t.name || null, x: t.x, y: t.y })),
+          positions: awayTokens.map(t => ({ role: t.role, number: t.number ? Number(t.number) : null, name: t.name || null, x: t.x, y: t.y, observed: !!t.observed })),
         }
       };
       localStorage.setItem('pendingFormations', JSON.stringify(formationsData));
@@ -488,10 +514,14 @@ const FormationSection = ({ sessionId, initialFormation = '4-3-3', isCreating = 
                 <label className="block text-sm mb-1">Numero</label>
                 <input
                   type="number"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${tempError ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                   value={temp.number}
-                  onChange={(e) => setTemp(s => ({ ...s, number: e.target.value }))}
+                  onChange={(e) => { setTemp(s => ({ ...s, number: e.target.value })); setTempError(''); }}
+                  ref={numberInputRef}
                 />
+                {tempError && (
+                  <p className="mt-1 text-xs text-red-600">{tempError}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm mb-1">Nome (facoltativo)</label>
@@ -502,9 +532,18 @@ const FormationSection = ({ sessionId, initialFormation = '4-3-3', isCreating = 
                   onChange={(e) => setTemp(s => ({ ...s, name: e.target.value }))}
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex items-center justify-between gap-2 pt-2">
+                <label className="inline-flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={!!temp.observed}
+                    onChange={(e) => setTemp(s => ({ ...s, observed: e.target.checked }))}
+                  />
+                  Giocatore visionato
+                </label>
                 <Button variant="secondary" onClick={() => setEditingIndex(null)}>Annulla</Button>
-                <Button variant="primary" onClick={saveToken}>Salva</Button>
+                <Button variant="primary" onClick={saveToken} disabled={!!tempError}>Salva</Button>
               </div>
             </div>
           </div>

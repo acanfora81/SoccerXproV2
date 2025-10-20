@@ -275,9 +275,11 @@ const promoteProspect = async (req, res) => {
     // Validazione body
     const bodyValidation = promoteToTargetSchema.safeParse(req.body);
     if (!bodyValidation.success) {
-      return res.status(400).json(
-        errorResponse(bodyValidation.error.errors[0].message)
-      );
+      console.error('[ProspectController] Body validation error:', bodyValidation.error);
+      const errorMessage = bodyValidation.error.issues?.[0]?.message || 
+                          bodyValidation.error.errors?.[0]?.message || 
+                          'Invalid request body';
+      return res.status(400).json(errorResponse(errorMessage));
     }
 
     const { id } = paramsValidation.data;

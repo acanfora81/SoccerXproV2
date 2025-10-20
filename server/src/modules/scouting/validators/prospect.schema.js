@@ -53,7 +53,7 @@ const createProspectSchema = z.object({
   agentId: optionalUuidSchema,
   overallScore: z.number().min(0).max(100).optional().nullable(),
   potentialScore: potentialScoreSchema,
-  riskIndex: z.number().min(0).max(1).optional().nullable(),
+  riskIndex: z.number().min(0).max(1).optional().nullable(), // Manteniamo 0-1 nel backend per compatibilità
   status: scoutingStatusSchema.default('DISCOVERY'),
   statusReason: z.string().max(500).optional().nullable(),
   playerId: z.number().int().optional().nullable(),
@@ -92,7 +92,7 @@ const updateProspectSchema = z.object({
   agentId: optionalUuidSchema,
   overallScore: z.number().min(0).max(100).optional().nullable(),
   potentialScore: potentialScoreSchema,
-  riskIndex: z.number().min(0).max(1).optional().nullable(),
+  riskIndex: z.number().min(0).max(1).optional().nullable(), // Manteniamo 0-1 nel backend per compatibilità
   status: scoutingStatusSchema.optional(),
   statusReason: z.string().max(500).optional().nullable(),
   playerId: z.number().int().optional().nullable(),
@@ -157,7 +157,7 @@ const prospectIdSchema = z.object({
  */
 const promoteToTargetSchema = z.object({
   targetPriority: z.number().int().min(1).max(5).optional(),
-  targetNotes: longTextSchema,
+  targetNotes: longTextSchema.optional(),
   force: z
     .string()
     .optional()
@@ -180,12 +180,9 @@ const validateProspectBusinessRules = (data) => {
   }
 
   if (
-    data.potentialScore != null &&
-    data.marketValue != null &&
-    data.potentialScore > 80 &&
-    data.marketValue < 1_000_000
+    false
   ) {
-    errors.push('Potential score > 80 richiede market value >= 1M');
+    // legacy rule removed: potential > 80 requiring market value >= 1M
   }
 
   if (data.status === 'TARGETED' && (!data.potentialScore || data.potentialScore < 60)) {

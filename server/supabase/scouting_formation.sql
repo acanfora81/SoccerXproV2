@@ -67,3 +67,4 @@ CREATE TRIGGER update_scout_formations_updated_at
   BEFORE UPDATE ON soccerxpro.scout_formations
   FOR EACH ROW EXECUTE FUNCTION soccerxpro.update_updated_at_column();
 
+

@@ -8,14 +8,14 @@ const prisma = getPrismaClient();
  * Ottieni tutti i target del team con filtri
  */
 const getAll = async (teamId, filters = {}) => {
-  const { search, status, priority, position, agentId } = filters;
+  const { search, status, priority, position } = filters; // agentId rimosso temporaneamente
 
   const where = {
     teamId,
     ...(status && { status }),
     ...(priority && { priority: Number(priority) }),
     ...(position && { position }),
-    // ...(agentId && { agentId: Number(agentId) }),
+    // ...(agentId && { agentId: Number(agentId) }), // Temporaneamente commentato
     ...(search && {
       OR: [
         { first_name: { contains: search, mode: 'insensitive' } },
@@ -56,17 +56,17 @@ const getById = async (id, teamId) => {
   const target = await prisma.market_target.findFirst({
     where: { id: Number(id), teamId },
     include: {
-      agent: true,
+      // agent: true, // Temporaneamente commentato - colonna non esistente nel DB
       market_negotiation: {
-        include: {
-          agent: {
-            select: {
-              id: true,
-              first_name: true,
-              last_name: true,
-            },
-          },
-        },
+        // include: {
+        //   agent: {
+        //     select: {
+        //       id: true,
+        //       first_name: true,
+        //       last_name: true,
+        //     },
+        //   },
+        // },
         orderBy: { createdAt: 'desc' },
       },
       player: {
@@ -114,32 +114,29 @@ const create = async (teamId, userId, data) => {
       market_value: data.market_value || null,
       previous_market_value: data.previous_market_value || null,
       playerId: data.playerId ? Number(data.playerId) : null,
-      // agentId: data.agentId ? Number(data.agentId) : null,
+      // agentId: data.agentId ? Number(data.agentId) : null, // Temporaneamente commentato
       agent_contact_name: data.agent_contact_name || null,
       agent_contact_phone: data.agent_contact_phone || null,
       priority: data.priority || 3,
       status: data.status || 'SCOUTING',
       notes: data.notes || null,
-      scouting_report: data.scouting_report || null,
       overall_rating: data.overall_rating ? Number(data.overall_rating) : null,
       potential_rating: data.potential_rating ? Number(data.potential_rating) : null,
       transfer_likelihood: data.transfer_likelihood ? Number(data.transfer_likelihood) : null,
       recommendation_level: data.recommendation_level ? Number(data.recommendation_level) : 3,
       video_url: data.video_url || null,
       profile_url: data.profile_url || null,
-      discovery_method: data.discovery_method || null,
-      scouting_source: data.scouting_source || null,
       report_confidence: data.report_confidence ? Number(data.report_confidence) : null,
       last_scouted_at: data.last_scouted_at ? new Date(data.last_scouted_at) : null,
     },
     include: {
-      agent: {
-        select: {
-          id: true,
-          first_name: true,
-          last_name: true,
-        },
-      },
+      // agent: { // Temporaneamente commentato
+      //   select: {
+      //     id: true,
+      //     first_name: true,
+      //     last_name: true,
+      //   },
+      // },
     },
   });
 };
@@ -179,13 +176,22 @@ const update = async (id, teamId, data) => {
   if ('current_club' in data) updateData.current_club = data.current_club || null;
   if ('club_country' in data) updateData.club_country = data.club_country || null;
   if ('contract_until' in data) updateData.contract_until = data.contract_until ? new Date(data.contract_until) : null;
-  if ('current_salary' in data) updateData.current_salary = data.current_salary || null;
-  if ('market_value' in data) updateData.market_value = data.market_value || null;
-  if ('previous_market_value' in data) updateData.previous_market_value = data.previous_market_value || null;
+  if ('current_salary' in data) {
+    const val = data.current_salary;
+    updateData.current_salary = (val === null || val === '' || typeof val === 'undefined') ? null : Number(val);
+  }
+  if ('market_value' in data) {
+    const val = data.market_value;
+    updateData.market_value = (val === null || val === '' || typeof val === 'undefined') ? null : Number(val);
+  }
+  if ('previous_market_value' in data) {
+    const val = data.previous_market_value;
+    updateData.previous_market_value = (val === null || val === '' || typeof val === 'undefined') ? null : Number(val);
+  }
 
   // Relazioni
   if ('playerId' in data) updateData.playerId = data.playerId ? Number(data.playerId) : null;
-  // if ('agentId' in data) updateData.agentId = data.agentId ? Number(data.agentId) : null;
+  // if ('agentId' in data) updateData.agentId = data.agentId ? Number(data.agentId) : null; // Temporaneamente commentato
   if ('agent_contact_name' in data) updateData.agent_contact_name = data.agent_contact_name || null;
   if ('agent_contact_phone' in data) updateData.agent_contact_phone = data.agent_contact_phone || null;
 
@@ -195,7 +201,6 @@ const update = async (id, teamId, data) => {
   if ('notes' in data) updateData.notes = data.notes || null;
 
   // Valutazioni e scouting
-  if ('scouting_report' in data) updateData.scouting_report = data.scouting_report || null;
   if ('overall_rating' in data) updateData.overall_rating = data.overall_rating ? Number(data.overall_rating) : null;
   if ('potential_rating' in data) updateData.potential_rating = data.potential_rating ? Number(data.potential_rating) : null;
   if ('transfer_likelihood' in data) updateData.transfer_likelihood = data.transfer_likelihood ? Number(data.transfer_likelihood) : null;
@@ -206,20 +211,18 @@ const update = async (id, teamId, data) => {
   // URL e metodi
   if ('video_url' in data) updateData.video_url = data.video_url || null;
   if ('profile_url' in data) updateData.profile_url = data.profile_url || null;
-  if ('discovery_method' in data) updateData.discovery_method = data.discovery_method || null;
-  if ('scouting_source' in data) updateData.scouting_source = data.scouting_source || null;
 
   return prisma.market_target.update({
     where: { id: Number(id) },
     data: updateData,
     include: {
-      agent: {
-        select: {
-          id: true,
-          first_name: true,
-          last_name: true,
-        },
-      },
+      // agent: { // Temporaneamente commentato
+      //   select: {
+      //     id: true,
+      //     first_name: true,
+      //     last_name: true,
+      //   },
+      // },
     },
   });
 };

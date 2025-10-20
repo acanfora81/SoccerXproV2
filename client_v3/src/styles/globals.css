@@ -61,11 +61,11 @@ h4 {
 
   /* === SHADOWS (sobrie, non fosforescenti) === */
   .shadow-wow {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 8%);
   }
 
   .shadow-header {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
   }
 
   /* === TABLE STYLE === */
@@ -75,15 +75,15 @@ h4 {
     border-radius: var(--radius-lg);
     overflow: hidden;
     background-color: var(--bg-surface);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
   }
 
   .table-modern thead {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgb(0 0 0 / 2%);
   }
 
   .dark .table-modern thead {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgb(255 255 255 / 5%);
   }
 
   .table-modern th {
@@ -102,15 +102,15 @@ h4 {
   }
 
   .dark .table-modern td {
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: rgb(255 255 255 / 8%);
   }
 
   .table-modern tr:hover td {
-    background-color: rgba(59, 130, 246, 0.05);
+    background-color: rgb(59 130 246 / 5%);
   }
 
   .dark .table-modern tr:hover td {
-    background-color: rgba(59, 130, 246, 0.1);
+    background-color: rgb(59 130 246 / 10%);
   }
 
   /* === BUTTONS === */
@@ -163,7 +163,7 @@ h4 {
   }
 
   .btn-ghost:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgb(0 0 0 / 5%);
   }
 
   .btn-sm {
@@ -213,12 +213,12 @@ h4 {
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-lg);
     padding: 1.25rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
     transition: box-shadow 0.2s ease;
   }
 
   .card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
   }
 
   /* === SIDEBAR STYLES === */
@@ -249,14 +249,14 @@ h4 {
   }
 
   .dark .nav-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgb(255 255 255 / 10%);
     color: #f3f4f6;
   }
 
   .nav-item.active {
     background: linear-gradient(135deg, #3b82f6, #6366f1);
-    color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgb(59 130 246 / 30%);
   }
 
   .nav-label {
@@ -278,7 +278,7 @@ h4 {
   }
 
   .dark .submenu {
-    border-left-color: rgba(255, 255, 255, 0.1);
+    border-left-color: rgb(255 255 255 / 10%);
   }
 }
 
@@ -403,7 +403,7 @@ h4 {
   html.dark input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(1) !important;
     cursor: pointer;
-    opacity: 1 !important;
+    opacity: 100% !important;
   }
 
   html.dark input[type="date"]::-webkit-datetime-edit {

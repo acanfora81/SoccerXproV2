@@ -94,7 +94,7 @@ export default function ProspectCreateModal({ open, onClose, onSuccess, editing 
     agentId: editing?.agentId || '',
     overallScore: editing?.overallScore ?? '',
     potentialScore: editing?.potentialScore ?? '',
-    riskIndex: editing?.riskIndex ?? '',
+    riskIndex: editing?.riskIndex ? Math.round(editing.riskIndex * 100) : '', // Converti da 0-1 a 0-100%
     status: editing?.status || 'DISCOVERY',
     statusReason: editing?.statusReason || '',
     playerId: editing?.playerId ?? '',
@@ -111,6 +111,17 @@ export default function ProspectCreateModal({ open, onClose, onSuccess, editing 
   async function onSubmit(e) {
     e?.preventDefault?.();
     setSaving(true); setError(null);
+    
+    // Validazione frontend per status TARGETED
+    if (form.status === 'TARGETED') {
+      const potentialScore = parseNumber(form.potentialScore);
+      if (!potentialScore || potentialScore < 60) {
+        setError('Per impostare lo status "Obiettivo" è necessario un Potenziale >= 60. Inserisci un valore valido nel campo "Potenziale".');
+        setSaving(false);
+        return;
+      }
+    }
+    
     try {
       const payload = {
         firstName: form.firstName,
@@ -139,7 +150,7 @@ export default function ProspectCreateModal({ open, onClose, onSuccess, editing 
         agentId: form.agentId || undefined,
         overallScore: parseNumber(form.overallScore),
         potentialScore: parseNumber(form.potentialScore),
-        riskIndex: parseNumber(form.riskIndex),
+        riskIndex: form.riskIndex ? parseNumber(form.riskIndex) / 100 : undefined, // Converti da 0-100% a 0-1
         status: form.status || 'DISCOVERY',
         statusReason: form.statusReason || undefined,
         playerId: form.playerId !== '' ? Number(form.playerId) : undefined,
@@ -157,15 +168,38 @@ export default function ProspectCreateModal({ open, onClose, onSuccess, editing 
       Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
       if (isEdit) {
-        await apiFetch(`/scouting/prospects/${editing.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        console.log('Updating prospect with payload:', payload);
+        const response = await apiFetch(`/scouting/prospects/${editing.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        console.log('Update response:', response);
       } else {
-        await apiFetch('/scouting/prospects', { method: 'POST', body: JSON.stringify(payload) });
+        console.log('Creating prospect with payload:', payload);
+        const response = await apiFetch('/scouting/prospects', { method: 'POST', body: JSON.stringify(payload) });
+        console.log('Create response:', response);
       }
 
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      setError(err?.message || 'Errore salvataggio');
+      console.error('Error saving prospect:', err);
+      
+      // Traduci i messaggi di errore in italiano
+      let errorMsg = err?.message || 'Errore salvataggio';
+      
+      if (err?.message?.includes('Status TARGETED richiede potentialScore >= 60')) {
+        errorMsg = 'Per impostare lo status "Obiettivo" è necessario un Potenziale >= 60. Inserisci un valore valido nel campo "Potenziale".';
+      } else if (err?.message?.includes('Invalid prospect ID')) {
+        errorMsg = 'ID prospect non valido';
+      } else if (err?.message?.includes('Prospect not found')) {
+        errorMsg = 'Prospect non trovato';
+      } else if (err?.message?.includes('Not authorized')) {
+        errorMsg = 'Non autorizzato a modificare questo prospect';
+      } else if (err?.message?.includes('validation')) {
+        errorMsg = 'Dati non validi. Controlla i campi obbligatori.';
+      } else if (err?.message?.includes('400')) {
+        errorMsg = 'Dati non validi. Verifica i campi inseriti.';
+      }
+      
+      setError(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -486,26 +520,84 @@ export default function ProspectCreateModal({ open, onClose, onSuccess, editing 
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground">Punteggio potenziale</label>
+                    <label className="block text-sm font-medium text-foreground">
+                      Punteggio potenziale
+                      {form.status === 'TARGETED' && (
+                        <span className="text-red-500 ml-1">* (minimo 60 per status "Obiettivo")</span>
+                      )}
+                    </label>
                     <input 
                       type="number"
+                      min="0"
+                      max="100"
                       step="0.1"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        form.status === 'TARGETED' && (!form.potentialScore || parseNumber(form.potentialScore) < 60)
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
                       value={form.potentialScore} 
                       onChange={e=>set('potentialScore', e.target.value)} 
+                      placeholder="0-100"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground">Indice di rischio (0-1)</label>
-                    <input 
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="1"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                      value={form.riskIndex} 
-                      onChange={e=>set('riskIndex', e.target.value)} 
-                    />
+                    <label className="block text-sm font-medium text-foreground">
+                      Indice di rischio
+                      {form.riskIndex && (
+                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                          parseNumber(form.riskIndex) <= 20 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                          parseNumber(form.riskIndex) <= 40 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                          parseNumber(form.riskIndex) <= 60 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
+                          parseNumber(form.riskIndex) <= 80 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                          'bg-gray-800 text-gray-200 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>
+                          {parseNumber(form.riskIndex)}% {
+                            parseNumber(form.riskIndex) <= 20 ? '🟢 Basso' :
+                            parseNumber(form.riskIndex) <= 40 ? '🟡 Moderato' :
+                            parseNumber(form.riskIndex) <= 60 ? '🟠 Medio-Alto' :
+                            parseNumber(form.riskIndex) <= 80 ? '🔴 Alto' :
+                            '⚫ Molto Alto'
+                          }
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="number"
+                        step="1"
+                        min="0"
+                        max="100"
+                        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent ${
+                          form.riskIndex ? (
+                            parseNumber(form.riskIndex) <= 20 ? 'border-green-500 focus:ring-green-500' :
+                            parseNumber(form.riskIndex) <= 40 ? 'border-yellow-500 focus:ring-yellow-500' :
+                            parseNumber(form.riskIndex) <= 60 ? 'border-orange-500 focus:ring-orange-500' :
+                            parseNumber(form.riskIndex) <= 80 ? 'border-red-500 focus:ring-red-500' :
+                            'border-gray-600 focus:ring-gray-500'
+                          ) : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+                        }`}
+                        value={form.riskIndex} 
+                        onChange={e=>set('riskIndex', e.target.value)} 
+                        placeholder="0-100"
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 text-sm">%</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="grid grid-cols-2 gap-4 mb-1">
+                        <span>🟢 0-20%: Basso</span>
+                        <span>🟡 21-40%: Moderato</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-1">
+                        <span>🟠 41-60%: Medio-Alto</span>
+                        <span>🔴 61-80%: Alto</span>
+                      </div>
+                      <div className="flex justify-start">
+                        <span>⚫ 81-100%: Molto Alto</span>
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-foreground">Stato</label>

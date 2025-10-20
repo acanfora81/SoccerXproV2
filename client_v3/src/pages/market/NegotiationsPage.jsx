@@ -5,32 +5,133 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Eye, 
   Edit3, 
-  CheckCircle, 
-  XCircle,
+  Trash2,
+  Handshake,
   TrendingUp,
-  DollarSign,
-  User,
+  TrendingDown,
+  Users,
+  AlertCircle,
+  CheckCircle2,
   Calendar,
-  Building,
-  Target,
-  ArrowRight,
+  Euro,
+  Star,
+  Filter,
   Clock,
-  CheckSquare
+  User,
+  Building,
+  Phone,
+  Mail,
+  FileText,
+  ArrowRight,
+  ArrowLeft,
+  Pen
 } from 'lucide-react';
-// Animazioni e grafici rimossi per compatibilità
 import PageHeader from '@/design-system/ds/PageHeader';
-import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
+import Card, { CardContent } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
 import { apiFetch } from '@/utils/apiClient';
 import NegotiationModal from '@/components/market/NegotiationModal';
-import NegotiationDetailsModal from '@/components/market/NegotiationDetailsModal';
 
 const NegotiationsPage = () => {
+  // === UTILITY FUNCTIONS ===
+  const getPlayerRating = (negotiation) => {
+    const target = negotiation.target;
+    
+    // Priorità: overall_rating > potential_rating > recommendation_level
+    if (target?.overall_rating) {
+      // overall_rating è in scala 0-100, convertiamo in 1-5 stelle
+      const rating = Number(target.overall_rating);
+      if (rating >= 90) return 5;      // 90-100 = 5 stelle
+      else if (rating >= 75) return 4; // 75-89 = 4 stelle
+      else if (rating >= 60) return 3; // 60-74 = 3 stelle
+      else if (rating >= 45) return 2; // 45-59 = 2 stelle
+      else return 1;                   // 0-44 = 1 stella
+    }
+    
+    if (target?.potential_rating) {
+      // potential_rating è in scala 0-100, convertiamo in 1-5 stelle
+      const rating = Number(target.potential_rating);
+      if (rating >= 90) return 5;      // 90-100 = 5 stelle
+      else if (rating >= 75) return 4; // 75-89 = 4 stelle
+      else if (rating >= 60) return 3; // 60-74 = 3 stelle
+      else if (rating >= 45) return 2; // 45-59 = 2 stelle
+      else return 1;                   // 0-44 = 1 stella
+    }
+    
+    if (target?.recommendation_level) {
+      // recommendation_level è già in scala 1-5
+      return Number(target.recommendation_level);
+    }
+    
+    // Fallback: usa la priorità della trattativa se non c'è rating del giocatore
+    return negotiation.priority || 3;
+  };
+
+  const getRatingTooltip = (negotiation) => {
+    const target = negotiation.target;
+    const rating = getPlayerRating(negotiation);
+    
+    if (target?.overall_rating) {
+      return `Rating Generale: ${target.overall_rating}/100 (${rating}/5 stelle)`;
+    }
+    
+    if (target?.potential_rating) {
+      return `Rating Potenziale: ${target.potential_rating}/100 (${rating}/5 stelle)`;
+    }
+    
+    if (target?.recommendation_level) {
+      return `Livello Raccomandazione: ${target.recommendation_level}/5`;
+    }
+    
+    return `Priorità Trattativa: ${rating}/5`;
+  };
+
+  const translatePositionToItalian = (position) => {
+    const positionMap = {
+      // Enum values from database (market_target.position)
+      'GOALKEEPER': 'Portiere',
+      'DEFENDER': 'Difensore',
+      'MIDFIELDER': 'Centrocampista',
+      'FORWARD': 'Attaccante',
+      // Codici abbreviati (da prospect o altri sistemi)
+      'GK': 'Portiere',
+      'CB': 'Difensore Centrale',
+      'LB': 'Terzino Sinistro',
+      'RB': 'Terzino Destro',
+      'LWB': 'Terzino Sinistro',
+      'RWB': 'Terzino Destro',
+      'CDM': 'Mediano',
+      'CM': 'Centrocampista',
+      'CAM': 'Trequartista',
+      'LM': 'Centrocampista Sinistro',
+      'RM': 'Centrocampista Destro',
+      'LW': 'Ala Sinistra',
+      'RW': 'Ala Destra',
+      'ST': 'Attaccante',
+      'CF': 'Centravanti',
+      'LF': 'Ala Sinistra',
+      'RF': 'Ala Destra',
+      'WINGER': 'Ala',
+      'STRIKER': 'Attaccante',
+      // Altri possibili valori
+      'ATTACKER': 'Attaccante',
+      'DEFENDER_CENTRAL': 'Difensore Centrale',
+      'DEFENDER_LEFT': 'Terzino Sinistro',
+      'DEFENDER_RIGHT': 'Terzino Destro',
+      'MIDFIELDER_CENTRAL': 'Centrocampista',
+      'MIDFIELDER_LEFT': 'Centrocampista Sinistro',
+      'MIDFIELDER_RIGHT': 'Centrocampista Destro',
+      'ATTACKER_LEFT': 'Ala Sinistra',
+      'ATTACKER_RIGHT': 'Ala Destra',
+      'ATTACKER_CENTRAL': 'Attaccante'
+    };
+    return positionMap[position] || position;
+  };
+
   // === STATE MANAGEMENT ===
   const [negotiations, setNegotiations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,28 +139,16 @@ const NegotiationsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterStage, setFilterStage] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
   
   // Modal states
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedNegotiation, setSelectedNegotiation] = useState(null);
   const [isViewMode, setIsViewMode] = useState(false);
   
   // Confirmation dialogs
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, negotiation: null });
-  const [convertConfirm, setConvertConfirm] = useState({ isOpen: false, negotiation: null });
   const [feedbackDialog, setFeedbackDialog] = useState({ isOpen: false, message: '', type: 'success' });
-
-  // === STAGES CONFIGURATION ===
-  const stages = [
-    { key: 'SCOUTING', label: 'Scouting', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', icon: Target },
-    { key: 'CONTACT', label: 'Contatto', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', icon: User },
-    { key: 'OFFER_SENT', label: 'Offerta Inviata', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200', icon: ArrowRight },
-    { key: 'COUNTEROFFER', label: 'Controfferte', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', icon: TrendingUp },
-    { key: 'AGREEMENT', label: 'Accordo', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', icon: CheckCircle },
-    { key: 'CLOSED', label: 'Chiusa', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200', icon: CheckSquare },
-    { key: 'REJECTED', label: 'Rifiutata', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', icon: XCircle }
-  ];
 
   // === API CALLS ===
   const fetchNegotiations = async () => {
@@ -68,9 +157,10 @@ const NegotiationsPage = () => {
       setError(null);
       
       const params = new URLSearchParams();
+      if (searchTerm) params.set('search', searchTerm);
       if (filterStatus !== 'all') params.set('status', filterStatus);
       if (filterStage !== 'all') params.set('stage', filterStage);
-      if (searchTerm) params.set('search', searchTerm);
+      if (filterPriority !== 'all') params.set('priority', filterPriority);
       
       const json = await apiFetch(`/api/market/negotiations?${params.toString()}`);
       if (json?.success === false) throw new Error(json?.error || 'Errore caricamento trattative');
@@ -92,7 +182,8 @@ const NegotiationsPage = () => {
       });
       if (json?.success === false) throw new Error(json?.error || 'Errore creazione');
       
-      setIsCreateModalOpen(false);
+      setIsModalOpen(false);
+      setSelectedNegotiation(null);
       await fetchNegotiations();
       setFeedbackDialog({ isOpen: true, message: 'Trattativa creata con successo!', type: 'success' });
     } catch (e) {
@@ -100,16 +191,18 @@ const NegotiationsPage = () => {
     }
   };
 
-  const handleUpdate = async (id, payload) => {
+  const handleUpdate = async (payload) => {
+    if (!selectedNegotiation?.id) return;
+    
     try {
       setLoading(true);
-      const json = await apiFetch(`/api/market/negotiations/${id}`, {
+      const json = await apiFetch(`/api/market/negotiations/${selectedNegotiation.id}`, {
         method: 'PUT',
         body: JSON.stringify(payload)
       });
       if (json?.success === false) throw new Error(json?.error || 'Errore aggiornamento');
       
-      setIsDetailsModalOpen(false);
+      setIsModalOpen(false);
       setSelectedNegotiation(null);
       await fetchNegotiations();
       setFeedbackDialog({ isOpen: true, message: 'Trattativa aggiornata con successo!', type: 'success' });
@@ -118,295 +211,427 @@ const NegotiationsPage = () => {
     }
   };
 
-  const handleClose = async (id) => {
+  const handleConfirmDelete = async () => {
+    const { negotiation } = deleteConfirm;
+    if (!negotiation?.id) return;
+    
     try {
       setLoading(true);
-      const json = await apiFetch(`/api/market/negotiations/${id}/close`, {
-        method: 'POST'
+      const json = await apiFetch(`/api/market/negotiations/${negotiation.id}`, {
+        method: 'DELETE'
       });
-      if (json?.success === false) throw new Error(json?.error || 'Errore chiusura');
+      if (json?.success === false) throw new Error(json?.error || 'Errore eliminazione');
       
+      setDeleteConfirm({ isOpen: false, negotiation: null });
       await fetchNegotiations();
-      setFeedbackDialog({ isOpen: true, message: 'Trattativa chiusa con successo!', type: 'success' });
+      setFeedbackDialog({ isOpen: true, message: 'Trattativa eliminata con successo!', type: 'success' });
     } catch (e) {
-      setFeedbackDialog({ isOpen: true, message: `Errore durante la chiusura: ${e.message}`, type: 'danger' });
+      setDeleteConfirm({ isOpen: false, negotiation: null });
+      setFeedbackDialog({ isOpen: true, message: `Errore durante l'eliminazione: ${e.message}`, type: 'danger' });
     }
   };
-
-  const handleConvertToPlayer = async () => {
-    const { negotiation } = convertConfirm;
-    try {
-      setLoading(true);
-      const json = await apiFetch(`/api/market/negotiations/${negotiation.id}/convert-to-player`, {
-        method: 'POST'
-      });
-      if (json?.success === false) throw new Error(json?.error || 'Errore conversione');
-      
-      setConvertConfirm({ isOpen: false, negotiation: null });
-      await fetchNegotiations();
-      setFeedbackDialog({ isOpen: true, message: 'Giocatore creato nella rosa con successo!', type: 'success' });
-    } catch (e) {
-      setFeedbackDialog({ isOpen: true, message: `Errore durante la conversione: ${e.message}`, type: 'danger' });
-    }
-  };
-
-  // === COMPUTED VALUES ===
-  const filteredNegotiations = useMemo(() => {
-    return negotiations.filter(neg => {
-      const matchesSearch = !searchTerm || 
-        neg.player_first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        neg.player_last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        neg.agent?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        neg.agent?.last_name?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      return matchesSearch;
-    });
-  }, [negotiations, searchTerm]);
-
-  const negotiationsByStage = useMemo(() => {
-    const grouped = {};
-    stages.forEach(stage => {
-      grouped[stage.key] = filteredNegotiations.filter(neg => neg.stage === stage.key);
-    });
-    return grouped;
-  }, [filteredNegotiations]);
-
-  const stats = useMemo(() => {
-    const total = negotiations.length;
-    const open = negotiations.filter(n => n.status === 'OPEN').length;
-    const agreement = negotiations.filter(n => n.status === 'AGREEMENT').length;
-    const closed = negotiations.filter(n => n.status === 'CLOSED').length;
-    const rejected = negotiations.filter(n => n.status === 'REJECTED').length;
-    
-    const totalValue = negotiations.reduce((sum, n) => {
-      return sum + (parseFloat(n.requested_fee) || 0) + (parseFloat(n.requested_salary_net) || 0);
-    }, 0);
-    
-    const totalCommissions = negotiations.reduce((sum, n) => {
-      return sum + (parseFloat(n.agent_commission_fee) || 0);
-    }, 0);
-
-    return { total, open, agreement, closed, rejected, totalValue, totalCommissions };
-  }, [negotiations]);
 
   // === EFFECTS ===
   useEffect(() => {
     fetchNegotiations();
-  }, [filterStatus, filterStage]);
+  }, [filterStatus, filterStage, filterPriority]);
 
-  // === RENDER HELPERS ===
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      OPEN: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Aperta' },
-      AGREEMENT: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: 'Accordo' },
-      CLOSED: { color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200', label: 'Chiusa' },
-      REJECTED: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', label: 'Rifiutata' }
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== '') fetchNegotiations();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // === FILTERED DATA ===
+  const filteredNegotiations = useMemo(() => {
+    let filtered = negotiations;
+    
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(n => 
+        n.player_first_name?.toLowerCase().includes(term) ||
+        n.player_last_name?.toLowerCase().includes(term) ||
+        n.counterpart?.toLowerCase().includes(term) ||
+        n.notes?.toLowerCase().includes(term)
+      );
+    }
+    
+    return filtered;
+  }, [negotiations, searchTerm]);
+
+  // === STATS ===
+  const stats = useMemo(() => {
+    const totalNegotiations = negotiations.length;
+    const openNegotiations = negotiations.filter(n => n.status === 'OPEN').length;
+    const highPriorityNegotiations = negotiations.filter(n => n.priority === 1 || n.priority === 2).length;
+    const totalValue = negotiations.reduce((sum, n) => sum + Number(n.requested_fee || 0), 0);
+    
+    return {
+      total: totalNegotiations,
+      open: openNegotiations,
+      highPriority: highPriorityNegotiations,
+      totalValue
     };
-    
-    const config = statusConfig[status] || statusConfig.OPEN;
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        {config.label}
-      </span>
-    );
+  }, [negotiations]);
+
+  // === HELPER FUNCTIONS ===
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'OPEN': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'AGREEMENT': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'CLOSED': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+      case 'REJECTED': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
   };
 
-  const formatCurrency = (amount) => {
-    if (!amount) return '€ 0';
-    return new Intl.NumberFormat('it-IT', { 
-      style: 'currency', 
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+  const getStageColor = (stage) => {
+    switch (stage) {
+      case 'SCOUTING': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'CONTACT': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'OFFER_SENT': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'COUNTEROFFER': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
+      case 'AGREEMENT': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
   };
 
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 1: return 'text-red-600 dark:text-red-400';
+      case 2: return 'text-orange-600 dark:text-orange-400';
+      case 3: return 'text-yellow-600 dark:text-yellow-400';
+      case 4: return 'text-blue-600 dark:text-blue-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  const getStageIcon = (stage) => {
+    switch (stage) {
+      case 'SCOUTING': return <Eye className="w-4 h-4" />;
+      case 'CONTACT': return <Phone className="w-4 h-4" />;
+      case 'OFFER_SENT': return <Euro className="w-4 h-4" />;
+      case 'COUNTEROFFER': return <Euro className="w-4 h-4" />;
+      case 'AGREEMENT': return <Pen className="w-4 h-4" />;
+      case 'CLOSED': return <Pen className="w-4 h-4" />;
+      case 'REJECTED': return <Trash2 className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'OPEN': return 'Aperta';
+      case 'AGREEMENT': return 'Accordo';
+      case 'CLOSED': return 'Chiusa';
+      case 'REJECTED': return 'Rifiutata';
+      default: return 'Non definita';
+    }
+  };
+
+  const getStageLabel = (stage) => {
+    switch (stage) {
+      case 'SCOUTING': return 'Scouting';
+      case 'CONTACT': return 'Contatto';
+      case 'OFFER_SENT': return 'Offerta Inviata';
+      case 'COUNTEROFFER': return 'Controfferta';
+      case 'AGREEMENT': return 'Accordo';
+      case 'CLOSED': return 'Chiusa';
+      case 'REJECTED': return 'Rifiutata';
+      default: return 'Non definita';
+    }
+  };
+
+  const getPriorityLabel = (priority) => {
+    switch (priority) {
+      case 1: return 'Critica';
+      case 2: return 'Alta';
+      case 3: return 'Media';
+      case 4: return 'Bassa';
+      default: return 'Non definita';
+    }
+  };
+
+  // === RENDER FUNCTIONS ===
   const renderNegotiationCard = (negotiation) => {
-    const StageIcon = stages.find(s => s.key === negotiation.stage)?.icon || Target;
+    const playerName = `${negotiation.player_first_name || ''} ${negotiation.player_last_name || ''}`.trim();
+    const target = negotiation.target;
     
     return (
-      <div
-        key={negotiation.id}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer"
-        onClick={() => {
-          setSelectedNegotiation(negotiation);
-          setIsViewMode(true);
-          setIsDetailsModalOpen(true);
-        }}
-      >
+      <div key={negotiation.id} className={`bg-white dark:bg-[#0f1424] rounded-xl border transition-all duration-200 flex flex-col h-96 ${
+        'border-2 border-green-300 dark:border-green-500/60 hover:shadow-md ring-1 ring-green-300/20 dark:ring-green-500/20 hover:ring-green-300/30 dark:hover:ring-green-500/30'
+      }`}>
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <StageIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {negotiation.player_first_name} {negotiation.player_last_name}
-            </span>
+        <div className="p-4 border-b border-gray-200/50 dark:border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-semibold text-lg">
+              <span>{negotiation.player_first_name?.[0]}{negotiation.player_last_name?.[0]}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {playerName || 'Giocatore non specificato'}
+              </div>
+              {target && (
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  {target.nationality || 'Nazionalità n/d'} • {translatePositionToItalian(target.position) || 'Ruolo n/d'} • {target.current_club || 'Club n/d'}
+                </div>
+              )}
+              {!target && negotiation.player_snapshot && (
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  {negotiation.player_snapshot.nationality || 'Nazionalità n/d'} • {translatePositionToItalian(negotiation.player_snapshot.position) || 'Ruolo n/d'}
+                </div>
+              )}
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(negotiation.status)}`}>
+                    {getStatusLabel(negotiation.status)}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStageColor(negotiation.stage)}`}>
+                    {getStageIcon(negotiation.stage)}
+                    <span>{getStageLabel(negotiation.stage)}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1" title={getRatingTooltip(negotiation)}>
+                  {[...Array(5)].map((_, i) => {
+                    const playerRating = getPlayerRating(negotiation);
+                    return (
+                      <Star 
+                        key={i} 
+                        className={`w-3 h-3 ${
+                          i < playerRating
+                            ? 'text-yellow-400 fill-current' 
+                            : 'text-gray-300 dark:text-gray-600'
+                        }`} 
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
-          {getStatusBadge(negotiation.status)}
         </div>
 
-        {/* Agent */}
-        {negotiation.agent && (
-          <div className="flex items-center space-x-2 mb-2">
-            <User className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-600 dark:text-gray-400">
-              {negotiation.agent.first_name} {negotiation.agent.last_name}
-            </span>
-          </div>
-        )}
+        {/* Contenuto principale */}
+        <div className="p-4 flex-1 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Dati anagrafici sintetici */}
+            {(target?.date_of_birth || target?.nationality || negotiation.player_snapshot?.nationality) && (
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Anagrafica</div>
+                <div className="text-sm text-gray-700 dark:text-gray-300">
+                  {(target?.date_of_birth ? new Date(target.date_of_birth).toLocaleDateString('it-IT') : null) || 'Data n/d'} • {(target?.nationality || negotiation.player_snapshot?.nationality || 'Nazionalità n/d')}
+                </div>
+              </div>
+            )}
+            {/* Transfer Fee */}
+            {negotiation.requested_fee && (
+              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Costo Trasferimento</div>
+                <div className="text-sm font-semibold text-green-700 dark:text-green-300">
+                  {Number(negotiation.requested_fee).toLocaleString('it-IT')} €
+                </div>
+              </div>
+            )}
 
-        {/* Counterpart */}
-        {negotiation.counterpart && (
-          <div className="flex items-center space-x-2 mb-2">
-            <Building className="w-3 h-3 text-gray-400" />
-            <span className="text-xs text-gray-600 dark:text-gray-400">
-              {negotiation.counterpart}
-            </span>
-          </div>
-        )}
+            {/* Salary */}
+            {negotiation.requested_salary_company && (
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Stipendio Richiesto</div>
+                <div className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                  {Number(negotiation.requested_salary_company).toLocaleString('it-IT')} €/anno
+                </div>
+              </div>
+            )}
 
-        {/* Financial Info */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <DollarSign className="w-3 h-3 text-green-600" />
-            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-              {formatCurrency(negotiation.requested_fee)}
-            </span>
+            {/* Counterpart */}
+            {negotiation.counterpart && (
+              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Controparte</div>
+                <div className="text-sm font-semibold text-orange-700 dark:text-orange-300 truncate">
+                  {negotiation.counterpart}
+                </div>
+              </div>
+            )}
+
+            {/* Contract Years */}
+            {negotiation.requested_contract_years && (
+              <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Durata Contratto</div>
+                <div className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                  {negotiation.requested_contract_years} anni
+                </div>
+              </div>
+            )}
+
+            {/* Next Action */}
+            {negotiation.next_action_date && (
+              <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Prossima Azione</div>
+                <div className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">
+                  {new Date(negotiation.next_action_date).toLocaleDateString('it-IT')}
+                </div>
+              </div>
+            )}
+
+            {/* Budget Included */}
+            {negotiation.budget_included && (
+              <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Budget</div>
+                <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  Incluso
+                </div>
+              </div>
+            )}
+
+            {/* Notes Preview */}
+            {negotiation.notes && (
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg col-span-2">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Note</div>
+                <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                  {negotiation.notes}
+                </div>
+              </div>
+            )}
           </div>
-          {negotiation.requested_salary_net && (
-            <span className="text-xs text-gray-500">
-              + {formatCurrency(negotiation.requested_salary_net)}/anno
-            </span>
-          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex items-center space-x-1">
+        {/* Actions Footer */}
+        <div className="px-4 py-3 border-t border-gray-200/50 dark:border-white/10 mt-auto">
+          <div className="flex gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 setSelectedNegotiation(negotiation);
                 setIsViewMode(true);
-                setIsDetailsModalOpen(true);
+                setIsModalOpen(true);
               }}
-              className="h-6 px-2 text-xs"
+              className="flex-1 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
             >
-              <Eye className="w-3 h-3" />
+              <Eye className="w-4 h-4 mr-1" />
+              Visualizza
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 setSelectedNegotiation(negotiation);
                 setIsViewMode(false);
-                setIsDetailsModalOpen(true);
+                setIsModalOpen(true);
               }}
-              className="h-6 px-2 text-xs"
+              className="flex-1 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20"
             >
-              <Edit3 className="w-3 h-3" />
+              <Edit3 className="w-4 h-4 mr-1" />
+              Modifica
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteConfirm({ isOpen: true, negotiation })}
+              className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              <Trash2 className="w-4 h-4" />
             </Button>
           </div>
-          
-          {negotiation.status === 'OPEN' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClose(negotiation.id);
-              }}
-              className="h-6 px-2 text-xs text-green-600 hover:text-green-700"
-            >
-              <CheckCircle className="w-3 h-3" />
-            </Button>
-          )}
         </div>
       </div>
     );
   };
-
-  // === LOADING STATE ===
-  if (loading && negotiations.length === 0) {
-    return (
-      <div className="space-y-6">
-        <PageHeader 
-          title="Trattative di Mercato" 
-          subtitle="Gestione pipeline, richieste economiche e conversione giocatori" 
-        />
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // === ERROR STATE ===
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <PageHeader 
-          title="Trattative di Mercato" 
-          subtitle="Gestione pipeline, richieste economiche e conversione giocatori" 
-        />
-        <Card>
-          <CardContent>
-            <EmptyState
-              icon={XCircle}
-              title="Errore nel caricamento"
-              description={`Errore: ${error}`}
-            >
-              <Button onClick={fetchNegotiations} variant="outline">
-                Riprova
-              </Button>
-            </EmptyState>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   // === MAIN RENDER ===
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 p-6">
+      {/* Page Header */}
       <PageHeader
         title="Trattative di Mercato"
-        subtitle="Gestione pipeline, richieste economiche e conversione giocatori"
+        subtitle="Gestione trattative economiche e negoziazioni"
         actions={
-          <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center space-x-2">
+          <Button onClick={() => { setSelectedNegotiation(null); setIsViewMode(false); setIsModalOpen(true); }} className="flex items-center space-x-2">
             <Plus className="w-4 h-4" />
             <span>Nuova Trattativa</span>
           </Button>
         }
       />
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Totale Trattative</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.total}
+                </div>
+              </div>
+              <Handshake className="w-8 h-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Aperte</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats.open}
+                </div>
+              </div>
+              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Alta Priorità</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {stats.highPriority}
+                </div>
+              </div>
+              <Star className="w-8 h-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Valore Totale</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {stats.totalValue.toLocaleString('it-IT')} €
+                </div>
+              </div>
+              <Euro className="w-8 h-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Cerca per nome giocatore o agente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Cerca per nome o controparte..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
             </div>
 
             {/* Status Filter */}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="all">Tutti gli stati</option>
               <option value="OPEN">Aperte</option>
@@ -419,133 +644,90 @@ const NegotiationsPage = () => {
             <select
               value={filterStage}
               onChange={(e) => setFilterStage(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
-              <option value="all">Tutti gli stage</option>
-              {stages.map(stage => (
-                <option key={stage.key} value={stage.key}>{stage.label}</option>
-              ))}
+              <option value="all">Tutte le fasi</option>
+              <option value="SCOUTING">Scouting</option>
+              <option value="CONTACT">Contatto</option>
+              <option value="OFFER_SENT">Offerta Inviata</option>
+              <option value="COUNTEROFFER">Controfferta</option>
+              <option value="AGREEMENT">Accordo</option>
+            </select>
+
+            {/* Priority Filter */}
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            >
+              <option value="all">Tutte le priorità</option>
+              <option value="1">Critica</option>
+              <option value="2">Alta</option>
+              <option value="3">Media</option>
+              <option value="4">Bassa</option>
             </select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Negotiations Grid */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      )}
+
+      {error && (
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Totale</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</p>
-              </div>
-              <Target className="w-8 h-8 text-blue-600" />
-            </div>
+          <CardContent className="p-6 text-center text-red-600">
+            <AlertCircle className="w-12 h-12 mx-auto mb-2" />
+            <p>{error}</p>
           </CardContent>
         </Card>
+      )}
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Valore Totale</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalValue)}</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+      {!loading && !error && filteredNegotiations.length === 0 && (
+        <EmptyState
+          icon={Handshake}
+          title="Nessuna trattativa trovata"
+          description="Inizia creando la tua prima trattativa di mercato"
+          action={
+            <Button onClick={() => { setSelectedNegotiation(null); setIsViewMode(false); setIsModalOpen(true); }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nuova Trattativa
+            </Button>
+          }
+        />
+      )}
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Commissioni</p>
-                <p className="text-2xl font-bold text-orange-600">{formatCurrency(stats.totalCommissions)}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Aperte</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.open}</p>
-              </div>
-              <Clock className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Kanban Board */}
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-        {stages.map(stage => (
-          <Card key={stage.key} className="min-h-[600px]">
-            <CardHeader className="pb-3">
-              <div className="flex items-center space-x-2">
-                <stage.icon className="w-4 h-4" />
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{stage.label}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${stage.color}`}>
-                  {negotiationsByStage[stage.key]?.length || 0}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {negotiationsByStage[stage.key]?.map(negotiation => 
-                renderNegotiationCard(negotiation)
-              )}
-              
-              {(!negotiationsByStage[stage.key] || negotiationsByStage[stage.key].length === 0) && (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <stage.icon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Nessuna trattativa</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {!loading && !error && filteredNegotiations.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredNegotiations.map(renderNegotiationCard)}
+        </div>
+      )}
 
       {/* Modals */}
       <NegotiationModal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreate}
-      />
-
-      <NegotiationDetailsModal
-        open={isDetailsModalOpen}
-        onClose={() => {
-          setIsDetailsModalOpen(false);
-          setSelectedNegotiation(null);
-          setIsViewMode(false);
-        }}
-        negotiation={selectedNegotiation}
+        open={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setSelectedNegotiation(null); }}
+        onSubmit={selectedNegotiation ? handleUpdate : handleCreate}
+        initial={selectedNegotiation}
         isViewMode={isViewMode}
-        onSubmit={(payload) => selectedNegotiation && handleUpdate(selectedNegotiation.id, payload)}
-        onConvertToPlayer={(negotiation) => setConvertConfirm({ isOpen: true, negotiation })}
       />
 
-      {/* Confirmation Dialogs */}
+      {/* Delete Confirmation */}
       <ConfirmDialog
-        open={convertConfirm.isOpen}
-        onOpenChange={(open) => {
-          if (!open) setConvertConfirm({ isOpen: false, negotiation: null });
-        }}
-        onConfirm={handleConvertToPlayer}
-        title="Crea Giocatore in Rosa"
-        message={`Vuoi inserire ${convertConfirm.negotiation?.player_first_name} ${convertConfirm.negotiation?.player_last_name} nella rosa e creare il contratto?`}
+        open={deleteConfirm.isOpen}
+        onOpenChange={(open) => !open && setDeleteConfirm({ isOpen: false, negotiation: null })}
+        onConfirm={handleConfirmDelete}
+        title="Elimina Trattativa"
+        message={`Sei sicuro di voler eliminare la trattativa per ${deleteConfirm.negotiation?.player_first_name} ${deleteConfirm.negotiation?.player_last_name}? L'operazione non può essere annullata.`}
       />
 
+      {/* Feedback Dialog */}
       <ConfirmDialog
         open={feedbackDialog.isOpen}
-        onOpenChange={(open) => {
-          if (!open) setFeedbackDialog({ isOpen: false, message: '', type: 'success' });
-        }}
+        onOpenChange={(open) => !open && setFeedbackDialog({ isOpen: false, message: '', type: 'success' })}
         onConfirm={() => setFeedbackDialog({ isOpen: false, message: '', type: 'success' })}
         title={feedbackDialog.type === 'success' ? 'Operazione completata' : 'Operazione non riuscita'}
         message={feedbackDialog.message}

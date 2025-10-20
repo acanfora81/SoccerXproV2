@@ -1,26 +1,30 @@
 // client_v3/src/pages/market/TargetsPage.jsx
-// Pagina dedicata alla gestione dei target di mercato (Obiettivi)
+// Pagina dedicata alla gestione dei target di mercato
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Eye, 
   Edit3, 
   Trash2,
-  Target as TargetIcon,
+  Target,
   TrendingUp,
-  User,
-  MapPin,
-  Calendar,
-  DollarSign,
-  Star,
+  TrendingDown,
+  Users,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Calendar,
+  MapPin,
+  Euro,
+  Star,
+  Filter,
+  MoreHorizontal,
+  FileText
 } from 'lucide-react';
+import { Building2 as Building } from 'lucide-react';
 import PageHeader from '@/design-system/ds/PageHeader';
-import Card, { CardContent, CardHeader } from '@/design-system/ds/Card';
+import Card, { CardContent } from '@/design-system/ds/Card';
 import Button from '@/design-system/ds/Button';
 import EmptyState from '@/design-system/ds/EmptyState';
 import ConfirmDialog from '@/design-system/ds/ConfirmDialog';
@@ -28,6 +32,59 @@ import { apiFetch } from '@/utils/apiClient';
 import TargetModal from '@/components/market/TargetModal';
 
 const TargetsPage = () => {
+  // Funzione per tradurre gli enum del database in nomi italiani
+  const translatePositionToItalian = (positionEnum) => {
+    const positionMapping = {
+      'GOALKEEPER': 'Portiere',
+      'DEFENDER': 'Difensore',
+      'MIDFIELDER': 'Centrocampista',
+      'FORWARD': 'Attaccante'
+    };
+    return positionMapping[positionEnum] || positionEnum;
+  };
+
+  // Funzione per tradurre i codici posizione in nomi italiani
+  const translatePositionCodeToItalian = (positionCode) => {
+    const positionMapping = {
+      'GK': 'Portiere',
+      'CB': 'Difensore Centrale',
+      'LB': 'Terzino Sinistro',
+      'RB': 'Terzino Destro',
+      'CDM': 'Centrocampista Difensivo',
+      'CM': 'Centrocampista',
+      'CAM': 'Centrocampista Offensivo',
+      'LW': 'Ala Sinistra',
+      'RW': 'Ala Destra',
+      'ST': 'Attaccante'
+    };
+    return positionMapping[positionCode] || positionCode;
+  };
+
+  // Traduzione piede preferito
+  const translateFootToItalian = (foot) => {
+    if (!foot) return '-';
+    const map = {
+      LEFT: 'Sinistro',
+      RIGHT: 'Destro',
+      BOTH: 'Ambidestro',
+      L: 'Sinistro',
+      R: 'Destro',
+      B: 'Ambidestro'
+    };
+    const key = String(foot).toUpperCase();
+    return map[key] || foot;
+  };
+
+  // Traduci stringa ruoli separata da virgole/campi
+  const translateRolesList = (roles) => {
+    if (!roles) return '-';
+    return roles
+      .split(/[,;]|\s+/)
+      .filter(Boolean)
+      .map((r) => translatePositionCodeToItalian(r))
+      .join(', ');
+  };
+
   // === STATE MANAGEMENT ===
   const [targets, setTargets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,26 +103,6 @@ const TargetsPage = () => {
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, target: null });
   const [feedbackDialog, setFeedbackDialog] = useState({ isOpen: false, message: '', type: 'success' });
 
-  // === STATUS CONFIGURATION ===
-  const statusConfig = {
-    'SCOUTING': { label: 'Scouting', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', icon: TargetIcon },
-    'INTERESTED': { label: 'Interessato', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', icon: Star },
-    'CONTACT': { label: 'Contattato', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200', icon: User },
-    'NEGOTIATING': { label: 'Negoziazione', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', icon: TrendingUp },
-    'OFFER_SENT': { label: 'Offerta Inviata', color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200', icon: DollarSign },
-    'SIGNED': { label: 'Firmato', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', icon: CheckCircle2 },
-    'REJECTED': { label: 'Rifiutato', color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', icon: AlertCircle },
-    'ARCHIVED': { label: 'Archiviato', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200', icon: AlertCircle }
-  };
-
-  const priorityColors = {
-    1: 'bg-red-500 text-white',
-    2: 'bg-orange-500 text-white',
-    3: 'bg-yellow-500 text-white',
-    4: 'bg-blue-500 text-white',
-    5: 'bg-gray-500 text-white'
-  };
-
   // === API CALLS ===
   const fetchTargets = async () => {
     try {
@@ -73,13 +110,13 @@ const TargetsPage = () => {
       setError(null);
       
       const params = new URLSearchParams();
+      if (searchTerm) params.set('search', searchTerm);
       if (filterStatus !== 'all') params.set('status', filterStatus);
       if (filterPriority !== 'all') params.set('priority', filterPriority);
       if (filterPosition !== 'all') params.set('position', filterPosition);
-      if (searchTerm) params.set('search', searchTerm);
       
       const json = await apiFetch(`/api/market/targets?${params.toString()}`);
-      if (json?.success === false) throw new Error(json?.error || 'Errore caricamento obiettivi');
+      if (json?.success === false) throw new Error(json?.error || 'Errore caricamento target');
       
       setTargets(json.data || []);
     } catch (e) {
@@ -101,7 +138,7 @@ const TargetsPage = () => {
       setIsModalOpen(false);
       setSelectedTarget(null);
       await fetchTargets();
-      setFeedbackDialog({ isOpen: true, message: 'Obiettivo creato con successo!', type: 'success' });
+      setFeedbackDialog({ isOpen: true, message: 'Target creato con successo!', type: 'success' });
     } catch (e) {
       setFeedbackDialog({ isOpen: true, message: `Errore durante la creazione: ${e.message}`, type: 'danger' });
     }
@@ -121,7 +158,7 @@ const TargetsPage = () => {
       setIsModalOpen(false);
       setSelectedTarget(null);
       await fetchTargets();
-      setFeedbackDialog({ isOpen: true, message: 'Obiettivo aggiornato con successo!', type: 'success' });
+      setFeedbackDialog({ isOpen: true, message: 'Target aggiornato con successo!', type: 'success' });
     } catch (e) {
       setFeedbackDialog({ isOpen: true, message: `Errore durante l'aggiornamento: ${e.message}`, type: 'danger' });
     }
@@ -140,7 +177,7 @@ const TargetsPage = () => {
       
       setDeleteConfirm({ isOpen: false, target: null });
       await fetchTargets();
-      setFeedbackDialog({ isOpen: true, message: 'Obiettivo archiviato con successo!', type: 'success' });
+      setFeedbackDialog({ isOpen: true, message: 'Target eliminato con successo!', type: 'success' });
     } catch (e) {
       setDeleteConfirm({ isOpen: false, target: null });
       setFeedbackDialog({ isOpen: true, message: `Errore durante l'eliminazione: ${e.message}`, type: 'danger' });
@@ -164,11 +201,11 @@ const TargetsPage = () => {
   const filteredTargets = useMemo(() => {
     let filtered = targets;
     
-    // Client-side additional filtering if needed
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(t => 
-        `${t.first_name} ${t.last_name}`.toLowerCase().includes(term) ||
+        t.first_name?.toLowerCase().includes(term) ||
+        t.last_name?.toLowerCase().includes(term) ||
         t.current_club?.toLowerCase().includes(term)
       );
     }
@@ -178,81 +215,246 @@ const TargetsPage = () => {
 
   // === STATS ===
   const stats = useMemo(() => {
+    const totalTargets = targets.length;
+    const activeTargets = targets.filter(t => t.status === 'ACTIVE').length;
+    const highPriorityTargets = targets.filter(t => t.priority <= 2).length;
+    const totalMarketValue = targets.reduce((sum, t) => sum + Number(t.market_value || 0), 0);
+    
     return {
-      total: targets.length,
-      scouting: targets.filter(t => t.status === 'SCOUTING').length,
-      active: targets.filter(t => ['INTERESTED', 'CONTACT', 'NEGOTIATING', 'OFFER_SENT'].includes(t.status)).length,
-      signed: targets.filter(t => t.status === 'SIGNED').length,
-      highPriority: targets.filter(t => t.priority <= 2).length
+      total: totalTargets,
+      active: activeTargets,
+      highPriority: highPriorityTargets,
+      totalMarketValue
     };
   }, [targets]);
 
-  // === RENDER FUNCTIONS ===
-  const renderTargetCard = (target) => {
-    const statusInfo = statusConfig[target.status] || statusConfig['SCOUTING'];
-    const StatusIcon = statusInfo.icon;
+  // === HELPER FUNCTIONS ===
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'ACTIVE': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'SCOUTING': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'INTERESTED': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'CONTACT': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
+      case 'ARCHIVED': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 1: return 'text-red-600 dark:text-red-400';
+      case 2: return 'text-orange-600 dark:text-orange-400';
+      case 3: return 'text-yellow-600 dark:text-yellow-400';
+      case 4: return 'text-blue-600 dark:text-blue-400';
+      case 5: return 'text-gray-600 dark:text-gray-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  const getPriorityLabel = (priority) => {
+    switch (priority) {
+      case 1: return 'Critica';
+      case 2: return 'Alta';
+      case 3: return 'Media';
+      case 4: return 'Bassa';
+      case 5: return 'Molto Bassa';
+      default: return 'Non definita';
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'ACTIVE': return 'Attivo';
+      case 'SCOUTING': return 'In Scouting';
+      case 'INTERESTED': return 'Interessato';
+      case 'CONTACT': return 'In Contatto';
+      case 'NEGOTIATING': return 'In Negoziazione';
+      case 'ARCHIVED': return 'Archiviato';
+      default: return 'Non definito';
+    }
+  };
+
+  // === CARD COMPONENT CON TABS (stile compatto, colori invariati) ===
+  const TargetCard = ({ target }) => {
+    const [activeTab, setActiveTab] = React.useState('info'); // info | club | vdm | valutazioni | link
+    const age = target.date_of_birth ? 
+      new Date().getFullYear() - new Date(target.date_of_birth).getFullYear() : null;
+    
+    // Debug: verifica la posizione che arriva dal database
+    console.log('🎯 Target position debug:', { 
+      id: target.id, 
+      name: `${target.first_name} ${target.last_name}`,
+      position: target.position,
+      translated: translatePositionToItalian(target.position)
+    });
     
     return (
-      <Card key={target.id} className="hover:shadow-lg transition-shadow duration-200">
-        <CardContent className="p-4">
-          {/* Header con Priority e Status */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${priorityColors[target.priority] || priorityColors[3]}`}>
-                P{target.priority}
-              </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 ${statusInfo.color}`}>
-                <StatusIcon className="w-3 h-3" />
-                <span>{statusInfo.label}</span>
-              </span>
+      <div className={`bg-white dark:bg-[#0f1424] rounded-xl border transition-all duration-200 flex flex-col h-full ${
+        'border-2 border-blue-300 dark:border-blue-500/60 hover:shadow-md ring-1 ring-blue-300/20 dark:ring-blue-500/20 hover:ring-blue-300/30 dark:hover:ring-blue-500/30'
+      }`}>
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200/50 dark:border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-lg">
+              <span>{target.first_name?.[0]}{target.last_name?.[0]}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-gray-900 dark:text-white truncate">
+                {target.first_name} {target.last_name}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {translatePositionToItalian(target.position)} • {age ? `${age} anni` : ''} • {target.nationality}
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  target.status === 'ACTIVE' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' :
+                  target.status === 'SCOUTING' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200' :
+                  target.status === 'NEGOTIATING' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200' :
+                  'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200'
+                }`}>
+                  {getStatusLabel(target.status)}
+                </span>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className={`w-3 h-3 ${
+                        i < (target.priority || 3) 
+                          ? 'text-yellow-400 fill-current' 
+                          : 'text-gray-300 dark:text-gray-600'
+                      }`} 
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Nome Giocatore */}
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-            {target.first_name} {target.last_name}
-          </h3>
-
-          {/* Info Giocatore */}
-          <div className="space-y-2 mb-4">
-            {target.position && (
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <TargetIcon className="w-4 h-4 mr-2" />
-                <span>{target.position}</span>
-              </div>
-            )}
-            
-            {target.current_club && (
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <MapPin className="w-4 h-4 mr-2" />
-                <span>{target.current_club}</span>
-              </div>
-            )}
-            
-            {target.age && (
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <Calendar className="w-4 h-4 mr-2" />
-                <span>{target.age} anni</span>
-              </div>
-            )}
-            
-            {target.market_value && (
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <DollarSign className="w-4 h-4 mr-2" />
-                <span>{Number(target.market_value).toLocaleString('it-IT')} €</span>
-              </div>
-            )}
-
-            {target.agent && (
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <User className="w-4 h-4 mr-2" />
-                <span>{target.agent.first_name} {target.agent.last_name}</span>
-              </div>
-            )}
+        {/* Tabs header */}
+        <div className="px-4 pt-3">
+          <div className="flex flex-wrap items-center gap-1.5 border-b border-gray-200 dark:border-white/10">
+            {[
+              { id: 'info', label: 'Informazioni Tecnico', Icon: Users },
+              { id: 'club', label: 'Club e Contratto', Icon: Building || Calendar },
+              { id: 'vdm', label: 'VdM', Icon: Euro },
+              { id: 'valutazioni', label: 'Valutazioni', Icon: Star },
+              { id: 'link', label: 'Collegamento e Note', Icon: FileText },
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`text-[11px] leading-none px-1.5 py-1.5 -mb-[1px] border-b-2 transition-colors ${
+                  activeTab === t.id
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {t.Icon ? <t.Icon className="w-3 h-3" /> : null}
+                  <span>{t.label}</span>
+                </span>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+        {/* Contenuto principale (una tab alla volta) */}
+        <div className="p-4 flex-1">
+          {activeTab === 'info' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Ruolo Preferito</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{translatePositionCodeToItalian(target.preferred_role) || '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Ruoli Secondari</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{translateRolesList(target.secondary_roles)}</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Piede</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{translateFootToItalian(target.foot)}</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Altezza / Peso</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{target.height_cm ? `${target.height_cm} cm` : '-'}{target.height_cm || target.weight_kg ? ' • ' : ''}{target.weight_kg ? `${target.weight_kg} kg` : '-'}</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'club' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Club Attuale</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{target.current_club || '-'}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-500">{target.club_country || '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Contratto fino al</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{target.contract_until ? new Date(target.contract_until).toLocaleDateString('it-IT') : '-'}</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'vdm' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Valore Mercato</div>
+                <div className="text-sm font-semibold text-green-700 dark:text-green-300">{target.market_value != null ? `${Number(target.market_value).toLocaleString('it-IT')} €` : '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Valore Precedente</div>
+                <div className="text-sm font-semibold text-green-700 dark:text-green-300">{target.previous_market_value != null ? `${Number(target.previous_market_value).toLocaleString('it-IT')} €` : '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg col-span-2">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Stipendio Attuale</div>
+                <div className="text-sm font-semibold text-blue-700 dark:text-blue-300">{target.current_salary != null ? `${Number(target.current_salary).toLocaleString('it-IT')} €` : '-'}</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'valutazioni' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Rating Attuale</div>
+                <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">{target.overall_rating != null ? `${target.overall_rating}/100` : '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Potenziale</div>
+                <div className="text-lg font-semibold text-purple-700 dark:text-purple-300">{target.potential_rating != null ? `${target.potential_rating}/100` : '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Probabilità Trasferimento</div>
+                <div className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">{target.transfer_likelihood != null ? `${target.transfer_likelihood}/100` : '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Raccomandazione</div>
+                <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{target.recommendation_level != null ? `${target.recommendation_level}/5` : '-'}</div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'link' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Profilo</div>
+                <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 truncate">{target.profile_url || '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Video</div>
+                <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 truncate">{target.video_url || '-'}</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg col-span-2">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Note</div>
+                <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{target.notes || '-'}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions Footer */}
+        <div className="px-4 py-3 border-t border-gray-200/50 dark:border-white/10 mt-auto">
+          <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -261,7 +463,7 @@ const TargetsPage = () => {
                 setIsViewMode(true);
                 setIsModalOpen(true);
               }}
-              className="text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+              className="flex-1 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
             >
               <Eye className="w-4 h-4 mr-1" />
               Visualizza
@@ -274,7 +476,7 @@ const TargetsPage = () => {
                 setIsViewMode(false);
                 setIsModalOpen(true);
               }}
-              className="text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20"
+              className="flex-1 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20"
             >
               <Edit3 className="w-4 h-4 mr-1" />
               Modifica
@@ -285,12 +487,11 @@ const TargetsPage = () => {
               onClick={() => setDeleteConfirm({ isOpen: true, target })}
               className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
             >
-              <Trash2 className="w-4 h-4 mr-1" />
-              Archivia
+              <Trash2 className="w-4 h-4" />
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 
@@ -299,46 +500,68 @@ const TargetsPage = () => {
     <div className="space-y-6 p-6">
       {/* Page Header */}
       <PageHeader
-        title="Obiettivi di Mercato"
-        subtitle="Gestione target e giocatori d'interesse"
+        title="Target di Mercato"
+        subtitle="Gestione obiettivi di mercato e giocatori da acquisire"
         actions={
           <Button onClick={() => { setSelectedTarget(null); setIsViewMode(false); setIsModalOpen(true); }} className="flex items-center space-x-2">
             <Plus className="w-4 h-4" />
-            <span>Nuovo Obiettivo</span>
+            <span>Nuovo Target</span>
           </Button>
         }
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">Totale Obiettivi</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Totale Target</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {stats.total}
+                </div>
+              </div>
+              <Target className="w-8 h-8 text-blue-600" />
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">In Scouting</div>
-            <div className="text-2xl font-bold text-blue-600">{stats.scouting}</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Attivi</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats.active}
+                </div>
+              </div>
+              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">Attivi</div>
-            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Alta Priorità</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {stats.highPriority}
+                </div>
+              </div>
+              <Star className="w-8 h-8 text-orange-600" />
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">Firmati</div>
-            <div className="text-2xl font-bold text-purple-600">{stats.signed}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">Alta Priorità</div>
-            <div className="text-2xl font-bold text-red-600">{stats.highPriority}</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Valore Totale</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {stats.totalMarketValue.toLocaleString('it-IT')} €
+                </div>
+              </div>
+              <Euro className="w-8 h-8 text-purple-600" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -352,7 +575,7 @@ const TargetsPage = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Cerca giocatore o club..."
+                placeholder="Cerca per nome o club..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
@@ -368,11 +591,9 @@ const TargetsPage = () => {
               <option value="all">Tutti gli stati</option>
               <option value="SCOUTING">Scouting</option>
               <option value="INTERESTED">Interessato</option>
-              <option value="CONTACT">Contattato</option>
-              <option value="NEGOTIATING">Negoziazione</option>
-              <option value="OFFER_SENT">Offerta Inviata</option>
-              <option value="SIGNED">Firmato</option>
-              <option value="REJECTED">Rifiutato</option>
+              <option value="CONTACT">In contatto</option>
+              <option value="ACTIVE">Attivo</option>
+              <option value="ARCHIVED">Archiviato</option>
             </select>
 
             {/* Priority Filter */}
@@ -382,11 +603,11 @@ const TargetsPage = () => {
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
               <option value="all">Tutte le priorità</option>
-              <option value="1">Priorità 1 (Massima)</option>
-              <option value="2">Priorità 2</option>
-              <option value="3">Priorità 3</option>
-              <option value="4">Priorità 4</option>
-              <option value="5">Priorità 5 (Minima)</option>
+              <option value="1">Critica</option>
+              <option value="2">Alta</option>
+              <option value="3">Media</option>
+              <option value="4">Bassa</option>
+              <option value="5">Molto Bassa</option>
             </select>
 
             {/* Position Filter */}
@@ -395,11 +616,17 @@ const TargetsPage = () => {
               onChange={(e) => setFilterPosition(e.target.value)}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             >
-              <option value="all">Tutti i ruoli</option>
-              <option value="POR">Portiere</option>
-              <option value="DIF">Difensore</option>
-              <option value="CEN">Centrocampista</option>
-              <option value="ATT">Attaccante</option>
+              <option value="all">Tutte le posizioni</option>
+              <option value="GK">Portiere</option>
+              <option value="CB">Difensore Centrale</option>
+              <option value="LB">Terzino Sinistro</option>
+              <option value="RB">Terzino Destro</option>
+              <option value="CDM">Centrocampista Difensivo</option>
+              <option value="CM">Centrocampista</option>
+              <option value="CAM">Trequartista</option>
+              <option value="LW">Ala Sinistra</option>
+              <option value="RW">Ala Destra</option>
+              <option value="ST">Attaccante</option>
             </select>
           </div>
         </CardContent>
@@ -423,13 +650,13 @@ const TargetsPage = () => {
 
       {!loading && !error && filteredTargets.length === 0 && (
         <EmptyState
-          icon={TargetIcon}
-          title="Nessun obiettivo trovato"
-          description="Inizia aggiungendo il tuo primo obiettivo di mercato"
+          icon={Target}
+          title="Nessun target trovato"
+          description="Inizia creando il tuo primo target di mercato"
           action={
             <Button onClick={() => { setSelectedTarget(null); setIsViewMode(false); setIsModalOpen(true); }}>
               <Plus className="w-4 h-4 mr-2" />
-              Nuovo Obiettivo
+              Nuovo Target
             </Button>
           }
         />
@@ -437,7 +664,9 @@ const TargetsPage = () => {
 
       {!loading && !error && filteredTargets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTargets.map(renderTargetCard)}
+          {filteredTargets.map((t) => (
+            <TargetCard key={t.id} target={t} />
+          ))}
         </div>
       )}
 
@@ -455,8 +684,8 @@ const TargetsPage = () => {
         open={deleteConfirm.isOpen}
         onOpenChange={(open) => !open && setDeleteConfirm({ isOpen: false, target: null })}
         onConfirm={handleConfirmDelete}
-        title="Archivia Obiettivo"
-        message={`Sei sicuro di voler archiviare "${deleteConfirm.target?.first_name} ${deleteConfirm.target?.last_name}"? Potrà essere ripristinato in seguito.`}
+        title="Elimina Target"
+        message={`Sei sicuro di voler eliminare il target ${deleteConfirm.target?.first_name} ${deleteConfirm.target?.last_name}? L'operazione non può essere annullata.`}
       />
 
       {/* Feedback Dialog */}

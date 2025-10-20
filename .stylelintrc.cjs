@@ -1,5 +1,8 @@
 // .stylelintrc.cjs
 module.exports = {
+  extends: [
+    "stylelint-config-tailwindcss"
+  ],
   rules: {
     // Regole di base valide per Stylelint 16
     "color-no-invalid-hex": true,
@@ -16,7 +19,22 @@ module.exports = {
     "color-named": "never", // non usare colori nominati come 'white', 'black'
     
     // Regole di specificità
-    "no-descending-specificity": true
+    "no-descending-specificity": true,
+    
+    // Disabilita regole che confliggono con Tailwind CSS
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "tailwind",
+          "apply",
+          "variants",
+          "responsive",
+          "screen",
+          "layer"
+        ]
+      }
+    ]
   },
   ignoreFiles: [
     "node_modules/**/*",

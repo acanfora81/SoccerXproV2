@@ -45,7 +45,7 @@ router.post('/net-from-gross', async (req, res) => {
     const finalTeamId = req.user?.profile?.teamId || teamId || opts?.teamId || null;
 
     // DB-first tax rates (merge con client e default sicuri)
-    const defaults = { inpsWorker: 9.19, ffcWorker: 0.5, inpsEmployer: 30, inailEmployer: 1.5, ffcEmployer: 6.25, solidarityWorker: 0, solidarityEmployer: 0 };
+    const defaults = { inpsWorker: 9.19, ffcWorker: 1.25, inpsEmployer: 29.58, inailEmployer: 7.9, ffcEmployer: 6.25, solidarityWorker: 0.5, solidarityEmployer: 0 };
     let dbRates = await loadTaxRatesFromDb(finalTeamId, finalYear, finalContractType);
     const taxRates = { ...defaults, ...(clientTaxRates || {}), ...(dbRates || {}) };
 

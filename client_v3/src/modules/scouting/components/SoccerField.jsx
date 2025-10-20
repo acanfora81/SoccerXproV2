@@ -62,14 +62,16 @@ const SoccerField = ({ tokens = [], onClickToken, prospectTeamSide = 'HOME', pro
                   ? 'cursor-default' 
                   : 'hover:ring-2 hover:ring-yellow-400 cursor-pointer'
               } ${
-                isSpecificProspect 
-                  ? 'ring-3 ring-yellow-400 shadow-lg shadow-yellow-400/50' 
-                  : 'ring-1 ring-white/50'
+                p.observed
+                  ? 'ring-4 ring-amber-400 shadow-lg shadow-amber-400/50'
+                  : (isSpecificProspect 
+                      ? 'ring-3 ring-yellow-400 shadow-lg shadow-yellow-400/50' 
+                      : 'ring-1 ring-white/50')
               }`}
               style={{ 
                 backgroundColor: p.teamSide === 'HOME' ? '#dc2626' : '#2563eb'  // Casa = rosso, Trasferta = blu
               }}
-              title={`${p.role}${p.number ? ' #' + p.number : ''}${p.name ? ' - ' + p.name : ''}${isSpecificProspect ? ' (PROSPECT)' : ''}`}
+              title={`${p.role}${p.number ? ' #' + p.number : ''}${p.name ? ' - ' + p.name : ''}${p.observed ? ' (VISIONATO)' : (isSpecificProspect ? ' (PROSPECT)' : '')}`}
             >
               {p.number || p.role}
             </button>

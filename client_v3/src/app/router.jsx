@@ -40,7 +40,6 @@ import FiscalSetupPage from "@/features/taxes/FiscalSetupPage";
 // Performance Pages
 import PerformanceDashboard from "@/features/performance/pages/PerformanceDashboard";
 import PlayersModuleApp from "@/modules/players/PlayersModuleApp";
-import MarketDashboard from "@/pages/market/MarketDashboard";
 import TrattativePage from "@/pages/market/TrattativePage";
 import OffersPage from "@/pages/market/OffersPage";
 import TargetsPage from "@/pages/market/TargetsPage";
@@ -51,6 +50,7 @@ import SessionsPage from "@/pages/scouting/SessionsPage";
 import ReportsPage from "@/pages/scouting/ReportsPage";
 import AgentiPage from "@/pages/market/AgentiPage";
 import NegotiationsPage from "@/pages/market/NegotiationsPage";
+import NegotiationsKanbanPage from "@/pages/market/NegotiationsKanbanPage";
 import BudgetsPage from "@/pages/market/BudgetsPage";
 import PerformancePlayers from "@/features/performance/pages/PerformancePlayers";
 import DossierPage from "@/features/performance/pages/DossierPage";
@@ -163,12 +163,13 @@ const router = createBrowserRouter([
       { path: "dashboard/scouting/reports", element: <ReportsPage /> },
 
       // Mercato
-      { path: "dashboard/market", element: <MarketDashboard /> },
+      { path: "dashboard/market", element: <Navigate to="/dashboard/market/trattative-kanban" replace /> },
       { path: "dashboard/market/trattative", element: <TrattativePage /> },
       { path: "dashboard/market/offerte", element: <OffersPage /> },
       { path: "dashboard/market/obiettivi", element: <TargetsPage /> },
       { path: "dashboard/market/agenti", element: <AgentiPage /> },
       { path: "dashboard/market/trattative-nuove", element: <NegotiationsPage /> },
+      { path: "dashboard/market/trattative-kanban", element: <NegotiationsKanbanPage /> },
       { path: "dashboard/market/budget", element: <BudgetsPage /> },
       
       // Amministrazione

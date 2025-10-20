@@ -2114,6 +2114,18 @@ model market_negotiation {
   requested_contract_years Int?
   tax_profile_id           Int?
 
+  // === PRIMA OFFERTA (snapshot prima invio - immutabile) ===
+  first_offer_fee            Decimal? @db.Decimal(12, 2)
+  first_offer_salary_net     Decimal? @db.Decimal(12, 2)
+  first_offer_salary_gross   Decimal? @db.Decimal(12, 2)
+  first_offer_salary_company Decimal? @db.Decimal(12, 2)
+
+  // === ULTIMA CONTROFFERTA (sempre aggiornabile) ===
+  last_counteroffer_fee            Decimal? @db.Decimal(12, 2)
+  last_counteroffer_salary_net     Decimal? @db.Decimal(12, 2)
+  last_counteroffer_salary_gross   Decimal? @db.Decimal(12, 2)
+  last_counteroffer_salary_company Decimal? @db.Decimal(12, 2)
+
   // === COMMISSIONI E BONUS ===
   agent_commission_fee   Decimal? @db.Decimal(12, 2)
   agent_commission_type  String?  @default("PERCENTAGE")
